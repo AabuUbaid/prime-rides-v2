@@ -1,6 +1,0 @@
--r base.txt
-
-ipython
-pytest
-pytest-django
-ruff
