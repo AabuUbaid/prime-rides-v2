@@ -130,6 +130,17 @@ class Car(models.Model):
         db_table = "cars"
         ordering = ["-created_at"]
 
+        indexes = [
+            models.Index(fields=["stock_id"]),
+            models.Index(fields=["status"]),
+            models.Index(fields=["source"]),
+            models.Index(fields=["supplier"]),
+            models.Index(fields=["make"]),
+            models.Index(fields=["model"]),
+            models.Index(fields=["year"]),
+            models.Index(fields=["created_at"]),
+        ]
+
     def __str__(self):
         return f"{self.stock_id} - {self.year} {self.make} {self.model}"
 
@@ -172,9 +183,14 @@ class CarImage(models.Model):
         default=False,
     )
 
+    display_order = models.PositiveIntegerField(
+            default=0,
+        )
+
     class Meta:
         db_table = "car_images"
-        ordering = ["-is_cover", "id"]
+        ordering = ["-is_cover", "id","display_order"]
+        
 
     def __str__(self):
         return f"Image - {self.car.stock_id}"

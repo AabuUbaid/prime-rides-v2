@@ -1,4 +1,5 @@
 from rest_framework import status
+from .pagination import InventoryPagination
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.views import APIView
@@ -6,7 +7,9 @@ from rest_framework.parsers import (
     MultiPartParser,
     FormParser,
 )
-from .models import Car
+from rest_framework.exceptions import ValidationError
+from .models import (Car, CarExpense)
+from .query_serializers import CarListQuerySerializer
 
 from .serializers import (
     CarCreateSerializer,
@@ -14,6 +17,10 @@ from .serializers import (
     CarDetailSerializer,
     CarUpdateSerializer,
     CarImageSerializer,
+    CarExpenseSerializer,
+    ImageReorderSerializer,
+    BulkImageDeleteSerializer,
+    BulkVehicleDeleteSerializer,
 )
 
 from .selectors import InventorySelector
@@ -28,14 +35,32 @@ class CarAPIView(APIView):
     )
 
     def get(self, request):
-        cars = InventorySelector.list_cars()
+
+        query_serializer = CarListQuerySerializer(
+            data=request.query_params,
+        )
+
+        query_serializer.is_valid(
+            raise_exception=True,
+        )
+
+        cars = InventorySelector.list_cars(
+            **query_serializer.validated_data,
+        )
+
+        paginator = InventoryPagination()
+
+        page = paginator.paginate_queryset(
+            cars,
+            request,
+        )
 
         serializer = CarListSerializer(
-            cars,
+            page,
             many=True,
         )
 
-        return Response(
+        return paginator.get_paginated_response(
             {
                 "success": True,
                 "data": serializer.data,
@@ -168,6 +193,25 @@ class CarDetailAPIView(APIView):
             }
         )
 
+    def delete(self, request, car_id):
+
+        car = InventorySelector.get_car_by_id(
+            car_id,
+        )
+
+        InventoryService.delete_car(
+            car,
+        )
+
+        return Response(
+            {
+                "success": True,
+                "message": "Vehicle deleted successfully.",
+            },
+            status=status.HTTP_200_OK,
+        )
+        
+
 
 class CarImageCoverAPIView(APIView):
 
@@ -192,5 +236,273 @@ class CarImageCoverAPIView(APIView):
                 "success": True,
                 "message": "Cover image updated successfully.",
                 "data": CarImageSerializer(image).data,
+            }
+        )
+class CarExpenseAPIView(APIView):
+
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request, car_id):
+
+        car = InventorySelector.get_car_by_id(
+            car_id
+        )
+
+        serializer = CarExpenseSerializer(
+            car.expenses.all(),
+            many=True,
+        )
+
+        return Response(
+            {
+                "success": True,
+                "data": serializer.data,
+            }
+        )
+
+    def post(self, request, car_id):
+
+        car = InventorySelector.get_car_by_id(
+            car_id
+        )
+
+        serializer = CarExpenseSerializer(
+            data=request.data,
+        )
+
+        serializer.is_valid(
+            raise_exception=True,
+        )
+
+        expense = serializer.save(
+            car=car,
+        )
+
+        return Response(
+            {
+                "success": True,
+                "data": CarExpenseSerializer(
+                    expense
+                ).data,
+            },
+            status=status.HTTP_201_CREATED,
+        )
+
+class CarExpenseDetailAPIView(APIView):
+
+    permission_classes = [IsAuthenticated]
+
+    def patch(
+        self,
+        request,
+        expense_id,
+    ):
+
+        expense = InventorySelector.get_expense_by_id(
+            expense_id
+        )
+
+        serializer = CarExpenseSerializer(
+            expense,
+            data=request.data,
+            partial=True,
+        )
+
+        serializer.is_valid(
+            raise_exception=True,
+        )
+
+        expense=InventoryService.update_expense(
+            expense,
+            serializer.validated_data,
+        )
+
+        return Response(
+            {
+                "success": True,
+                "data": CarExpenseSerializer(
+                    expense
+                ).data,
+            }
+        )
+
+    def delete(
+        self,
+        request,
+        expense_id,
+    ):
+
+        expense = InventorySelector.get_expense_by_id(
+            expense_id
+        )
+        InventoryService.delete_expense(
+            expense,
+        )
+
+        return Response(
+            {
+                "success": True,
+                "message": "Expense deleted successfully.",
+            }
+        )
+
+
+class CarImageAPIView(APIView):
+
+    permission_classes = [IsAuthenticated]
+
+    def delete(
+        self,
+        request,
+        image_id,
+    ):
+
+        image = InventorySelector.get_image_by_id(
+            image_id,
+        )
+
+        InventoryService.delete_image(
+            image,
+        )
+
+        return Response(
+            {
+                "success": True,
+                "message": "Image deleted successfully.",
+            }
+        )
+
+class DashboardAPIView(APIView):
+
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request):
+
+        data = InventorySelector.dashboard_summary()
+
+        return Response(
+            {
+                "success": True,
+                "data": data,
+            }
+        )
+
+class CarImageReorderAPIView(APIView):
+
+    permission_classes = [IsAuthenticated]
+
+    def patch(
+        self,
+        request,
+        car_id,
+    ):
+
+        car = InventorySelector.get_car_by_id(
+            car_id,
+        )
+
+        serializer = ImageReorderSerializer(
+            data=request.data,
+        )
+
+        serializer.is_valid(
+            raise_exception=True,
+        )
+
+        images = InventorySelector.get_car_images(
+            car,
+        )
+
+        InventoryService.reorder_images(
+            car=car,
+            images=images,
+            image_order=serializer.validated_data[
+                "image_order"
+            ],
+        )
+
+        return Response(
+            {
+                "success": True,
+                "message": "Images reordered successfully.",
+            }
+        )
+
+
+class BulkImageDeleteAPIView(APIView):
+
+    permission_classes = [IsAuthenticated]
+
+    def post(self, request):
+
+        serializer = BulkImageDeleteSerializer(
+            data=request.data,
+        )
+
+        serializer.is_valid(
+            raise_exception=True,
+        )
+
+        images = InventorySelector.get_images_by_ids(
+            serializer.validated_data["image_ids"],
+        )
+
+        if images.count() != len(serializer.validated_data["image_ids"]):
+
+            raise ValidationError(
+                {
+                    "image_ids": [
+                        "One or more image IDs are invalid."
+                    ]
+                }
+            )
+
+        deleted = InventoryService.bulk_delete_images(
+            images,
+        )
+
+        return Response(
+            {
+                "success": True,
+                "message": f"{deleted} image(s) deleted successfully.",
+            }
+        )
+
+class BulkVehicleDeleteAPIView(APIView):
+
+    permission_classes = [IsAuthenticated]
+
+    def delete(self, request):
+
+        serializer = BulkVehicleDeleteSerializer(
+            data=request.data,
+        )
+
+        serializer.is_valid(
+            raise_exception=True,
+        )
+
+        cars = InventorySelector.get_cars_by_ids(
+            serializer.validated_data["vehicle_ids"],
+        )
+
+        if cars.count() != len(serializer.validated_data["vehicle_ids"]):
+
+            raise ValidationError(
+                {
+                    "vehicle_ids": [
+                        "One or more vehicle IDs are invalid."
+                    ]
+                }
+            )
+
+        deleted = InventoryService.bulk_delete_vehicles(
+            cars,
+        )
+
+        return Response(
+            {
+                "success": True,
+                "message": f"{deleted} vehicle(s) deleted successfully.",
             }
         )

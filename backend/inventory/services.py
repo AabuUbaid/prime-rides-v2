@@ -1,8 +1,9 @@
 from datetime import datetime
-
+from django.db import transaction
+from rest_framework.exceptions import ValidationError
 from django.db.models import Max
 
-from .models import Car, CarImage
+from .models import (Car, CarImage, CarExpense,)
 
 
 class InventoryService:
@@ -72,10 +73,25 @@ class InventoryService:
         validated_data,
     ):
 
+        remove_certificate = validated_data.pop(
+        "remove_certificate",
+        False,
+    )
+
         images = validated_data.pop(
             "images",
             [],
         )
+
+        if remove_certificate:
+
+            if car.possession_certificate:
+
+                car.possession_certificate.delete(
+                    save=False,
+                )
+
+            car.possession_certificate = None
 
         for field, value in validated_data.items():
             setattr(
@@ -119,4 +135,190 @@ class InventoryService:
         )
 
         return image
-        
+
+    @staticmethod
+    def update_expense(
+        expense,
+        validated_data,
+    ):
+
+        for field, value in validated_data.items():
+            setattr(
+                expense,
+                field,
+                value,
+            )
+
+        expense.save()
+
+        return expense
+
+
+    @staticmethod
+    def delete_expense(
+        expense,
+    ):
+
+        expense.delete()
+
+    @staticmethod
+    def delete_car(
+        car,
+    ):
+
+        # Delete certificate file
+        if car.possession_certificate:
+            car.possession_certificate.delete(
+                save=False,
+            )
+
+        # Delete image files
+        for image in car.images.all():
+            image.image.delete(
+                save=False,
+            )
+
+        car.delete()
+
+    @staticmethod
+    def delete_image(image):
+
+        car = image.car
+
+        was_cover = image.is_cover
+
+        image.image.delete(save=False)
+
+        image.delete()
+
+        if was_cover:
+
+            new_cover = (
+                CarImage.objects
+                .filter(car=car)
+                .first()
+            )
+
+            if new_cover:
+
+                new_cover.is_cover = True
+
+                new_cover.save(
+                    update_fields=[
+                        "is_cover",
+                    ]
+                )
+
+
+    @staticmethod
+    @transaction.atomic
+    def reorder_images(
+        car,
+        images,
+        image_order,
+    ):
+        """
+        Reorders images for a vehicle.
+
+        Parameters
+        ----------
+        car : Car
+            Vehicle whose images are being reordered.
+
+        images : QuerySet[CarImage]
+            Images belonging to this vehicle.
+
+        image_order : list[int]
+            Ordered list of image IDs.
+        """
+
+        images_map = {
+            image.id: image
+            for image in images
+        }
+
+        # Validate count
+        if len(image_order) != len(images_map):
+            raise ValidationError(
+                {
+                    "image_order": [
+                        "Image list is incomplete."
+                    ]
+                }
+            )
+
+        # Validate duplicates
+        if len(image_order) != len(set(image_order)):
+            raise ValidationError(
+                {
+                    "image_order": [
+                        "Duplicate image IDs detected."
+                    ]
+                }
+            )
+
+        # Validate ownership
+        for image_id in image_order:
+
+            if image_id not in images_map:
+
+                raise ValidationError(
+                {
+                    "image_order": [
+                        "One or more images do not belong to this vehicle."
+                    ]
+                }
+            )
+
+        # Update display order
+        for order, image_id in enumerate(
+            image_order,
+            start=1,
+        ):
+
+            image = images_map[image_id]
+
+            image.display_order = order
+
+            image.save(
+                update_fields=[
+                    "display_order",
+                ]
+            )
+
+        return images
+
+    
+    @staticmethod
+    @transaction.atomic
+    def bulk_delete_images(images):
+
+        deleted_count = 0
+
+        for image in images:
+
+            InventoryService.delete_image(
+                image,
+            )
+
+            deleted_count += 1
+
+        return deleted_count
+
+    @staticmethod
+    @transaction.atomic
+    def bulk_delete_vehicles(
+        cars,
+    ):
+
+        deleted = 0
+
+        for car in cars:
+
+            InventoryService.delete_car(
+                car,
+            )
+
+            deleted += 1
+
+        return deleted
