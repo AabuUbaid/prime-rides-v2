@@ -50,6 +50,9 @@ INSTALLED_APPS = [
     'corsheaders',
     'accounts',
     "rest_framework_simplejwt.token_blacklist",
+    'inventory',
+    "drf_spectacular",
+    "drf_spectacular_sidecar",
     
 ]
 
@@ -72,6 +75,28 @@ REST_FRAMEWORK = {
         "rest_framework.permissions.IsAuthenticated",
     ),
     "DEFAULT_SCHEMA_CLASS": "drf_spectacular.openapi.AutoSchema",
+
+    "EXCEPTION_HANDLER": "config.exceptions.custom_exception_handler",
+}
+
+SPECTACULAR_SETTINGS = {
+
+    "TITLE": "Prime Rides DMS API",
+
+    "DESCRIPTION": (
+        "Production REST API for Prime Rides "
+        "Dealer Management System."
+    ),
+
+    "VERSION": "1.0.0",
+
+    "SERVE_INCLUDE_SCHEMA": False,
+
+    "SWAGGER_UI_SETTINGS": {
+        "persistAuthorization": True,
+    },
+
+    "COMPONENT_SPLIT_REQUEST": True,
 }
 
 SIMPLE_JWT = {
@@ -153,12 +178,16 @@ USE_TZ = True
 # Static files (CSS, JavaScript, Images)
 # https://docs.djangoproject.com/en/5.1/howto/static-files/
 
+MEDIA_URL = "/media/"
+MEDIA_ROOT = BASE_DIR / "media"
+
 STATIC_URL = 'static/'
 
 CORS_ALLOWED_ORIGINS = [
     "http://localhost:5173",
     "http://127.0.0.1:5173",
     "http://172.28.5.8:5173",
+    "http://192.168.0.180:5173",
 ]
 
 # Default primary key field type
