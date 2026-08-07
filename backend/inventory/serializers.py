@@ -91,7 +91,6 @@ class CarCreateSerializer(serializers.ModelSerializer):
             "engine_number",
             "possession_certificate",
             "images",
-            "expenses",
             
         )
 
@@ -372,10 +371,6 @@ class CarUpdateSerializer(serializers.ModelSerializer):
 
         return images
     
-    remove_certificate = serializers.BooleanField(
-        required=False,
-        write_only=True,
-    )
 
     def validate_possession_certificate(self, file):
 
