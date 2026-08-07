@@ -44,12 +44,62 @@ class InventoryService:
                 is_cover=False,
             )
 
+
+    @staticmethod
+    def normalize_vehicle_data(validated_data):
+        """
+        Normalize vehicle data before saving.
+        """
+
+        title_fields = [
+            "make",
+            "model",
+            "variant",
+            "colour",
+            "supplier",
+        ]
+
+        for field in title_fields:
+
+            value = validated_data.get(field)
+
+            if value:
+
+                validated_data[field] = (
+                    str(value)
+                    .strip()
+                    .title()
+                )
+
+        upper_fields = [
+            "chassis_number",
+            "engine_number",
+        ]
+
+        for field in upper_fields:
+
+            value = validated_data.get(field)
+
+            if value:
+
+                validated_data[field] = (
+                    str(value)
+                    .strip()
+                    .upper()
+                )
+
+        return validated_data
+
     @staticmethod
     def create_car(validated_data):
 
         images = validated_data.pop(
             "images",
             [],
+        )
+
+        validated_data = InventoryService.normalize_vehicle_data(
+            validated_data,
         )
 
         validated_data["stock_id"] = (
@@ -81,6 +131,10 @@ class InventoryService:
         images = validated_data.pop(
             "images",
             [],
+        )
+
+        validated_data = InventoryService.normalize_vehicle_data(
+            validated_data,
         )
 
         if remove_certificate:

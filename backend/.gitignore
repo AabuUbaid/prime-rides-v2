@@ -1,13 +1,36 @@
 # Python
+*.py[cod]
+__pycache__/
+*.so
+
+# Virtual environment
+env/
+venv/
+.venv/
+backend/env/
 backend/venv/
-backend/__pycache__/
-*.pyc
-.env
-.vscode
+backend/.venv/
 
-# Node
-frontend/*/node_modules/
-frontend/*/dist/
+# Django / data files
+db.sqlite3
+*.sqlite3
+*.sqlite
+/media/
+/static/
+/staticfiles/
+/coverage.xml
+*.log
+local_settings.py
 
-# General
+# Django migrations cache
+**/migrations/__pycache__/
+**/migrations/*.py[cod]
+!**/migrations/__init__.py
+
+# IDE / OS
+.vscode/
+.idea/
+*.sublime-project
+*.sublime-workspace
 .DS_Store
+Thumbs.db
