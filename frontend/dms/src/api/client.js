@@ -4,9 +4,13 @@ export async function apiClient(endpoint, options = {}) {
   const token = localStorage.getItem("accessToken");
 
   const headers = {
-    "Content-Type": "application/json",
     ...options.headers,
   };
+
+  // Only set JSON header when body is NOT FormData
+  if (!(options.body instanceof FormData)) {
+    headers["Content-Type"] = "application/json";
+  }
 
   if (token) {
     headers.Authorization = `Bearer ${token}`;
@@ -26,7 +30,14 @@ export async function apiClient(endpoint, options = {}) {
   }
 
   if (!response.ok) {
-    throw new Error(data?.detail || data?.message || "Something went wrong");
+    console.error("API ERROR:", data);
+
+    throw new Error(
+      data?.detail ||
+        data?.message ||
+        JSON.stringify(data) ||
+        "Something went wrong",
+    );
   }
 
   return data;

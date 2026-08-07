@@ -8,7 +8,7 @@ function Dashboard() {
       <h1 className="text-3xl font-bold">Prime Rides Dashboard</h1>
 
       <p className="mt-4">
-        Logged in as: <strong>{user?.email}</strong>
+        Logged in as: <strong>{user?.first_name}</strong>
       </p>
 
       <p>
