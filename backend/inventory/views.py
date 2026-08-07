@@ -1,3 +1,5 @@
+from urllib import request
+
 from rest_framework import status
 from .pagination import InventoryPagination
 from rest_framework.permissions import IsAuthenticated
@@ -10,6 +12,7 @@ from rest_framework.parsers import (
 from rest_framework.exceptions import ValidationError
 from .models import (Car, CarExpense)
 from .query_serializers import CarListQuerySerializer
+from django.http import QueryDict
 
 from .serializers import (
     CarCreateSerializer,
@@ -69,8 +72,17 @@ class CarAPIView(APIView):
 
     def post(self, request):
 
-        data = request.data.copy()
+        data = QueryDict(
+            "",
+            mutable=True,
+        )
 
+        # Copy normal form fields
+        for key, value in request.data.items():
+            if key != "images":
+                data[key] = value
+
+        # Copy uploaded images
         data.setlist(
             "images",
             request.FILES.getlist("images"),
@@ -124,8 +136,17 @@ class CarDetailAPIView(APIView):
             car_id,
         )
 
-        data = request.data.copy()
+        data = QueryDict(
+            "",
+            mutable=True,
+        )
 
+        # Copy normal form fields
+        for key, value in request.data.items():
+            if key != "images":
+                data[key] = value
+
+        # Copy uploaded images
         data.setlist(
             "images",
             request.FILES.getlist("images"),
@@ -161,13 +182,21 @@ class CarDetailAPIView(APIView):
             car_id,
         )
 
-        data = request.data.copy()
+        data = QueryDict(
+            "",
+            mutable=True,
+        )
 
+        # Copy normal form fields
+        for key, value in request.data.items():
+            if key != "images":
+                data[key] = value
+
+        # Copy uploaded images
         data.setlist(
             "images",
             request.FILES.getlist("images"),
         )
-
         serializer = CarUpdateSerializer(
             car,
             data=data,
