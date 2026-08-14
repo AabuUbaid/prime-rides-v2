@@ -1,7 +1,17 @@
 import { apiClient } from "./client";
 
-export function getCars() {
-  return apiClient("/inventory/cars/");
+export function getCars(params = {}) {
+  const query = new URLSearchParams();
+
+  Object.entries(params).forEach(([key, value]) => {
+    if (value !== "" && value !== null && value !== undefined) {
+      query.append(key, value);
+    }
+  });
+
+  const queryString = query.toString();
+
+  return apiClient(`/inventory/cars/${queryString ? `?${queryString}` : ""}`);
 }
 
 export function getCar(id) {
@@ -66,3 +76,33 @@ export function deleteCar(id) {
     method: "DELETE",
   });
 }
+
+export function deleteImage(imageId) {
+  return apiClient(`/inventory/images/${imageId}/`, {
+    method: "DELETE",
+  });
+}
+
+export function setCoverImage(imageId) {
+  return apiClient(`/inventory/images/${imageId}/cover/`, {
+    method: "PATCH",
+  });
+}
+
+export function reorderImages(carId, imageOrder) {
+  return apiClient(`/inventory/cars/${carId}/images/reorder/`, {
+    method: "PATCH",
+    body: JSON.stringify({
+      image_order: imageOrder,
+    }),
+  });
+}
+
+export const bulkDeleteImages = (imageIds) => {
+  return apiClient("/inventory/images/bulk-delete/", {
+    method: "POST",
+    body: JSON.stringify({
+      image_ids: imageIds,
+    }),
+  });
+};

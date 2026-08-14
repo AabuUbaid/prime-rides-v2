@@ -1,6 +1,12 @@
 import { useEffect, useState } from "react";
 import { useParams } from "react-router-dom";
-import { getCar } from "../../api/inventory";
+import {
+  getCar,
+  deleteImage,
+  reorderImages,
+  bulkDeleteImages,
+  setCoverImage,
+} from "../../api/inventory";
 import ExpenseList from "./components/ExpenseList";
 import ExpenseForm from "./components/ExpenseForm";
 import { createExpense, updateExpense, deleteExpense } from "../../api/expense";
@@ -10,6 +16,8 @@ function CarDetails() {
 
   const [car, setCar] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [draggedImageId, setDraggedImageId] = useState(null);
+  const [selectedImageIds, setSelectedImageIds] = useState([]);
 
   useEffect(() => {
     async function loadCar() {
@@ -26,6 +34,38 @@ function CarDetails() {
 
     loadCar();
   }, [id]);
+
+  const handleDeleteImage = async (imageId) => {
+    const confirmed = window.confirm(
+      "Are you sure you want to delete this image?",
+    );
+
+    if (!confirmed) {
+      return;
+    }
+
+    try {
+      await deleteImage(imageId);
+
+      const response = await getCar(id);
+
+      setCar(response.data);
+    } catch (error) {
+      console.error("DELETE IMAGE FAILED:", error);
+    }
+  };
+
+  const handleSetCoverImage = async (imageId) => {
+    try {
+      await setCoverImage(imageId);
+
+      const response = await getCar(id);
+
+      setCar(response.data);
+    } catch (error) {
+      console.error("SET COVER IMAGE FAILED:", error);
+    }
+  };
 
   const handleUpdateExpense = async (expenseId, data) => {
     try {
@@ -55,25 +95,101 @@ function CarDetails() {
     }
   };
 
-  if (loading) {
-    return <h2>Loading...</h2>;
-  }
-
-  const coverImage =
-    car.images.find((image) => image.is_cover) || car.images[0];
-
   const handleAddExpense = async (expense) => {
     try {
-      const response = await createExpense(car.id, expense);
+      await createExpense(car.id, expense);
 
-      setCar((prev) => ({
-        ...prev,
-        expenses: [...prev.expenses, response.data],
-      }));
+      const response = await getCar(id);
+
+      setCar(response.data);
     } catch (error) {
       console.error(error);
     }
   };
+
+  const handleDragStart = (imageId) => {
+    setDraggedImageId(imageId);
+  };
+
+  const handleDrop = async (targetImageId) => {
+    if (!draggedImageId || draggedImageId === targetImageId) {
+      return;
+    }
+
+    const currentImages = [...car.images];
+
+    const draggedIndex = currentImages.findIndex(
+      (image) => image.id === draggedImageId,
+    );
+
+    const targetIndex = currentImages.findIndex(
+      (image) => image.id === targetImageId,
+    );
+
+    if (draggedIndex === -1 || targetIndex === -1) {
+      return;
+    }
+
+    const reorderedImages = [...currentImages];
+
+    const [draggedImage] = reorderedImages.splice(draggedIndex, 1);
+
+    reorderedImages.splice(targetIndex, 0, draggedImage);
+
+    const imageOrder = reorderedImages.map((image) => image.id);
+
+    try {
+      await reorderImages(id, imageOrder);
+
+      const response = await getCar(id);
+
+      setCar(response.data);
+    } catch (error) {
+      console.error("REORDER IMAGES FAILED:", error);
+    } finally {
+      setDraggedImageId(null);
+    }
+  };
+
+  const handleImageSelection = (imageId) => {
+    setSelectedImageIds((prev) => {
+      if (prev.includes(imageId)) {
+        return prev.filter((id) => id !== imageId);
+      }
+
+      return [...prev, imageId];
+    });
+  };
+
+  const handleBulkDeleteImages = async () => {
+    if (selectedImageIds.length === 0) {
+      return;
+    }
+
+    const confirmed = window.confirm(
+      `Delete ${selectedImageIds.length} selected image(s)?`,
+    );
+
+    if (!confirmed) {
+      return;
+    }
+
+    try {
+      await bulkDeleteImages(selectedImageIds);
+
+      const response = await getCar(id);
+
+      setCar(response.data);
+
+      setSelectedImageIds([]);
+    } catch (error) {
+      console.error("BULK DELETE IMAGES FAILED:", error);
+    }
+  };
+
+  if (loading) {
+    return <h2>Loading...</h2>;
+  }
 
   return (
     <div>
@@ -186,31 +302,75 @@ function CarDetails() {
         <p>No images uploaded.</p>
       ) : (
         <>
-          <h3>Cover Image</h3>
+          <h3>Gallery</h3>
 
-          <img
-            src={`${import.meta.env.VITE_URL}${coverImage.image}`}
-            alt="Cover"
-            width="400"
-          />
+          {selectedImageIds.length > 0 && (
+            <button type="button" onClick={handleBulkDeleteImages}>
+              Delete Selected ({selectedImageIds.length})
+            </button>
+          )}
+
+          <div
+            style={{
+              display: "flex",
+              gap: "15px",
+              flexWrap: "wrap",
+            }}
+          >
+            {car.images.map((image) => (
+              <div
+                key={image.id}
+                draggable
+                onDragStart={() => handleDragStart(image.id)}
+                onDragOver={(e) => e.preventDefault()}
+                onDrop={() => handleDrop(image.id)}
+                style={{
+                  border: "1px solid #ccc",
+                  padding: "10px",
+                  cursor: "grab",
+                }}
+              >
+                <input
+                  type="checkbox"
+                  checked={selectedImageIds.includes(image.id)}
+                  onChange={() => handleImageSelection(image.id)}
+                />
+
+                <img
+                  src={`${import.meta.env.VITE_URL}${image.image}`}
+                  alt="Vehicle"
+                  width="150"
+                />
+
+                {image.is_cover && (
+                  <p>
+                    <strong>Cover Image</strong>
+                  </p>
+                )}
+
+                {!image.is_cover && (
+                  <button
+                    type="button"
+                    onClick={() => handleSetCoverImage(image.id)}
+                  >
+                    Set as Cover
+                  </button>
+                )}
+
+                <button
+                  type="button"
+                  onClick={() => handleDeleteImage(image.id)}
+                >
+                  Delete
+                </button>
+              </div>
+            ))}
+          </div>
         </>
       )}
 
-      <h3>Gallery</h3>
-
-      <div>
-        {car.images
-          .filter((image) => image.id !== coverImage.id)
-          .map((image) => (
-            <img
-              key={image.id}
-              src={`${import.meta.env.VITE_URL}${image.image}`}
-              alt="Vehicle"
-              width="150"
-            />
-          ))}
-      </div>
       <ExpenseForm onAddExpense={handleAddExpense} />
+
       <h2>Vehicle Expenses</h2>
 
       <ExpenseList
@@ -218,12 +378,14 @@ function CarDetails() {
         onUpdateExpense={handleUpdateExpense}
         onDeleteExpense={handleDeleteExpense}
       />
-      <h3>
-        Total Expenses:{" "}
-        {(car.expenses ?? [])
-          .reduce((total, expense) => total + Number(expense.amount), 0)
-          .toFixed(2)}
-      </h3>
+
+      <h3>Expense Summary</h3>
+
+      <p>Expense Count: {car.expense_summary?.expense_count ?? 0}</p>
+
+      <p>Total Expenses: {car.expense_summary?.total_expenses ?? 0}</p>
+
+      <p>Net Cost: {car.expense_summary?.net_cost ?? 0}</p>
     </div>
   );
 }

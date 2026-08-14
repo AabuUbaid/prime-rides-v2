@@ -9,7 +9,7 @@ function PricingInformation({ formData, handleChange }) {
         placeholder="Purchase Cost"
         min="0"
         step={1}
-        value={formData.purchase_cost}
+        value={formData.purchase_cost ?? ""}
         onChange={handleChange}
       />
 
@@ -17,7 +17,7 @@ function PricingInformation({ formData, handleChange }) {
         type="number"
         name="asking_price"
         placeholder="Asking Price"
-        value={formData.asking_price}
+        value={formData.asking_price ?? ""}
         onChange={handleChange}
       />
 
@@ -27,7 +27,7 @@ function PricingInformation({ formData, handleChange }) {
         placeholder="Least Selling Price"
         min="0"
         step={1}
-        value={formData.least_selling_price}
+        value={formData.least_selling_price ?? ""}
         onChange={handleChange}
       />
     </div>

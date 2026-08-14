@@ -6,12 +6,27 @@ import { getCars } from "../../api/inventory";
 function Stock() {
   const [cars, setCars] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [search, setSearch] = useState("");
+  const [searchQuery, setSearchQuery] = useState("");
+
   const navigate = useNavigate();
+
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setSearchQuery(search);
+    }, 500);
+
+    return () => {
+      clearTimeout(timer);
+    };
+  }, [search]);
 
   useEffect(() => {
     async function loadCars() {
       try {
-        const response = await getCars();
+        const response = await getCars({
+          search: searchQuery,
+        });
 
         setCars(response.data);
       } catch (error) {
@@ -22,7 +37,7 @@ function Stock() {
     }
 
     loadCars();
-  }, []);
+  }, [searchQuery]);
 
   if (loading) {
     return <h2>Loading...</h2>;
@@ -31,6 +46,20 @@ function Stock() {
   return (
     <div>
       <h1>Inventory</h1>
+
+      <div>
+        <input
+          type="text"
+          placeholder="Search vehicles..."
+          value={search}
+          onChange={(e) => setSearch(e.target.value)}
+        />
+
+        <button type="button" onClick={() => setSearch("")}>
+          Clear
+        </button>
+      </div>
+
       <table>
         <thead>
           <tr>
@@ -59,10 +88,12 @@ function Stock() {
               <td>{car.status}</td>
               <td>{car.asking_price ?? "-"}</td>
               <td>{car.mileage ?? "-"}</td>
+
               <td>
                 <button onClick={() => navigate(`/stock/${car.id}`)}>
                   👁️View
                 </button>
+
                 <button onClick={() => navigate(`/stock/${car.id}/edit`)}>
                   ✏️Edit
                 </button>

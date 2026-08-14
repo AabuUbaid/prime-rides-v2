@@ -132,13 +132,13 @@ class InventorySelector:
             id=car_id,
         )
 
-    @staticmethod
-    def get_car_images(car):
-        return (
-            CarImage.objects
-            .filter(car=car)
-            .order_by("-is_cover", "id")
-        )
+    # @staticmethod
+    # def get_car_images(car):
+    #     return (
+    #         CarImage.objects
+    #         .filter(car=car)
+    #         .order_by("-is_cover", "id")
+    #     )
 
     @staticmethod
     def get_image_by_id(image_id):
