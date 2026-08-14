@@ -189,7 +189,7 @@ class CarImage(models.Model):
 
     class Meta:
         db_table = "car_images"
-        ordering = ["-is_cover", "id","display_order"]
+        ordering = ["-is_cover","display_order", "id"]
         
 
     def __str__(self):

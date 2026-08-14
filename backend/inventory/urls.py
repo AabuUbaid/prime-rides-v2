@@ -21,7 +21,7 @@ urlpatterns = [
         name="car-expenses",
     ),
     path(
-    "images/<uuid:image_id>/cover/",
+    "images/<int:image_id>/cover/",
     CarImageCoverAPIView.as_view(),
     name="set-cover-image",
     ),
@@ -51,7 +51,7 @@ urlpatterns = [
     ),
 
     path(
-        "images/delete/",
+        "images/bulk-delete/",
         BulkImageDeleteAPIView.as_view(),
         name="bulk-delete-images",
     ),

@@ -33,6 +33,7 @@ const initialFormData = {
   highlight_public: false,
 
   possession_certificate: null,
+  remove_certificate: false,
 
   images: [],
 };
@@ -109,6 +110,14 @@ function EditCar() {
       const result = await updateCar(id, formData);
 
       console.log(result);
+
+      setCar(result.data);
+
+      setFormData((prev) => ({
+        ...prev,
+        remove_certificate: false,
+        possession_certificate: null,
+      }));
 
       toast.success("Vehicle updated successfully.");
     } catch (error) {

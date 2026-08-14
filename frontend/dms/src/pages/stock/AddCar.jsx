@@ -105,7 +105,6 @@ function AddCar() {
       <UploadSection formData={formData} setFormData={setFormData} />
 
       <SubmitSection saving={saving} />
-      <pre>{JSON.stringify(formData, null, 2)}</pre>
     </form>
   );
 }

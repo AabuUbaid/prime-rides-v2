@@ -3,6 +3,23 @@ function UploadSection({ car, formData, setFormData }) {
     setFormData((prev) => ({
       ...prev,
       possession_certificate: e.target.files[0] || null,
+      remove_certificate: false,
+    }));
+  };
+
+  const handleDeleteCertificate = () => {
+    const confirmed = window.confirm(
+      "Are you sure you want to delete the possession certificate?",
+    );
+
+    if (!confirmed) {
+      return;
+    }
+
+    setFormData((prev) => ({
+      ...prev,
+      possession_certificate: null,
+      remove_certificate: true,
     }));
   };
 
@@ -16,7 +33,9 @@ function UploadSection({ car, formData, setFormData }) {
   return (
     <div>
       <h2>Upload Files</h2>
-      {car?.possession_certificate && (
+
+      {/* Current Certificate */}
+      {car?.possession_certificate && !formData.remove_certificate && (
         <div>
           <p>Current Certificate</p>
 
@@ -27,24 +46,39 @@ function UploadSection({ car, formData, setFormData }) {
           >
             View Current Certificate
           </a>
+
+          <button
+            type="button"
+            onClick={handleDeleteCertificate}
+            style={{ marginLeft: "10px" }}
+          >
+            Delete Certificate
+          </button>
         </div>
       )}
+
+      {/* Certificate Upload */}
       <div>
         <label>Possession Certificate</label>
 
         <input
           type="file"
-          accept=".pdf , .jpg, .jpeg, .png"
+          accept=".pdf,.jpg,.jpeg,.png"
           onChange={handleCertificateChange}
         />
 
         {formData.possession_certificate && (
           <p>{formData.possession_certificate.name}</p>
         )}
+
+        {formData.remove_certificate && (
+          <p>Certificate will be deleted when you save the vehicle.</p>
+        )}
       </div>
 
       <br />
 
+      {/* Vehicle Images */}
       <div>
         <label>Vehicle Images</label>
 
