@@ -25,6 +25,8 @@ class CarListQuerySerializer(serializers.Serializer):
 
     highlight_public = serializers.BooleanField(
         required=False,
+        allow_null=True,
+
     )
 
     min_price = serializers.DecimalField(

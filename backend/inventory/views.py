@@ -1,7 +1,4 @@
-from urllib import request
-
 from rest_framework import status
-from .pagination import InventoryPagination
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.views import APIView
@@ -10,9 +7,13 @@ from rest_framework.parsers import (
     FormParser,
 )
 from rest_framework.exceptions import ValidationError
-from .models import (Car, CarExpense)
-from .query_serializers import CarListQuerySerializer
+
 from django.http import QueryDict
+
+from .pagination import InventoryPagination
+from .models import Car, CarExpense
+
+from .query_serializers import CarListQuerySerializer
 
 from .serializers import (
     CarCreateSerializer,
@@ -31,7 +32,9 @@ from .services import InventoryService
 
 
 class CarAPIView(APIView):
+
     permission_classes = [IsAuthenticated]
+
     parser_classes = (
         MultiPartParser,
         FormParser,
@@ -79,6 +82,7 @@ class CarAPIView(APIView):
 
         # Copy normal form fields
         for key, value in request.data.items():
+
             if key != "images":
                 data[key] = value
 
@@ -105,23 +109,35 @@ class CarAPIView(APIView):
                 "success": True,
                 "message": "Vehicle created successfully.",
                 "data": CarCreateSerializer(
-                    car
+                    car,
                 ).data,
             },
             status=status.HTTP_201_CREATED,
         )
 
+
 class CarDetailAPIView(APIView):
+
     permission_classes = [IsAuthenticated]
+
     parser_classes = (
-    MultiPartParser,
-    FormParser,
-)
+        MultiPartParser,
+        FormParser,
+    )
 
-    def get(self, request, car_id):
-        car = InventorySelector.get_car_by_id(car_id)
+    def get(
+        self,
+        request,
+        car_id,
+    ):
 
-        serializer = CarDetailSerializer(car)
+        car = InventorySelector.get_car_by_id(
+            car_id,
+        )
+
+        serializer = CarDetailSerializer(
+            car,
+        )
 
         return Response(
             {
@@ -130,7 +146,11 @@ class CarDetailAPIView(APIView):
             }
         )
 
-    def put(self, request, car_id):
+    def put(
+        self,
+        request,
+        car_id,
+    ):
 
         car = InventorySelector.get_car_by_id(
             car_id,
@@ -143,6 +163,7 @@ class CarDetailAPIView(APIView):
 
         # Copy normal form fields
         for key, value in request.data.items():
+
             if key != "images":
                 data[key] = value
 
@@ -176,7 +197,11 @@ class CarDetailAPIView(APIView):
             }
         )
 
-    def patch(self, request, car_id):
+    def patch(
+        self,
+        request,
+        car_id,
+    ):
 
         car = InventorySelector.get_car_by_id(
             car_id,
@@ -189,6 +214,7 @@ class CarDetailAPIView(APIView):
 
         # Copy normal form fields
         for key, value in request.data.items():
+
             if key != "images":
                 data[key] = value
 
@@ -197,6 +223,7 @@ class CarDetailAPIView(APIView):
             "images",
             request.FILES.getlist("images"),
         )
+
         serializer = CarUpdateSerializer(
             car,
             data=data,
@@ -222,7 +249,11 @@ class CarDetailAPIView(APIView):
             }
         )
 
-    def delete(self, request, car_id):
+    def delete(
+        self,
+        request,
+        car_id,
+    ):
 
         car = InventorySelector.get_car_by_id(
             car_id,
@@ -239,7 +270,6 @@ class CarDetailAPIView(APIView):
             },
             status=status.HTTP_200_OK,
         )
-        
 
 
 class CarImageCoverAPIView(APIView):
@@ -253,7 +283,7 @@ class CarImageCoverAPIView(APIView):
     ):
 
         image = InventorySelector.get_image_by_id(
-            image_id
+            image_id,
         )
 
         image = InventoryService.set_cover_image(
@@ -264,17 +294,25 @@ class CarImageCoverAPIView(APIView):
             {
                 "success": True,
                 "message": "Cover image updated successfully.",
-                "data": CarImageSerializer(image).data,
+                "data": CarImageSerializer(
+                    image,
+                ).data,
             }
         )
+
+
 class CarExpenseAPIView(APIView):
 
     permission_classes = [IsAuthenticated]
 
-    def get(self, request, car_id):
+    def get(
+        self,
+        request,
+        car_id,
+    ):
 
         car = InventorySelector.get_car_by_id(
-            car_id
+            car_id,
         )
 
         serializer = CarExpenseSerializer(
@@ -289,10 +327,14 @@ class CarExpenseAPIView(APIView):
             }
         )
 
-    def post(self, request, car_id):
+    def post(
+        self,
+        request,
+        car_id,
+    ):
 
         car = InventorySelector.get_car_by_id(
-            car_id
+            car_id,
         )
 
         serializer = CarExpenseSerializer(
@@ -311,11 +353,12 @@ class CarExpenseAPIView(APIView):
             {
                 "success": True,
                 "data": CarExpenseSerializer(
-                    expense
+                    expense,
                 ).data,
             },
             status=status.HTTP_201_CREATED,
         )
+
 
 class CarExpenseDetailAPIView(APIView):
 
@@ -328,7 +371,7 @@ class CarExpenseDetailAPIView(APIView):
     ):
 
         expense = InventorySelector.get_expense_by_id(
-            expense_id
+            expense_id,
         )
 
         serializer = CarExpenseSerializer(
@@ -341,7 +384,7 @@ class CarExpenseDetailAPIView(APIView):
             raise_exception=True,
         )
 
-        expense=InventoryService.update_expense(
+        expense = InventoryService.update_expense(
             expense,
             serializer.validated_data,
         )
@@ -350,7 +393,7 @@ class CarExpenseDetailAPIView(APIView):
             {
                 "success": True,
                 "data": CarExpenseSerializer(
-                    expense
+                    expense,
                 ).data,
             }
         )
@@ -362,8 +405,9 @@ class CarExpenseDetailAPIView(APIView):
     ):
 
         expense = InventorySelector.get_expense_by_id(
-            expense_id
+            expense_id,
         )
+
         InventoryService.delete_expense(
             expense,
         )
@@ -401,11 +445,15 @@ class CarImageAPIView(APIView):
             }
         )
 
+
 class DashboardAPIView(APIView):
 
     permission_classes = [IsAuthenticated]
 
-    def get(self, request):
+    def get(
+        self,
+        request,
+    ):
 
         data = InventorySelector.dashboard_summary()
 
@@ -415,6 +463,7 @@ class DashboardAPIView(APIView):
                 "data": data,
             }
         )
+
 
 class CarImageReorderAPIView(APIView):
 
@@ -462,7 +511,10 @@ class BulkImageDeleteAPIView(APIView):
 
     permission_classes = [IsAuthenticated]
 
-    def post(self, request):
+    def post(
+        self,
+        request,
+    ):
 
         serializer = BulkImageDeleteSerializer(
             data=request.data,
@@ -473,10 +525,14 @@ class BulkImageDeleteAPIView(APIView):
         )
 
         images = InventorySelector.get_images_by_ids(
-            serializer.validated_data["image_ids"],
+            serializer.validated_data[
+                "image_ids"
+            ],
         )
 
-        if images.count() != len(serializer.validated_data["image_ids"]):
+        if images.count() != len(
+            serializer.validated_data["image_ids"]
+        ):
 
             raise ValidationError(
                 {
@@ -493,15 +549,21 @@ class BulkImageDeleteAPIView(APIView):
         return Response(
             {
                 "success": True,
-                "message": f"{deleted} image(s) deleted successfully.",
+                "message": (
+                    f"{deleted} image(s) deleted successfully."
+                ),
             }
         )
+
 
 class BulkVehicleDeleteAPIView(APIView):
 
     permission_classes = [IsAuthenticated]
 
-    def delete(self, request):
+    def delete(
+        self,
+        request,
+    ):
 
         serializer = BulkVehicleDeleteSerializer(
             data=request.data,
@@ -512,10 +574,14 @@ class BulkVehicleDeleteAPIView(APIView):
         )
 
         cars = InventorySelector.get_cars_by_ids(
-            serializer.validated_data["vehicle_ids"],
+            serializer.validated_data[
+                "vehicle_ids"
+            ],
         )
 
-        if cars.count() != len(serializer.validated_data["vehicle_ids"]):
+        if cars.count() != len(
+            serializer.validated_data["vehicle_ids"]
+        ):
 
             raise ValidationError(
                 {
@@ -532,6 +598,8 @@ class BulkVehicleDeleteAPIView(APIView):
         return Response(
             {
                 "success": True,
-                "message": f"{deleted} vehicle(s) deleted successfully.",
+                "message": (
+                    f"{deleted} vehicle(s) deleted successfully."
+                ),
             }
         )
