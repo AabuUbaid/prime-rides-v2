@@ -93,18 +93,51 @@ function AddCar() {
   };
 
   return (
-    <form onSubmit={handleSubmit}>
-      <h1>Add Vehicle</h1>
+    <form
+      onSubmit={handleSubmit}
+      className="mx-auto max-w-5xl space-y-6 p-6"
+    >
+      <div>
+        <h1 className="text-2xl font-bold text-gray-900">
+          Add Vehicle
+        </h1>
 
-      <VehicleInformation formData={formData} handleChange={handleChange} />
+        <p className="mt-1 text-sm text-gray-500">
+          Add a new vehicle to the inventory.
+        </p>
+      </div>
 
-      <PricingInformation formData={formData} handleChange={handleChange} />
+      <div className="rounded-lg border border-gray-200 bg-white p-6 shadow-sm">
+        <VehicleInformation
+          formData={formData}
+          handleChange={handleChange}
+        />
+      </div>
 
-      <VehicleDetails formData={formData} handleChange={handleChange} />
+      <div className="rounded-lg border border-gray-200 bg-white p-6 shadow-sm">
+        <PricingInformation
+          formData={formData}
+          handleChange={handleChange}
+        />
+      </div>
 
-      <UploadSection formData={formData} setFormData={setFormData} />
+      <div className="rounded-lg border border-gray-200 bg-white p-6 shadow-sm">
+        <VehicleDetails
+          formData={formData}
+          handleChange={handleChange}
+        />
+      </div>
 
-      <SubmitSection saving={saving} />
+      <div className="rounded-lg border border-gray-200 bg-white p-6 shadow-sm">
+        <UploadSection
+          formData={formData}
+          setFormData={setFormData}
+        />
+      </div>
+
+      <div className="rounded-lg border border-gray-200 bg-white p-6 shadow-sm">
+        <SubmitSection saving={saving} />
+      </div>
     </form>
   );
 }

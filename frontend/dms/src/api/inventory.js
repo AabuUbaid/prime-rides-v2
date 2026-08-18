@@ -106,3 +106,27 @@ export const bulkDeleteImages = (imageIds) => {
     }),
   });
 };
+
+export function bulkDeleteCars(vehicleIds) {
+  return apiClient("/inventory/cars/bulk/", {
+    method: "DELETE",
+    body: JSON.stringify({
+      vehicle_ids: vehicleIds,
+    }),
+  });
+}
+
+export function bulkImportCars(file) {
+  const formData = new FormData();
+
+  formData.append("file", file);
+
+  return apiClient("/inventory/cars/import/", {
+    method: "POST",
+    body: formData,
+  });
+}
+
+export function getDashboardSummary() {
+  return apiClient("/inventory/dashboard/");
+}

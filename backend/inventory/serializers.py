@@ -85,6 +85,7 @@ class CarCreateSerializer(serializers.ModelSerializer):
             "status",
             "mileage",
             "source",
+            "source_specify",
             "supplier",
             "highlight_public",
             "chassis_number",
@@ -96,11 +97,11 @@ class CarCreateSerializer(serializers.ModelSerializer):
 
         extra_kwargs = {
             # Required for vehicle creation
-            "make": {"required": True},
-            "model": {"required": True},
-            "variant": {"required": True},
-            "colour": {"required": True},
-            "year": {"required": True},
+            "make": {"required": True, "allow_blank": False},
+            "model": {"required": True, "allow_blank": False},
+            "variant": {"required": True, "allow_blank": False},
+            "colour": {"required": True, "allow_blank": False},
+            "year": {"required": True, "allow_null": True},
             "supplier": {"required": False},
 
             # Completed later
@@ -317,6 +318,8 @@ class CarDetailSerializer(serializers.ModelSerializer):
             "status",
             "mileage",
             "source",
+            "source_specify",
+            "supplier",
             "highlight_public",
             "chassis_number",
             "engine_number",
@@ -552,4 +555,320 @@ class BulkVehicleDeleteSerializer(serializers.Serializer):
         child=serializers.UUIDField(),
         allow_empty=False,
     )
+
+
+class BulkVehicleRowSerializer(serializers.ModelSerializer):
+
+    class Meta:
+        model = Car
+
+        fields = [
+            "year",
+            "make",
+            "model",
+            "variant",
+            "colour",
+            "chassis_number",
+            "engine_number",
+            "purchase_cost",
+            "asking_price",
+            "least_selling_price",
+            "status",
+            "mileage",
+            "source",
+            "source_specify",
+            "supplier",
+            "highlight_public",
+        ]
+
+        extra_kwargs = {
+
+            # -------------------------------------------------
+            # Vehicle identity/details
+            # -------------------------------------------------
+
+            "year": {
+                "required": True,
+                "allow_null": False,
+            },
+
+            "make": {
+                "required": True,
+                "allow_null": False,
+                "allow_blank": False,
+            },
+
+            "model": {
+                "required": True,
+                "allow_null": False,
+                "allow_blank": False,
+            },
+
+            "variant": {
+                "required": True,
+                "allow_null": False,
+                "allow_blank": False,
+            },
+
+            "colour": {
+                "required": True,
+                "allow_null": False,
+                "allow_blank": False,
+            },
+
+            # -------------------------------------------------
+            # Identifiers
+            #
+            # Duplicate validation is handled by
+            # InventoryService.validate_bulk_vehicle_identifiers()
+            # -------------------------------------------------
+
+            "chassis_number": {
+                "required": False,
+                "allow_blank": True,
+                "allow_null": True,
+            },
+
+            "engine_number": {
+                "required": False,
+                "allow_blank": True,
+                "allow_null": True,
+            },
+
+            # -------------------------------------------------
+            # Financial fields
+            # -------------------------------------------------
+
+            "purchase_cost": {
+                "required": False,
+                "allow_null": True,
+            },
+
+            "asking_price": {
+                "required": False,
+                "allow_null": True,
+            },
+
+            "least_selling_price": {
+                "required": False,
+                "allow_null": True,
+            },
+
+            # -------------------------------------------------
+            # Other optional fields
+            # -------------------------------------------------
+
+            "mileage": {
+                "required": False,
+                "allow_null": True,
+            },
+
+            "source_specify": {
+                "required": False,
+                "allow_blank": True,
+                "allow_null": True,
+            },
+
+            "supplier": {
+                "required": False,
+                "allow_blank": True,
+                "allow_null": True,
+            },
+
+            "status": {
+                "required": False,
+            },
+
+            "source": {
+                "required": False,
+            },
+
+            "highlight_public": {
+                "required": False,
+            },
+        }
+
+    def validate(self, attrs):
+
+        # -------------------------------------------------
+        # REQUIRED VEHICLE IDENTITY
+        # -------------------------------------------------
+
+        required_fields = {
+            "year": "Year is required.",
+            "make": "Make is required.",
+            "model": "Model is required.",
+            "variant": "Variant is required.",
+            "colour": "Colour is required.",
+        }
+
+        errors = {}
+
+        for field, message in required_fields.items():
+
+            value = attrs.get(field)
+
+            if value is None:
+                errors[field] = message
+
+            elif isinstance(value, str) and not value.strip():
+                errors[field] = message
+
+        if errors:
+            raise serializers.ValidationError(
+                errors
+            )
+
+        # -------------------------------------------------
+        # OPTIONAL TEXT FIELDS
+        # -------------------------------------------------
+
+        text_fields = [
+            "chassis_number",
+            "engine_number",
+            "source_specify",
+            "supplier",
+        ]
+
+        for field in text_fields:
+
+            if attrs.get(field) is None:
+                attrs[field] = ""
+
+        # -------------------------------------------------
+        # PRICE VALIDATION
+        # -------------------------------------------------
+
+        purchase = attrs.get(
+            "purchase_cost"
+        )
+
+        asking = attrs.get(
+            "asking_price"
+        )
+
+        least = attrs.get(
+            "least_selling_price"
+        )
+
+        if (
+            purchase is not None
+            and purchase < 0
+        ):
+            errors = {
+                "purchase_cost": "Cannot be negative."
+            }
+
+        if (
+            asking is not None
+            and asking < 0
+        ):
+            errors = {
+                "asking_price": "Cannot be negative."
+            }
+
+        if (
+            least is not None
+            and least < 0
+        ):
+            errors = {
+                "least_selling_price": (
+                    "Cannot be negative."
+                )
+            }
+
+        if errors:
+            raise serializers.ValidationError(
+                errors
+            )
+
+        # -------------------------------------------------
+        # PRICE RELATIONSHIPS
+        # -------------------------------------------------
+
+        if (
+            purchase is not None
+            and asking is not None
+            and purchase > asking
+        ):
+            raise serializers.ValidationError(
+                {
+                    "asking_price": (
+                        "Asking price must be greater "
+                        "than purchase cost."
+                    )
+                }
+            )
+
+        if (
+            least is not None
+            and asking is not None
+            and least > asking
+        ):
+            raise serializers.ValidationError(
+                {
+                    "least_selling_price": (
+                        "Least selling price cannot "
+                        "exceed asking price."
+                    )
+                }
+            )
+
+        # -------------------------------------------------
+        # YEAR VALIDATION
+        # -------------------------------------------------
+
+        year = attrs.get("year")
+
+        if year is not None:
+
+            if year > date.today().year:
+
+                raise serializers.ValidationError(
+                    {
+                        "year": (
+                            "Vehicle year cannot be "
+                            "greater than the current year."
+                        )
+                    }
+                )
+
+        # -------------------------------------------------
+        # MILEAGE VALIDATION
+        # -------------------------------------------------
+
+        mileage = attrs.get("mileage")
+
+        if (
+            mileage is not None
+            and mileage < 0
+        ):
+            raise serializers.ValidationError(
+                {
+                    "mileage": "Cannot be negative."
+                }
+            )
+
+        return attrs
+
+
+class BulkVehicleImportSerializer(serializers.Serializer):
+    file = serializers.FileField(
+        required=True,
+        write_only=True,
+    )
+
+    def validate_file(self, file):
+        filename = (
+            getattr(file, "name", "") or ""
+        ).lower()
+
+        if not filename.endswith(
+            (".xlsx", ".csv")
+        ):
+            raise serializers.ValidationError(
+                "Only .xlsx and .csv files are supported."
+            )
+
+        return file
 
