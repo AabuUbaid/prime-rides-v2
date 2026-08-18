@@ -25,6 +25,7 @@ from .serializers import (
     ImageReorderSerializer,
     BulkImageDeleteSerializer,
     BulkVehicleDeleteSerializer,
+    BulkVehicleImportSerializer,
 )
 
 from .selectors import InventorySelector
@@ -602,4 +603,136 @@ class BulkVehicleDeleteAPIView(APIView):
                     f"{deleted} vehicle(s) deleted successfully."
                 ),
             }
+        )
+
+class BulkVehicleImportAPIView(APIView):
+
+    permission_classes = [IsAuthenticated]
+
+    def post(
+        self,
+        request,
+    ):
+
+        serializer = BulkVehicleImportSerializer(
+            data=request.data
+        )
+
+        serializer.is_valid(
+            raise_exception=True,
+        )
+
+        uploaded_file = (
+            serializer.validated_data["file"]
+        )
+
+        try:
+
+            rows = (
+                InventoryService
+                .parse_vehicle_import_file(
+                    uploaded_file
+                )
+            )
+
+            result = (
+                InventoryService
+                .import_vehicle_rows(
+                    rows
+                )
+            )
+
+        except ValidationError:
+
+            raise
+
+        except Exception as exc:
+
+            raise ValidationError(
+                {
+                    "bulk_import": [
+                        f"Import failed: {str(exc)}"
+                    ]
+                }
+            )
+
+        created_cars = result[
+            "created_cars"
+        ]
+
+        created_count = result[
+            "created_count"
+        ]
+
+        skipped_count = result[
+            "skipped_count"
+        ]
+
+        skipped_rows = result[
+            "skipped_rows"
+        ]
+
+        errors = result[
+            "errors"
+        ]
+
+        # -------------------------------------------------
+        # Completely successful import
+        # -------------------------------------------------
+
+        if skipped_count == 0:
+
+            return Response(
+                {
+                    "success": True,
+                    "message": (
+                        f"{created_count} vehicle(s) "
+                        "imported successfully."
+                    ),
+                    "data": {
+                        "created_count": (
+                            created_count
+                        ),
+                        "skipped_count": 0,
+                        "vehicle_ids": [
+                            str(car.id)
+                            for car in created_cars
+                        ],
+                        "errors": [],
+                    },
+                },
+                status=status.HTTP_201_CREATED,
+            )
+
+        # -------------------------------------------------
+        # Partial import
+        # -------------------------------------------------
+
+        return Response(
+            {
+                "success": True,
+                "message": (
+                    f"Import completed. "
+                    f"{created_count} vehicle(s) "
+                    f"imported and "
+                    f"{skipped_count} row(s) skipped."
+                ),
+                "data": {
+                    "created_count": (
+                        created_count
+                    ),
+                    "skipped_count": (
+                        skipped_count
+                    ),
+                    "skipped_rows": (
+                        skipped_rows
+                    ),
+                    "vehicle_ids": [
+                        str(car.id)
+                        for car in created_cars
+                    ],
+                    "errors": errors,
+                },
+            },
+            status=status.HTTP_201_CREATED,
         )

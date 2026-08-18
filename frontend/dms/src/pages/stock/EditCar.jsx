@@ -148,31 +148,62 @@ function EditCar() {
   };
 
   if (loading) {
-    return <h2>Loading...</h2>;
+    return (
+      <h2 className="p-6 text-xl font-semibold text-gray-900">
+        Loading...
+      </h2>
+    );
   }
 
   return (
-    <div>
-      <h1>Edit Vehicle</h1>
+    <div className="mx-auto max-w-5xl space-y-6 p-6">
+      <div>
+        <h1 className="text-2xl font-bold text-gray-900">
+          Edit Vehicle
+        </h1>
 
-      <form onSubmit={handleSubmit}>
-        <VehicleInformation formData={formData} handleChange={handleChange} />
+        <p className="mt-1 text-sm text-gray-500">
+          Update vehicle information and inventory details.
+        </p>
+      </div>
 
-        <PricingInformation formData={formData} handleChange={handleChange} />
+      <form onSubmit={handleSubmit} className="space-y-6">
+        <div className="rounded-lg border border-gray-200 bg-white p-6 shadow-sm">
+          <VehicleInformation
+            formData={formData}
+            handleChange={handleChange}
+          />
+        </div>
 
-        <VehicleDetails formData={formData} handleChange={handleChange} />
+        <div className="rounded-lg border border-gray-200 bg-white p-6 shadow-sm">
+          <PricingInformation
+            formData={formData}
+            handleChange={handleChange}
+          />
+        </div>
 
-        <UploadSection
-          car={car}
-          formData={formData}
-          setFormData={setFormData}
-        />
+        <div className="rounded-lg border border-gray-200 bg-white p-6 shadow-sm">
+          <VehicleDetails
+            formData={formData}
+            handleChange={handleChange}
+          />
+        </div>
 
-        <SubmitSection
-          saving={saving}
-          handleSubmit={handleSubmit}
-          handleDelete={handleDelete}
-        />
+        <div className="rounded-lg border border-gray-200 bg-white p-6 shadow-sm">
+          <UploadSection
+            car={car}
+            formData={formData}
+            setFormData={setFormData}
+          />
+        </div>
+
+        <div className="rounded-lg border border-gray-200 bg-white p-6 shadow-sm">
+          <SubmitSection
+            saving={saving}
+            handleSubmit={handleSubmit}
+            handleDelete={handleDelete}
+          />
+        </div>
       </form>
     </div>
   );

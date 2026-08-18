@@ -31,7 +31,8 @@ class Car(models.Model):
         unique=True,
     )
 
-    year = models.PositiveIntegerField()
+    year = models.PositiveIntegerField(
+    )
 
     make = models.CharField(
         max_length=100,
@@ -47,6 +48,7 @@ class Car(models.Model):
 
     colour = models.CharField(
         max_length=50,
+       
     )
 
     chassis_number = models.CharField(

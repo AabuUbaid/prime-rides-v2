@@ -18,6 +18,7 @@ function CarDetails() {
   const [loading, setLoading] = useState(true);
   const [draggedImageId, setDraggedImageId] = useState(null);
   const [selectedImageIds, setSelectedImageIds] = useState([]);
+  const [brokenImageIds, setBrokenImageIds] = useState([]);
 
   useEffect(() => {
     async function loadCar() {
@@ -31,6 +32,8 @@ function CarDetails() {
         setLoading(false);
       }
     }
+
+    setBrokenImageIds([]);
 
     loadCar();
   }, [id]);
@@ -188,103 +191,167 @@ function CarDetails() {
   };
 
   if (loading) {
-    return <h2>Loading...</h2>;
+    return <h2 className="p-6 text-xl font-semibold text-gray-900">Loading...</h2>;
   }
 
   return (
-    <div>
-      <h1>Vehicle Details</h1>
+    <div className="space-y-6 p-6">
+      <h1 className="text-2xl font-bold text-gray-900">
+        Vehicle Details
+      </h1>
 
-      <table>
+      <table className="w-full overflow-hidden rounded-lg border border-gray-200 bg-white text-sm">
         <tbody>
-          <tr>
-            <th>Stock ID</th>
-            <td>{car.stock_id}</td>
+          <tr className="border-b border-gray-100">
+            <th className="w-1/3 bg-gray-50 px-4 py-3 text-left font-medium text-gray-600">
+              Stock ID
+            </th>
+            <td className="px-4 py-3 text-gray-900">{car.stock_id}</td>
+          </tr>
+
+          <tr className="border-b border-gray-100">
+            <th className="w-1/3 bg-gray-50 px-4 py-3 text-left font-medium text-gray-600">
+              Year
+            </th>
+            <td className="px-4 py-3 text-gray-900">{car.year}</td>
+          </tr>
+
+          <tr className="border-b border-gray-100">
+            <th className="w-1/3 bg-gray-50 px-4 py-3 text-left font-medium text-gray-600">
+              Make
+            </th>
+            <td className="px-4 py-3 text-gray-900">{car.make}</td>
+          </tr>
+
+          <tr className="border-b border-gray-100">
+            <th className="w-1/3 bg-gray-50 px-4 py-3 text-left font-medium text-gray-600">
+              Model
+            </th>
+            <td className="px-4 py-3 text-gray-900">{car.model}</td>
+          </tr>
+
+          <tr className="border-b border-gray-100">
+            <th className="w-1/3 bg-gray-50 px-4 py-3 text-left font-medium text-gray-600">
+              Variant
+            </th>
+            <td className="px-4 py-3 text-gray-900">{car.variant}</td>
+          </tr>
+
+          <tr className="border-b border-gray-100">
+            <th className="w-1/3 bg-gray-50 px-4 py-3 text-left font-medium text-gray-600">
+              Colour
+            </th>
+            <td className="px-4 py-3 text-gray-900">{car.colour}</td>
+          </tr>
+
+          <tr className="border-b border-gray-100">
+            <th className="w-1/3 bg-gray-50 px-4 py-3 text-left font-medium text-gray-600">
+              Status
+            </th>
+            <td className="px-4 py-3 text-gray-900">{car.status}</td>
+          </tr>
+
+          <tr className="border-b border-gray-100">
+            <th className="w-1/3 bg-gray-50 px-4 py-3 text-left font-medium text-gray-600">
+              Purchase Cost
+            </th>
+            <td className="px-4 py-3 text-gray-900">
+              {car.purchase_cost ?? "-"}
+            </td>
+          </tr>
+
+          <tr className="border-b border-gray-100">
+            <th className="w-1/3 bg-gray-50 px-4 py-3 text-left font-medium text-gray-600">
+              Asking Price
+            </th>
+            <td className="px-4 py-3 text-gray-900">
+              {car.asking_price ?? "-"}
+            </td>
+          </tr>
+
+          <tr className="border-b border-gray-100">
+            <th className="w-1/3 bg-gray-50 px-4 py-3 text-left font-medium text-gray-600">
+              Least Selling Price
+            </th>
+            <td className="px-4 py-3 text-gray-900">
+              {car.least_selling_price ?? "-"}
+            </td>
+          </tr>
+
+          <tr className="border-b border-gray-100">
+            <th className="w-1/3 bg-gray-50 px-4 py-3 text-left font-medium text-gray-600">
+              Mileage
+            </th>
+            <td className="px-4 py-3 text-gray-900">
+              {car.mileage ?? "-"}
+            </td>
+          </tr>
+
+          <tr className="border-b border-gray-100">
+            <th className="w-1/3 bg-gray-50 px-4 py-3 text-left font-medium text-gray-600">
+              Supplier
+            </th>
+            <td className="px-4 py-3 text-gray-900">
+              {car.supplier || "-"}
+            </td>
+          </tr>
+
+          <tr className="border-b border-gray-100">
+            <th className="w-1/3 bg-gray-50 px-4 py-3 text-left font-medium text-gray-600">
+              Source
+            </th>
+            <td className="px-4 py-3 text-gray-900">{car.source}</td>
+          </tr>
+
+          {car.source === "other" && (
+            <tr className="border-b border-gray-100">
+              <th className="w-1/3 bg-gray-50 px-4 py-3 text-left font-medium text-gray-600">
+                Source Specify
+              </th>
+              <td className="px-4 py-3 text-gray-900">
+                {car.source_specify || "-"}
+              </td>
+            </tr>
+          )}
+
+          <tr className="border-b border-gray-100">
+            <th className="w-1/3 bg-gray-50 px-4 py-3 text-left font-medium text-gray-600">
+              Chassis Number
+            </th>
+            <td className="px-4 py-3 text-gray-900">
+              {car.chassis_number || "-"}
+            </td>
+          </tr>
+
+          <tr className="border-b border-gray-100">
+            <th className="w-1/3 bg-gray-50 px-4 py-3 text-left font-medium text-gray-600">
+              Engine Number
+            </th>
+            <td className="px-4 py-3 text-gray-900">
+              {car.engine_number || "-"}
+            </td>
+          </tr>
+
+          <tr className="border-b border-gray-100">
+            <th className="w-1/3 bg-gray-50 px-4 py-3 text-left font-medium text-gray-600">
+              Highlight Public
+            </th>
+            <td className="px-4 py-3 text-gray-900">
+              {car.highlight_public ? "Yes" : "No"}
+            </td>
           </tr>
 
           <tr>
-            <th>Year</th>
-            <td>{car.year}</td>
-          </tr>
-
-          <tr>
-            <th>Make</th>
-            <td>{car.make}</td>
-          </tr>
-
-          <tr>
-            <th>Model</th>
-            <td>{car.model}</td>
-          </tr>
-
-          <tr>
-            <th>Variant</th>
-            <td>{car.variant}</td>
-          </tr>
-
-          <tr>
-            <th>Colour</th>
-            <td>{car.colour}</td>
-          </tr>
-
-          <tr>
-            <th>Status</th>
-            <td>{car.status}</td>
-          </tr>
-
-          <tr>
-            <th>Purchase Cost</th>
-            <td>{car.purchase_cost ?? "-"}</td>
-          </tr>
-
-          <tr>
-            <th>Asking Price</th>
-            <td>{car.asking_price ?? "-"}</td>
-          </tr>
-
-          <tr>
-            <th>Least Selling Price</th>
-            <td>{car.least_selling_price ?? "-"}</td>
-          </tr>
-
-          <tr>
-            <th>Mileage</th>
-            <td>{car.mileage ?? "-"}</td>
-          </tr>
-
-          <tr>
-            <th>Supplier</th>
-            <td>{car.supplier || "-"}</td>
-          </tr>
-
-          <tr>
-            <th>Source</th>
-            <td>{car.source}</td>
-          </tr>
-
-          <tr>
-            <th>Chassis Number</th>
-            <td>{car.chassis_number || "-"}</td>
-          </tr>
-
-          <tr>
-            <th>Engine Number</th>
-            <td>{car.engine_number || "-"}</td>
-          </tr>
-
-          <tr>
-            <th>Highlight Public</th>
-            <td>{car.highlight_public ? "Yes" : "No"}</td>
-          </tr>
-
-          <tr>
-            <th>Possession Certificate</th>
-            <td>
+            <th className="w-1/3 bg-gray-50 px-4 py-3 text-left font-medium text-gray-600">
+              Possession Certificate
+            </th>
+            <td className="px-4 py-3 text-gray-900">
               {car.possession_certificate ? (
                 <a
                   href={`${import.meta.env.VITE_URL}${car.possession_certificate}`}
                   target="_blank"
                   rel="noreferrer"
+                  className="text-blue-600 hover:text-blue-800 hover:underline"
                 >
                   View Certificate
                 </a>
@@ -296,21 +363,32 @@ function CarDetails() {
         </tbody>
       </table>
 
-      <h2>Vehicle Images</h2>
+      <h2 className="text-xl font-semibold text-gray-900">
+        Vehicle Images
+      </h2>
 
       {car.images.length === 0 ? (
-        <p>No images uploaded.</p>
+        <p className="rounded-lg border border-dashed border-gray-300 bg-gray-50 p-6 text-center text-sm text-gray-500">
+          No images uploaded.
+        </p>
       ) : (
         <>
-          <h3>Gallery</h3>
+          <h3 className="text-lg font-semibold text-gray-800">
+            Gallery
+          </h3>
 
           {selectedImageIds.length > 0 && (
-            <button type="button" onClick={handleBulkDeleteImages}>
+            <button
+              type="button"
+              onClick={handleBulkDeleteImages}
+              className="rounded-md bg-red-600 px-4 py-2 text-sm font-medium text-white hover:bg-red-700"
+            >
               Delete Selected ({selectedImageIds.length})
             </button>
           )}
 
           <div
+            className="mt-4"
             style={{
               display: "flex",
               gap: "15px",
@@ -324,6 +402,7 @@ function CarDetails() {
                 onDragStart={() => handleDragStart(image.id)}
                 onDragOver={(e) => e.preventDefault()}
                 onDrop={() => handleDrop(image.id)}
+                className="rounded-lg bg-white shadow-sm transition hover:shadow-md"
                 style={{
                   border: "1px solid #ccc",
                   padding: "10px",
@@ -334,17 +413,49 @@ function CarDetails() {
                   type="checkbox"
                   checked={selectedImageIds.includes(image.id)}
                   onChange={() => handleImageSelection(image.id)}
+                  className="mb-2 h-4 w-4"
                 />
 
-                <img
-                  src={`${import.meta.env.VITE_URL}${image.image}`}
-                  alt="Vehicle"
-                  width="150"
-                />
+                {brokenImageIds.includes(image.id) ? (
+                  <div
+                    style={{
+                      width: "150px",
+                      height: "100px",
+                      display: "flex",
+                      alignItems: "center",
+                      justifyContent: "center",
+                      border: "1px solid #ddd",
+                      backgroundColor: "#f5f5f5",
+                      color: "#777",
+                      fontSize: "14px",
+                      textAlign: "center",
+                    }}
+                  >
+                    Image unavailable
+                  </div>
+                ) : (
+                  <img
+                    src={`${import.meta.env.VITE_URL}${image.image}`}
+                    alt="Vehicle"
+                    width="150"
+                    height="100"
+                    className="rounded-md"
+                    style={{
+                      objectFit: "cover",
+                    }}
+                    onError={() => {
+                      setBrokenImageIds((prev) =>
+                        prev.includes(image.id)
+                          ? prev
+                          : [...prev, image.id],
+                      );
+                    }}
+                  />
+                )}
 
                 {image.is_cover && (
-                  <p>
-                    <strong>Cover Image</strong>
+                  <p className="mt-2 text-sm font-semibold text-green-700">
+                    Cover Image
                   </p>
                 )}
 
@@ -352,6 +463,7 @@ function CarDetails() {
                   <button
                     type="button"
                     onClick={() => handleSetCoverImage(image.id)}
+                    className="mt-2 mr-2 rounded-md border border-gray-300 px-3 py-1.5 text-sm text-gray-700 hover:bg-gray-50"
                   >
                     Set as Cover
                   </button>
@@ -360,6 +472,7 @@ function CarDetails() {
                 <button
                   type="button"
                   onClick={() => handleDeleteImage(image.id)}
+                  className="mt-2 rounded-md bg-red-600 px-3 py-1.5 text-sm text-white hover:bg-red-700"
                 >
                   Delete
                 </button>
@@ -371,7 +484,9 @@ function CarDetails() {
 
       <ExpenseForm onAddExpense={handleAddExpense} />
 
-      <h2>Vehicle Expenses</h2>
+      <h2 className="text-xl font-semibold text-gray-900">
+        Vehicle Expenses
+      </h2>
 
       <ExpenseList
         expenses={car.expenses}
@@ -379,13 +494,21 @@ function CarDetails() {
         onDeleteExpense={handleDeleteExpense}
       />
 
-      <h3>Expense Summary</h3>
+      <h3 className="text-lg font-semibold text-gray-800">
+        Expense Summary
+      </h3>
 
-      <p>Expense Count: {car.expense_summary?.expense_count ?? 0}</p>
+      <p className="text-sm text-gray-700">
+        Expense Count: {car.expense_summary?.expense_count ?? 0}
+      </p>
 
-      <p>Total Expenses: {car.expense_summary?.total_expenses ?? 0}</p>
+      <p className="text-sm text-gray-700">
+        Total Expenses: {car.expense_summary?.total_expenses ?? 0}
+      </p>
 
-      <p>Net Cost: {car.expense_summary?.net_cost ?? 0}</p>
+      <p className="text-sm font-semibold text-gray-900">
+        Net Cost: {car.expense_summary?.net_cost ?? 0}
+      </p>
     </div>
   );
 }
