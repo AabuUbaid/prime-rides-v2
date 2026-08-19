@@ -43,6 +43,11 @@ urlpatterns = [
         ),
         name="redoc",
     ),
+
+    path(
+        "api/finance/",
+        include("finance.urls"),
+    ),
 ]
 
 if settings.DEBUG:

@@ -53,6 +53,7 @@ INSTALLED_APPS = [
     'inventory',
     "drf_spectacular",
     "drf_spectacular_sidecar",
+    "finance",
     
 ]
 
