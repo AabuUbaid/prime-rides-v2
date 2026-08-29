@@ -1,18 +1,33 @@
 from django.core.exceptions import ValidationError as DjangoValidationError
 from django.shortcuts import get_object_or_404
 from django.db.models import Q
-from rest_framework import status
+from rest_framework import status , generics
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
+
 from . import selectors, services
-from .models import Bank, EmiSheet
+from .models import (
+    Bank,
+    BankProcessingConfiguration,
+    EmiSheet,
+    ExpensePreset,
+    InsuranceBand,
+    ServicePackage,
+)
+
+
 from .serializers import (
     BankSerializer,
     EmiCalculationSerializer,
     EmiSheetCreateSerializer,
     EmiSheetSerializer,
+    BankProcessingConfigurationSerializer,
+    ExpensePresetSerializer,
+    InsuranceBandSerializer,
+    ServicePackageSerializer,
+    EmiSheetUpdateSerializer,   
 )
 
 from accounts.permissions import IsMaster
@@ -183,6 +198,68 @@ class BankDetailView(APIView):
             status=status.HTTP_200_OK,
         )
 
+# =========================================================
+# EXPENSE PRESETS
+# =========================================================
+
+
+class ExpensePresetListCreateView(
+    generics.ListCreateAPIView
+):
+
+    serializer_class = ExpensePresetSerializer
+
+    permission_classes = [
+        IsAuthenticated,
+    ]
+
+    def get_permissions(self):
+        if self.request.method == "POST":
+            return [IsMaster()]
+
+        return [IsAuthenticated()]
+    """
+    List and create Master expense presets.
+    """
+
+    
+
+    def get_queryset(self):
+        queryset = selectors.list_expense_presets()
+
+        active_only = self.request.query_params.get(
+            "active_only"
+        )
+
+        if active_only == "true":
+            queryset = queryset.filter(
+                is_active=True
+            )
+
+        expense_type = self.request.query_params.get(
+            "expense_type"
+        )
+
+        if expense_type:
+            queryset = queryset.filter(
+                expense_type=expense_type
+            )
+
+        return queryset
+
+
+class ExpensePresetDetailView(
+    generics.RetrieveUpdateDestroyAPIView
+):
+    permission_classes = [
+        IsMaster,
+    ]
+    """
+    Retrieve, update, or delete an expense preset.
+    """
+
+    queryset = ExpensePreset.objects.all()
+    serializer_class = ExpensePresetSerializer
 
 # =========================================================
 # EMI CALCULATE
@@ -208,15 +285,21 @@ class EmiCalculateView(APIView):
         )
 
         try:
+            calculation_data = serializer.validated_data.copy()
+
             result = services.calculate_emi(
-                **serializer.validated_data
+                **calculation_data
             )
 
         except DjangoValidationError as exc:
             return Response(
                 {
                     "success": False,
-                    "message": str(exc),
+                    "message": (
+                        exc.messages[0]
+                        if exc.messages
+                        else str(exc)
+                    ),
                 },
                 status=status.HTTP_400_BAD_REQUEST,
             )
@@ -403,6 +486,54 @@ class EmiSheetDetailView(APIView):
             status=status.HTTP_200_OK,
         )
 
+    def patch(self, request, pk):
+        """
+        Update editable EMI sheet information.
+        Financial snapshot fields remain immutable.
+        """
+
+        emi_sheet = get_object_or_404(
+            EmiSheet,
+            pk=pk,
+        )
+
+        serializer = EmiSheetUpdateSerializer(
+            data=request.data,
+            partial=True,
+        )
+
+        serializer.is_valid(
+            raise_exception=True,
+        )
+
+        try:
+            emi_sheet = services.update_emi_sheet(
+                emi_sheet=emi_sheet,
+                **serializer.validated_data,
+            )
+
+        except DjangoValidationError as exc:
+            return Response(
+                {
+                    "success": False,
+                    "message": str(exc),
+                },
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        response_serializer = EmiSheetSerializer(
+            emi_sheet,
+        )
+
+        return Response(
+            {
+                "success": True,
+                "message": "EMI sheet updated successfully.",
+                "data": response_serializer.data,
+            },
+            status=status.HTTP_200_OK,
+        )
+
     def delete(self, request, pk):
         """
         Delete an EMI sheet.
@@ -442,3 +573,175 @@ class EmiSheetDetailView(APIView):
             },
             status=status.HTTP_200_OK,
         )
+
+# =========================================================
+# INSURANCE BANDS
+# =========================================================
+
+
+class InsuranceBandListCreateView(
+    generics.ListCreateAPIView
+):
+    serializer_class = InsuranceBandSerializer
+    
+    permission_classes = [
+        IsAuthenticated,
+    ]
+
+    def get_permissions(self):
+        if self.request.method == "POST":
+            return [IsMaster()]
+
+        return [IsAuthenticated()]
+    """
+    List and create Master insurance bands.
+    """
+
+    
+
+    def get_queryset(self):
+        queryset = selectors.list_insurance_bands()
+
+        active_only = self.request.query_params.get(
+            "active_only"
+        )
+
+        if active_only == "true":
+            queryset = queryset.filter(
+                is_active=True
+            )
+
+        return queryset
+
+
+class InsuranceBandDetailView(
+    generics.RetrieveUpdateDestroyAPIView
+):
+    permission_classes = [
+        IsMaster,
+    ]
+
+    queryset = InsuranceBand.objects.all()
+    serializer_class = InsuranceBandSerializer
+    """
+    Retrieve, update, or delete an insurance band.
+    """
+
+
+# =========================================================
+# SERVICE PACKAGES
+# =========================================================
+
+
+class ServicePackageListCreateView(
+    generics.ListCreateAPIView
+):
+    """
+    List and create Master service packages.
+    """
+
+    serializer_class = ServicePackageSerializer
+
+    permission_classes = [
+        IsAuthenticated,
+    ]
+
+    def get_permissions(self):
+        if self.request.method == "POST":
+            return [IsMaster()]
+
+        return [IsAuthenticated()]
+
+    def get_queryset(self):
+        queryset = selectors.list_service_packages()
+
+        active_only = self.request.query_params.get(
+            "active_only"
+        )
+
+        if active_only == "true":
+            queryset = queryset.filter(
+                is_active=True
+            )
+
+        return queryset
+
+
+class ServicePackageDetailView(
+    generics.RetrieveUpdateDestroyAPIView
+):
+    permission_classes = [
+        IsMaster,
+    ]
+    """
+    Retrieve, update, or delete a service package.
+    """
+
+    queryset = ServicePackage.objects.all()
+    serializer_class = ServicePackageSerializer
+
+
+# =========================================================
+# BANK PROCESSING CONFIGURATION
+# =========================================================
+
+
+class BankProcessingConfigurationListCreateView(
+    generics.ListCreateAPIView
+):
+    """
+    List and create bank processing configurations.
+    """
+
+    serializer_class = (
+        BankProcessingConfigurationSerializer
+    )
+
+    permission_classes = [
+        IsAuthenticated,
+    ]
+
+    def get_permissions(self):
+        if self.request.method == "POST":
+            return [IsMaster()]
+
+        return [IsAuthenticated()]
+    
+    def get_queryset(self):
+        queryset = (
+            selectors
+            .list_bank_processing_configurations()
+        )
+
+        active_only = self.request.query_params.get(
+            "active_only"
+        )
+
+        if active_only == "true":
+            queryset = queryset.filter(
+                is_active=True
+            )
+
+        return queryset
+
+
+class BankProcessingConfigurationDetailView(
+    generics.RetrieveUpdateDestroyAPIView
+):
+    permission_classes = [
+        IsMaster,
+    ]
+
+    """
+    Retrieve, update, or delete a bank processing
+    configuration.
+    """
+
+    queryset = (
+        BankProcessingConfiguration.objects
+        .select_related("bank")
+    )
+
+    serializer_class = (
+        BankProcessingConfigurationSerializer
+    )
