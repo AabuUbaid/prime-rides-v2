@@ -424,14 +424,8 @@ class EmiExpenseSerializer(
 
 
 class EmiExpenseInputSerializer(serializers.Serializer):
-    expense_type = serializers.ChoiceField(
-        choices=[
-            ("rta", "RTA Passing"),
-            ("registration", "Registration"),
-            ("evaluation", "Evaluation"),
-            ("bank_process", "Bank Processing"),
-            ("insurance", "Insurance"),
-        ],
+    expense_type = serializers.CharField(
+        max_length=80,
     )
 
     description = serializers.CharField(
@@ -440,10 +434,15 @@ class EmiExpenseInputSerializer(serializers.Serializer):
         default="",
     )
 
-    def validate(self, attrs):
-        return attrs
+    def validate_expense_type(self, value):
+        value = value.strip()
 
+        if not value:
+            raise serializers.ValidationError(
+                "Expense type is required."
+            )
 
+        return value
 # =========================================================
 # EMI CALCULATION REQUEST
 # =========================================================
