@@ -112,7 +112,16 @@ function Dashboard() {
             </p>
           </div>
 
-          <div className="flex items-center gap-4">
+          <div className="flex items-center gap-3">
+            {user?.role === "MASTER" && (
+              <a
+                href="/finance/settings"
+                className="rounded-md border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 transition hover:bg-gray-100"
+              >
+                Finance Master
+              </a>
+            )}
+
             <div className="text-right">
               <p className="text-sm font-medium text-gray-900">
                 {user?.first_name}

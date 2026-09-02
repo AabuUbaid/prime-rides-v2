@@ -48,6 +48,10 @@ urlpatterns = [
         "api/finance/",
         include("finance.urls"),
     ),
+     path(
+        "api/quotes/",
+        include("quotes.urls"),
+    ),
 ]
 
 if settings.DEBUG:

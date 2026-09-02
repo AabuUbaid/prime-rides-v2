@@ -1,0 +1,518 @@
+from decimal import Decimal
+
+from django.contrib.auth import get_user_model
+from rest_framework import serializers
+
+from finance.models import EmiSheet
+from inventory.models import Car
+
+from .models import Quote, QuoteExpense
+
+
+User = get_user_model()
+
+
+# =========================================================
+# QUOTE EXPENSE
+# =========================================================
+
+class QuoteExpenseSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = QuoteExpense
+        fields = (
+            "id",
+            "expense_type",
+            "name",
+            "description",
+            "estimated_min",
+            "estimated_max",
+            "actual_amount",
+            "applies",
+            "created_at",
+            "updated_at",
+        )
+
+        read_only_fields = (
+            "id",
+            "created_at",
+            "updated_at",
+        )
+
+    def validate(self, attrs):
+        estimated_min = attrs.get("estimated_min")
+        estimated_max = attrs.get("estimated_max")
+
+        if (
+            estimated_min is not None
+            and estimated_max is not None
+            and estimated_max < estimated_min
+        ):
+            raise serializers.ValidationError(
+                {
+                    "estimated_max": (
+                        "Estimated maximum cannot be less "
+                        "than estimated minimum."
+                    )
+                }
+            )
+
+        return attrs
+
+
+# =========================================================
+# QUOTE EXPENSE CREATE
+# =========================================================
+
+class QuoteExpenseCreateSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = QuoteExpense
+        fields = (
+            "expense_type",
+            "name",
+            "description",
+            "estimated_min",
+            "estimated_max",
+            "applies",
+        )
+
+    def validate(self, attrs):
+        estimated_min = attrs.get("estimated_min")
+        estimated_max = attrs.get("estimated_max")
+
+        if (
+            estimated_min is not None
+            and estimated_max is not None
+            and estimated_max < estimated_min
+        ):
+            raise serializers.ValidationError(
+                {
+                    "estimated_max": (
+                        "Estimated maximum cannot be less "
+                        "than estimated minimum."
+                    )
+                }
+            )
+
+        return attrs
+
+
+# =========================================================
+# QUOTE EXPENSE ACTUAL UPDATE
+# =========================================================
+
+class QuoteExpenseActualUpdateSerializer(
+    serializers.Serializer
+):
+    id = serializers.IntegerField()
+
+    actual_amount = serializers.DecimalField(
+        max_digits=12,
+        decimal_places=2,
+        min_value=Decimal("0.00"),
+        allow_null=True,
+        required=False,
+    )
+
+    applies = serializers.BooleanField(
+        required=False,
+    )
+
+
+# =========================================================
+# QUOTE CREATE
+# =========================================================
+
+class QuoteCreateSerializer(serializers.ModelSerializer):
+
+    car_id = serializers.PrimaryKeyRelatedField(
+        source="car",
+        queryset=Car.objects.all(),
+        required=False,
+        allow_null=True,
+    )
+
+    emi_sheet_id = serializers.PrimaryKeyRelatedField(
+        source="emi_sheet",
+        queryset=EmiSheet.objects.all(),
+        required=False,
+        allow_null=True,
+    )
+
+    salesperson_id = serializers.PrimaryKeyRelatedField(
+        source="salesperson",
+        queryset=User.objects.all(),
+        required=False,
+        allow_null=True,
+    )
+
+    expenses = QuoteExpenseCreateSerializer(
+        many=True,
+        required=False,
+    )
+
+    # -----------------------------------------------------
+    # Final business rule:
+    # Cash / Finance only
+    # -----------------------------------------------------
+
+    payment_method = serializers.ChoiceField(
+        choices=Quote.PaymentMethod.choices,
+        required=False,
+        allow_blank=True,
+    )
+
+    class Meta:
+        model = Quote
+        fields = (
+            "source",
+            "car_id",
+            "emi_sheet_id",
+            "customer_name",
+            "customer_mobile",
+            "salesperson_id",
+            "price",
+            "payment_method",
+            "deposit_amount",
+            "deposit_date",
+            "expenses",
+        )
+
+    def validate(self, attrs):
+        source = attrs.get("source")
+        car = attrs.get("car")
+        emi_sheet = attrs.get("emi_sheet")
+
+        # -------------------------------------------------
+        # STOCK SOURCE
+        # -------------------------------------------------
+
+        if source == Quote.Source.STOCK:
+
+            if car is None:
+                raise serializers.ValidationError(
+                    {
+                        "car_id": (
+                            "A vehicle is required when "
+                            "source is stock."
+                        )
+                    }
+                )
+
+            if emi_sheet is not None:
+                raise serializers.ValidationError(
+                    {
+                        "emi_sheet_id": (
+                            "EMI sheet must not be supplied "
+                            "for a stock quote."
+                        )
+                    }
+                )
+
+            # ---------------------------------------------
+            # Reserved vehicles are not quoteable
+            # ---------------------------------------------
+
+            if car.status == Car.Status.RESERVED:
+                raise serializers.ValidationError(
+                    {
+                        "car_id": (
+                            "Reserved vehicles cannot be "
+                            "used to create a Quote."
+                        )
+                    }
+                )
+
+        # -------------------------------------------------
+        # SAVED EMI SOURCE
+        # -------------------------------------------------
+
+        elif source == Quote.Source.SAVED_EMI:
+
+            if emi_sheet is None:
+                raise serializers.ValidationError(
+                    {
+                        "emi_sheet_id": (
+                            "An EMI sheet is required when "
+                            "source is saved_emi."
+                        )
+                    }
+                )
+
+            if car is not None:
+                raise serializers.ValidationError(
+                    {
+                        "car_id": (
+                            "Car must not be supplied "
+                            "for a saved EMI quote."
+                        )
+                    }
+                )
+
+        # -------------------------------------------------
+        # SOURCE INVALID
+        # -------------------------------------------------
+
+        else:
+            raise serializers.ValidationError(
+                {
+                    "source": (
+                        "A valid Quote source is required."
+                    )
+                }
+            )
+
+        # -------------------------------------------------
+        # EXPENSE VALIDATION
+        # -------------------------------------------------
+
+        expenses = attrs.get("expenses", [])
+
+        if not isinstance(expenses, list):
+            raise serializers.ValidationError(
+                {
+                    "expenses": (
+                        "Expected a list of expense items."
+                    )
+                }
+            )
+
+        return attrs
+
+
+# =========================================================
+# QUOTE UPDATE
+# =========================================================
+
+class QuoteUpdateSerializer(serializers.ModelSerializer):
+
+    salesperson_id = serializers.PrimaryKeyRelatedField(
+        source="salesperson",
+        queryset=User.objects.all(),
+        required=False,
+        allow_null=True,
+    )
+
+    expense_updates = QuoteExpenseActualUpdateSerializer(
+        many=True,
+        required=False,
+    )
+
+    class Meta:
+        model = Quote
+        fields = (
+            "salesperson_id",
+            "deposit_amount",
+            "deposit_date",
+            "status",
+            "expense_updates",
+        )
+
+    def validate(self, attrs):
+        request_data = self.initial_data
+
+        allowed_fields = {
+            "salesperson_id",
+            "deposit_amount",
+            "deposit_date",
+            "status",
+            "expense_updates",
+        }
+
+        unexpected_fields = (
+            set(request_data.keys()) - allowed_fields
+        )
+
+        # -------------------------------------------------
+        # Preserve current approved behavior:
+        #
+        # Protected fields supplied by the client are
+        # ignored rather than modified.
+        #
+        # Only explicitly exposed editable fields above
+        # reach update_quote().
+        # -------------------------------------------------
+
+        _ = unexpected_fields
+
+        return attrs
+
+
+# =========================================================
+# QUOTE LIST
+# =========================================================
+
+class QuoteListSerializer(serializers.ModelSerializer):
+
+    salesperson_id = serializers.UUIDField(
+        source="salesperson.id",
+        read_only=True,
+    )
+
+    class Meta:
+        model = Quote
+
+        fields = (
+            "id",
+            "quote_number",
+            "source",
+            "customer_name",
+            "customer_mobile",
+            "vehicle_stock_id",
+            "vehicle_make",
+            "vehicle_model",
+            "vehicle_variant",
+            "vehicle_chassis_number",
+            "salesperson_id",
+            "price",
+            "payment_method",
+            "deposit_amount",
+            "deposit_date",
+            "status",
+            "created_at",
+            "updated_at",
+        )
+
+        read_only_fields = fields
+
+
+# =========================================================
+# QUOTE DETAIL
+# =========================================================
+
+class QuoteDetailSerializer(serializers.ModelSerializer):
+
+    salesperson_id = serializers.UUIDField(
+        source="salesperson.id",
+        read_only=True,
+    )
+
+    car_id = serializers.UUIDField(
+        source="car.id",
+        read_only=True,
+    )
+
+    emi_sheet_id = serializers.IntegerField(
+        source="emi_sheet.id",
+        read_only=True,
+    )
+
+    expenses = QuoteExpenseSerializer(
+        many=True,
+        read_only=True,
+    )
+
+    class Meta:
+        model = Quote
+
+        fields = (
+            "id",
+            "quote_number",
+            "source",
+
+            "car_id",
+            "emi_sheet_id",
+
+            "customer_name",
+            "customer_mobile",
+
+            "salesperson_id",
+
+            "vehicle_stock_id",
+            "vehicle_make",
+            "vehicle_model",
+            "vehicle_variant",
+            "vehicle_year",
+            "vehicle_colour",
+            "vehicle_mileage",
+            "vehicle_chassis_number",
+            "vehicle_engine_number",
+
+            "price",
+            "payment_method",
+            "deposit_amount",
+            "deposit_date",
+
+            "emi_bank_name",
+            "emi_interest_rate",
+            "emi_vehicle_price",
+            "emi_vat_enabled",
+            "emi_vat_amount",
+            "emi_down_payment",
+            "emi_finance_amount",
+            "emi_expense_total",
+            "emi_tenure_years",
+            "emi_total_interest",
+            "emi_total_payable",
+            "emi_monthly_emi",
+
+            "status",
+
+            "expenses",
+
+            "created_at",
+            "updated_at",
+        )
+
+        read_only_fields = fields
+
+
+# =========================================================
+# QUOTE PRINT
+# =========================================================
+
+class QuotePrintSerializer(serializers.ModelSerializer):
+
+    class Meta:
+        model = Quote
+
+        fields = (
+            "quote_number",
+            "created_at",
+            "customer_name",
+            "customer_mobile",
+            "vehicle_stock_id",
+            "vehicle_make",
+            "vehicle_model",
+            "vehicle_variant",
+            "vehicle_year",
+            "vehicle_colour",
+            "vehicle_mileage",
+            "vehicle_chassis_number",
+            "vehicle_engine_number",
+            "price",
+            "payment_method",
+            "deposit_amount",
+            "deposit_date",
+        )
+
+        read_only_fields = fields
+
+    def to_representation(self, instance):
+        data = super().to_representation(instance)
+
+        return {
+            "quote_number": data["quote_number"],
+            "date": data["created_at"],
+
+            "customer": {
+                "name": data["customer_name"],
+                "mobile": data["customer_mobile"],
+            },
+
+            "vehicle": {
+                "stock_id": data["vehicle_stock_id"],
+                "make": data["vehicle_make"],
+                "model": data["vehicle_model"],
+                "variant": data["vehicle_variant"],
+                "year": data["vehicle_year"],
+                "colour": data["vehicle_colour"],
+                "mileage": data["vehicle_mileage"],
+                "chassis_number": data["vehicle_chassis_number"],
+                "engine_number": data["vehicle_engine_number"],
+            },
+
+            "price": data["price"],
+            "payment_method": data["payment_method"],
+            "deposit_amount": data["deposit_amount"],
+            "deposit_date": data["deposit_date"],
+        }

@@ -11,6 +11,9 @@ import EditCar from "./pages/stock/EditCar";
 
 import Login from "./pages/Login";
 import Dashboard from "./pages/Dashboard";
+import FinanceSettings from "./pages/finance/FinanceSettings";
+import BankManagement from "./pages/finance/BankManagement";
+import ExpensePresetManagement from "./pages/finance/ExpensePresetManagement";
 
 function App() {
   return (
@@ -27,6 +30,33 @@ function App() {
             element={
               <ProtectedRoute>
                 <Dashboard />
+              </ProtectedRoute>
+            }
+          />
+
+          <Route
+            path="/finance/settings"
+            element={
+              <ProtectedRoute>
+                <FinanceSettings />
+              </ProtectedRoute>
+            }
+          />
+
+          <Route
+            path="/finance/settings/banks"
+            element={
+              <ProtectedRoute>
+                <BankManagement />
+              </ProtectedRoute>
+            }
+          />
+
+          <Route
+            path="/finance/settings/expense-presets"
+            element={
+              <ProtectedRoute>
+                <ExpensePresetManagement />
               </ProtectedRoute>
             }
           />
