@@ -864,6 +864,7 @@ class EmiSheetSerializer(
             "emi_number",
 
             # Customer
+            "customer",
             "customer_name",
             "customer_mobile",
 
@@ -893,6 +894,7 @@ class EmiSheetSerializer(
             "price_after_vat",
             "down_payment",
             "finance_amount",
+            "car_value_evaluation",
             "expense_total",
             "emi_principal",
             "tenure_years",

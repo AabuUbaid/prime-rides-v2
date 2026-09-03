@@ -55,6 +55,7 @@ INSTALLED_APPS = [
     "drf_spectacular_sidecar",
     "finance",
     "quotes",
+    "customers",
     
 ]
 

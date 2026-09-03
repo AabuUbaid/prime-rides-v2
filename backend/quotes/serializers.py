@@ -7,7 +7,8 @@ from finance.models import EmiSheet
 from inventory.models import Car
 
 from .models import Quote, QuoteExpense
-
+from customers.models import CustomerDocument
+from customers.serializers import CustomerDocumentSerializer
 
 User = get_user_model()
 
@@ -172,7 +173,7 @@ class QuoteCreateSerializer(serializers.ModelSerializer):
             "salesperson_id",
             "price",
             "payment_method",
-            "deposit_amount",
+            "extra_down_payment",
             "deposit_date",
             "expenses",
         )
@@ -301,7 +302,7 @@ class QuoteUpdateSerializer(serializers.ModelSerializer):
         model = Quote
         fields = (
             "salesperson_id",
-            "deposit_amount",
+            "extra_down_payment",
             "deposit_date",
             "status",
             "expense_updates",
@@ -312,7 +313,7 @@ class QuoteUpdateSerializer(serializers.ModelSerializer):
 
         allowed_fields = {
             "salesperson_id",
-            "deposit_amount",
+            "extra_down_payment",
             "deposit_date",
             "status",
             "expense_updates",
@@ -347,6 +348,10 @@ class QuoteListSerializer(serializers.ModelSerializer):
         source="salesperson.id",
         read_only=True,
     )
+    customer_id = serializers.IntegerField(
+        source="customer.id",
+        read_only=True,
+    )
 
     class Meta:
         model = Quote
@@ -355,6 +360,7 @@ class QuoteListSerializer(serializers.ModelSerializer):
             "id",
             "quote_number",
             "source",
+            "customer_id",
             "customer_name",
             "customer_mobile",
             "vehicle_stock_id",
@@ -365,7 +371,8 @@ class QuoteListSerializer(serializers.ModelSerializer):
             "salesperson_id",
             "price",
             "payment_method",
-            "deposit_amount",
+            "down_payment",
+            "extra_down_payment",
             "deposit_date",
             "status",
             "created_at",
@@ -383,6 +390,10 @@ class QuoteDetailSerializer(serializers.ModelSerializer):
 
     salesperson_id = serializers.UUIDField(
         source="salesperson.id",
+        read_only=True,
+    )
+    customer_id = serializers.IntegerField(
+        source="customer.id",
         read_only=True,
     )
 
@@ -412,6 +423,7 @@ class QuoteDetailSerializer(serializers.ModelSerializer):
             "car_id",
             "emi_sheet_id",
 
+            "customer_id",
             "customer_name",
             "customer_mobile",
 
@@ -429,7 +441,8 @@ class QuoteDetailSerializer(serializers.ModelSerializer):
 
             "price",
             "payment_method",
-            "deposit_amount",
+            "down_payment",
+            "extra_down_payment",
             "deposit_date",
 
             "emi_bank_name",
@@ -462,6 +475,12 @@ class QuoteDetailSerializer(serializers.ModelSerializer):
 
 class QuotePrintSerializer(serializers.ModelSerializer):
 
+
+    customer_documents = CustomerDocumentSerializer(
+        source="customer.documents",
+        many=True,
+        read_only=True,
+    )
     class Meta:
         model = Quote
 
@@ -481,8 +500,10 @@ class QuotePrintSerializer(serializers.ModelSerializer):
             "vehicle_engine_number",
             "price",
             "payment_method",
-            "deposit_amount",
+            "down_payment",
+            "extra_down_payment",
             "deposit_date",
+            "customer_documents"
         )
 
         read_only_fields = fields
@@ -497,6 +518,7 @@ class QuotePrintSerializer(serializers.ModelSerializer):
             "customer": {
                 "name": data["customer_name"],
                 "mobile": data["customer_mobile"],
+                "documents": data["customer_documents"],
             },
 
             "vehicle": {
@@ -513,6 +535,8 @@ class QuotePrintSerializer(serializers.ModelSerializer):
 
             "price": data["price"],
             "payment_method": data["payment_method"],
-            "deposit_amount": data["deposit_amount"],
+            "down_payment": data["down_payment"],
+            "extra_down_payment": data["extra_down_payment"],
+
             "deposit_date": data["deposit_date"],
         }

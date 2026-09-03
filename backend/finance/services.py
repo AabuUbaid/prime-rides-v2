@@ -5,7 +5,7 @@ from django.db import transaction
 
 from inventory.models import Car
 
-
+from customers.models import Customer
 from .models import (
     Bank,
     BankProcessingConfiguration,
@@ -124,10 +124,8 @@ def _validate_financial_inputs(
             field="tenure_years",
         )
 
-    vat_amount = (
-        _money(vehicle_price * VAT_RATE)
-        if vat_enabled
-        else ZERO
+    vat_amount = _money(
+        vehicle_price * VAT_RATE
     )
 
     applicable_price = _money(
@@ -1258,6 +1256,11 @@ def calculate_emi(
         + banker_application_charge
         - down_payment
     )
+    car_value_evaluation = _money(
+            finance_amount
+            * Decimal("100")
+            / Decimal("80")
+        )
 
     if finance_amount < ZERO:
         _raise_validation(
@@ -1268,7 +1271,7 @@ def calculate_emi(
     # emi_principal is retained as the historical
     # principal used by the existing model.
     emi_principal = finance_amount
-
+    
     # -----------------------------------------------------
     # Flat-rate interest
     # -----------------------------------------------------
@@ -1364,9 +1367,7 @@ def calculate_emi(
         # ---------------------------------------------
 
         "vehicle_price": vehicle_price,
-        "vat_enabled": bool(
-            vat_enabled
-        ),
+        "vat_enabled":True,
         "vat_amount": vat_amount,
         "price_after_vat": price_after_vat,
         "down_payment": down_payment,
@@ -1486,6 +1487,7 @@ def calculate_emi(
         ),
 
         "finance_amount": finance_amount,
+        "car_value_evaluation": car_value_evaluation,
         "emi_principal": emi_principal,
 
         # ---------------------------------------------
@@ -1706,7 +1708,50 @@ def generate_emi_number():
         f"EMI-{sequence.current_number:04d}"
     )
 
+def resolve_customer(
+    *,
+    customer_name,
+    customer_mobile,
+):
+    """
+    Find an existing Customer by normalized phone number
+    or create a new Customer.
 
+    Customer matching is based on phone number.
+    """
+
+    customer_name = (
+        customer_name or ""
+    ).strip()
+
+    customer_mobile = (
+        customer_mobile or ""
+    ).strip()
+
+    if not customer_mobile:
+        _raise_validation(
+            "Customer mobile is required.",
+            field="customer_mobile",
+        )
+
+    customer = (
+        Customer.objects
+        .filter(
+            phone_number=customer_mobile,
+        )
+        .first()
+    )
+
+    if customer is not None:
+        return customer, False
+
+    customer = Customer.objects.create(
+        customer_name=customer_name,
+        phone_number=customer_mobile,
+        # Agent stays null for now.
+    )
+
+    return customer, True
 # =========================================================
 # CREATE EMI SHEET
 # =========================================================
@@ -1740,7 +1785,10 @@ def create_emi_sheet(
     All Master-controlled values are resolved again inside
     the transaction immediately before saving.
     """
-
+    customer, customer_created = resolve_customer(
+        customer_name=customer_name,
+        customer_mobile=customer_mobile,
+    )
     # -----------------------------------------------------
     # Vehicle snapshot
     # -----------------------------------------------------
@@ -1802,7 +1850,7 @@ def create_emi_sheet(
         # ---------------------------------------------
         # Customer
         # ---------------------------------------------
-
+        customer=customer,
         customer_name=(
             customer_name or ""
         ).strip(),
@@ -1924,6 +1972,11 @@ def create_emi_sheet(
         finance_amount=(
             calculation[
                 "finance_amount"
+            ]
+        ),
+        car_value_evaluation=(
+            calculation[
+                "car_value_evaluation"
             ]
         ),
 

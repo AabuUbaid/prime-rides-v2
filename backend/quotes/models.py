@@ -6,6 +6,7 @@ from django.db import models
 
 from finance.models import EmiSheet
 from inventory.models import Car
+from customers.models import Customer
 
 
 class Quote(models.Model):
@@ -64,7 +65,13 @@ class Quote(models.Model):
     # -------------------------------------------------
     # Customer
     # -------------------------------------------------
-
+    customer = models.ForeignKey(
+        Customer,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="quotes",
+    )
     customer_name = models.CharField(
         max_length=255,
     )
@@ -146,7 +153,16 @@ class Quote(models.Model):
         ],
     )
 
-    deposit_amount = models.DecimalField(
+    down_payment = models.DecimalField(
+        max_digits=12,
+        decimal_places=2,
+        default=Decimal("0.00"),
+        validators=[
+            MinValueValidator(Decimal("0.00")),
+        ],
+    )
+
+    extra_down_payment = models.DecimalField(
         max_digits=12,
         decimal_places=2,
         default=Decimal("0.00"),
@@ -306,15 +322,15 @@ class Quote(models.Model):
         constraints = [
             models.CheckConstraint(
                 condition=models.Q(
-                    price__gte=Decimal("0.00"),
+                    down_payment__gte=Decimal("0.00"),
                 ),
-                name="quote_price_non_negative",
+                name="quote_down_payment_non_negative",
             ),
             models.CheckConstraint(
                 condition=models.Q(
-                    deposit_amount__gte=Decimal("0.00"),
+                    extra_down_payment__gte=Decimal("0.00"),
                 ),
-                name="quote_deposit_non_negative",
+                name="quote_extra_down_payment_non_negative",
             ),
         ]
 

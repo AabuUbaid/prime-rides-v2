@@ -12,9 +12,11 @@ def get_quote(
             "car",
             "emi_sheet",
             "salesperson",
+            "customer",
         )
         .prefetch_related(
             "expenses",
+            "customer__documents",
         )
         .get(
             pk=quote_id,
@@ -33,6 +35,7 @@ def list_quotes(
             "car",
             "emi_sheet",
             "salesperson",
+            "customer",
         )
         .all()
     )

@@ -7,7 +7,7 @@ from django.core.validators import (
 from django.db import models
 from inventory.models import Car
 
-
+from customers.models import Customer
 # =========================================================
 # BANK
 # =========================================================
@@ -442,6 +442,14 @@ class EmiSheet(models.Model):
     # Customer
     # -------------------------------------------------
 
+    customer = models.ForeignKey(
+        Customer,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="emi_sheets",
+    )
+
     customer_name = models.CharField(
         max_length=255,
     )
@@ -563,6 +571,12 @@ class EmiSheet(models.Model):
     finance_amount = models.DecimalField(
         max_digits=12,
         decimal_places=2,
+    )
+
+    car_value_evaluation = models.DecimalField(
+        max_digits=12,
+        decimal_places=2,
+        default=Decimal("0.00"),
     )
 
     expense_selection = models.JSONField(

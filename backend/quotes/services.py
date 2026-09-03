@@ -5,6 +5,7 @@ from rest_framework.exceptions import ValidationError
 
 from finance.models import EmiSheet
 from inventory.models import Car
+from customers.services import create_customer
 
 from .models import Quote, QuoteExpense, QuoteSequence
 
@@ -110,12 +111,18 @@ def snapshot_emi_to_quote(
         emi_sheet.vehicle_engine_number
     )
 
+    if emi_sheet.customer is None:
+        raise ValidationError(
+            "The selected EMI is not associated with a Customer."
+        )
+
     # -----------------------------------------------------
     # Historical customer snapshot
     # -----------------------------------------------------
-
+    quote.customer = emi_sheet.customer
     quote.customer_name = emi_sheet.customer_name
     quote.customer_mobile = emi_sheet.customer_mobile
+   
 
     # -----------------------------------------------------
     # Historical EMI / Finance snapshot
@@ -126,6 +133,15 @@ def snapshot_emi_to_quote(
     quote.emi_vehicle_price = emi_sheet.vehicle_price
     quote.emi_vat_enabled = emi_sheet.vat_enabled
     quote.emi_vat_amount = emi_sheet.vat_amount
+
+    # Quote vehicle price is the Car Value (Evaluation)
+    quote.price = emi_sheet.car_value_evaluation
+
+    quote.down_payment =(
+        emi_sheet.car_value_evaluation
+        * Decimal("20")
+        / Decimal("100")
+    )
     quote.emi_down_payment = emi_sheet.down_payment
     quote.emi_finance_amount = emi_sheet.finance_amount
     quote.emi_expense_total = emi_sheet.expense_total
@@ -376,7 +392,7 @@ def create_quote(
     customer_mobile,
     price,
     payment_method="",
-    deposit_amount=Decimal("0.00"),
+    extra_down_payment=Decimal("0.00"),
     deposit_date=None,
     car=None,
     emi_sheet=None,
@@ -419,10 +435,37 @@ def create_quote(
         )
 
     # -----------------------------------------------------
+    # Resolve Customer
+    # -----------------------------------------------------
+
+    customer_result = create_customer(
+        customer_name=customer_name,
+        phone_number=customer_mobile,
+        agent=None,
+    )
+
+    customer = customer_result["customer"]
+
+    # -----------------------------------------------------
     # Generate backend-controlled Quote number
     # -----------------------------------------------------
 
     quote_number = generate_quote_number()
+
+
+    # -----------------------------------------------------
+    # Resolve Customer for stock Quote
+    # -----------------------------------------------------
+
+    customer = None
+
+    if source == Quote.Source.STOCK:
+        customer_result = create_customer(
+            customer_name=customer_name,
+            phone_number=customer_mobile,
+            agent=None,
+        )
+        customer = customer_result["customer"]
 
     # -----------------------------------------------------
     # Create base Quote
@@ -435,6 +478,8 @@ def create_quote(
         car=car,
         emi_sheet=emi_sheet,
 
+        customer=customer,
+
         customer_name=customer_name,
         customer_mobile=customer_mobile,
 
@@ -443,7 +488,7 @@ def create_quote(
         price=price,
         payment_method=payment_method,
 
-        deposit_amount=deposit_amount,
+        extra_down_payment=extra_down_payment,
         deposit_date=deposit_date,
 
         status=Quote.Status.QUOTE,
@@ -492,7 +537,7 @@ def update_quote(
     *,
     quote,
     salesperson=None,
-    deposit_amount=None,
+    extra_down_payment=None,
     deposit_date=None,
     status=None,
     expense_updates=None,
@@ -504,7 +549,7 @@ def update_quote(
 
     Editable fields:
         salesperson
-        deposit_amount
+        extra_down_payment
         deposit_date
         status
         expense actual_amount / applies
@@ -533,8 +578,8 @@ def update_quote(
     # Deposit
     # -----------------------------------------------------
 
-    if deposit_amount is not None:
-        quote.deposit_amount = deposit_amount
+    if extra_down_payment is not None:
+        quote.extra_down_payment = extra_down_payment
 
     if deposit_date is not None:
         quote.deposit_date = deposit_date
