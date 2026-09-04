@@ -344,3 +344,75 @@ export function deleteBankProcessingConfiguration(
     },
   );
 }
+
+// =========================================================
+// EMI
+// =========================================================
+
+/**
+ * Calculate an EMI without saving an EMI record.
+ *
+ * The backend is authoritative for:
+ * - VAT
+ * - bank interest rate
+ * - expenses
+ * - insurance
+ * - service package
+ * - bank processing
+ * - finance amount
+ * - interest
+ * - total payable
+ * - monthly EMI
+ */
+export function calculateEmi(payload) {
+  return apiClient("/finance/emi/calculate/", {
+    method: "POST",
+    body: JSON.stringify(payload),
+  });
+}
+
+/**
+ * Get saved EMI estimates.
+ *
+ * Supported query parameters:
+ * - search
+ * - status
+ * - bank
+ */
+export function getEmiEstimates(params = {}) {
+  return apiClient(
+    `/finance/emi/${buildQueryString(params)}`,
+  );
+}
+
+/**
+ * Get a single saved EMI estimate.
+ */
+export function getEmi(emiId) {
+  return apiClient(`/finance/emi/${emiId}/`);
+}
+
+/**
+ * Save an EMI estimate.
+ *
+ * The backend recalculates authoritative financial values
+ * before persisting the record.
+ */
+export function saveEmiSheet(payload) {
+  return apiClient("/finance/emi/", {
+    method: "POST",
+    body: JSON.stringify(payload),
+  });
+}
+
+/**
+ * Delete a saved EMI estimate.
+ *
+ * Backend permission:
+ * - MASTER only
+ */
+export function deleteEmi(emiId) {
+  return apiClient(`/finance/emi/${emiId}/`, {
+    method: "DELETE",
+  });
+}

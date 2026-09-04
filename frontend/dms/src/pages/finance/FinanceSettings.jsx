@@ -101,13 +101,30 @@ function FinanceSettings() {
       {/* Main */}
       <main className="mx-auto max-w-7xl px-6 py-8">
         <div className="mb-8">
-          <h2 className="text-2xl font-semibold text-gray-900">
-            Finance Master
-          </h2>
+          <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+            <div>
+              <h2 className="text-2xl font-semibold text-gray-900">
+                Finance Master
+              </h2>
 
-          <p className="mt-1 text-sm text-gray-500">
-            Manage finance configuration used by the DMS Finance module.
-          </p>
+              <p className="mt-1 text-sm text-gray-500">
+                Manage finance configuration used by the DMS Finance module.
+              </p>
+            </div>
+
+            <Link
+    to="/finance/emi/list"
+    className="block rounded-lg border border-gray-200 bg-white p-5 transition hover:border-gray-400 hover:shadow-sm"
+>
+    <h3 className="text-base font-semibold text-gray-900">
+        EMI Estimates
+    </h3>
+
+    <p className="mt-1 text-sm text-gray-500">
+        View and manage saved finance estimates.
+    </p>
+</Link>
+          </div>
         </div>
 
         <div className="grid grid-cols-1 gap-5 md:grid-cols-2 xl:grid-cols-3">

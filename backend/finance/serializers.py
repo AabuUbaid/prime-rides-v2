@@ -149,6 +149,7 @@ class InsuranceBandSerializer(serializers.ModelSerializer):
             "minimum_vehicle_price",
             "maximum_vehicle_price",
             "amount",
+            "no_license_surcharge",
             "is_active",
             "created_at",
             "updated_at",
@@ -250,6 +251,14 @@ class InsuranceBandSerializer(serializers.ModelSerializer):
         if value < Decimal("0.00"):
             raise serializers.ValidationError(
                 "Insurance amount cannot be negative."
+            )
+
+        return value
+
+    def validate_no_license_surcharge(self, value):
+        if value < Decimal("0.00"):
+            raise serializers.ValidationError(
+                "No driving licence surcharge cannot be negative."
             )
 
         return value

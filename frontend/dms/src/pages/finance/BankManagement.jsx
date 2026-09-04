@@ -48,9 +48,10 @@ function BankManagement() {
     }
   }
 
-  useEffect(() => {
-    loadBanks();
-  }, []);
+ useEffect(() => {
+  // eslint-disable-next-line react-hooks/set-state-in-effect
+  loadBanks();
+}, []);;
 
   function openCreateModal() {
     setEditingBank(null);

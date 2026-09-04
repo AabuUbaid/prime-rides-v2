@@ -38,11 +38,14 @@ async function refreshAccessToken() {
 
         if (!response.ok) {
           throw new Error(
-            data?.detail ||
-            data?.message ||
-            JSON.stringify(data) ||
-            "Token refresh failed",
-          );
+  data?.detail ||
+    data?.message ||
+    JSON.stringify(data) ||
+    "Something went wrong",
+  {
+    cause: data,
+  },
+);
         }
 
         const newAccessToken = data?.data?.access;
@@ -128,12 +131,17 @@ export async function apiClient(endpoint, options = {}) {
         headers: retryHeaders,
       });
     } catch (error) {
-      console.error("Token refresh failed:", error);
+  console.error("Token refresh failed:", error);
 
-      clearAuthentication();
+  clearAuthentication();
 
-      throw new Error("Session expired. Please login again.");
-    }
+  throw new Error(
+    "Session expired. Please login again.",
+    {
+      cause: error,
+    },
+  );
+}
   }
 
   let data = null;
@@ -145,15 +153,18 @@ export async function apiClient(endpoint, options = {}) {
   }
 
   if (!response.ok) {
-    console.error("API ERROR:", data);
+  console.error("API ERROR:", data);
 
-    throw new Error(
-      data?.detail ||
+  throw new Error(
+    data?.detail ||
       data?.message ||
       JSON.stringify(data) ||
       "Something went wrong",
-    );
-  }
+    {
+      cause: data,
+    },
+  );
+}
 
   return data;
 }

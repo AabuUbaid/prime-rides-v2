@@ -32,7 +32,6 @@ ZERO = Decimal("0.00")
 VAT_RATE = Decimal("0.05")
 MINIMUM_VEHICLE_PRICE = Decimal("20000.00")
 MAX_TENURE_YEARS = 5
-NO_LICENSE_SURCHARGE = Decimal("850.00")
 
 
 # =========================================================
@@ -455,7 +454,7 @@ def resolve_insurance_amount(
     )
 
     surcharge = (
-        NO_LICENSE_SURCHARGE
+        _money(band.no_license_surcharge)
         if not driving_license
         else ZERO
     )

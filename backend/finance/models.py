@@ -217,6 +217,15 @@ class InsuranceBand(models.Model):
         ],
     )
 
+    no_license_surcharge = models.DecimalField(
+        max_digits=12,
+        decimal_places=2,
+        default=Decimal("0.00"),
+        validators=[
+            MinValueValidator(Decimal("0.00")),
+        ],
+    )
+
     is_active = models.BooleanField(
         default=True,
     )
@@ -254,6 +263,12 @@ class InsuranceBand(models.Model):
                     amount__gte=Decimal("0.00"),
                 ),
                 name="insurance_band_amount_non_negative",
+            ),
+            models.CheckConstraint(
+                condition=models.Q(
+                    no_license_surcharge__gte=Decimal("0.00"),
+                ),
+                name="insurance_band_no_license_surcharge_non_negative",
             ),
         ]
 

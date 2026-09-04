@@ -14,6 +14,12 @@ import Dashboard from "./pages/Dashboard";
 import FinanceSettings from "./pages/finance/FinanceSettings";
 import BankManagement from "./pages/finance/BankManagement";
 import ExpensePresetManagement from "./pages/finance/ExpensePresetManagement";
+import InsuranceBandManagement from "./pages/finance/InsuranceBandManagement";
+import ServicePackageManagement from "./pages/finance/ServicePackageManagement";
+import BankProcessingManagement from "./pages/finance/BankProcessingManagement";
+import EmiCalculator from "./pages/finance/EmiCalculator";
+import EmiList from "./pages/finance/EmiList";
+import EmiDetail from "./pages/finance/EmiDetail";
 
 function App() {
   return (
@@ -60,6 +66,60 @@ function App() {
               </ProtectedRoute>
             }
           />
+
+          <Route
+            path="/finance/settings/insurance-bands"
+            element={
+              <ProtectedRoute>
+                <InsuranceBandManagement />
+              </ProtectedRoute>
+            }
+          />
+
+          <Route
+            path="/finance/settings/service-packages"
+            element={
+              <ProtectedRoute>
+                <ServicePackageManagement />
+              </ProtectedRoute>
+            }
+          />
+
+          <Route
+            path="/finance/settings/bank-processing"
+            element={
+              <ProtectedRoute>
+                <BankProcessingManagement />
+              </ProtectedRoute>
+            }
+          />
+
+          <Route
+            path="/finance/emi"
+            element={
+              <ProtectedRoute>
+                <EmiCalculator />
+              </ProtectedRoute>
+            }
+          />
+
+          <Route
+    path="/finance/emi/list"
+    element={
+        <ProtectedRoute>
+            <EmiList />
+        </ProtectedRoute>
+    }
+/>
+
+<Route
+    path="/finance/emi/:id"
+    element={
+        <ProtectedRoute>
+            <EmiDetail />
+        </ProtectedRoute>
+    }
+/>
 
           <Route
             path="/stock/add"
