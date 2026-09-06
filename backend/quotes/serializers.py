@@ -68,13 +68,14 @@ class QuoteExpenseCreateSerializer(serializers.ModelSerializer):
     class Meta:
         model = QuoteExpense
         fields = (
-            "expense_type",
-            "name",
-            "description",
-            "estimated_min",
-            "estimated_max",
-            "applies",
-        )
+        "expense_type",
+        "name",
+        "description",
+        "estimated_min",
+        "estimated_max",
+        "actual_amount",
+        "applies",
+    )
 
     def validate(self, attrs):
         estimated_min = attrs.get("estimated_min")
@@ -158,8 +159,7 @@ class QuoteCreateSerializer(serializers.ModelSerializer):
 
     payment_method = serializers.ChoiceField(
         choices=Quote.PaymentMethod.choices,
-        required=False,
-        allow_blank=True,
+        required=True,
     )
 
     class Meta:
@@ -182,6 +182,7 @@ class QuoteCreateSerializer(serializers.ModelSerializer):
         source = attrs.get("source")
         car = attrs.get("car")
         emi_sheet = attrs.get("emi_sheet")
+        payment_method = attrs.get("payment_method")
 
         # -------------------------------------------------
         # STOCK SOURCE
@@ -209,10 +210,17 @@ class QuoteCreateSerializer(serializers.ModelSerializer):
                     }
                 )
 
-            # ---------------------------------------------
-            # Reserved vehicles are not quoteable
-            # ---------------------------------------------
+            # Stock quotes are always Cash.
+            if payment_method != Quote.PaymentMethod.CASH:
+                raise serializers.ValidationError(
+                    {
+                        "payment_method": (
+                            "Stock quotes must use Cash payment."
+                        )
+                    }
+                )
 
+            # Reserved vehicles are not quoteable.
             if car.status == Car.Status.RESERVED:
                 raise serializers.ValidationError(
                     {
@@ -245,6 +253,17 @@ class QuoteCreateSerializer(serializers.ModelSerializer):
                         "car_id": (
                             "Car must not be supplied "
                             "for a saved EMI quote."
+                        )
+                    }
+                )
+
+            # Saved EMI quotes are always Finance.
+            if payment_method != Quote.PaymentMethod.FINANCE:
+                raise serializers.ValidationError(
+                    {
+                        "payment_method": (
+                            "Saved EMI quotes must use "
+                            "Finance payment."
                         )
                     }
                 )

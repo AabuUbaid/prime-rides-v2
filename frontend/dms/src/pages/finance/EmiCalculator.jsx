@@ -39,7 +39,6 @@ function EmiCalculator() {
     const [expensePresets, setExpensePresets] = useState([]);
     const [expensePresetsLoading, setExpensePresetsLoading] = useState(true);
 
-    const [registrationDubai] = useState(false);
     const [drivingLicense, setDrivingLicense] = useState(false);
     const [servicePackageSelected, setServicePackageSelected] = useState(false);
 
@@ -49,7 +48,6 @@ function EmiCalculator() {
 
     useEffect(() => {
         const searchTerm = vehicleSearch.trim();
-
         if (!searchTerm) {
             return undefined;
         }
@@ -207,7 +205,6 @@ function EmiCalculator() {
                 expenses: selectedExpenseTypes.map((expenseType) => ({
                     expense_type: expenseType,
                 })),
-                registration_dubai: registrationDubai,
                 driving_license: drivingLicense,
                 service_package_selected: servicePackageSelected,
             };
@@ -269,7 +266,6 @@ function EmiCalculator() {
             expenses: selectedExpenseTypes.map((expenseType) => ({
                 expense_type: expenseType,
             })),
-            registration_dubai: registrationDubai,
             driving_license: drivingLicense,
             service_package_selected: servicePackageSelected,
         };
@@ -318,69 +314,73 @@ function EmiCalculator() {
     }
 }
 
-    function handleExpenseToggle(expenseType) {
-        setIncludeOtherExpenses(true);
+  function handleExpenseToggle(expenseType) {
+    setIncludeOtherExpenses(true);
 
-        setSelectedExpenseTypes((current) => {
-            if (current.includes(expenseType)) {
-                return current.filter((type) => type !== expenseType);
-            }
-
-            const selectedPreset = expensePresets.find(
-                (preset) => preset.expense_type === expenseType,
-            );
-
-            if (!selectedPreset) {
-                return [...current, expenseType];
-            }
-
-            const conflictingTypes = expensePresets
-                .filter(
-                    (preset) =>
-                        preset.id !== selectedPreset.id &&
-                        preset.calculation_type === "conditional",
-                )
-                .filter(
-                    (preset) =>
-                        preset.condition_key === selectedPreset.expense_type ||
-                        selectedPreset.condition_key === preset.expense_type,
-                )
-                .map((preset) => preset.expense_type);
-
-            return [
-                ...current.filter(
-                    (type) => !conflictingTypes.includes(type),
-                ),
-                expenseType,
-            ];
-        });
-    }
-
-    const visibleExpensePresets = expensePresets.filter((preset) => {
-        const selectedPreset = expensePresets.find(
-            (item) => item.expense_type === preset.expense_type,
-        );
-
-        if (!selectedPreset) {
-            return true;
+    setSelectedExpenseTypes((current) => {
+        if (current.includes(expenseType)) {
+            return current.filter((type) => type !== expenseType);
         }
 
-        const hasConflictingSelection = expensePresets.some(
-            (item) =>
-                item.expense_type !== preset.expense_type &&
-                selectedExpenseTypes.includes(item.expense_type) &&
-                item.calculation_type === "conditional" &&
-                preset.calculation_type === "conditional" &&
-                (
-                    item.condition_key === preset.expense_type ||
-                    preset.condition_key === item.expense_type
-                ),
-        );
-
-        return !hasConflictingSelection || selectedExpenseTypes.includes(
-            preset.expense_type,
-        );
+        return [...current, expenseType];
     });
+}
+
+const visibleExpensePresets = expensePresets.filter((preset) => {
+    if (preset.calculation_type !== "conditional") {
+        return true;
+    }
+
+    const selectedConditionalPresets = expensePresets.filter(
+        (item) =>
+            selectedExpenseTypes.includes(item.expense_type) &&
+            item.calculation_type === "conditional",
+    );
+
+    if (selectedConditionalPresets.length === 0) {
+        return true;
+    }
+
+    if (selectedExpenseTypes.includes(preset.expense_type)) {
+        return true;
+    }
+
+    const isRelatedToSelection = selectedConditionalPresets.some(
+        (selectedPreset) => {
+            const selectedKey = String(
+                selectedPreset.condition_key || "",
+            )
+                .trim()
+                .toLowerCase();
+
+            const selectedType = String(
+                selectedPreset.expense_type || "",
+            )
+                .trim()
+                .toLowerCase();
+
+            const presetKey = String(
+                preset.condition_key || "",
+            )
+                .trim()
+                .toLowerCase();
+
+            const presetType = String(
+                preset.expense_type || "",
+            )
+                .trim()
+                .toLowerCase();
+
+            return (
+                (selectedKey && selectedKey === presetKey) ||
+                (selectedKey && selectedKey === presetType) ||
+                (presetKey && presetKey === selectedType)
+            );
+        },
+    );
+
+    return !isRelatedToSelection;
+});
     function buildExpenseDescription(preset) {
         if (preset.amount === null || preset.amount === undefined) {
             return "";

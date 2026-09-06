@@ -182,6 +182,43 @@ def validate_payment_method(payment_method):
             "Invalid payment method. "
             "Allowed values are Cash and Finance."
         )
+        
+# =========================================================
+# SOURCE / PAYMENT METHOD VALIDATION
+# =========================================================
+
+def validate_source_payment_method(
+    *,
+    source,
+    payment_method,
+):
+    """
+    Enforce the Quote source/payment relationship.
+
+    Stock:
+        Cash only
+
+    Saved EMI:
+        Finance only
+    """
+
+    if source == Quote.Source.STOCK:
+        if payment_method != Quote.PaymentMethod.CASH:
+            raise ValidationError(
+                "Stock quotes must use Cash payment."
+            )
+        return
+
+    if source == Quote.Source.SAVED_EMI:
+        if payment_method != Quote.PaymentMethod.FINANCE:
+            raise ValidationError(
+                "Saved EMI quotes must use Finance payment."
+            )
+        return
+
+    raise ValidationError(
+        f"Unsupported quote source: {source}"
+    )
 
 
 # =========================================================
@@ -423,6 +460,11 @@ def create_quote(
 
     validate_payment_method(
         payment_method,
+    )
+    
+    validate_source_payment_method(
+        source=source,
+        payment_method=payment_method,
     )
 
     # -----------------------------------------------------

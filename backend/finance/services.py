@@ -598,25 +598,21 @@ def resolve_bank_processing_amount(
 # =========================================================
 
 
-def resolve_future_fixed_expense(
+def resolve_future_expense(
     *,
     expense_type,
 ):
     """
-    Resolve a future fixed expense preset.
+    Resolve the newest active expense preset for the
+    requested expense type.
 
-    This keeps ordinary future fixed expenses database-driven.
-
-    When multiple active presets accidentally exist for the
-    same type, the newest one is used deterministically.
+    The calculation type is evaluated by the caller.
     """
-
     preset = (
         ExpensePreset.objects
         .filter(
             expense_type=expense_type,
             is_active=True,
-            calculation_type="fixed",
         )
         .order_by("-id")
         .first()
@@ -624,11 +620,132 @@ def resolve_future_fixed_expense(
 
     if preset is None:
         raise ExpensePreset.DoesNotExist(
-            f"No active fixed expense is configured "
+            f"No active expense configuration exists "
             f"for '{expense_type}'."
         )
 
-    return preset, _money(preset.amount)
+    return preset
+
+
+# =========================================================
+# EXPENSE CONDITION RESOLUTION
+# =========================================================
+
+
+def _normalize_condition_value(value):
+    """
+    Normalize common boolean representations while preserving
+    other values as strings.
+    """
+
+    if isinstance(value, bool):
+        return value
+
+    if value is None:
+        return None
+
+    normalized = str(value).strip().lower()
+
+    if normalized in {
+        "true",
+        "yes",
+        "1",
+        "on",
+    }:
+        return True
+
+    if normalized in {
+        "false",
+        "no",
+        "0",
+        "off",
+    }:
+        return False
+
+    return normalized
+
+
+def _condition_values_match(
+    *,
+    actual_value,
+    expected_value,
+):
+    """
+    Compare a runtime condition value with the Master-configured
+    condition value.
+    """
+
+    return (
+        _normalize_condition_value(actual_value)
+        == _normalize_condition_value(expected_value)
+    )
+
+
+def _build_expense_condition_context(
+    *,
+    selected_types,
+    registration_dubai,
+    driving_license,
+    service_package_selected,
+):
+    """
+    Build the runtime condition context used by Master-configured
+    conditional expenses.
+
+    Expense names, types, amounts, and condition rules remain in
+    Finance Master. This function only exposes current calculation
+    state to the generic condition evaluator.
+    """
+
+    selected_expenses = {
+        expense_type: True
+        for expense_type in selected_types
+    }
+
+    return {
+        "registration_dubai": registration_dubai,
+        "driving_license": driving_license,
+        "service_package_selected": service_package_selected,
+        "selected_expenses": selected_expenses,
+    }
+
+
+def _evaluate_expense_condition(
+    *,
+    preset,
+    condition_context,
+    selected_types,
+    applied_types,
+):
+    """
+    Evaluate a conditional ExpensePreset without embedding any
+    expense-specific business rule in the calculation service.
+
+    A condition key may refer to:
+      1. A direct calculation-context value.
+      2. A selected expense type.
+      3. An already-applied expense type.
+    """
+
+    condition_key = str(
+        preset.condition_key or ""
+    ).strip()
+
+    if not condition_key:
+        return False
+
+    if condition_key in condition_context:
+        actual_value = condition_context[condition_key]
+    elif condition_key in selected_types:
+        actual_value = True
+    elif condition_key in applied_types:
+        actual_value = True
+    else:
+        actual_value = False
+    return _condition_values_match(
+        actual_value=actual_value,
+        expected_value=preset.condition_value,
+    )
 
 
 # =========================================================
@@ -646,11 +763,15 @@ def _resolve_master_expenses(
     service_package_selected=False,
 ):
     """
-    Resolve all selected expenses from Master configuration.
+    Resolve all applicable expenses from Finance Master.
 
-    Frontend supplies selection only.
+    Frontend supplies selections and current calculation inputs only.
+    Financial values and conditional rules always come from the
+    Master configuration.
 
-    Frontend amounts, names, and prices are NOT trusted.
+    Conditional presets are evaluated automatically when their
+    configured condition is satisfied; they do not need to be
+    hardcoded into the frontend.
     """
 
     expenses = expenses or []
@@ -674,6 +795,13 @@ def _resolve_master_expenses(
                 selected_types.append(
                     expense_type
                 )
+
+    condition_context = _build_expense_condition_context(
+        selected_types=selected_types,
+        registration_dubai=registration_dubai,
+        driving_license=driving_license,
+        service_package_selected=service_package_selected,
+    )
 
     result = {
         "rta": {
@@ -826,7 +954,7 @@ def _resolve_master_expenses(
         }
 
     # -----------------------------------------------------
-    # Future fixed expenses
+    # Generic selected expenses
     # -----------------------------------------------------
 
     known_types = {
@@ -838,20 +966,58 @@ def _resolve_master_expenses(
         "service_package",
     }
 
+    applied_types = set()
+
     for expense_type in selected_types:
         if expense_type in known_types:
+            applied_types.add(expense_type)
             continue
 
         try:
-            preset, amount = (
-                resolve_future_fixed_expense(
-                    expense_type=expense_type,
-                )
+            preset = resolve_future_expense(
+                expense_type=expense_type,
             )
         except ExpensePreset.DoesNotExist:
             raise DjangoValidationError(
                 f"No active expense configuration exists "
                 f"for '{expense_type}'."
+            )
+
+        amount = ZERO
+
+        if preset.calculation_type == "fixed":
+            amount = _money(preset.amount)
+
+        elif preset.calculation_type == "percentage_minimum":
+            percentage_amount = (
+                vehicle_price
+                * _decimal(preset.percentage)
+                / Decimal("100")
+            )
+
+            amount = _money(
+                max(
+                    percentage_amount,
+                    _decimal(preset.minimum_amount),
+                )
+            )
+
+        elif preset.calculation_type == "conditional":
+            if not _evaluate_expense_condition(
+                preset=preset,
+                condition_context=condition_context,
+                selected_types=selected_types,
+                applied_types=applied_types,
+            ):
+                continue
+
+            amount = _money(preset.amount)
+
+        else:
+            raise DjangoValidationError(
+                f"Unsupported calculation type "
+                f"'{preset.calculation_type}' "
+                f"for expense '{expense_type}'."
             )
 
         result["future"].append(
@@ -863,6 +1029,13 @@ def _resolve_master_expenses(
                 "amount": amount,
             }
         )
+
+        applied_types.add(expense_type)
+
+    # -----------------------------------------------------
+    # Generic conditional expenses from Master
+    # -----------------------------------------------------
+
 
     # -----------------------------------------------------
     # Total

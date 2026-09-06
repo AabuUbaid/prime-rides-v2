@@ -21,6 +21,10 @@ import EmiCalculator from "./pages/finance/EmiCalculator";
 import EmiList from "./pages/finance/EmiList";
 import EmiDetail from "./pages/finance/EmiDetail";
 
+import Quotes from "./pages/deals/Quotes";
+import NewQuote from "./pages/deals/NewQuote";
+import QuoteDetail from "./pages/deals/QuoteDetail";
+
 function App() {
   return (
     <BrowserRouter>
@@ -104,22 +108,49 @@ function App() {
           />
 
           <Route
-    path="/finance/emi/list"
-    element={
-        <ProtectedRoute>
-            <EmiList />
-        </ProtectedRoute>
-    }
-/>
+            path="/finance/emi/list"
+            element={
+              <ProtectedRoute>
+                <EmiList />
+              </ProtectedRoute>
+            }
+          />
 
-<Route
-    path="/finance/emi/:id"
-    element={
-        <ProtectedRoute>
-            <EmiDetail />
-        </ProtectedRoute>
-    }
-/>
+          <Route
+            path="/finance/emi/:id"
+            element={
+              <ProtectedRoute>
+                <EmiDetail />
+              </ProtectedRoute>
+            }
+          />
+
+          <Route
+            path="/deals"
+            element={
+              <ProtectedRoute>
+                <Quotes />
+              </ProtectedRoute>
+            }
+          />
+
+          <Route
+            path="/deals/new"
+            element={
+              <ProtectedRoute>
+                <NewQuote />
+              </ProtectedRoute>
+            }
+          />
+
+          <Route
+            path="/deals/:id"
+            element={
+              <ProtectedRoute>
+                <QuoteDetail />
+              </ProtectedRoute>
+            }
+          />
 
           <Route
             path="/stock/add"
