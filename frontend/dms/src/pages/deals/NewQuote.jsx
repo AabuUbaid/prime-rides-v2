@@ -3,2272 +3,1881 @@ import { Link, useNavigate } from "react-router-dom";
 import { toast } from "react-toastify";
 
 import { createQuote } from "../../api/quotes";
+import { getCar, getCars } from "../../api/inventory";
 import {
-    getCar,
-    getCars,
-} from "../../api/inventory";
-import {
-    calculateEmi,
-    getBanks,
-    getEmi,
-    getEmiEstimates,
-    getExpensePresets,
-    getInsuranceBands,
-    getServicePackages,
+  calculateEmi,
+  getBanks,
+  getEmi,
+  getEmiEstimates,
+  getExpensePresets,
+  getInsuranceBands,
+  getServicePackages,
 } from "../../api/finance";
 
 const SOURCE_STOCK = "stock";
 const SOURCE_SAVED_EMI = "saved_emi";
 
 function getApiData(response) {
-    if (Array.isArray(response?.data)) {
-        return response.data;
-    }
+  if (Array.isArray(response?.data)) {
+    return response.data;
+  }
 
-    if (Array.isArray(response)) {
-        return response;
-    }
+  if (Array.isArray(response)) {
+    return response;
+  }
 
-    return [];
+  return [];
 }
 
 function unwrapData(response) {
-    return response?.data ?? response;
+  return response?.data ?? response;
 }
 
 function formatCurrency(value) {
-    if (
-        value === null ||
-        value === undefined ||
-        value === ""
-    ) {
-        return "-";
-    }
+  if (value === null || value === undefined || value === "") {
+    return "-";
+  }
 
-    const number = Number(value);
+  const number = Number(value);
 
-    if (Number.isNaN(number)) {
-        return String(value);
-    }
+  if (Number.isNaN(number)) {
+    return String(value);
+  }
 
-    return new Intl.NumberFormat("en-AE", {
-        minimumFractionDigits: 2,
-        maximumFractionDigits: 2,
-    }).format(number);
+  return new Intl.NumberFormat("en-AE", {
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2,
+  }).format(number);
 }
 
 function getVehicleName(item) {
-    return [
-        item?.make || item?.vehicle_make,
-        item?.model || item?.vehicle_model,
-        item?.variant || item?.vehicle_variant,
-    ]
-        .filter(Boolean)
-        .join(" ");
+  return [
+    item?.make || item?.vehicle_make,
+    item?.model || item?.vehicle_model,
+    item?.variant || item?.vehicle_variant,
+  ]
+    .filter(Boolean)
+    .join(" ");
 }
 
 function getCustomerName(emi) {
-    return (
-        emi?.customer_name ||
-        emi?.customer?.customer_name ||
-        ""
-    );
+  return emi?.customer_name || emi?.customer?.customer_name || "";
 }
 
 function getCustomerMobile(emi) {
-    return (
-        emi?.customer_mobile ||
-        emi?.customer?.phone_number ||
-        ""
-    );
+  return emi?.customer_mobile || emi?.customer?.phone_number || "";
 }
 
 function getEmiVehicleName(emi) {
-    return [
-        emi?.vehicle_make,
-        emi?.vehicle_model,
-        emi?.vehicle_variant,
-    ]
-        .filter(Boolean)
-        .join(" ");
+  return [emi?.vehicle_make, emi?.vehicle_model, emi?.vehicle_variant]
+    .filter(Boolean)
+    .join(" ");
 }
 
 function isReservedVehicle(car) {
-    return (
-        String(car?.status || "")
-            .trim()
-            .toLowerCase() === "reserved"
-    );
+  return (
+    String(car?.status || "")
+      .trim()
+      .toLowerCase() === "reserved"
+  );
 }
 
 function getExpenseType(preset) {
-    return (
-        preset?.expense_type ||
-        preset?.type ||
-        ""
-    );
+  return preset?.expense_type || preset?.type || "";
 }
 
 function getExpenseName(preset) {
-    return (
-        preset?.name ||
-        preset?.expense_name ||
-        getExpenseType(preset) ||
-        "Expense"
-    );
+  return (
+    preset?.name || preset?.expense_name || getExpenseType(preset) || "Expense"
+  );
 }
 
 function getExpenseDescription(preset) {
-    return (
-        preset?.description ||
-        ""
-    );
+  return preset?.description || "";
 }
 
 function getEstimatedMin(preset) {
-    return (
-        preset?.estimated_min ??
-        preset?.amount ??
-        "0"
-    );
+  return preset?.estimated_min ?? preset?.amount ?? "0";
 }
 
 function getEstimatedMax(preset) {
-    return (
-        preset?.estimated_max ??
-        preset?.amount ??
-        "0"
-    );
+  return preset?.estimated_max ?? preset?.amount ?? "0";
 }
 
 function normalizeConditionValue(value) {
-    if (value === true || value === "true") {
-        return "true";
-    }
+  if (value === true || value === "true") {
+    return "true";
+  }
 
-    if (value === false || value === "false") {
-        return "false";
-    }
+  if (value === false || value === "false") {
+    return "false";
+  }
 
-    return String(value ?? "").trim().toLowerCase();
+  return String(value ?? "")
+    .trim()
+    .toLowerCase();
 }
 
 function getConditionKey(preset) {
-    return String(
-        preset?.condition_key ?? "",
-    ).trim();
+  return String(preset?.condition_key ?? "").trim();
 }
 
 function getConditionValue(preset) {
-    return normalizeConditionValue(
-        preset?.condition_value,
-    );
+  return normalizeConditionValue(preset?.condition_value);
 }
 
 export default function NewQuote() {
-    const navigate = useNavigate();
+  const navigate = useNavigate();
 
-    const [source, setSource] =
-        useState(SOURCE_STOCK);
+  const [source, setSource] = useState(SOURCE_STOCK);
 
-    const [cars, setCars] = useState([]);
-    const [emiSheets, setEmiSheets] = useState([]);
-    const [expensePresets, setExpensePresets] =
-        useState([]);
-    const [insuranceBands, setInsuranceBands] =
-        useState([]);
-    const [servicePackages, setServicePackages] =
-        useState([]);
+  const [cars, setCars] = useState([]);
+  const [emiSheets, setEmiSheets] = useState([]);
+  const [expensePresets, setExpensePresets] = useState([]);
+  const [insuranceBands, setInsuranceBands] = useState([]);
+  const [servicePackages, setServicePackages] = useState([]);
 
-    // Stock/Cash calculation state. The Saved EMI workflow below is
-    // intentionally kept separate and uses its historical EMI snapshot.
-    const [cashBankId, setCashBankId] = useState("");
-    const [stockCalculation, setStockCalculation] = useState(null);
-    const [calculatingStock, setCalculatingStock] = useState(false);
-    const [drivingLicense, setDrivingLicense] = useState(true);
-    const [vatEnabled, setVatEnabled] = useState(true);
-    const [servicePackageSelected, setServicePackageSelected] =
-        useState(false);
+  // Stock/Cash calculation state. The Saved EMI workflow below is
+  // intentionally kept separate and uses its historical EMI snapshot.
+  const [cashBankId, setCashBankId] = useState("");
+  const [stockCalculation, setStockCalculation] = useState(null);
+  const [calculatingStock, setCalculatingStock] = useState(false);
+  const [drivingLicense, setDrivingLicense] = useState(true);
+  const [vatEnabled, setVatEnabled] = useState(true);
+  const [servicePackageSelected, setServicePackageSelected] = useState(false);
 
-    const [selectedCarId, setSelectedCarId] =
-        useState("");
+  const [selectedCarId, setSelectedCarId] = useState("");
 
-    const [selectedEmiId, setSelectedEmiId] =
-        useState("");
+  const [selectedEmiId, setSelectedEmiId] = useState("");
 
-    const [selectedEmi, setSelectedEmi] =
-        useState(null);
+  const [selectedEmi, setSelectedEmi] = useState(null);
 
-    const [loadingEmiDetail, setLoadingEmiDetail] =
-        useState(false);
+  const [loadingEmiDetail, setLoadingEmiDetail] = useState(false);
 
-    const [customerName, setCustomerName] =
-        useState("");
+  const [customerName, setCustomerName] = useState("");
 
-    const [customerMobile, setCustomerMobile] =
-        useState("");
+  const [customerMobile, setCustomerMobile] = useState("");
 
-    const [price, setPrice] = useState("");
+  const [price, setPrice] = useState("");
 
-    const [extraDownPayment, setExtraDownPayment] =
-        useState("");
+  const [extraDownPayment, setExtraDownPayment] = useState("");
 
-    const [depositDate, setDepositDate] =
-        useState("");
+  const [depositDate, setDepositDate] = useState("");
 
-    const [selectedExpenses, setSelectedExpenses] =
-        useState([]);
+  const [selectedExpenses, setSelectedExpenses] = useState([]);
 
-    const [loadingOptions, setLoadingOptions] =
-        useState(true);
+  const [loadingOptions, setLoadingOptions] = useState(true);
 
-    const [submitting, setSubmitting] =
-        useState(false);
+  const [submitting, setSubmitting] = useState(false);
 
-    const [error, setError] = useState("");
+  const [error, setError] = useState("");
 
-    const [loadingCarDetail, setLoadingCarDetail] =
-        useState(false);
+  const [loadingCarDetail, setLoadingCarDetail] = useState(false);
 
-
-    function isExpensePresetDisabled(preset) {
+  function isExpensePresetDisabled(preset) {
     const conditionKey = getConditionKey(preset);
     const conditionValue = getConditionValue(preset);
 
     if (!conditionKey || conditionValue === "") {
-        return false;
+      return false;
     }
 
     const controllingPreset = expensePresets.find(
-        (candidate) =>
-            getExpenseType(candidate) ===
-            conditionKey,
+      (candidate) => getExpenseType(candidate) === conditionKey,
     );
 
     if (!controllingPreset) {
-        return false;
+      return false;
     }
 
-    const controllerSelected =
-        selectedExpenses.some(
-            (expense) =>
-                String(expense.id) ===
-                String(controllingPreset.id),
-        );
+    const controllerSelected = selectedExpenses.some(
+      (expense) => String(expense.id) === String(controllingPreset.id),
+    );
 
     if (!controllerSelected) {
-        return false;
+      return false;
+    }
+
+    return conditionValue === "false";
+  }
+  /*
+   * -------------------------------------------------------
+   * Initial data
+   * -------------------------------------------------------
+   *
+   * We load:
+   * - Inventory cars
+   * - Saved EMI list
+   * - Active quote expense presets
+   *
+   * Expense presets are only shown for Cash/Stock quotes.
+   */
+  useEffect(() => {
+    let cancelled = false;
+
+    async function loadOptions() {
+      try {
+        setLoadingOptions(true);
+        setError("");
+
+        const [
+          carsResponse,
+          emiResponse,
+          expenseResponse,
+          banksResponse,
+          insuranceResponse,
+          servicePackageResponse,
+        ] = await Promise.all([
+          getCars(),
+          getEmiEstimates(),
+          getExpensePresets({
+            active_only: true,
+          }),
+          getBanks(),
+          getInsuranceBands({
+            active_only: true,
+          }),
+          getServicePackages({
+            active_only: true,
+          }),
+        ]);
+
+        if (cancelled) {
+          return;
+        }
+
+        setCars(getApiData(carsResponse));
+        setEmiSheets(getApiData(emiResponse));
+        setExpensePresets(getApiData(expenseResponse));
+
+        setInsuranceBands(getApiData(insuranceResponse));
+        setServicePackages(getApiData(servicePackageResponse));
+
+        const banks = getApiData(banksResponse);
+        const cashBank = banks.find((bank) => bank?.is_cash === true);
+
+        if (cashBank) {
+          setCashBankId(String(cashBank.id));
+        }
+      } catch (err) {
+        if (!cancelled) {
+          setError(err?.message || "Unable to load quote options.");
+        }
+      } finally {
+        if (!cancelled) {
+          setLoadingOptions(false);
+        }
+      }
+    }
+
+    loadOptions();
+
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  const selectedCar = cars.find(
+    (car) => String(car.id) === String(selectedCarId),
+  );
+
+  const applicableInsuranceBand = (() => {
+    const numericPrice = Number(price);
+
+    if (!Number.isFinite(numericPrice)) {
+      return null;
     }
 
     return (
-        conditionValue === "false"
-    );
-}
-    /*
-     * -------------------------------------------------------
-     * Initial data
-     * -------------------------------------------------------
-     *
-     * We load:
-     * - Inventory cars
-     * - Saved EMI list
-     * - Active quote expense presets
-     *
-     * Expense presets are only shown for Cash/Stock quotes.
-     */
-    useEffect(() => {
-        let cancelled = false;
+      (insuranceBands || []).find((band) => {
+        const minimum = Number(band?.minimum_vehicle_price ?? 0);
+        const maximumRaw = band?.maximum_vehicle_price;
+        const maximum =
+          maximumRaw === null || maximumRaw === undefined || maximumRaw === ""
+            ? null
+            : Number(maximumRaw);
 
-        async function loadOptions() {
-            try {
-                setLoadingOptions(true);
-                setError("");
-
-                const [
-                    carsResponse,
-                    emiResponse,
-                    expenseResponse,
-                    banksResponse,
-                    insuranceResponse,
-                    servicePackageResponse,
-                ] = await Promise.all([
-                    getCars(),
-                    getEmiEstimates(),
-                    getExpensePresets({
-                        active_only: true,
-                    }),
-                    getBanks(),
-                    getInsuranceBands({
-                        active_only: true,
-                    }),
-                    getServicePackages({
-                        active_only: true,
-                    }),
-                ]);
-
-                if (cancelled) {
-                    return;
-                }
-
-                setCars(getApiData(carsResponse));
-                setEmiSheets(getApiData(emiResponse));
-                setExpensePresets(
-                    getApiData(expenseResponse),
-                );
-        
-                setInsuranceBands(
-                    getApiData(insuranceResponse),
-                );
-                setServicePackages(
-                    getApiData(servicePackageResponse),
-                );
-
-                const banks = getApiData(banksResponse);
-                const cashBank = banks.find(
-                    (bank) => bank?.is_cash === true,
-                );
-
-                if (cashBank) {
-                    setCashBankId(String(cashBank.id));
-                }
-            } catch (err) {
-                if (!cancelled) {
-                    setError(
-                        err?.message ||
-                        "Unable to load quote options.",
-                    );
-                }
-            } finally {
-                if (!cancelled) {
-                    setLoadingOptions(false);
-                }
-            }
-        }
-
-        loadOptions();
-
-        return () => {
-            cancelled = true;
-        };
-    }, []);
-
-    const selectedCar = cars.find(
-        (car) =>
-            String(car.id) ===
-            String(selectedCarId),
-    );
-
-    const applicableInsuranceBand = (() => {
-        const numericPrice = Number(price);
-
-        if (!Number.isFinite(numericPrice)) {
-            return null;
-        }
-
-        return (insuranceBands || []).find((band) => {
-            const minimum = Number(
-                band?.minimum_vehicle_price ?? 0,
-            );
-            const maximumRaw =
-                band?.maximum_vehicle_price;
-            const maximum =
-                maximumRaw === null ||
-                    maximumRaw === undefined ||
-                    maximumRaw === ""
-                    ? null
-                    : Number(maximumRaw);
-
-            return (
-                numericPrice >= minimum &&
-                (maximum === null || numericPrice <= maximum)
-            );
-        }) || null;
-    })();
-
-    const defaultServicePackage =
-        (servicePackages || []).find(
-            (item) => Boolean(item?.is_default),
-        ) || null;
-
-    const isSelectedExpenseType = (expenseType) =>
-        selectedExpenses.some(
-            (expense) =>
-                getExpenseType(expense) === expenseType,
+        return (
+          numericPrice >= minimum &&
+          (maximum === null || numericPrice <= maximum)
         );
+      }) || null
+    );
+  })();
 
-    const addOrRemoveSpecialExpense = (
-        expenseType,
-        expenseData,
-    ) => {
-        setSelectedExpenses((current) => {
-            const exists = current.some(
-                (expense) =>
-                    getExpenseType(expense) ===
-                    expenseType,
-            );
+  const defaultServicePackage =
+    (servicePackages || []).find((item) => Boolean(item?.is_default)) || null;
 
-            if (exists) {
-                return current.filter(
-                    (expense) =>
-                        getExpenseType(expense) !==
-                        expenseType,
-                );
-            }
+  const isSelectedExpenseType = (expenseType) =>
+    selectedExpenses.some((expense) => getExpenseType(expense) === expenseType);
 
-            return [...current, expenseData];
+  const addOrRemoveSpecialExpense = (expenseType, expenseData) => {
+    setSelectedExpenses((current) => {
+      const exists = current.some(
+        (expense) => getExpenseType(expense) === expenseType,
+      );
+
+      if (exists) {
+        return current.filter(
+          (expense) => getExpenseType(expense) !== expenseType,
+        );
+      }
+
+      return [...current, expenseData];
+    });
+  };
+
+  /*
+   * -------------------------------------------------------
+   * Source switching
+   * -------------------------------------------------------
+   */
+  const handleSourceChange = (nextSource) => {
+    if (nextSource === source) {
+      return;
+    }
+
+    setSource(nextSource);
+
+    setSelectedCarId("");
+    setSelectedEmiId("");
+    setSelectedEmi(null);
+
+    setCustomerName("");
+    setCustomerMobile("");
+    setPrice("");
+    setExtraDownPayment("");
+    setDepositDate("");
+
+    setSelectedExpenses([]);
+    setStockCalculation(null);
+    setDrivingLicense(true);
+    setVatEnabled(true);
+    setServicePackageSelected(false);
+
+    setError("");
+  };
+
+  /*
+   * -------------------------------------------------------
+   * Stock selection
+   * -------------------------------------------------------
+   */
+  const handleStockVehicleChange = async (event) => {
+    const carId = event.target.value;
+
+    setSelectedCarId(carId);
+    setError("");
+
+    if (!carId) {
+      setPrice("");
+      setStockCalculation(null);
+      return;
+    }
+
+    try {
+      setLoadingCarDetail(true);
+
+      const response = await getCar(carId);
+      const vehicle = response?.data || response;
+
+      if (!vehicle) {
+        throw new Error("Vehicle details were not returned.");
+      }
+
+      const vehiclePrice = vehicle.asking_price ?? "";
+
+      setPrice(vehiclePrice !== "" ? String(vehiclePrice) : "");
+      setStockCalculation(null);
+    } catch (err) {
+      setPrice("");
+
+      setError(err?.message || "Unable to load the selected vehicle.");
+    } finally {
+      setLoadingCarDetail(false);
+    }
+  };
+
+  /*
+   * -------------------------------------------------------
+   * Stock/Cash authoritative calculation
+   * -------------------------------------------------------
+   *
+   * Stock quotes are Cash only, but their VAT and selected
+   * expense amounts still come from the backend Finance engine.
+   * We use the configured Cash bank only to access the same
+   * authoritative Finance calculation/resolution code. No EMI
+   * record is created or modified.
+   */
+  useEffect(() => {
+    if (source !== SOURCE_STOCK) {
+      return;
+    }
+
+    const numericPrice = Number(price);
+
+    if (
+      !selectedCarId ||
+      !cashBankId ||
+      !Number.isFinite(numericPrice) ||
+      numericPrice <= 0
+    ) {
+      setStockCalculation(null);
+      return;
+    }
+
+    let cancelled = false;
+
+    async function calculateStockQuote() {
+      try {
+        setCalculatingStock(true);
+
+        const response = await calculateEmi({
+          vehicle_price: numericPrice,
+          vat_enabled: vatEnabled,
+          down_payment: 0,
+          tenure_years: 1,
+          bank_id: Number(cashBankId),
+          include_other_expenses: true,
+          expenses: selectedExpenses.map((expense) => ({
+            expense_type: getExpenseType(expense),
+          })),
+          driving_license: drivingLicense,
+          service_package_selected: servicePackageSelected,
+          auto_apply_conditional_expenses: false,
         });
-    };
 
-    /*
-     * -------------------------------------------------------
-     * Source switching
-     * -------------------------------------------------------
-     */
-    const handleSourceChange = (nextSource) => {
-        if (nextSource === source) {
-            return;
+        if (cancelled) {
+          return;
         }
 
-        setSource(nextSource);
+        const calculation = unwrapData(response);
 
-        setSelectedCarId("");
-        setSelectedEmiId("");
-        setSelectedEmi(null);
-
-        setCustomerName("");
-        setCustomerMobile("");
-        setPrice("");
-        setExtraDownPayment("");
-        setDepositDate("");
-
-        setSelectedExpenses([]);
-        setStockCalculation(null);
-        setDrivingLicense(true);
-        setVatEnabled(true);
-        setServicePackageSelected(false);
-
-        setError("");
-    };
-
-    /*
-     * -------------------------------------------------------
-     * Stock selection
-     * -------------------------------------------------------
-     */
-    const handleStockVehicleChange = async (
-        event,
-    ) => {
-        const carId = event.target.value;
-
-        setSelectedCarId(carId);
-        setError("");
-
-        if (!carId) {
-            setPrice("");
-            setStockCalculation(null);
-            return;
+        if (response?.success === false || !calculation) {
+          throw new Error(
+            response?.message || "Unable to calculate stock quotation.",
+          );
         }
 
-        try {
-            setLoadingCarDetail(true);
+        setStockCalculation(calculation);
+      } catch (err) {
+        if (!cancelled) {
+          setStockCalculation(null);
+          setError(err?.message || "Unable to calculate stock quotation.");
+        }
+      } finally {
+        if (!cancelled) {
+          setCalculatingStock(false);
+        }
+      }
+    }
 
-            const response = await getCar(carId);
-            const vehicle =
-                response?.data || response;
+    calculateStockQuote();
 
-            if (!vehicle) {
-                throw new Error(
-                    "Vehicle details were not returned.",
-                );
+    return () => {
+      cancelled = true;
+    };
+  }, [
+    source,
+    selectedCarId,
+    cashBankId,
+    price,
+    selectedExpenses,
+    drivingLicense,
+    vatEnabled,
+    servicePackageSelected,
+  ]);
+
+  const stockVatAmount = stockCalculation?.vat_amount ?? "0";
+
+  const stockPriceAfterVat = stockCalculation?.price_after_vat ?? "";
+
+  const stockExpenseRows = Array.isArray(stockCalculation?.expenses)
+    ? stockCalculation.expenses
+    : [];
+
+  const stockExpenseTotal = stockCalculation?.expense_total ?? "0";
+
+  const stockFinalTotal =
+    stockPriceAfterVat !== ""
+      ? Number(stockPriceAfterVat) + Number(stockExpenseTotal || 0)
+      : null;
+
+  /*
+   * -------------------------------------------------------
+   * Saved EMI selection
+   * -------------------------------------------------------
+   *
+   * IMPORTANT:
+   *
+   * The dropdown response is not assumed to contain the
+   * complete historical EMI snapshot.
+   *
+   * When the user selects an EMI, we call:
+   *
+   * GET /finance/emi/<id>/
+   *
+   * and use THAT response as the historical source.
+   */
+  const handleSavedEmiChange = async (event) => {
+    const emiId = event.target.value;
+
+    setSelectedEmiId(emiId);
+    setSelectedEmi(null);
+    setCustomerName("");
+    setCustomerMobile("");
+    setPrice("");
+    setError("");
+
+    if (!emiId) {
+      setLoadingEmiDetail(false);
+      return;
+    }
+
+    try {
+      setLoadingEmiDetail(true);
+
+      const response = await getEmi(emiId);
+
+      const emi = unwrapData(response);
+
+      if (!emi) {
+        throw new Error("Saved EMI details were not returned.");
+      }
+
+      setSelectedEmi(emi);
+    } catch (err) {
+      setError(err?.message || "Unable to load the selected EMI.");
+    } finally {
+      setLoadingEmiDetail(false);
+    }
+  };
+
+  /*
+   * -------------------------------------------------------
+   * Derive historical Saved EMI values
+   * -------------------------------------------------------
+   *
+   * These are DISPLAY values and submission values.
+   * They are not recalculated.
+   */
+  const financeCustomerName = getCustomerName(selectedEmi);
+
+  const financeCustomerMobile = getCustomerMobile(selectedEmi);
+
+  const financePrice =
+    selectedEmi?.price ??
+    selectedEmi?.vehicle_price ??
+    selectedEmi?.emi_vehicle_price ??
+    "";
+
+  const savedEmiDownPayment =
+    selectedEmi?.down_payment ?? selectedEmi?.emi_down_payment ?? "";
+
+  const financeAmount =
+    selectedEmi?.finance_amount ?? selectedEmi?.emi_finance_amount ?? "";
+
+  const financeBank =
+    selectedEmi?.bank_name ?? selectedEmi?.emi_bank_name ?? "";
+
+  const financeRate =
+    selectedEmi?.interest_rate ?? selectedEmi?.emi_interest_rate ?? "";
+
+  const financeTenure =
+    selectedEmi?.tenure ??
+    selectedEmi?.tenure_years ??
+    selectedEmi?.tenure_years_count ??
+    selectedEmi?.emi_tenure_years ??
+    "";
+
+  const financeInterest =
+    selectedEmi?.total_interest ?? selectedEmi?.emi_total_interest ?? "";
+
+  const financePayable =
+    selectedEmi?.total_payable ?? selectedEmi?.emi_total_payable ?? "";
+
+  const financeMonthlyEmi =
+    selectedEmi?.monthly_emi ?? selectedEmi?.emi_monthly_emi ?? "";
+
+  const financeVatAmount =
+    selectedEmi?.vat_amount ?? selectedEmi?.emi_vat_amount ?? "";
+
+  const financeExpenseTotal =
+    selectedEmi?.expense_total ?? selectedEmi?.emi_expense_total ?? "";
+
+  const financeVehicleName = getEmiVehicleName(selectedEmi);
+
+  /*
+   * -------------------------------------------------------
+   * Cash quote expenses
+   * -------------------------------------------------------
+   */
+  const handleExpenseToggle = (preset) => {
+    const presetId = String(preset.id);
+    const conditionKey = getConditionKey(preset);
+    const conditionValue = getConditionValue(preset);
+
+    setSelectedExpenses((current) => {
+      const exists = current.some((expense) => String(expense.id) === presetId);
+
+      if (exists) {
+        return current.filter((expense) => String(expense.id) !== presetId);
+      }
+
+      const withoutConflictingPreset = conditionKey
+        ? current.filter((expense) => {
+            const originalPreset = expensePresets.find(
+              (item) => String(item.id) === String(expense.id),
+            );
+
+            if (!originalPreset) {
+              return true;
             }
 
-            const vehiclePrice =
-                vehicle.asking_price ?? "";
-
-            setPrice(
-                vehiclePrice !== ""
-                    ? String(vehiclePrice)
-                    : "",
-            );
-            setStockCalculation(null);
-        } catch (err) {
-            setPrice("");
-
-            setError(
-                err?.message ||
-                "Unable to load the selected vehicle.",
-            );
-        } finally {
-            setLoadingCarDetail(false);
-        }
-    };
-
-    /*
-     * -------------------------------------------------------
-     * Stock/Cash authoritative calculation
-     * -------------------------------------------------------
-     *
-     * Stock quotes are Cash only, but their VAT and selected
-     * expense amounts still come from the backend Finance engine.
-     * We use the configured Cash bank only to access the same
-     * authoritative Finance calculation/resolution code. No EMI
-     * record is created or modified.
-     */
-    useEffect(() => {
-        if (source !== SOURCE_STOCK) {
-            return;
-        }
-
-        const numericPrice = Number(price);
-
-        if (!selectedCarId || !cashBankId || !Number.isFinite(numericPrice) || numericPrice <= 0) {
-            setStockCalculation(null);
-            return;
-        }
-
-        let cancelled = false;
-
-        async function calculateStockQuote() {
-            try {
-                setCalculatingStock(true);
-
-                const response = await calculateEmi({
-                    vehicle_price: numericPrice,
-                    vat_enabled: vatEnabled,
-                    down_payment: 0,
-                    tenure_years: 1,
-                    bank_id: Number(cashBankId),
-                    include_other_expenses: true,
-                    expenses: selectedExpenses.map((expense) => ({
-                        expense_type: getExpenseType(expense),
-                    })),
-                    driving_license: drivingLicense,
-                    service_package_selected: servicePackageSelected,
-                    auto_apply_conditional_expenses: false,
-                });
-
-                if (cancelled) {
-                    return;
-                }
-
-                const calculation = unwrapData(response);
-
-                if (response?.success === false || !calculation) {
-                    throw new Error(
-                        response?.message ||
-                        "Unable to calculate stock quotation.",
-                    );
-                }
-
-                setStockCalculation(calculation);
-            } catch (err) {
-                if (!cancelled) {
-                    setStockCalculation(null);
-                    setError(
-                        err?.message ||
-                        "Unable to calculate stock quotation.",
-                    );
-                }
-            } finally {
-                if (!cancelled) {
-                    setCalculatingStock(false);
-                }
+            if (getConditionKey(originalPreset) !== conditionKey) {
+              return true;
             }
-        }
 
-        calculateStockQuote();
+            return getConditionValue(originalPreset) === conditionValue;
+          })
+        : current;
 
-        return () => {
-            cancelled = true;
+      return [...withoutConflictingPreset, preset];
+    });
+  };
+
+  /*
+   * -------------------------------------------------------
+   * Validation
+   * -------------------------------------------------------
+   */
+
+  const validateCashQuote = () => {
+    if (!selectedCarId) {
+      return "Please select a stock vehicle.";
+    }
+
+    if (!customerName.trim()) {
+      return "Customer name is required.";
+    }
+
+    if (!customerMobile.trim()) {
+      return "Customer mobile is required.";
+    }
+
+    if (!price) {
+      return "Price is required.";
+    }
+
+    if (selectedCar && isReservedVehicle(selectedCar)) {
+      return "This vehicle is reserved and cannot be used for a new Quote.";
+    }
+
+    if (!cashBankId) {
+      return "Cash calculation is not configured. Please configure an active Cash bank.";
+    }
+
+    if (isSelectedExpenseType("insurance") && !applicableInsuranceBand) {
+      return "No active insurance band is configured for this vehicle price.";
+    }
+
+    if (servicePackageSelected && !defaultServicePackage) {
+      return "No active default Service Package is configured.";
+    }
+
+    if (calculatingStock || !stockCalculation) {
+      return "Please wait for the quotation calculation to finish.";
+    }
+
+    return "";
+  };
+
+  const validateSavedEmiQuote = () => {
+    if (!selectedEmiId) {
+      return "Please select a saved EMI calculation.";
+    }
+
+    if (!selectedEmi) {
+      return "Please wait for the saved EMI details to finish loading.";
+    }
+
+    if (!financeCustomerName.trim()) {
+      return "The saved EMI does not contain a customer name.";
+    }
+
+    if (!financeCustomerMobile.trim()) {
+      return "The saved EMI does not contain a customer mobile number.";
+    }
+
+    if (!financePrice) {
+      return "The saved EMI does not contain a vehicle price.";
+    }
+
+    return "";
+  };
+
+  /*
+   * -------------------------------------------------------
+   * Create Quote
+   * -------------------------------------------------------
+   */
+  const handleSubmit = async (event) => {
+    event.preventDefault();
+
+    const validationError =
+      source === SOURCE_STOCK ? validateCashQuote() : validateSavedEmiQuote();
+
+    if (validationError) {
+      toast.error(validationError);
+      return;
+    }
+
+    try {
+      setSubmitting(true);
+      setError("");
+
+      let payload;
+
+      /*
+       * CASH / STOCK
+       *
+       * Current inventory vehicle + customer input.
+       * Payment method is fixed to Cash.
+       */
+      if (source === SOURCE_STOCK) {
+        payload = {
+          source: SOURCE_STOCK,
+          car_id: selectedCarId,
+          customer_name: customerName.trim(),
+          customer_mobile: customerMobile.trim(),
+          price,
+          payment_method: "Cash",
         };
-    }, [
-        source,
-        selectedCarId,
-        cashBankId,
-        price,
-        selectedExpenses,
-        drivingLicense,
-        vatEnabled,
-        servicePackageSelected,
-    ]);
 
-    const stockVatAmount =
-        stockCalculation?.vat_amount ?? "0";
-
-    const stockPriceAfterVat =
-        stockCalculation?.price_after_vat ?? "";
-
-    const stockExpenseRows = Array.isArray(
-        stockCalculation?.expenses,
-    )
-        ? stockCalculation.expenses
-        : [];
-
-    const stockExpenseTotal =
-        stockCalculation?.expense_total ?? "0";
-
-    const stockFinalTotal =
-        stockPriceAfterVat !== ""
-            ? Number(stockPriceAfterVat) + Number(stockExpenseTotal || 0)
-            : null;
-
-    /*
-     * -------------------------------------------------------
-     * Saved EMI selection
-     * -------------------------------------------------------
-     *
-     * IMPORTANT:
-     *
-     * The dropdown response is not assumed to contain the
-     * complete historical EMI snapshot.
-     *
-     * When the user selects an EMI, we call:
-     *
-     * GET /finance/emi/<id>/
-     *
-     * and use THAT response as the historical source.
-     */
-    const handleSavedEmiChange = async (
-        event,
-    ) => {
-        const emiId = event.target.value;
-
-        setSelectedEmiId(emiId);
-        setSelectedEmi(null);
-        setCustomerName("");
-        setCustomerMobile("");
-        setPrice("");
-        setError("");
-
-        if (!emiId) {
-            setLoadingEmiDetail(false);
-            return;
+        if (extraDownPayment !== "") {
+          payload.extra_down_payment = extraDownPayment;
         }
 
-        try {
-            setLoadingEmiDetail(true);
-
-            const response = await getEmi(
-                emiId,
-            );
-
-            const emi = unwrapData(response);
-
-            if (!emi) {
-                throw new Error(
-                    "Saved EMI details were not returned.",
-                );
-            }
-
-            setSelectedEmi(emi);
-        } catch (err) {
-            setError(
-                err?.message ||
-                "Unable to load the selected EMI.",
-            );
-        } finally {
-            setLoadingEmiDetail(false);
+        if (depositDate) {
+          payload.deposit_date = depositDate;
         }
-    };
 
-    /*
-     * -------------------------------------------------------
-     * Derive historical Saved EMI values
-     * -------------------------------------------------------
-     *
-     * These are DISPLAY values and submission values.
-     * They are not recalculated.
-     */
-    const financeCustomerName =
-        getCustomerName(selectedEmi);
+        if (stockExpenseRows.length > 0) {
+          payload.expenses = stockExpenseRows.map((expense) => ({
+            expense_type: expense.expense_type,
+            name: expense.name || expense.expense_type || "Expense",
+            description: expense.description || "",
+            estimated_min: expense.amount,
+            estimated_max: expense.amount,
+            actual_amount: expense.amount,
+            applies: true,
+          }));
+        }
+      } else {
+        /*
+         * FINANCE / SAVED EMI
+         *
+         * Historical values come from the selected
+         * EmiSheet.
+         *
+         * Current Finance Master settings are never
+         * consulted here.
+         *
+         * We still send customer_name, customer_mobile,
+         * and price because the CURRENT backend serializer
+         * requires them, while the backend service uses
+         * the saved EMI as the historical source.
+         */
+        payload = {
+          source: SOURCE_SAVED_EMI,
+          emi_sheet_id: Number(selectedEmiId),
 
-    const financeCustomerMobile =
-        getCustomerMobile(selectedEmi);
+          customer_name: financeCustomerName.trim(),
 
-    const financePrice =
-        selectedEmi?.price ??
-        selectedEmi?.vehicle_price ??
-        selectedEmi?.emi_vehicle_price ??
-        "";
+          customer_mobile: financeCustomerMobile.trim(),
 
-    const savedEmiDownPayment =
-        selectedEmi?.down_payment ??
-        selectedEmi?.emi_down_payment ??
-        "";
+          price: String(financePrice),
 
-    const financeAmount =
-        selectedEmi?.finance_amount ??
-        selectedEmi?.emi_finance_amount ??
-        "";
+          payment_method: "Finance",
+        };
 
-    const financeBank =
-        selectedEmi?.bank_name ??
-        selectedEmi?.emi_bank_name ??
-        "";
+        if (extraDownPayment !== "") {
+          payload.extra_down_payment = extraDownPayment;
+        }
 
-    const financeRate =
-        selectedEmi?.interest_rate ??
-        selectedEmi?.emi_interest_rate ??
-        "";
+        if (depositDate) {
+          payload.deposit_date = depositDate;
+        }
 
-    const financeTenure =
-        selectedEmi?.tenure ??
-        selectedEmi?.tenure_years ??
-        selectedEmi?.tenure_years_count ??
-        selectedEmi?.emi_tenure_years ??
-        "";
+        /*
+         * DO NOT send:
+         *
+         * car_id
+         * selected expense presets
+         * new EMI calculation inputs
+         *
+         * The saved EmiSheet is the Finance source.
+         */
+      }
 
-    const financeInterest =
-        selectedEmi?.total_interest ??
-        selectedEmi?.emi_total_interest ??
-        "";
+      const response = await createQuote(payload);
 
-    const financePayable =
-        selectedEmi?.total_payable ??
-        selectedEmi?.emi_total_payable ??
-        "";
+      if (response?.success === false) {
+        throw new Error(response.message || "Quote creation failed.");
+      }
 
-    const financeMonthlyEmi =
-        selectedEmi?.monthly_emi ??
-        selectedEmi?.emi_monthly_emi ??
-        "";
+      const createdQuote = response?.data || response;
 
-    const financeVatAmount =
-        selectedEmi?.vat_amount ??
-        selectedEmi?.emi_vat_amount ??
-        "";
+      toast.success("Quote created successfully.");
 
-    const financeExpenseTotal =
-        selectedEmi?.expense_total ??
-        selectedEmi?.emi_expense_total ??
-        "";
+      if (createdQuote?.id) {
+        navigate(`/deals/${createdQuote.id}`);
+      } else {
+        navigate("/deals");
+      }
+    } catch (err) {
+      const message = err?.message || "Unable to create quote.";
 
-    const financeVehicleName =
-        getEmiVehicleName(selectedEmi);
+      setError(message);
+      toast.error(message);
+    } finally {
+      setSubmitting(false);
+    }
+  };
 
-    /*
-     * -------------------------------------------------------
-     * Cash quote expenses
-     * -------------------------------------------------------
-     */
-    const handleExpenseToggle = (preset) => {
-        const presetId = String(preset.id);
-        const conditionKey = getConditionKey(preset);
-        const conditionValue = getConditionValue(preset);
+  if (loadingOptions) {
+    return (
+      <div className="p-6">
+        <div className="rounded-xl border border-gray-200 bg-white p-10 text-center text-sm text-gray-500">
+          Loading quote options...
+        </div>
+      </div>
+    );
+  }
 
-        setSelectedExpenses((current) => {
-            const exists = current.some(
-                (expense) =>
-                    String(expense.id) === presetId,
-            );
+  return (
+    <div className="p-6">
+      {/* Header */}
+      <div className="mb-6">
+        <Link
+          to="/deals"
+          className="text-sm font-medium text-gray-600 hover:text-gray-900"
+        >
+          ← Back to Deals
+        </Link>
 
-            if (exists) {
-                return current.filter(
-                    (expense) =>
-                        String(expense.id) !== presetId,
-                );
-            }
+        <h1 className="mt-3 text-2xl font-semibold text-gray-900">New Quote</h1>
 
-            const withoutConflictingPreset =
-                conditionKey
-                    ? current.filter((expense) => {
-                        const originalPreset =
-                            expensePresets.find(
-                                (item) =>
-                                    String(item.id) ===
-                                    String(expense.id),
-                            );
+        <p className="mt-1 text-sm text-gray-500">
+          Create a Cash quotation from stock or a Finance quotation from a saved
+          EMI.
+        </p>
+      </div>
 
-                        if (!originalPreset) {
-                            return true;
-                        }
+      {error && (
+        <div className="mb-5 rounded-xl border border-red-200 bg-red-50 p-4 text-sm text-red-700">
+          {error}
+        </div>
+      )}
 
-                        if (
-                            getConditionKey(
-                                originalPreset,
-                            ) !== conditionKey
-                        ) {
-                            return true;
-                        }
+      <form onSubmit={handleSubmit} className="space-y-6">
+        {/* Sale Type */}
+        <section className="rounded-xl border border-gray-200 bg-white shadow-sm">
+          <div className="border-b border-gray-200 px-5 py-4">
+            <h2 className="font-semibold text-gray-900">Sale Type</h2>
+          </div>
+
+          <div className="grid gap-3 p-5 sm:grid-cols-2">
+            <button
+              type="button"
+              onClick={() => handleSourceChange(SOURCE_STOCK)}
+              className={`rounded-lg border p-5 text-left transition ${
+                source === SOURCE_STOCK
+                  ? "border-gray-900 bg-gray-50"
+                  : "border-gray-200 hover:bg-gray-50"
+              }`}
+            >
+              <div className="text-base font-semibold text-gray-900">
+                Cash Sale
+              </div>
+
+              <div className="mt-1 text-sm text-gray-500">
+                Select an available vehicle from inventory and create a Cash
+                quotation.
+              </div>
+            </button>
+
+            <button
+              type="button"
+              onClick={() => handleSourceChange(SOURCE_SAVED_EMI)}
+              className={`rounded-lg border p-5 text-left transition ${
+                source === SOURCE_SAVED_EMI
+                  ? "border-gray-900 bg-gray-50"
+                  : "border-gray-200 hover:bg-gray-50"
+              }`}
+            >
+              <div className="text-base font-semibold text-gray-900">
+                Finance Sale
+              </div>
+
+              <div className="mt-1 text-sm text-gray-500">
+                Select a saved EMI and use its historical Finance information.
+              </div>
+            </button>
+          </div>
+        </section>
+
+        {/* ================================================= */}
+        {/* CASH SALE                                        */}
+        {/* ================================================= */}
+        {source === SOURCE_STOCK && (
+          <>
+            {/* Vehicle */}
+            <section className="rounded-xl border border-gray-200 bg-white shadow-sm">
+              <div className="border-b border-gray-200 px-5 py-4">
+                <h2 className="font-semibold text-gray-900">Vehicle</h2>
+              </div>
+
+              <div className="p-5">
+                <label className="mb-2 block text-sm font-medium text-gray-700">
+                  Stock Vehicle
+                </label>
+
+                <select
+                  value={selectedCarId}
+                  onChange={handleStockVehicleChange}
+                  className="w-full rounded-lg border border-gray-300 bg-white px-3 py-2.5 text-sm outline-none focus:border-gray-500"
+                >
+                  <option value="">Select vehicle</option>
+
+                  {cars
+                    .filter((car) => !isReservedVehicle(car))
+                    .map((car) => (
+                      <option key={car.id} value={car.id}>
+                        {getVehicleName(car) || `Vehicle #${car.id}`}
+                        {" — "}
+                        {car.stock_id || car.vehicle_stock_id || `ID ${car.id}`}
+                      </option>
+                    ))}
+                </select>
+
+                {selectedCar && (
+                  <div className="mt-4 rounded-lg bg-gray-50 p-4">
+                    <div className="text-sm font-semibold text-gray-900">
+                      {getVehicleName(selectedCar) || "Selected Vehicle"}
+                    </div>
+
+                    <div className="mt-3 grid gap-3 text-sm sm:grid-cols-2 lg:grid-cols-4">
+                      <div>
+                        <div className="text-xs text-gray-400">Stock ID</div>
+
+                        <div className="mt-1 font-medium text-gray-800">
+                          {selectedCar.stock_id ||
+                            selectedCar.vehicle_stock_id ||
+                            "-"}
+                        </div>
+                      </div>
+
+                      <div>
+                        <div className="text-xs text-gray-400">
+                          Asking Price
+                        </div>
+
+                        <div className="mt-1 font-medium text-gray-800">
+                          {formatCurrency(selectedCar.asking_price)}
+                        </div>
+                      </div>
+
+                      <div>
+                        <div className="text-xs text-gray-400">Chassis</div>
+
+                        <div className="mt-1 font-medium text-gray-800">
+                          {selectedCar.chassis_number ||
+                            selectedCar.vehicle_chassis_number ||
+                            "-"}
+                        </div>
+                      </div>
+
+                      <div>
+                        <div className="text-xs text-gray-400">Engine</div>
+
+                        <div className="mt-1 font-medium text-gray-800">
+                          {selectedCar.engine_number ||
+                            selectedCar.vehicle_engine_number ||
+                            "-"}
+                        </div>
+                      </div>
+
+                      <div>
+                        <div className="text-xs text-gray-400">Status</div>
+
+                        <div className="mt-1 font-medium text-gray-800">
+                          {selectedCar.status || "-"}
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                )}
+              </div>
+            </section>
+
+            {/* Customer */}
+            <section className="rounded-xl border border-gray-200 bg-white shadow-sm">
+              <div className="border-b border-gray-200 px-5 py-4">
+                <h2 className="font-semibold text-gray-900">Customer</h2>
+              </div>
+
+              <div className="grid gap-5 p-5 md:grid-cols-2">
+                <div>
+                  <label className="mb-2 block text-sm font-medium text-gray-700">
+                    Customer Name
+                  </label>
+
+                  <input
+                    type="text"
+                    value={customerName}
+                    onChange={(event) => setCustomerName(event.target.value)}
+                    placeholder="Enter customer name"
+                    className="w-full rounded-lg border border-gray-300 px-3 py-2.5 text-sm outline-none focus:border-gray-500"
+                  />
+                </div>
+
+                <div>
+                  <label className="mb-2 block text-sm font-medium text-gray-700">
+                    Mobile
+                  </label>
+
+                  <input
+                    type="tel"
+                    value={customerMobile}
+                    onChange={(event) => setCustomerMobile(event.target.value)}
+                    placeholder="Enter mobile number"
+                    className="w-full rounded-lg border border-gray-300 px-3 py-2.5 text-sm outline-none focus:border-gray-500"
+                  />
+                </div>
+              </div>
+            </section>
+
+            {/* Commercial */}
+            <section className="rounded-xl border border-gray-200 bg-white shadow-sm">
+              <div className="border-b border-gray-200 px-5 py-4">
+                <h2 className="font-semibold text-gray-900">
+                  Commercial Details
+                </h2>
+                <p className="mt-1 text-xs text-gray-500">
+                  VAT and expense amounts are calculated from the backend
+                  Finance Master.
+                </p>
+              </div>
+
+              <div className="grid gap-5 p-5 md:grid-cols-2 lg:grid-cols-3">
+                <div>
+                  <label className="mb-2 block text-sm font-medium text-gray-700">
+                    Vehicle Price
+                  </label>
+
+                  <input
+                    type="number"
+                    min="0"
+                    step="0.01"
+                    value={price}
+                    onChange={(event) => setPrice(event.target.value)}
+                    placeholder={
+                      loadingCarDetail ? "Loading vehicle price..." : "0.00"
+                    }
+                    disabled={loadingCarDetail || !selectedCarId}
+                    className="w-full rounded-lg border border-gray-300 px-3 py-2.5 text-sm outline-none focus:border-gray-500 disabled:bg-gray-100"
+                    required
+                  />
+                </div>
+
+                <div>
+                  <label className="mb-2 block text-sm font-medium text-gray-700">
+                    Payment Method
+                  </label>
+
+                  <div className="flex min-h-[42px] items-center rounded-lg border border-gray-300 bg-gray-50 px-3 text-sm font-medium text-gray-800">
+                    Cash
+                  </div>
+                </div>
+
+                <div>
+                  <label className="mb-2 block text-sm font-medium text-gray-700">
+                    Extra Down Payment
+                  </label>
+
+                  <input
+                    type="number"
+                    min="0"
+                    step="0.01"
+                    value={extraDownPayment}
+                    onChange={(event) =>
+                      setExtraDownPayment(event.target.value)
+                    }
+                    placeholder="0.00"
+                    className="w-full rounded-lg border border-gray-300 px-3 py-2.5 text-sm outline-none focus:border-gray-500"
+                  />
+                </div>
+
+                <div>
+                  <label className="mb-2 block text-sm font-medium text-gray-700">
+                    Deposit Date
+                  </label>
+
+                  <input
+                    type="date"
+                    value={depositDate}
+                    onChange={(event) => setDepositDate(event.target.value)}
+                    className="w-full rounded-lg border border-gray-300 px-3 py-2.5 text-sm outline-none focus:border-gray-500"
+                  />
+                </div>
+              </div>
+            </section>
+
+            {/* Quote Expenses */}
+            <section className="rounded-xl border border-gray-200 bg-white shadow-sm">
+              <div className="border-b border-gray-200 px-5 py-4">
+                <h2 className="font-semibold text-gray-900">Other Expenses</h2>
+
+                <p className="mt-1 text-xs text-gray-500">
+                  Select any applicable Master-configured expenses. The backend
+                  resolves the actual amount.
+                </p>
+              </div>
+
+              <div className="p-5">
+                {expensePresets.length === 0 ? (
+                  <p className="text-sm text-gray-500">
+                    No active expense presets available.
+                  </p>
+                ) : (
+                  <div className="grid gap-3 md:grid-cols-2 lg:grid-cols-3">
+                    {expensePresets
+                      .filter((preset) => {
+                        const type = getExpenseType(preset);
+
+                        return ![
+                          "bank_process",
+                          "bank_processing",
+                          "insurance",
+                          "service_package",
+                        ].includes(type);
+                      })
+                      .map((preset) => {
+                        const selected = selectedExpenses.some(
+                          (expense) => String(expense.id) === String(preset.id),
+                        );
+
+                        const disabled = isExpensePresetDisabled(preset);
+
+                        const expenseType = getExpenseType(preset);
 
                         return (
-                            getConditionValue(
-                                originalPreset,
-                            ) === conditionValue
+                          <label
+                            key={preset.id}
+                            className={`flex cursor-pointer items-start gap-3 rounded-lg border p-4 transition ${
+                              selected
+                                ? "border-gray-900 bg-gray-50"
+                                : "border-gray-200 hover:bg-gray-50"
+                            }${
+                              disabled
+                                ? "cursor-not-allowed opacity-50"
+                                : "cursor-pointer"
+                            }`}
+                          >
+                            <input
+                              type="checkbox"
+                              checked={selected}
+                              disabled={disabled}
+                              onChange={() => handleExpenseToggle(preset)}
+                              className="mt-1"
+                            />
+
+                            <div className="min-w-0">
+                              <div className="text-sm font-medium text-gray-900">
+                                {getExpenseName(preset)}
+                              </div>
+
+                              <div className="mt-1 text-xs text-gray-500">
+                                {expenseType || "Configured expense"}
+                              </div>
+                            </div>
+                          </label>
                         );
-                    })
-                    : current;
+                      })}
+                  </div>
+                )}
 
-            return [
-                ...withoutConflictingPreset,
-                preset,
-            ];
-        });
-    };
+                <div className="mt-5 rounded-lg border border-gray-200 bg-gray-50 p-4">
+                  <div className="flex items-start justify-between gap-4">
+                    <div>
+                      <div className="text-sm font-medium text-gray-900">
+                        VAT
+                      </div>
+                      <div className="mt-1 text-xs text-gray-500">
+                        Apply the backend-configured VAT rate to this stock
+                        quotation.
+                      </div>
+                    </div>
 
-    /*
-     * -------------------------------------------------------
-     * Validation
-     * -------------------------------------------------------
-     */
-
-    const validateCashQuote = () => {
-        if (!selectedCarId) {
-            return "Please select a stock vehicle.";
-        }
-
-        if (!customerName.trim()) {
-            return "Customer name is required.";
-        }
-
-        if (!customerMobile.trim()) {
-            return "Customer mobile is required.";
-        }
-
-        if (!price) {
-            return "Price is required.";
-        }
-
-        if (
-            selectedCar &&
-            isReservedVehicle(selectedCar)
-        ) {
-            return "This vehicle is reserved and cannot be used for a new Quote.";
-        }
-
-        if (!cashBankId) {
-            return "Cash calculation is not configured. Please configure an active Cash bank.";
-        }
-
-        if (isSelectedExpenseType("insurance") && !applicableInsuranceBand) {
-            return "No active insurance band is configured for this vehicle price.";
-        }
-
-        if (servicePackageSelected && !defaultServicePackage) {
-            return "No active default Service Package is configured.";
-        }
-
-        if (calculatingStock || !stockCalculation) {
-            return "Please wait for the quotation calculation to finish.";
-        }
-
-        return "";
-    };
-
-    const validateSavedEmiQuote = () => {
-        if (!selectedEmiId) {
-            return "Please select a saved EMI calculation.";
-        }
-
-        if (!selectedEmi) {
-            return "Please wait for the saved EMI details to finish loading.";
-        }
-
-        if (!financeCustomerName.trim()) {
-            return "The saved EMI does not contain a customer name.";
-        }
-
-        if (!financeCustomerMobile.trim()) {
-            return "The saved EMI does not contain a customer mobile number.";
-        }
-
-        if (!financePrice) {
-            return "The saved EMI does not contain a vehicle price.";
-        }
-
-        return "";
-    };
-
-    /*
-     * -------------------------------------------------------
-     * Create Quote
-     * -------------------------------------------------------
-     */
-    const handleSubmit = async (
-        event,
-    ) => {
-        event.preventDefault();
-
-        const validationError =
-            source === SOURCE_STOCK
-                ? validateCashQuote()
-                : validateSavedEmiQuote();
-
-        if (validationError) {
-            toast.error(validationError);
-            return;
-        }
-
-        try {
-            setSubmitting(true);
-            setError("");
-
-            let payload;
-
-            /*
-             * CASH / STOCK
-             *
-             * Current inventory vehicle + customer input.
-             * Payment method is fixed to Cash.
-             */
-            if (source === SOURCE_STOCK) {
-                payload = {
-                    source: SOURCE_STOCK,
-                    car_id: selectedCarId,
-                    customer_name: customerName.trim(),
-                    customer_mobile: customerMobile.trim(),
-                    price,
-                    payment_method: "Cash",
-                };
-
-                if (extraDownPayment !== "") {
-                    payload.extra_down_payment =
-                        extraDownPayment;
-                }
-
-                if (depositDate) {
-                    payload.deposit_date = depositDate;
-                }
-
-                if (stockExpenseRows.length > 0) {
-                    payload.expenses =
-                        stockExpenseRows.map(
-                            (expense) => ({
-                                expense_type:
-                                    expense.expense_type,
-                                name:
-                                    expense.name ||
-                                    expense.expense_type ||
-                                    "Expense",
-                                description:
-                                    expense.description ||
-                                    "",
-                                estimated_min:
-                                    expense.amount,
-                                estimated_max:
-                                    expense.amount,
-                                actual_amount:
-                                    expense.amount,
-                                applies: true,
-                            }),
-                        );
-                }
-            } else {
-                /*
-                 * FINANCE / SAVED EMI
-                 *
-                 * Historical values come from the selected
-                 * EmiSheet.
-                 *
-                 * Current Finance Master settings are never
-                 * consulted here.
-                 *
-                 * We still send customer_name, customer_mobile,
-                 * and price because the CURRENT backend serializer
-                 * requires them, while the backend service uses
-                 * the saved EMI as the historical source.
-                 */
-                payload = {
-                    source: SOURCE_SAVED_EMI,
-                    emi_sheet_id:
-                        Number(selectedEmiId),
-
-                    customer_name:
-                        financeCustomerName.trim(),
-
-                    customer_mobile:
-                        financeCustomerMobile.trim(),
-
-                    price: String(financePrice),
-
-                    payment_method: "Finance",
-                };
-
-                if (extraDownPayment !== "") {
-                    payload.extra_down_payment =
-                        extraDownPayment;
-                }
-
-                if (depositDate) {
-                    payload.deposit_date =
-                        depositDate;
-                }
-
-                /*
-                 * DO NOT send:
-                 *
-                 * car_id
-                 * selected expense presets
-                 * new EMI calculation inputs
-                 *
-                 * The saved EmiSheet is the Finance source.
-                 */
-            }
-
-            const response =
-                await createQuote(payload);
-
-            if (response?.success === false) {
-                throw new Error(
-                    response.message ||
-                    "Quote creation failed.",
-                );
-            }
-
-            const createdQuote =
-                response?.data || response;
-
-            toast.success(
-                "Quote created successfully.",
-            );
-
-            if (createdQuote?.id) {
-                navigate(
-                    `/deals/${createdQuote.id}`,
-                );
-            } else {
-                navigate("/deals");
-            }
-        } catch (err) {
-            const message =
-                err?.message ||
-                "Unable to create quote.";
-
-            setError(message);
-            toast.error(message);
-        } finally {
-            setSubmitting(false);
-        }
-    };
-
-    if (loadingOptions) {
-        return (
-            <div className="p-6">
-                <div className="rounded-xl border border-gray-200 bg-white p-10 text-center text-sm text-gray-500">
-                    Loading quote options...
+                    <label className="flex items-center gap-2 text-sm text-gray-700">
+                      <input
+                        type="checkbox"
+                        checked={vatEnabled}
+                        onChange={(event) =>
+                          setVatEnabled(event.target.checked)
+                        }
+                      />
+                      VAT Enabled
+                    </label>
+                  </div>
                 </div>
-            </div>
-        );
-    }
 
-    return (
-        <div className="p-6">
-            {/* Header */}
-            <div className="mb-6">
-                <Link
-                    to="/deals"
-                    className="text-sm font-medium text-gray-600 hover:text-gray-900"
-                >
-                    ← Back to Deals
-                </Link>
+                <div className="mt-5 grid gap-3 md:grid-cols-2">
+                  <label
+                    className={`flex cursor-pointer items-start gap-3 rounded-lg border p-4 transition ${
+                      isSelectedExpenseType("insurance")
+                        ? "border-gray-900 bg-gray-50"
+                        : "border-gray-200 hover:bg-gray-50"
+                    }`}
+                  >
+                    <input
+                      type="checkbox"
+                      checked={isSelectedExpenseType("insurance")}
+                      disabled={!applicableInsuranceBand}
+                      onChange={() => {
+                        if (!applicableInsuranceBand) {
+                          return;
+                        }
 
-                <h1 className="mt-3 text-2xl font-semibold text-gray-900">
-                    New Quote
-                </h1>
+                        addOrRemoveSpecialExpense("insurance", {
+                          id: "special-insurance",
+                          expense_type: "insurance",
+                          name: applicableInsuranceBand.name || "Insurance",
+                          description:
+                            "Insurance resolved from the applicable Master band.",
+                          estimated_min: applicableInsuranceBand.amount,
+                          estimated_max: applicableInsuranceBand.amount,
+                          applies: true,
+                        });
+                      }}
+                      className="mt-1"
+                    />
 
-                <p className="mt-1 text-sm text-gray-500">
-                    Create a Cash quotation from stock or a
-                    Finance quotation from a saved EMI.
+                    <div>
+                      <div className="text-sm font-medium text-gray-900">
+                        Insurance
+                      </div>
+
+                      {applicableInsuranceBand ? (
+                        <div className="mt-1 text-xs text-gray-500">
+                          {applicableInsuranceBand.name ||
+                            "Applicable insurance band"}
+                          {" — "}
+                          {formatCurrency(applicableInsuranceBand.amount)}
+                        </div>
+                      ) : (
+                        <div className="mt-1 text-xs text-red-500">
+                          No active insurance band covers this vehicle price.
+                        </div>
+                      )}
+                    </div>
+                  </label>
+
+                  <label
+                    className={`flex cursor-pointer items-start gap-3 rounded-lg border p-4 transition ${
+                      servicePackageSelected
+                        ? "border-gray-900 bg-gray-50"
+                        : "border-gray-200 hover:bg-gray-50"
+                    }`}
+                  >
+                    <input
+                      type="checkbox"
+                      checked={servicePackageSelected}
+                      disabled={!defaultServicePackage}
+                      onChange={(event) => {
+                        const checked = event.target.checked;
+                        setServicePackageSelected(checked);
+
+                        setSelectedExpenses((current) => {
+                          const withoutServicePackage = current.filter(
+                            (expense) =>
+                              getExpenseType(expense) !== "service_package",
+                          );
+
+                          if (!checked || !defaultServicePackage) {
+                            return withoutServicePackage;
+                          }
+
+                          return [
+                            ...withoutServicePackage,
+                            {
+                              id: "special-service-package",
+                              expense_type: "service_package",
+                              name:
+                                defaultServicePackage.name || "Service Package",
+                              description:
+                                defaultServicePackage.description ||
+                                "Default Service Package",
+                              estimated_min: defaultServicePackage.amount,
+                              estimated_max: defaultServicePackage.amount,
+                              applies: true,
+                            },
+                          ];
+                        });
+                      }}
+                      className="mt-1"
+                    />
+
+                    <div>
+                      <div className="text-sm font-medium text-gray-900">
+                        Service Package
+                      </div>
+
+                      {defaultServicePackage ? (
+                        <div className="mt-1 text-xs text-gray-500">
+                          {defaultServicePackage.name ||
+                            "Default Service Package"}
+                          {" — "}
+                          {formatCurrency(defaultServicePackage.amount)}
+                        </div>
+                      ) : (
+                        <div className="mt-1 text-xs text-red-500">
+                          No active default service package is configured.
+                        </div>
+                      )}
+                    </div>
+                  </label>
+                </div>
+
+                {isSelectedExpenseType("insurance") && (
+                  <div className="mt-5 rounded-lg border border-gray-200 bg-gray-50 p-4">
+                    <div className="mb-3 text-sm font-medium text-gray-900">
+                      Insurance Options
+                    </div>
+
+                    <label className="flex items-center gap-3 text-sm text-gray-700">
+                      <input
+                        type="checkbox"
+                        checked={drivingLicense}
+                        onChange={(event) =>
+                          setDrivingLicense(event.target.checked)
+                        }
+                      />
+                      Customer has a driving licence
+                    </label>
+
+                    {!drivingLicense &&
+                      applicableInsuranceBand?.no_license_surcharge !==
+                        undefined && (
+                        <div className="mt-2 text-xs text-gray-500">
+                          No-licence surcharge:{" "}
+                          {formatCurrency(
+                            applicableInsuranceBand.no_license_surcharge,
+                          )}
+                        </div>
+                      )}
+                  </div>
+                )}
+              </div>
+            </section>
+
+            {/* Cash Quote Calculation */}
+            <section className="rounded-xl border border-gray-200 bg-white shadow-sm">
+              <div className="border-b border-gray-200 px-5 py-4">
+                <h2 className="font-semibold text-gray-900">
+                  Quote Calculation
+                </h2>
+
+                <p className="mt-1 text-xs text-gray-500">
+                  VAT is applied by the backend at the configured VAT rate.
+                  Expense amounts are also resolved by the backend.
                 </p>
-            </div>
+              </div>
 
-            {error && (
-                <div className="mb-5 rounded-xl border border-red-200 bg-red-50 p-4 text-sm text-red-700">
-                    {error}
-                </div>
-            )}
+              <div className="p-5">
+                {calculatingStock ? (
+                  <div className="text-sm text-gray-500">
+                    Calculating quotation...
+                  </div>
+                ) : stockCalculation ? (
+                  <div className="space-y-4">
+                    <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+                      <div className="rounded-lg bg-gray-50 p-4">
+                        <div className="text-xs text-gray-500">
+                          Vehicle Price
+                        </div>
+                        <div className="mt-1 text-base font-semibold text-gray-900">
+                          {formatCurrency(stockCalculation.vehicle_price)}
+                        </div>
+                      </div>
 
-            <form
-                onSubmit={handleSubmit}
-                className="space-y-6"
-            >
-                {/* Sale Type */}
+                      <div className="rounded-lg bg-gray-50 p-4">
+                        <div className="text-xs text-gray-500">VAT</div>
+                        <div className="mt-1 text-base font-semibold text-gray-900">
+                          {formatCurrency(stockVatAmount)}
+                        </div>
+                      </div>
+
+                      <div className="rounded-lg bg-gray-50 p-4">
+                        <div className="text-xs text-gray-500">
+                          Price After VAT
+                        </div>
+                        <div className="mt-1 text-base font-semibold text-gray-900">
+                          {formatCurrency(stockPriceAfterVat)}
+                        </div>
+                      </div>
+
+                      <div className="rounded-lg bg-gray-50 p-4">
+                        <div className="text-xs text-gray-500">
+                          Expense Total
+                        </div>
+                        <div className="mt-1 text-base font-semibold text-gray-900">
+                          {formatCurrency(stockExpenseTotal)}
+                        </div>
+                      </div>
+                    </div>
+
+                    <div className="rounded-lg border border-gray-200">
+                      <div className="border-b border-gray-200 px-4 py-3 text-sm font-semibold text-gray-900">
+                        Selected Expenses
+                      </div>
+
+                      {stockExpenseRows.length > 0 ? (
+                        <div className="divide-y divide-gray-100">
+                          {stockExpenseRows.map((expense, index) => (
+                            <div
+                              key={expense.expense_type || expense.id || index}
+                              className="flex items-center justify-between px-4 py-3"
+                            >
+                              <span className="text-sm text-gray-700">
+                                {expense.name ||
+                                  expense.expense_type ||
+                                  "Expense"}
+                              </span>
+
+                              <span className="text-sm font-medium text-gray-900">
+                                {formatCurrency(expense.amount)}
+                              </span>
+                            </div>
+                          ))}
+                        </div>
+                      ) : (
+                        <div className="px-4 py-4 text-sm text-gray-500">
+                          No additional expenses selected.
+                        </div>
+                      )}
+                    </div>
+
+                    <div className="flex items-center justify-between rounded-lg bg-gray-900 px-4 py-4 text-white">
+                      <span className="text-sm font-medium">
+                        Final Quotation Amount
+                      </span>
+
+                      <span className="text-xl font-semibold">
+                        {formatCurrency(stockFinalTotal)}
+                      </span>
+                    </div>
+                  </div>
+                ) : (
+                  <div className="text-sm text-gray-500">
+                    Select a vehicle and enter the price to calculate the
+                    quotation.
+                  </div>
+                )}
+              </div>
+            </section>
+          </>
+        )}
+
+        {/* ================================================= */}
+        {/* FINANCE SALE                                     */}
+        {/* ================================================= */}
+        {source === SOURCE_SAVED_EMI && (
+          <>
+            {/* Saved EMI selector */}
+            <section className="rounded-xl border border-gray-200 bg-white shadow-sm">
+              <div className="border-b border-gray-200 px-5 py-4">
+                <h2 className="font-semibold text-gray-900">Saved EMI</h2>
+
+                <p className="mt-1 text-xs text-gray-500">
+                  Select the historical EMI record to use for this Finance
+                  quotation.
+                </p>
+              </div>
+
+              <div className="p-5">
+                <label className="mb-2 block text-sm font-medium text-gray-700">
+                  Saved EMI Calculation
+                </label>
+
+                <select
+                  value={selectedEmiId}
+                  onChange={handleSavedEmiChange}
+                  disabled={loadingEmiDetail}
+                  className="w-full rounded-lg border border-gray-300 bg-white px-3 py-2.5 text-sm outline-none focus:border-gray-500 disabled:bg-gray-100"
+                >
+                  <option value="">Select saved EMI</option>
+
+                  {emiSheets.map((emi) => (
+                    <option key={emi.id} value={emi.id}>
+                      {getCustomerName(emi) ||
+                        getEmiVehicleName(emi) ||
+                        `EMI #${emi.id}`}
+                      {" — "}
+                      {formatCurrency(emi.price ?? emi.vehicle_price)}
+                    </option>
+                  ))}
+                </select>
+
+                {loadingEmiDetail && (
+                  <div className="mt-3 text-sm text-gray-500">
+                    Loading saved EMI details...
+                  </div>
+                )}
+              </div>
+            </section>
+
+            {selectedEmi && (
+              <>
+                {/* Historical Customer */}
                 <section className="rounded-xl border border-gray-200 bg-white shadow-sm">
-                    <div className="border-b border-gray-200 px-5 py-4">
-                        <h2 className="font-semibold text-gray-900">
-                            Sale Type
-                        </h2>
+                  <div className="border-b border-gray-200 px-5 py-4">
+                    <h2 className="font-semibold text-gray-900">Customer</h2>
+
+                    <p className="mt-1 text-xs text-gray-500">
+                      Historical customer information from the saved EMI.
+                    </p>
+                  </div>
+
+                  <div className="grid gap-5 p-5 md:grid-cols-2">
+                    <div>
+                      <div className="mb-2 text-sm text-gray-500">
+                        Customer Name
+                      </div>
+
+                      <div className="rounded-lg border border-gray-200 bg-gray-50 px-3 py-2.5 text-sm font-medium text-gray-900">
+                        {financeCustomerName || "-"}
+                      </div>
                     </div>
 
-                    <div className="grid gap-3 p-5 sm:grid-cols-2">
-                        <button
-                            type="button"
-                            onClick={() =>
-                                handleSourceChange(
-                                    SOURCE_STOCK,
-                                )
-                            }
-                            className={`rounded-lg border p-5 text-left transition ${source === SOURCE_STOCK
-                                ? "border-gray-900 bg-gray-50"
-                                : "border-gray-200 hover:bg-gray-50"
-                                }`}
-                        >
-                            <div className="text-base font-semibold text-gray-900">
-                                Cash Sale
-                            </div>
+                    <div>
+                      <div className="mb-2 text-sm text-gray-500">Mobile</div>
 
-                            <div className="mt-1 text-sm text-gray-500">
-                                Select an available vehicle from inventory
-                                and create a Cash quotation.
-                            </div>
-                        </button>
-
-                        <button
-                            type="button"
-                            onClick={() =>
-                                handleSourceChange(
-                                    SOURCE_SAVED_EMI,
-                                )
-                            }
-                            className={`rounded-lg border p-5 text-left transition ${source === SOURCE_SAVED_EMI
-                                ? "border-gray-900 bg-gray-50"
-                                : "border-gray-200 hover:bg-gray-50"
-                                }`}
-                        >
-                            <div className="text-base font-semibold text-gray-900">
-                                Finance Sale
-                            </div>
-
-                            <div className="mt-1 text-sm text-gray-500">
-                                Select a saved EMI and use its historical
-                                Finance information.
-                            </div>
-                        </button>
+                      <div className="rounded-lg border border-gray-200 bg-gray-50 px-3 py-2.5 text-sm font-medium text-gray-900">
+                        {financeCustomerMobile || "-"}
+                      </div>
                     </div>
+                  </div>
                 </section>
 
-                {/* ================================================= */}
-                {/* CASH SALE                                        */}
-                {/* ================================================= */}
-                {source === SOURCE_STOCK && (
-                    <>
-                        {/* Vehicle */}
-                        <section className="rounded-xl border border-gray-200 bg-white shadow-sm">
-                            <div className="border-b border-gray-200 px-5 py-4">
-                                <h2 className="font-semibold text-gray-900">
-                                    Vehicle
-                                </h2>
-                            </div>
-
-                            <div className="p-5">
-                                <label className="mb-2 block text-sm font-medium text-gray-700">
-                                    Stock Vehicle
-                                </label>
-
-                                <select
-                                    value={selectedCarId}
-                                    onChange={
-                                        handleStockVehicleChange
-                                    }
-                                    className="w-full rounded-lg border border-gray-300 bg-white px-3 py-2.5 text-sm outline-none focus:border-gray-500"
-                                >
-                                    <option value="">
-                                        Select vehicle
-                                    </option>
-
-                                    {cars
-                                        .filter(
-                                            (car) =>
-                                                !isReservedVehicle(
-                                                    car,
-                                                ),
-                                        )
-                                        .map((car) => (
-                                            <option
-                                                key={car.id}
-                                                value={car.id}
-                                            >
-                                                {getVehicleName(
-                                                    car,
-                                                ) ||
-                                                    `Vehicle #${car.id}`}
-                                                {" — "}
-                                                {car.stock_id ||
-                                                    car.vehicle_stock_id ||
-                                                    `ID ${car.id}`}
-                                            </option>
-                                        ))}
-                                </select>
-
-                                {selectedCar && (
-                                    <div className="mt-4 rounded-lg bg-gray-50 p-4">
-                                        <div className="text-sm font-semibold text-gray-900">
-                                            {getVehicleName(
-                                                selectedCar,
-                                            ) ||
-                                                "Selected Vehicle"}
-                                        </div>
-
-                                        <div className="mt-3 grid gap-3 text-sm sm:grid-cols-2 lg:grid-cols-4">
-                                            <div>
-                                                <div className="text-xs text-gray-400">
-                                                    Stock ID
-                                                </div>
-
-                                                <div className="mt-1 font-medium text-gray-800">
-                                                    {selectedCar.stock_id ||
-                                                        selectedCar.vehicle_stock_id ||
-                                                        "-"}
-                                                </div>
-                                            </div>
-
-                                            <div>
-                                                <div className="text-xs text-gray-400">
-                                                    Asking Price
-                                                </div>
-
-                                                <div className="mt-1 font-medium text-gray-800">
-                                                    {formatCurrency(
-                                                        selectedCar.asking_price,
-                                                    )}
-                                                </div>
-                                            </div>
-
-                                            <div>
-                                                <div className="text-xs text-gray-400">
-                                                    Chassis
-                                                </div>
-
-                                                <div className="mt-1 font-medium text-gray-800">
-                                                    {selectedCar.chassis_number ||
-                                                        selectedCar.vehicle_chassis_number ||
-                                                        "-"}
-                                                </div>
-                                            </div>
-
-                                            <div>
-                                                <div className="text-xs text-gray-400">
-                                                    Engine
-                                                </div>
-
-                                                <div className="mt-1 font-medium text-gray-800">
-                                                    {selectedCar.engine_number ||
-                                                        selectedCar.vehicle_engine_number ||
-                                                        "-"}
-                                                </div>
-                                            </div>
-
-                                            <div>
-                                                <div className="text-xs text-gray-400">
-                                                    Status
-                                                </div>
-
-                                                <div className="mt-1 font-medium text-gray-800">
-                                                    {selectedCar.status ||
-                                                        "-"}
-                                                </div>
-                                            </div>
-                                        </div>
-                                    </div>
-                                )}
-                            </div>
-                        </section>
-
-                        {/* Customer */}
-                        <section className="rounded-xl border border-gray-200 bg-white shadow-sm">
-                            <div className="border-b border-gray-200 px-5 py-4">
-                                <h2 className="font-semibold text-gray-900">
-                                    Customer
-                                </h2>
-                            </div>
-
-                            <div className="grid gap-5 p-5 md:grid-cols-2">
-                                <div>
-                                    <label className="mb-2 block text-sm font-medium text-gray-700">
-                                        Customer Name
-                                    </label>
-
-                                    <input
-                                        type="text"
-                                        value={customerName}
-                                        onChange={(event) =>
-                                            setCustomerName(
-                                                event.target.value,
-                                            )
-                                        }
-                                        placeholder="Enter customer name"
-                                        className="w-full rounded-lg border border-gray-300 px-3 py-2.5 text-sm outline-none focus:border-gray-500"
-                                    />
-                                </div>
-
-                                <div>
-                                    <label className="mb-2 block text-sm font-medium text-gray-700">
-                                        Mobile
-                                    </label>
-
-                                    <input
-                                        type="tel"
-                                        value={customerMobile}
-                                        onChange={(event) =>
-                                            setCustomerMobile(
-                                                event.target.value,
-                                            )
-                                        }
-                                        placeholder="Enter mobile number"
-                                        className="w-full rounded-lg border border-gray-300 px-3 py-2.5 text-sm outline-none focus:border-gray-500"
-                                    />
-                                </div>
-                            </div>
-                        </section>
-
-                        {/* Commercial */}
-                        <section className="rounded-xl border border-gray-200 bg-white shadow-sm">
-                            <div className="border-b border-gray-200 px-5 py-4">
-                                <h2 className="font-semibold text-gray-900">
-                                    Commercial Details
-                                </h2>
-                                <p className="mt-1 text-xs text-gray-500">
-                                    VAT and expense amounts are calculated from the backend Finance Master.
-                                </p>
-                            </div>
-
-                            <div className="grid gap-5 p-5 md:grid-cols-2 lg:grid-cols-3">
-                                <div>
-                                    <label className="mb-2 block text-sm font-medium text-gray-700">
-                                        Vehicle Price
-                                    </label>
-
-                                    <input
-                                        type="number"
-                                        min="0"
-                                        step="0.01"
-                                        value={price}
-                                        onChange={(event) =>
-                                            setPrice(event.target.value)
-                                        }
-                                        placeholder={
-                                            loadingCarDetail
-                                                ? "Loading vehicle price..."
-                                                : "0.00"
-                                        }
-                                        disabled={
-                                            loadingCarDetail || !selectedCarId
-                                        }
-                                        className="w-full rounded-lg border border-gray-300 px-3 py-2.5 text-sm outline-none focus:border-gray-500 disabled:bg-gray-100"
-                                        required
-                                    />
-                                </div>
-
-                                <div>
-                                    <label className="mb-2 block text-sm font-medium text-gray-700">
-                                        Payment Method
-                                    </label>
-
-                                    <div className="flex min-h-[42px] items-center rounded-lg border border-gray-300 bg-gray-50 px-3 text-sm font-medium text-gray-800">
-                                        Cash
-                                    </div>
-                                </div>
-
-                                <div>
-                                    <label className="mb-2 block text-sm font-medium text-gray-700">
-                                        Extra Down Payment
-                                    </label>
-
-                                    <input
-                                        type="number"
-                                        min="0"
-                                        step="0.01"
-                                        value={extraDownPayment}
-                                        onChange={(event) =>
-                                            setExtraDownPayment(
-                                                event.target.value,
-                                            )
-                                        }
-                                        placeholder="0.00"
-                                        className="w-full rounded-lg border border-gray-300 px-3 py-2.5 text-sm outline-none focus:border-gray-500"
-                                    />
-                                </div>
-
-                                <div>
-                                    <label className="mb-2 block text-sm font-medium text-gray-700">
-                                        Deposit Date
-                                    </label>
-
-                                    <input
-                                        type="date"
-                                        value={depositDate}
-                                        onChange={(event) =>
-                                            setDepositDate(
-                                                event.target.value,
-                                            )
-                                        }
-                                        className="w-full rounded-lg border border-gray-300 px-3 py-2.5 text-sm outline-none focus:border-gray-500"
-                                    />
-                                </div>
-                            </div>
-                        </section>
-
-                        {/* Quote Expenses */}
-                        <section className="rounded-xl border border-gray-200 bg-white shadow-sm">
-                            <div className="border-b border-gray-200 px-5 py-4">
-                                <h2 className="font-semibold text-gray-900">
-                                    Other Expenses
-                                </h2>
-
-                                <p className="mt-1 text-xs text-gray-500">
-                                    Select any applicable Master-configured expenses. The backend resolves the actual amount.
-                                </p>
-                            </div>
-
-                            <div className="p-5">
-                                {expensePresets.length === 0 ? (
-                                    <p className="text-sm text-gray-500">
-                                        No active expense presets available.
-                                    </p>
-                                ) : (
-                                    <div className="grid gap-3 md:grid-cols-2 lg:grid-cols-3">
-                                        {expensePresets
-                                            .filter((preset) => {
-                                                const type =
-                                                    getExpenseType(preset);
-
-                                                return ![
-                                                    "bank_process",
-                                                    "bank_processing",
-                                                    "insurance",
-                                                    "service_package",
-                                                ].includes(type);
-                                            })
-                                            .map((preset) => {
-                                                const selected =
-                                                    selectedExpenses.some(
-                                                        (expense) =>
-                                                            String(expense.id) ===
-                                                            String(preset.id),
-                                                    );
-
-                                                const disabled =
-                                                    isExpensePresetDisabled(preset);
-
-                                                const expenseType =
-                                                    getExpenseType(preset);
-
-                                                return (
-                                                    <label
-                                                        key={preset.id}
-                                                        className={`flex cursor-pointer items-start gap-3 rounded-lg border p-4 transition ${selected
-                                                            ? "border-gray-900 bg-gray-50"
-                                                            : "border-gray-200 hover:bg-gray-50"
-                                                            }${disabled
-                                                                ? "cursor-not-allowed opacity-50"
-                                                                : "cursor-pointer"
-                                                            }`}
-                                                    >
-                                                        <input
-                                                            type="checkbox"
-                                                            checked={selected}
-                                                            disabled={disabled}
-                                                            onChange={() =>
-                                                                handleExpenseToggle(preset)
-                                                            }
-                                                            className="mt-1"
-                                                        />
-
-                                                        <div className="min-w-0">
-                                                            <div className="text-sm font-medium text-gray-900">
-                                                                {getExpenseName(
-                                                                    preset,
-                                                                )}
-                                                            </div>
-
-                                                            <div className="mt-1 text-xs text-gray-500">
-                                                                {expenseType || "Configured expense"}
-                                                            </div>
-                                                        </div>
-                                                    </label>
-                                                );
-                                            })}
-                                    </div>
-                                )}
-
-                                <div className="mt-5 rounded-lg border border-gray-200 bg-gray-50 p-4">
-                                    <div className="flex items-start justify-between gap-4">
-                                        <div>
-                                            <div className="text-sm font-medium text-gray-900">
-                                                VAT
-                                            </div>
-                                            <div className="mt-1 text-xs text-gray-500">
-                                                Apply the backend-configured VAT rate to this stock quotation.
-                                            </div>
-                                        </div>
-
-                                        <label className="flex items-center gap-2 text-sm text-gray-700">
-                                            <input
-                                                type="checkbox"
-                                                checked={vatEnabled}
-                                                onChange={(event) =>
-                                                    setVatEnabled(
-                                                        event.target.checked,
-                                                    )
-                                                }
-                                            />
-                                            VAT Enabled
-                                        </label>
-                                    </div>
-                                </div>
-
-                                <div className="mt-5 grid gap-3 md:grid-cols-2">
-                                    <label
-                                        className={`flex cursor-pointer items-start gap-3 rounded-lg border p-4 transition ${isSelectedExpenseType("insurance")
-                                            ? "border-gray-900 bg-gray-50"
-                                            : "border-gray-200 hover:bg-gray-50"
-                                            }`}
-                                    >
-                                        <input
-                                            type="checkbox"
-                                            checked={isSelectedExpenseType("insurance")}
-                                            disabled={!applicableInsuranceBand}
-                                            onChange={() => {
-                                                if (!applicableInsuranceBand) {
-                                                    return;
-                                                }
-
-                                                addOrRemoveSpecialExpense(
-                                                    "insurance",
-                                                    {
-                                                        id: "special-insurance",
-                                                        expense_type: "insurance",
-                                                        name:
-                                                            applicableInsuranceBand.name ||
-                                                            "Insurance",
-                                                        description: "Insurance resolved from the applicable Master band.",
-                                                        estimated_min: applicableInsuranceBand.amount,
-                                                        estimated_max: applicableInsuranceBand.amount,
-                                                        applies: true,
-                                                    },
-                                                );
-                                            }}
-                                            className="mt-1"
-                                        />
-
-                                        <div>
-                                            <div className="text-sm font-medium text-gray-900">
-                                                Insurance
-                                            </div>
-
-                                            {applicableInsuranceBand ? (
-                                                <div className="mt-1 text-xs text-gray-500">
-                                                    {applicableInsuranceBand.name || "Applicable insurance band"}
-                                                    {" — "}
-                                                    {formatCurrency(applicableInsuranceBand.amount)}
-                                                </div>
-                                            ) : (
-                                                <div className="mt-1 text-xs text-red-500">
-                                                    No active insurance band covers this vehicle price.
-                                                </div>
-                                            )}
-                                        </div>
-                                    </label>
-
-                                    <label
-                                        className={`flex cursor-pointer items-start gap-3 rounded-lg border p-4 transition ${servicePackageSelected
-                                            ? "border-gray-900 bg-gray-50"
-                                            : "border-gray-200 hover:bg-gray-50"
-                                            }`}
-                                    >
-                                        <input
-                                            type="checkbox"
-                                            checked={servicePackageSelected}
-                                            disabled={!defaultServicePackage}
-                                            onChange={(event) => {
-                                                const checked = event.target.checked;
-                                                setServicePackageSelected(checked);
-
-                                                setSelectedExpenses((current) => {
-                                                    const withoutServicePackage = current.filter(
-                                                        (expense) =>
-                                                            getExpenseType(expense) !==
-                                                            "service_package",
-                                                    );
-
-                                                    if (!checked || !defaultServicePackage) {
-                                                        return withoutServicePackage;
-                                                    }
-
-                                                    return [
-                                                        ...withoutServicePackage,
-                                                        {
-                                                            id: "special-service-package",
-                                                            expense_type: "service_package",
-                                                            name:
-                                                                defaultServicePackage.name ||
-                                                                "Service Package",
-                                                            description:
-                                                                defaultServicePackage.description ||
-                                                                "Default Service Package",
-                                                            estimated_min:
-                                                                defaultServicePackage.amount,
-                                                            estimated_max:
-                                                                defaultServicePackage.amount,
-                                                            applies: true,
-                                                        },
-                                                    ];
-                                                });
-                                            }}
-                                            className="mt-1"
-                                        />
-
-                                        <div>
-                                            <div className="text-sm font-medium text-gray-900">
-                                                Service Package
-                                            </div>
-
-                                            {defaultServicePackage ? (
-                                                <div className="mt-1 text-xs text-gray-500">
-                                                    {defaultServicePackage.name || "Default Service Package"}
-                                                    {" — "}
-                                                    {formatCurrency(defaultServicePackage.amount)}
-                                                </div>
-                                            ) : (
-                                                <div className="mt-1 text-xs text-red-500">
-                                                    No active default service package is configured.
-                                                </div>
-                                            )}
-                                        </div>
-                                    </label>
-                                </div>
-
-                                {isSelectedExpenseType("insurance") && (
-                                    <div className="mt-5 rounded-lg border border-gray-200 bg-gray-50 p-4">
-                                        <div className="mb-3 text-sm font-medium text-gray-900">
-                                            Insurance Options
-                                        </div>
-
-                                        <label className="flex items-center gap-3 text-sm text-gray-700">
-                                            <input
-                                                type="checkbox"
-                                                checked={drivingLicense}
-                                                onChange={(event) =>
-                                                    setDrivingLicense(
-                                                        event.target.checked,
-                                                    )
-                                                }
-                                            />
-                                            Customer has a driving licence
-                                        </label>
-
-                                        {!drivingLicense &&
-                                            applicableInsuranceBand?.no_license_surcharge !==
-                                            undefined && (
-                                                <div className="mt-2 text-xs text-gray-500">
-                                                    No-licence surcharge: {formatCurrency(
-                                                        applicableInsuranceBand.no_license_surcharge,
-                                                    )}
-                                                </div>
-                                            )}
-                                    </div>
-                                )}
-                            </div>
-                        </section>
-
-                        {/* Cash Quote Calculation */}
-                        <section className="rounded-xl border border-gray-200 bg-white shadow-sm">
-                            <div className="border-b border-gray-200 px-5 py-4">
-                                <h2 className="font-semibold text-gray-900">
-                                    Quote Calculation
-                                </h2>
-
-                                <p className="mt-1 text-xs text-gray-500">
-                                    VAT is applied by the backend at the configured VAT rate. Expense amounts are also resolved by the backend.
-                                </p>
-                            </div>
-
-                            <div className="p-5">
-                                {calculatingStock ? (
-                                    <div className="text-sm text-gray-500">
-                                        Calculating quotation...
-                                    </div>
-                                ) : stockCalculation ? (
-                                    <div className="space-y-4">
-                                        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-                                            <div className="rounded-lg bg-gray-50 p-4">
-                                                <div className="text-xs text-gray-500">
-                                                    Vehicle Price
-                                                </div>
-                                                <div className="mt-1 text-base font-semibold text-gray-900">
-                                                    {formatCurrency(
-                                                        stockCalculation.vehicle_price,
-                                                    )}
-                                                </div>
-                                            </div>
-
-                                            <div className="rounded-lg bg-gray-50 p-4">
-                                                <div className="text-xs text-gray-500">
-                                                    VAT
-                                                </div>
-                                                <div className="mt-1 text-base font-semibold text-gray-900">
-                                                    {formatCurrency(
-                                                        stockVatAmount,
-                                                    )}
-                                                </div>
-                                            </div>
-
-                                            <div className="rounded-lg bg-gray-50 p-4">
-                                                <div className="text-xs text-gray-500">
-                                                    Price After VAT
-                                                </div>
-                                                <div className="mt-1 text-base font-semibold text-gray-900">
-                                                    {formatCurrency(
-                                                        stockPriceAfterVat,
-                                                    )}
-                                                </div>
-                                            </div>
-
-                                            <div className="rounded-lg bg-gray-50 p-4">
-                                                <div className="text-xs text-gray-500">
-                                                    Expense Total
-                                                </div>
-                                                <div className="mt-1 text-base font-semibold text-gray-900">
-                                                    {formatCurrency(
-                                                        stockExpenseTotal,
-                                                    )}
-                                                </div>
-                                            </div>
-                                        </div>
-
-                                        <div className="rounded-lg border border-gray-200">
-                                            <div className="border-b border-gray-200 px-4 py-3 text-sm font-semibold text-gray-900">
-                                                Selected Expenses
-                                            </div>
-
-                                            {stockExpenseRows.length > 0 ? (
-                                                <div className="divide-y divide-gray-100">
-                                                    {stockExpenseRows.map(
-                                                        (expense, index) => (
-                                                            <div
-                                                                key={
-                                                                    expense.expense_type ||
-                                                                    expense.id ||
-                                                                    index
-                                                                }
-                                                                className="flex items-center justify-between px-4 py-3"
-                                                            >
-                                                                <span className="text-sm text-gray-700">
-                                                                    {expense.name ||
-                                                                        expense.expense_type ||
-                                                                        "Expense"}
-                                                                </span>
-
-                                                                <span className="text-sm font-medium text-gray-900">
-                                                                    {formatCurrency(
-                                                                        expense.amount,
-                                                                    )}
-                                                                </span>
-                                                            </div>
-                                                        ),
-                                                    )}
-                                                </div>
-                                            ) : (
-                                                <div className="px-4 py-4 text-sm text-gray-500">
-                                                    No additional expenses selected.
-                                                </div>
-                                            )}
-                                        </div>
-
-                                        <div className="flex items-center justify-between rounded-lg bg-gray-900 px-4 py-4 text-white">
-                                            <span className="text-sm font-medium">
-                                                Final Quotation Amount
-                                            </span>
-
-                                            <span className="text-xl font-semibold">
-                                                {formatCurrency(
-                                                    stockFinalTotal,
-                                                )}
-                                            </span>
-                                        </div>
-                                    </div>
-                                ) : (
-                                    <div className="text-sm text-gray-500">
-                                        Select a vehicle and enter the price to calculate the quotation.
-                                    </div>
-                                )}
-                            </div>
-                        </section>
-                    </>
-                )}
-
-                {/* ================================================= */}
-                {/* FINANCE SALE                                     */}
-                {/* ================================================= */}
-                {source === SOURCE_SAVED_EMI && (
-                    <>
-                        {/* Saved EMI selector */}
-                        <section className="rounded-xl border border-gray-200 bg-white shadow-sm">
-                            <div className="border-b border-gray-200 px-5 py-4">
-                                <h2 className="font-semibold text-gray-900">
-                                    Saved EMI
-                                </h2>
-
-                                <p className="mt-1 text-xs text-gray-500">
-                                    Select the historical EMI record to use for
-                                    this Finance quotation.
-                                </p>
-                            </div>
-
-                            <div className="p-5">
-                                <label className="mb-2 block text-sm font-medium text-gray-700">
-                                    Saved EMI Calculation
-                                </label>
-
-                                <select
-                                    value={selectedEmiId}
-                                    onChange={
-                                        handleSavedEmiChange
-                                    }
-                                    disabled={loadingEmiDetail}
-                                    className="w-full rounded-lg border border-gray-300 bg-white px-3 py-2.5 text-sm outline-none focus:border-gray-500 disabled:bg-gray-100"
-                                >
-                                    <option value="">
-                                        Select saved EMI
-                                    </option>
-
-                                    {emiSheets.map((emi) => (
-                                        <option
-                                            key={emi.id}
-                                            value={emi.id}
-                                        >
-                                            {getCustomerName(
-                                                emi,
-                                            ) ||
-                                                getEmiVehicleName(
-                                                    emi,
-                                                ) ||
-                                                `EMI #${emi.id}`}
-                                            {" — "}
-                                            {formatCurrency(
-                                                emi.price ??
-                                                emi.vehicle_price,
-                                            )}
-                                        </option>
-                                    ))}
-                                </select>
-
-                                {loadingEmiDetail && (
-                                    <div className="mt-3 text-sm text-gray-500">
-                                        Loading saved EMI details...
-                                    </div>
-                                )}
-                            </div>
-                        </section>
-
-                        {selectedEmi && (
-                            <>
-                                {/* Historical Customer */}
-                                <section className="rounded-xl border border-gray-200 bg-white shadow-sm">
-                                    <div className="border-b border-gray-200 px-5 py-4">
-                                        <h2 className="font-semibold text-gray-900">
-                                            Customer
-                                        </h2>
-
-                                        <p className="mt-1 text-xs text-gray-500">
-                                            Historical customer information from the
-                                            saved EMI.
-                                        </p>
-                                    </div>
-
-                                    <div className="grid gap-5 p-5 md:grid-cols-2">
-                                        <div>
-                                            <div className="mb-2 text-sm text-gray-500">
-                                                Customer Name
-                                            </div>
-
-                                            <div className="rounded-lg border border-gray-200 bg-gray-50 px-3 py-2.5 text-sm font-medium text-gray-900">
-                                                {financeCustomerName ||
-                                                    "-"}
-                                            </div>
-                                        </div>
-
-                                        <div>
-                                            <div className="mb-2 text-sm text-gray-500">
-                                                Mobile
-                                            </div>
-
-                                            <div className="rounded-lg border border-gray-200 bg-gray-50 px-3 py-2.5 text-sm font-medium text-gray-900">
-                                                {financeCustomerMobile ||
-                                                    "-"}
-                                            </div>
-                                        </div>
-                                    </div>
-                                </section>
-
-                                {/* Historical Vehicle */}
-                                <section className="rounded-xl border border-gray-200 bg-white shadow-sm">
-                                    <div className="border-b border-gray-200 px-5 py-4">
-                                        <h2 className="font-semibold text-gray-900">
-                                            Vehicle
-                                        </h2>
-
-                                        <p className="mt-1 text-xs text-gray-500">
-                                            Historical vehicle information from the
-                                            saved EMI.
-                                        </p>
-                                    </div>
-
-                                    <div className="grid gap-5 p-5 sm:grid-cols-2 lg:grid-cols-4">
-                                        <div>
-                                            <div className="text-xs text-gray-500">
-                                                Vehicle
-                                            </div>
-
-                                            <div className="mt-1 text-sm font-medium text-gray-900">
-                                                {financeVehicleName ||
-                                                    "-"}
-                                            </div>
-                                        </div>
-
-                                        <div>
-                                            <div className="text-xs text-gray-500">
-                                                Stock ID
-                                            </div>
-
-                                            <div className="mt-1 text-sm font-medium text-gray-900">
-                                                {selectedEmi.vehicle_stock_id ||
-                                                    "-"}
-                                            </div>
-                                        </div>
-
-                                        <div>
-                                            <div className="text-xs text-gray-500">
-                                                Chassis
-                                            </div>
-
-                                            <div className="mt-1 text-sm font-medium text-gray-900">
-                                                {selectedEmi.vehicle_chassis_number ||
-                                                    "-"}
-                                            </div>
-                                        </div>
-
-                                        <div>
-                                            <div className="text-xs text-gray-500">
-                                                Engine
-                                            </div>
-
-                                            <div className="mt-1 text-sm font-medium text-gray-900">
-                                                {selectedEmi.vehicle_engine_number ||
-                                                    "-"}
-                                            </div>
-                                        </div>
-                                    </div>
-                                </section>
-
-                                {/* Historical Finance */}
-                                <section className="rounded-xl border border-gray-200 bg-white shadow-sm">
-                                    <div className="border-b border-gray-200 px-5 py-4">
-                                        <h2 className="font-semibold text-gray-900">
-                                            Finance Summary
-                                        </h2>
-
-                                        <p className="mt-1 text-xs text-gray-500">
-                                            Historical values. No new Finance calculation
-                                            is performed here.
-                                        </p>
-                                    </div>
-
-                                    <div className="grid gap-5 p-5 sm:grid-cols-2 lg:grid-cols-4">
-                                        <div>
-                                            <div className="text-xs text-gray-500">
-                                                Vehicle Price
-                                            </div>
-
-                                            <div className="mt-1 text-sm font-semibold text-gray-900">
-                                                {formatCurrency(
-                                                    financePrice,
-                                                )}
-                                            </div>
-                                        </div>
-
-                                        <div>
-                                            <div className="text-xs text-gray-500">
-                                                Payment Method
-                                            </div>
-
-                                            <div className="mt-1 text-sm font-semibold text-gray-900">
-                                                Finance
-                                            </div>
-                                        </div>
-
-                                        <div>
-                                            <div className="text-xs text-gray-500">
-                                                Bank
-                                            </div>
-
-                                            <div className="mt-1 text-sm font-semibold text-gray-900">
-                                                {financeBank ||
-                                                    "-"}
-                                            </div>
-                                        </div>
-
-                                        <div>
-                                            <div className="text-xs text-gray-500">
-                                                Interest Rate
-                                            </div>
-
-                                            <div className="mt-1 text-sm font-semibold text-gray-900">
-                                                {financeRate ||
-                                                    "-"}
-                                            </div>
-                                        </div>
-
-                                        <div>
-                                            <div className="text-xs text-gray-500">
-                                                VAT Amount
-                                            </div>
-
-                                            <div className="mt-1 text-sm font-semibold text-gray-900">
-                                                {formatCurrency(
-                                                    financeVatAmount,
-                                                )}
-                                            </div>
-                                        </div>
-
-                                        <div>
-                                            <div className="text-xs text-gray-500">
-                                                Down Payment
-                                            </div>
-
-                                            <div className="mt-1 text-sm font-semibold text-gray-900">
-                                                {formatCurrency(
-                                                    savedEmiDownPayment,
-                                                )}
-                                            </div>
-                                        </div>
-
-                                        <div>
-                                            <div className="text-xs text-gray-500">
-                                                Finance Amount
-                                            </div>
-
-                                            <div className="mt-1 text-sm font-semibold text-gray-900">
-                                                {formatCurrency(
-                                                    financeAmount,
-                                                )}
-                                            </div>
-                                        </div>
-
-                                        <div>
-                                            <div className="text-xs text-gray-500">
-                                                Tenure
-                                            </div>
-
-                                            <div className="mt-1 text-sm font-semibold text-gray-900">
-                                                {financeTenure ||
-                                                    "-"}
-                                            </div>
-                                        </div>
-
-                                        <div>
-                                            <div className="text-xs text-gray-500">
-                                                Total Interest
-                                            </div>
-
-                                            <div className="mt-1 text-sm font-semibold text-gray-900">
-                                                {formatCurrency(
-                                                    financeInterest,
-                                                )}
-                                            </div>
-                                        </div>
-
-                                        <div>
-                                            <div className="text-xs text-gray-500">
-                                                Total Payable
-                                            </div>
-
-                                            <div className="mt-1 text-sm font-semibold text-gray-900">
-                                                {formatCurrency(
-                                                    financePayable,
-                                                )}
-                                            </div>
-                                        </div>
-
-                                        <div>
-                                            <div className="text-xs text-gray-500">
-                                                Monthly EMI
-                                            </div>
-
-                                            <div className="mt-1 text-sm font-semibold text-gray-900">
-                                                {formatCurrency(
-                                                    financeMonthlyEmi,
-                                                )}
-                                            </div>
-                                        </div>
-
-                                        <div>
-                                            <div className="text-xs text-gray-500">
-                                                Finance Expenses
-                                            </div>
-
-                                            <div className="mt-1 text-sm font-semibold text-gray-900">
-                                                {formatCurrency(
-                                                    financeExpenseTotal,
-                                                )}
-                                            </div>
-                                        </div>
-                                    </div>
-                                </section>
-
-                                {/* Quote-level details */}
-                                <section className="rounded-xl border border-gray-200 bg-white shadow-sm">
-                                    <div className="border-b border-gray-200 px-5 py-4">
-                                        <h2 className="font-semibold text-gray-900">
-                                            Quote Details
-                                        </h2>
-
-                                        <p className="mt-1 text-xs text-gray-500">
-                                            Finance information above comes from the
-                                            historical EMI. Only Quote-level values can
-                                            be entered here.
-                                        </p>
-                                    </div>
-
-                                    <div className="grid gap-5 p-5 md:grid-cols-2">
-                                        <div>
-                                            <label className="mb-2 block text-sm font-medium text-gray-700">
-                                                Payment Method
-                                            </label>
-
-                                            <div className="flex min-h-[42px] items-center rounded-lg border border-gray-300 bg-gray-50 px-3 text-sm font-medium text-gray-800">
-                                                Finance
-                                            </div>
-                                        </div>
-
-                                        <div>
-                                            <label className="mb-2 block text-sm font-medium text-gray-700">
-                                                Price
-                                            </label>
-
-                                            <div className="flex min-h-[42px] items-center rounded-lg border border-gray-300 bg-gray-50 px-3 text-sm font-medium text-gray-800">
-                                                {formatCurrency(
-                                                    financePrice,
-                                                )}
-                                            </div>
-                                        </div>
-
-                                        <div>
-                                            <label className="mb-2 block text-sm font-medium text-gray-700">
-                                                Extra Down Payment
-                                            </label>
-
-                                            <input
-                                                type="number"
-                                                min="0"
-                                                step="0.01"
-                                                value={extraDownPayment}
-                                                onChange={(event) =>
-                                                    setExtraDownPayment(
-                                                        event.target.value,
-                                                    )
-                                                }
-                                                placeholder="0.00"
-                                                className="w-full rounded-lg border border-gray-300 px-3 py-2.5 text-sm outline-none focus:border-gray-500"
-                                            />
-                                        </div>
-
-                                        <div>
-                                            <label className="mb-2 block text-sm font-medium text-gray-700">
-                                                Deposit Date
-                                            </label>
-
-                                            <input
-                                                type="date"
-                                                value={depositDate}
-                                                onChange={(event) =>
-                                                    setDepositDate(
-                                                        event.target.value,
-                                                    )
-                                                }
-                                                className="w-full rounded-lg border border-gray-300 px-3 py-2.5 text-sm outline-none focus:border-gray-500"
-                                            />
-                                        </div>
-                                    </div>
-                                </section>
-
-                                {/* Historical finance expenses */}
-                                <section className="rounded-xl border border-gray-200 bg-white shadow-sm">
-                                    <div className="border-b border-gray-200 px-5 py-4">
-                                        <h2 className="font-semibold text-gray-900">
-                                            Historical Finance Expenses
-                                        </h2>
-
-                                        <p className="mt-1 text-xs text-gray-500">
-                                            These belong to the saved EMI and are
-                                            displayed for reference only.
-                                        </p>
-                                    </div>
-
-                                    <div className="p-5">
-                                        {Array.isArray(
-                                            selectedEmi.expenses,
-                                        ) &&
-                                            selectedEmi.expenses.length >
-                                            0 ? (
-                                            <div className="divide-y divide-gray-100">
-                                                {selectedEmi.expenses.map(
-                                                    (expense, index) => (
-                                                        <div
-                                                            key={
-                                                                expense.id ??
-                                                                index
-                                                            }
-                                                            className="flex items-center justify-between py-3"
-                                                        >
-                                                            <span className="text-sm text-gray-700">
-                                                                {expense.name ||
-                                                                    expense.expense_name ||
-                                                                    expense.expense_type ||
-                                                                    "Expense"}
-                                                            </span>
-
-                                                            <span className="text-sm font-medium text-gray-900">
-                                                                {formatCurrency(
-                                                                    expense.amount ??
-                                                                    expense.actual_amount ??
-                                                                    expense.estimated_min,
-                                                                )}
-                                                            </span>
-                                                        </div>
-                                                    ),
-                                                )}
-                                            </div>
-                                        ) : (
-                                            <p className="text-sm text-gray-500">
-                                                No historical finance expenses recorded.
-                                            </p>
-                                        )}
-                                    </div>
-                                </section>
-                            </>
-                        )}
-                    </>
-                )}
-
-                {/* Actions */}
-                <div className="flex flex-col-reverse gap-3 sm:flex-row sm:justify-end">
-                    <Link
-                        to="/deals"
-                        className="rounded-lg border border-gray-300 bg-white px-5 py-2.5 text-center text-sm font-medium text-gray-700 hover:bg-gray-50"
-                    >
-                        Cancel
-                    </Link>
-
-                    <button
-                        type="submit"
-                        disabled={
-                            submitting ||
-                            loadingEmiDetail ||
-                            (source === SOURCE_SAVED_EMI &&
-                                !selectedEmi) ||
-                            (source === SOURCE_STOCK &&
-                                (calculatingStock ||
-                                    !stockCalculation))
+                {/* Historical Vehicle */}
+                <section className="rounded-xl border border-gray-200 bg-white shadow-sm">
+                  <div className="border-b border-gray-200 px-5 py-4">
+                    <h2 className="font-semibold text-gray-900">Vehicle</h2>
+
+                    <p className="mt-1 text-xs text-gray-500">
+                      Historical vehicle information from the saved EMI.
+                    </p>
+                  </div>
+
+                  <div className="grid gap-5 p-5 sm:grid-cols-2 lg:grid-cols-4">
+                    <div>
+                      <div className="text-xs text-gray-500">Vehicle</div>
+
+                      <div className="mt-1 text-sm font-medium text-gray-900">
+                        {financeVehicleName || "-"}
+                      </div>
+                    </div>
+
+                    <div>
+                      <div className="text-xs text-gray-500">Stock ID</div>
+
+                      <div className="mt-1 text-sm font-medium text-gray-900">
+                        {selectedEmi.vehicle_stock_id || "-"}
+                      </div>
+                    </div>
+
+                    <div>
+                      <div className="text-xs text-gray-500">Chassis</div>
+
+                      <div className="mt-1 text-sm font-medium text-gray-900">
+                        {selectedEmi.vehicle_chassis_number || "-"}
+                      </div>
+                    </div>
+
+                    <div>
+                      <div className="text-xs text-gray-500">Engine</div>
+
+                      <div className="mt-1 text-sm font-medium text-gray-900">
+                        {selectedEmi.vehicle_engine_number || "-"}
+                      </div>
+                    </div>
+                  </div>
+                </section>
+
+                {/* Historical Finance */}
+                <section className="rounded-xl border border-gray-200 bg-white shadow-sm">
+                  <div className="border-b border-gray-200 px-5 py-4">
+                    <h2 className="font-semibold text-gray-900">
+                      Finance Summary
+                    </h2>
+
+                    <p className="mt-1 text-xs text-gray-500">
+                      Historical values. No new Finance calculation is performed
+                      here.
+                    </p>
+                  </div>
+
+                  <div className="grid gap-5 p-5 sm:grid-cols-2 lg:grid-cols-4">
+                    <div>
+                      <div className="text-xs text-gray-500">Vehicle Price</div>
+
+                      <div className="mt-1 text-sm font-semibold text-gray-900">
+                        {formatCurrency(financePrice)}
+                      </div>
+                    </div>
+
+                    <div>
+                      <div className="text-xs text-gray-500">
+                        Payment Method
+                      </div>
+
+                      <div className="mt-1 text-sm font-semibold text-gray-900">
+                        Finance
+                      </div>
+                    </div>
+
+                    <div>
+                      <div className="text-xs text-gray-500">Bank</div>
+
+                      <div className="mt-1 text-sm font-semibold text-gray-900">
+                        {financeBank || "-"}
+                      </div>
+                    </div>
+
+                    <div>
+                      <div className="text-xs text-gray-500">Interest Rate</div>
+
+                      <div className="mt-1 text-sm font-semibold text-gray-900">
+                        {financeRate || "-"}
+                      </div>
+                    </div>
+
+                    <div>
+                      <div className="text-xs text-gray-500">VAT Amount</div>
+
+                      <div className="mt-1 text-sm font-semibold text-gray-900">
+                        {formatCurrency(financeVatAmount)}
+                      </div>
+                    </div>
+
+                    <div>
+                      <div className="text-xs text-gray-500">Down Payment</div>
+
+                      <div className="mt-1 text-sm font-semibold text-gray-900">
+                        {formatCurrency(savedEmiDownPayment)}
+                      </div>
+                    </div>
+
+                    <div>
+                      <div className="text-xs text-gray-500">
+                        Finance Amount
+                      </div>
+
+                      <div className="mt-1 text-sm font-semibold text-gray-900">
+                        {formatCurrency(financeAmount)}
+                      </div>
+                    </div>
+
+                    <div>
+                      <div className="text-xs text-gray-500">Tenure</div>
+
+                      <div className="mt-1 text-sm font-semibold text-gray-900">
+                        {financeTenure || "-"}
+                      </div>
+                    </div>
+
+                    <div>
+                      <div className="text-xs text-gray-500">
+                        Total Interest
+                      </div>
+
+                      <div className="mt-1 text-sm font-semibold text-gray-900">
+                        {formatCurrency(financeInterest)}
+                      </div>
+                    </div>
+
+                    <div>
+                      <div className="text-xs text-gray-500">Total Payable</div>
+
+                      <div className="mt-1 text-sm font-semibold text-gray-900">
+                        {formatCurrency(financePayable)}
+                      </div>
+                    </div>
+
+                    <div>
+                      <div className="text-xs text-gray-500">Monthly EMI</div>
+
+                      <div className="mt-1 text-sm font-semibold text-gray-900">
+                        {formatCurrency(financeMonthlyEmi)}
+                      </div>
+                    </div>
+
+                    <div>
+                      <div className="text-xs text-gray-500">
+                        Finance Expenses
+                      </div>
+
+                      <div className="mt-1 text-sm font-semibold text-gray-900">
+                        {formatCurrency(financeExpenseTotal)}
+                      </div>
+                    </div>
+                  </div>
+                </section>
+
+                {/* Quote-level details */}
+                <section className="rounded-xl border border-gray-200 bg-white shadow-sm">
+                  <div className="border-b border-gray-200 px-5 py-4">
+                    <h2 className="font-semibold text-gray-900">
+                      Quote Details
+                    </h2>
+
+                    <p className="mt-1 text-xs text-gray-500">
+                      Finance information above comes from the historical EMI.
+                      Only Quote-level values can be entered here.
+                    </p>
+                  </div>
+
+                  <div className="grid gap-5 p-5 md:grid-cols-2">
+                    <div>
+                      <label className="mb-2 block text-sm font-medium text-gray-700">
+                        Payment Method
+                      </label>
+
+                      <div className="flex min-h-[42px] items-center rounded-lg border border-gray-300 bg-gray-50 px-3 text-sm font-medium text-gray-800">
+                        Finance
+                      </div>
+                    </div>
+
+                    <div>
+                      <label className="mb-2 block text-sm font-medium text-gray-700">
+                        Price
+                      </label>
+
+                      <div className="flex min-h-[42px] items-center rounded-lg border border-gray-300 bg-gray-50 px-3 text-sm font-medium text-gray-800">
+                        {formatCurrency(financePrice)}
+                      </div>
+                    </div>
+
+                    <div>
+                      <label className="mb-2 block text-sm font-medium text-gray-700">
+                        Extra Down Payment
+                      </label>
+
+                      <input
+                        type="number"
+                        min="0"
+                        step="0.01"
+                        value={extraDownPayment}
+                        onChange={(event) =>
+                          setExtraDownPayment(event.target.value)
                         }
-                        className="rounded-lg bg-gray-900 px-5 py-2.5 text-sm font-medium text-white hover:bg-gray-800 disabled:cursor-not-allowed disabled:opacity-50"
-                    >
-                        {submitting
-                            ? "Creating Quote..."
-                            : "Create Quote"}
-                    </button>
-                </div>
-            </form>
+                        placeholder="0.00"
+                        className="w-full rounded-lg border border-gray-300 px-3 py-2.5 text-sm outline-none focus:border-gray-500"
+                      />
+                    </div>
+
+                    <div>
+                      <label className="mb-2 block text-sm font-medium text-gray-700">
+                        Deposit Date
+                      </label>
+
+                      <input
+                        type="date"
+                        value={depositDate}
+                        onChange={(event) => setDepositDate(event.target.value)}
+                        className="w-full rounded-lg border border-gray-300 px-3 py-2.5 text-sm outline-none focus:border-gray-500"
+                      />
+                    </div>
+                  </div>
+                </section>
+
+                {/* Historical finance expenses */}
+                <section className="rounded-xl border border-gray-200 bg-white shadow-sm">
+                  <div className="border-b border-gray-200 px-5 py-4">
+                    <h2 className="font-semibold text-gray-900">
+                      Historical Finance Expenses
+                    </h2>
+
+                    <p className="mt-1 text-xs text-gray-500">
+                      These belong to the saved EMI and are displayed for
+                      reference only.
+                    </p>
+                  </div>
+
+                  <div className="p-5">
+                    {Array.isArray(selectedEmi.expenses) &&
+                    selectedEmi.expenses.length > 0 ? (
+                      <div className="divide-y divide-gray-100">
+                        {selectedEmi.expenses.map((expense, index) => (
+                          <div
+                            key={expense.id ?? index}
+                            className="flex items-center justify-between py-3"
+                          >
+                            <span className="text-sm text-gray-700">
+                              {expense.name ||
+                                expense.expense_name ||
+                                expense.expense_type ||
+                                "Expense"}
+                            </span>
+
+                            <span className="text-sm font-medium text-gray-900">
+                              {formatCurrency(
+                                expense.amount ??
+                                  expense.actual_amount ??
+                                  expense.estimated_min,
+                              )}
+                            </span>
+                          </div>
+                        ))}
+                      </div>
+                    ) : (
+                      <p className="text-sm text-gray-500">
+                        No historical finance expenses recorded.
+                      </p>
+                    )}
+                  </div>
+                </section>
+              </>
+            )}
+          </>
+        )}
+
+        {/* Actions */}
+        <div className="flex flex-col-reverse gap-3 sm:flex-row sm:justify-end">
+          <Link
+            to="/deals"
+            className="rounded-lg border border-gray-300 bg-white px-5 py-2.5 text-center text-sm font-medium text-gray-700 hover:bg-gray-50"
+          >
+            Cancel
+          </Link>
+
+          <button
+            type="submit"
+            disabled={
+              submitting ||
+              loadingEmiDetail ||
+              (source === SOURCE_SAVED_EMI && !selectedEmi) ||
+              (source === SOURCE_STOCK &&
+                (calculatingStock || !stockCalculation))
+            }
+            className="rounded-lg bg-gray-900 px-5 py-2.5 text-sm font-medium text-white hover:bg-gray-800 disabled:cursor-not-allowed disabled:opacity-50"
+          >
+            {submitting ? "Creating Quote..." : "Create Quote"}
+          </button>
         </div>
-    );
-}   
+      </form>
+    </div>
+  );
+}

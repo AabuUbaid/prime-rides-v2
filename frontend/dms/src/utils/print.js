@@ -1,38 +1,29 @@
-function sanitizePrintTitle(value, fallback = "Prime Rides") {
-    return String(value || fallback)
-        .trim()
-        .replace(/[<>:"/\\|?*]+/g, "")
-        .replace(/\s+/g, " ");
+function sanitizePrintValue(value, fallback = "") {
+  return String(value || fallback)
+    .trim()
+    .replace(/[<>:"/\\|?*]+/g, "")
+    .replace(/\s+/g, " ");
 }
 
 export function printDocument({
-    title,
-    documentNumber,
+  customerName = "Customer",
+  documentNumber = "Document",
 }) {
-    const previousTitle = document.title;
+  const previousTitle = document.title;
 
-    const safeTitle = sanitizePrintTitle(title);
-    const safeNumber = sanitizePrintTitle(
-        documentNumber,
-        "",
-    );
+  const safeCustomerName = sanitizePrintValue(customerName, "Customer");
 
-    document.title = safeNumber
-        ? `${safeTitle}-${safeNumber}`
-        : safeTitle;
+  const safeDocumentNumber = sanitizePrintValue(documentNumber, "Document");
 
-    const restoreTitle = () => {
-        document.title = previousTitle;
-        window.removeEventListener(
-            "afterprint",
-            restoreTitle,
-        );
-    };
+  document.title = `${safeCustomerName}-${safeDocumentNumber}`;
 
-    window.addEventListener(
-        "afterprint",
-        restoreTitle,
-    );
+  const restoreTitle = () => {
+    document.title = previousTitle;
 
-    window.print();
+    window.removeEventListener("afterprint", restoreTitle);
+  };
+
+  window.addEventListener("afterprint", restoreTitle);
+
+  window.print();
 }

@@ -1,1 +1,255 @@
 @import "tailwindcss";
+
+/* =========================================================
+   PRIME RIDES MASTER PRINT SYSTEM
+   ========================================================= */
+
+@page {
+    size: A4 portrait;
+    margin: 10mm;
+}
+
+@media print {
+
+    html,
+    body,
+    #root {
+        margin: 0 !important;
+        padding: 0 !important;
+        width: 100% !important;
+        min-height: 0 !important;
+        background: #ffffff !important;
+    }
+
+    body {
+        color: #111827 !important;
+        font-family: Arial, Helvetica, sans-serif !important;
+        overflow: visible !important;
+        -webkit-print-color-adjust: exact !important;
+        print-color-adjust: exact !important;
+    }
+
+    .no-print,
+    .no-print-screen {
+        display: none !important;
+    }
+
+    .print-area {
+        display: block !important;
+        width: 100% !important;
+        margin: 0 !important;
+        padding: 0 !important;
+        background: #ffffff !important;
+        box-shadow: none !important;
+        border: 0 !important;
+    }
+
+    .print-document {
+        width: 100%;
+        box-sizing: border-box;
+        background: #ffffff;
+        color: #111827;
+        font-family: Arial, Helvetica, sans-serif;
+    }
+
+    .print-header {
+        display: grid;
+        grid-template-columns: 1fr auto;
+        gap: 16px;
+        align-items: start;
+
+        padding-bottom: 8px;
+        margin-bottom: 14px;
+
+        border-bottom: 1.5px solid #111827;
+
+        break-inside: avoid;
+        page-break-inside: avoid;
+    }
+
+    .print-company {
+        font-size: 12px;
+        font-weight: 700;
+        line-height: 1.25;
+        letter-spacing: 0.04em;
+    }
+
+    .print-document-title {
+        margin-top: 3px;
+        font-size: 18px;
+        font-weight: 800;
+        line-height: 1.2;
+        letter-spacing: 0.03em;
+    }
+
+    .print-company-details {
+        margin-top: 4px;
+        font-size: 8px;
+        line-height: 1.4;
+        color: #4b5563;
+    }
+
+    .print-meta {
+        min-width: 150px;
+        text-align: right;
+        font-size: 8px;
+        line-height: 1.5;
+    }
+
+    .print-meta strong {
+        color: #111827;
+    }
+
+    .print-section {
+        margin-bottom: 12px;
+        break-inside: avoid;
+        page-break-inside: avoid;
+    }
+
+    .print-section-title {
+        margin-bottom: 6px;
+        padding-bottom: 3px;
+
+        border-bottom: 1px solid #9ca3af;
+
+        font-size: 10px;
+        font-weight: 700;
+        line-height: 1.2;
+        text-transform: uppercase;
+        letter-spacing: 0.08em;
+    }
+
+    .print-grid-2 {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 7px 18px;
+    }
+
+    .print-grid-3 {
+        display: grid;
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+        gap: 7px 16px;
+    }
+
+    .print-field {
+        min-width: 0;
+    }
+
+    .print-field-label {
+        font-size: 7px;
+        font-weight: 600;
+        line-height: 1.2;
+        text-transform: uppercase;
+        letter-spacing: 0.06em;
+        color: #6b7280;
+    }
+
+    .print-field-value {
+        margin-top: 2px;
+        font-size: 9px;
+        font-weight: 600;
+        line-height: 1.35;
+        overflow-wrap: anywhere;
+    }
+
+    .print-table {
+        width: 100%;
+        border-collapse: collapse;
+        font-size: 9px;
+    }
+
+    .print-table th,
+    .print-table td {
+        padding: 5px 6px;
+        border: 1px solid #d1d5db;
+        vertical-align: top;
+    }
+
+    .print-table th {
+        background: #f3f4f6 !important;
+        font-weight: 700;
+        color: #111827;
+    }
+
+    .print-table tr {
+        break-inside: avoid;
+        page-break-inside: avoid;
+    }
+
+    .print-total {
+        margin-left: auto;
+        width: min(100%, 280px);
+        margin-top: 8px;
+
+        break-inside: avoid;
+        page-break-inside: avoid;
+    }
+
+    .print-total-row {
+        display: flex;
+        justify-content: space-between;
+        gap: 16px;
+
+        padding: 3px 0;
+
+        font-size: 9px;
+    }
+
+    .print-total-row--strong {
+        margin-top: 4px;
+        padding-top: 6px;
+
+        border-top: 1.5px solid #111827;
+
+        font-size: 11px;
+        font-weight: 800;
+    }
+
+    .print-signature {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 40px;
+
+        margin-top: 32px;
+
+        break-inside: avoid;
+        page-break-inside: avoid;
+    }
+
+    .print-signature-line {
+        padding-top: 22px;
+        border-top: 1px solid #111827;
+
+        text-align: center;
+        font-size: 8px;
+    }
+
+    .print-footer {
+        display: grid;
+        grid-template-columns: 1fr 1fr auto;
+        gap: 12px;
+        align-items: end;
+
+        margin-top: 18px;
+        padding-top: 7px;
+
+        border-top: 1px solid #111827;
+
+        font-size: 7px;
+        line-height: 1.35;
+        color: #4b5563;
+
+        break-inside: avoid;
+        page-break-inside: avoid;
+    }
+
+    .print-avoid-break {
+        break-inside: avoid !important;
+        page-break-inside: avoid !important;
+    }
+
+    .print-page-break {
+        break-before: page !important;
+        page-break-before: always !important;
+    }
+}
