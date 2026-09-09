@@ -4,6 +4,7 @@ from .models import (
     ExpensePreset,
     InsuranceBand,
     ServicePackage,
+    CashDeal
 )
 
 
@@ -458,3 +459,71 @@ def get_bank_processing_configuration_for_bank(
             is_active=True,
         )
     )
+    
+    
+class CashDealSelector:
+
+    @staticmethod
+    def list_cash_deals(
+        *,
+        search=None,
+        status=None,
+        agent=None,
+        customer=None,
+        payment_method=None,
+        ordering="-created_at",
+    ):
+        queryset = (
+            CashDeal.objects
+            .select_related(
+                "quote",
+                "customer",
+                "car",
+                "agent",
+            )
+            .order_by(ordering)
+        )
+
+        if search:
+            queryset = queryset.filter(
+                Q(deal_number__icontains=search)
+                | Q(customer_name__icontains=search)
+                | Q(customer_mobile__icontains=search)
+                | Q(vehicle_stock_id__icontains=search)
+                | Q(vehicle_make__icontains=search)
+                | Q(vehicle_model__icontains=search)
+            )
+
+        if status:
+            queryset = queryset.filter(
+                status=status,
+            )
+
+        if agent:
+            queryset = queryset.filter(
+                agent_id=agent,
+            )
+
+        if customer:
+            queryset = queryset.filter(
+                customer_id=customer,
+            )
+
+        if payment_method:
+            queryset = queryset.filter(
+                payment_method=payment_method,
+            )
+
+        return queryset
+
+    @staticmethod
+    def get_cash_deal_by_id(deal_id):
+        return get_object_or_404(
+            CashDeal.objects.select_related(
+                "quote",
+                "customer",
+                "car",
+                "agent",
+            ),
+            id=deal_id,
+        )

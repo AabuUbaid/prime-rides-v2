@@ -8,6 +8,7 @@ class Car(models.Model):
         AVAILABLE = "available", "Available"
         UPCOMING = "upcoming", "Upcoming"
         RESERVED = "reserved", "Reserved"
+        BOOKED="booked", "Booked"
         SOLD = "sold", "Sold"
         IN_SERVICE = "in_service", "In Service"
         IN_HOUSE = "in_house", "In House"
@@ -29,6 +30,11 @@ class Car(models.Model):
     stock_id = models.CharField(
         max_length=20,
         unique=True,
+    )
+    
+    vehicle_type = models.CharField(
+        max_length=100,
+        blank=True,
     )
 
     year = models.PositiveIntegerField(
@@ -87,9 +93,19 @@ class Car(models.Model):
         choices=Status.choices,
         default=Status.AVAILABLE,
     )
+    
+    actual_mileage = models.PositiveIntegerField(
+        null=True,
+        blank=True,
+    )
 
     mileage = models.PositiveIntegerField(
         null=True,
+        blank=True,
+    )
+    
+    service_location = models.CharField(
+        max_length=255,
         blank=True,
     )
 

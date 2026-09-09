@@ -2,8 +2,10 @@ from decimal import Decimal, ROUND_HALF_UP
 
 from django.core.exceptions import ValidationError as DjangoValidationError
 from django.db import transaction
-
+from django.utils import timezone
+from quotes.models import Quote
 from inventory.models import Car
+from inventory.services import InventoryService
 
 from customers.models import Customer
 from .models import (
@@ -15,6 +17,10 @@ from .models import (
     ExpensePreset,
     InsuranceBand,
     ServicePackage,
+    BankLoan,
+    BankLoanFollowUp,
+    CashDeal,
+    BalanceSheet
 )
 
 from .selectors import (
@@ -2392,3 +2398,1263 @@ def resolve_selected_fixed_expense(
         "preset": preset,
         "amount": amount,
     }
+    
+# =========================================================
+# BANK LOAN SERVICES
+# =========================================================
+
+BANK_LOAN_STATUS_TRANSITIONS = {
+    BankLoan.Status.PENDING: {
+        BankLoan.Status.PENDING,
+        BankLoan.Status.APPROVED,
+        BankLoan.Status.REJECTED,
+    },
+    BankLoan.Status.APPROVED: {
+        BankLoan.Status.APPROVED,
+    },
+    BankLoan.Status.REJECTED: {
+        BankLoan.Status.REJECTED,
+    },
+}
+
+
+def validate_bank_loan_status_transition(
+    *,
+    current_status,
+    new_status,
+):
+    if current_status == new_status:
+        return
+
+    allowed = BANK_LOAN_STATUS_TRANSITIONS.get(
+        current_status,
+        set(),
+    )
+
+    if new_status not in allowed:
+        raise DjangoValidationError(
+            f"Cannot change Bank Loan status from "
+            f"{current_status} to {new_status}."
+        )
+        
+def validate_quote_for_bank_loan(
+    *,
+    quote,
+):
+    if quote.payment_method != Quote.PaymentMethod.FINANCE:
+        raise DjangoValidationError(
+            "Only Finance Quotes can proceed to a Bank Loan."
+        )
+
+    if quote.status != Quote.Status.BOOKED:
+        raise DjangoValidationError(
+            "The Quote must be Booked before proceeding "
+            "to a Bank Loan."
+        )
+
+    if quote.emi_sheet is None:
+        raise DjangoValidationError(
+            "A Finance Quote must have an EMI Sheet "
+            "before a Bank Loan can be created."
+        )
+
+    if quote.customer is None:
+        raise DjangoValidationError(
+            "The Quote must have an associated Customer."
+        )
+        
+def validate_bank_for_new_loan(
+    *,
+    bank_id,
+):
+    bank, interest_rate = resolve_active_bank(
+        bank_id=bank_id,
+    )
+
+    if bank.is_cash:
+        raise DjangoValidationError(
+            "A cash bank cannot be used for a Bank Loan."
+        )
+
+    return bank, interest_rate
+
+
+@transaction.atomic
+def create_bank_loan_from_quote(
+    *,
+    quote,
+    bank_id=None,
+    agent=None,
+    priority=BankLoan.Priority.MEDIUM,
+):
+    validate_quote_for_bank_loan(
+        quote=quote,
+    )
+
+    emi_sheet = quote.emi_sheet
+
+    active_loan_exists = quote.bank_loans.filter(
+        status__in=[
+            BankLoan.Status.PENDING,
+            BankLoan.Status.APPROVED,
+        ]
+    ).exists()
+
+    if active_loan_exists:
+        raise DjangoValidationError(
+            {"quote": "An active bank loan application already exists for this quote."}
+        )
+
+    # Use the bank from the EMI/Finance configuration
+    # unless a different bank is explicitly selected.
+    selected_bank_id = (
+        bank_id
+        if bank_id is not None
+        else emi_sheet.bank_id
+    )
+
+    bank, interest_rate = validate_bank_for_new_loan(
+        bank_id=selected_bank_id,
+    )
+
+    customer = quote.customer
+
+    car = quote.car or emi_sheet.car
+
+    agent = agent or quote.salesperson
+
+    # -----------------------------------------------------
+    # Historical customer snapshot
+    # -----------------------------------------------------
+
+    customer_name = (
+        quote.customer_name
+        or emi_sheet.customer_name
+    )
+
+    customer_mobile = (
+        quote.customer_mobile
+        or emi_sheet.customer_mobile
+    )
+
+    # -----------------------------------------------------
+    # Historical vehicle snapshot
+    # -----------------------------------------------------
+
+    vehicle_stock_id = (
+        quote.vehicle_stock_id
+        or emi_sheet.vehicle_stock_id
+    )
+
+    vehicle_make = (
+        quote.vehicle_make
+        or emi_sheet.vehicle_make
+    )
+
+    vehicle_model = (
+        quote.vehicle_model
+        or emi_sheet.vehicle_model
+    )
+
+    vehicle_variant = (
+        quote.vehicle_variant
+        or emi_sheet.vehicle_variant
+    )
+
+    vehicle_year = (
+        quote.vehicle_year
+        if quote.vehicle_year is not None
+        else emi_sheet.vehicle_year
+    )
+
+    vehicle_colour = (
+        quote.vehicle_colour
+        or emi_sheet.vehicle_colour
+    )
+
+    vehicle_mileage = (
+        quote.vehicle_mileage
+        if quote.vehicle_mileage is not None
+        else emi_sheet.vehicle_mileage
+    )
+
+    vehicle_chassis_number = (
+        quote.vehicle_chassis_number
+        or emi_sheet.vehicle_chassis_number
+    )
+
+    vehicle_engine_number = (
+        quote.vehicle_engine_number
+        or emi_sheet.vehicle_engine_number
+    )
+
+    # -----------------------------------------------------
+    # Requested finance
+    # -----------------------------------------------------
+
+    requested_finance = quote.emi_finance_amount
+
+    if requested_finance is None:
+        requested_finance = emi_sheet.finance_amount
+        
+        
+    if priority is None:
+        priority = BankLoan.Priority.MEDIUM
+    # -----------------------------------------------------
+    # Create Bank Loan
+    # -----------------------------------------------------
+
+    bank_loan = BankLoan.objects.create(
+        quote=quote,
+
+        customer=customer,
+
+        car=car,
+
+        agent=agent,
+
+        bank=bank,
+
+        bank_name=bank.name,
+
+        interest_rate=interest_rate,
+
+        customer_name=customer_name,
+
+        customer_mobile=customer_mobile,
+
+        vehicle_stock_id=vehicle_stock_id,
+
+        vehicle_make=vehicle_make,
+
+        vehicle_model=vehicle_model,
+
+        vehicle_variant=vehicle_variant,
+
+        vehicle_year=vehicle_year,
+
+        vehicle_colour=vehicle_colour,
+
+        vehicle_mileage=vehicle_mileage,
+
+        vehicle_chassis_number=vehicle_chassis_number,
+
+        vehicle_engine_number=vehicle_engine_number,
+
+        requested_finance=requested_finance,
+
+        approved_finance=None,
+        
+        selling_price=quote.price,
+        evaluation=(
+            quote.emi_sheet.car_value_evaluation
+            if quote.emi_sheet is not None
+            else Decimal("0.00")
+        ),
+
+        application_status=(
+            BankLoan.ApplicationStatus.NOT_SUBMITTED
+        ),
+
+        status=BankLoan.Status.PENDING,
+
+        priority=priority,
+
+        emi_sheet=emi_sheet,
+    )
+
+    return bank_loan
+
+
+def update_bank_loan_status(
+    *,
+    bank_loan,
+    new_status,
+):
+    validate_bank_loan_status_transition(
+        current_status=bank_loan.status,
+        new_status=new_status,
+    )
+
+    bank_loan.status = new_status
+
+    bank_loan.save(
+        update_fields=[
+            "status",
+            "updated_at",
+        ],
+    )
+
+    return bank_loan
+
+@transaction.atomic
+def update_bank_loan_finance(
+    *,
+    bank_loan,
+    requested_finance=None,
+    approved_finance=None,
+):
+    effective_requested = bank_loan.requested_finance
+    effective_approved = bank_loan.approved_finance
+
+    if requested_finance is not None:
+        requested_finance = Decimal(requested_finance)
+
+        if requested_finance < 0:
+            raise DjangoValidationError(
+                "Requested finance cannot be negative."
+            )
+
+        effective_requested = requested_finance
+
+    if approved_finance is not None:
+        approved_finance = Decimal(approved_finance)
+
+        if approved_finance < 0:
+            raise DjangoValidationError(
+                "Approved finance cannot be negative."
+            )
+
+        effective_approved = approved_finance
+
+    if (
+        effective_requested is not None
+        and effective_approved is not None
+        and effective_approved > effective_requested
+    ):
+        raise DjangoValidationError(
+            "Approved finance cannot exceed requested finance."
+        )
+
+    bank_loan.requested_finance = effective_requested
+    bank_loan.approved_finance = effective_approved
+
+    bank_loan.save(
+        update_fields=[
+            "requested_finance",
+            "approved_finance",
+            "updated_at",
+        ],
+    )
+
+    return bank_loan
+
+
+def update_bank_loan_priority(
+    *,
+    bank_loan,
+    priority,
+):
+    valid_priorities = {
+        choice[0]
+        for choice in BankLoan.Priority.choices
+    }
+
+    if priority not in valid_priorities:
+        raise DjangoValidationError(
+            "Invalid Bank Loan priority."
+        )
+
+    bank_loan.priority = priority
+
+    bank_loan.save(
+        update_fields=[
+            "priority",
+            "updated_at",
+        ],
+    )
+
+    return bank_loan
+
+
+@transaction.atomic
+def create_bank_loan_with_new_bank(
+    *,
+    bank_loan,
+    bank_id,
+    agent=None,
+    priority=None,
+):
+    if bank_loan.status != BankLoan.Status.REJECTED:
+        raise DjangoValidationError(
+            "A new bank application can only be created "
+            "from a rejected Bank Loan."
+        )
+
+    if bank_loan.quote is None:
+        raise DjangoValidationError(
+            "The Bank Loan must be linked to a Quote."
+        )
+
+    if bank_loan.quote.payment_method != Quote.PaymentMethod.FINANCE:
+        raise DjangoValidationError(
+            "Only Finance Quotes can proceed to a Bank Loan."
+        )
+
+    bank, interest_rate = validate_bank_for_new_loan(
+        bank_id=bank_id,
+    )
+
+    if bank.id == bank_loan.bank_id:
+        raise DjangoValidationError(
+            "The new bank must be different from the rejected bank."
+        )
+
+    new_bank_loan = BankLoan.objects.create(
+        quote=bank_loan.quote,
+        customer=bank_loan.customer,
+        car=bank_loan.car,
+        agent=agent or bank_loan.agent,
+
+        bank=bank,
+        bank_name=bank.name,
+        interest_rate=interest_rate,
+
+        customer_name=bank_loan.customer_name,
+        customer_mobile=bank_loan.customer_mobile,
+
+        vehicle_stock_id=bank_loan.vehicle_stock_id,
+        vehicle_make=bank_loan.vehicle_make,
+        vehicle_model=bank_loan.vehicle_model,
+        vehicle_variant=bank_loan.vehicle_variant,
+        vehicle_year=bank_loan.vehicle_year,
+        vehicle_colour=bank_loan.vehicle_colour,
+        vehicle_mileage=bank_loan.vehicle_mileage,
+        vehicle_chassis_number=bank_loan.vehicle_chassis_number,
+        vehicle_engine_number=bank_loan.vehicle_engine_number,
+
+        requested_finance=bank_loan.requested_finance,
+        approved_finance=None,
+
+        application_status=BankLoan.ApplicationStatus.NOT_SUBMITTED,
+        status=BankLoan.Status.PENDING,
+
+        priority=(
+            priority
+            if priority is not None
+            else bank_loan.priority
+        ),
+
+        emi_sheet=bank_loan.emi_sheet,
+        
+        # New bank = new application
+        application_number="",
+        bank_reference="",
+        relationship_manager="",
+        application_date=None,
+        expected_approval_date=None,
+        remark="",
+    )
+
+    return new_bank_loan
+
+@transaction.atomic
+def create_bank_loan_follow_up(
+    bank_loan,
+    note,
+    created_by,
+    follow_up_date=None,
+):
+    if not note or not note.strip():
+        raise DjangoValidationError({"note": "Follow-up note is required."})
+
+    if created_by is None:
+        raise DjangoValidationError({"created_by": "Created by is required."})
+
+    return BankLoanFollowUp.objects.create(
+        bank_loan=bank_loan,
+        note=note.strip(),
+        follow_up_date=follow_up_date,
+        created_by=created_by,
+    )
+
+
+@transaction.atomic
+def update_bank_loan_application_status(bank_loan, application_status):
+    valid_statuses = {
+        choice[0]
+        for choice in BankLoan.ApplicationStatus.choices
+    }
+
+    if application_status not in valid_statuses:
+        raise DjangoValidationError(
+            {"application_status": "Invalid application status."}
+        )
+
+    bank_loan.application_status = application_status
+    bank_loan.save(update_fields=["application_status", "updated_at"])
+
+    return bank_loan
+
+# =========================================================
+# CASH DEAL
+# =========================================================
+
+@transaction.atomic
+def create_cash_deal(
+    *,
+    quote,
+):
+    # -------------------------------------------------
+    # Quote status validation
+    # -------------------------------------------------
+
+    if quote.status != Quote.Status.BOOKED:
+        raise DjangoValidationError(
+            "A Cash Deal can only be created from a booked Quote."
+        )
+
+    # -------------------------------------------------
+    # Payment method validation
+    # -------------------------------------------------
+
+    if quote.payment_method != Quote.PaymentMethod.CASH:
+        raise DjangoValidationError(
+            "A Cash Deal can only be created for a Cash payment method."
+        )
+
+    # -------------------------------------------------
+    # Duplicate prevention
+    # -------------------------------------------------
+
+    if CashDeal.objects.filter(
+        quote=quote,
+    ).exists():
+        raise DjangoValidationError(
+            "A Cash Deal already exists for this Quote."
+        )
+
+    # -------------------------------------------------
+    # Required customer
+    # -------------------------------------------------
+
+    if not quote.customer:
+        raise DjangoValidationError(
+            "The Quote must have a customer before creating a Cash Deal."
+        )
+
+    # -------------------------------------------------
+    # Required vehicle
+    # -------------------------------------------------
+
+    car = quote.car
+
+    if not car:
+        raise DjangoValidationError(
+            "The Quote must have a vehicle before creating a Cash Deal."
+        )
+
+    # -------------------------------------------------
+    # Required salesperson
+    # -------------------------------------------------
+
+    agent = quote.salesperson
+
+    # -------------------------------------------------
+    # Selling price
+    # -------------------------------------------------
+
+    selling_price = quote.price
+
+    if selling_price is None:
+        raise DjangoValidationError(
+            "The Quote must have a price before creating a Cash Deal."
+        )
+
+    selling_price = Decimal(selling_price)
+
+    # -------------------------------------------------
+    # Create Cash Deal
+    # -------------------------------------------------
+
+    cash_deal = CashDeal.objects.create(
+
+        # Source
+        quote=quote,
+
+        # Relationships
+        customer=quote.customer,
+        car=car,
+        agent=quote.salesperson,
+
+        # Customer snapshot
+        customer_name=quote.customer_name,
+        customer_mobile=quote.customer_mobile,
+
+        # Vehicle snapshot
+        vehicle_stock_id=car.stock_id,
+        vehicle_make=car.make,
+        vehicle_model=car.model,
+        vehicle_variant=car.variant or "",
+        vehicle_year=car.year,
+        vehicle_colour=car.colour or "",
+        vehicle_mileage=car.actual_mileage,
+        vehicle_chassis_number=car.chassis_number or "",
+        vehicle_engine_number=car.engine_number or "",
+
+        # Financial snapshot
+        selling_price=selling_price,
+
+        # Evaluation is not part of the Cash Deal calculation.
+        # CashDeal model default is 0.00.
+
+        # Initial payment state
+        advance_amount=Decimal("0.00"),
+        balance_amount=selling_price,
+
+        # Initial status
+        status=CashDeal.Status.BOOKED,
+    )
+
+    return cash_deal
+
+
+def update_cash_deal_financials(
+    *,
+    cash_deal,
+    advance_amount,
+):
+    selling_price = cash_deal.selling_price
+
+    advance_amount = Decimal(advance_amount)
+
+    if advance_amount < Decimal("0.00"):
+        raise DjangoValidationError(
+            "Advance amount cannot be negative."
+        )
+
+    if advance_amount > selling_price:
+        raise DjangoValidationError(
+            "Advance amount cannot be greater than the selling price."
+        )
+
+    balance_amount = (
+        selling_price - advance_amount
+    )
+
+    cash_deal.advance_amount = advance_amount
+    cash_deal.balance_amount = balance_amount
+
+    # -------------------------------------------------
+    # Status transition
+    # -------------------------------------------------
+
+    if balance_amount == Decimal("0.00"):
+        cash_deal.status = CashDeal.Status.PAYMENT_PENDING
+
+    elif advance_amount > Decimal("0.00"):
+        cash_deal.status = CashDeal.Status.ADVANCE_RECEIVED
+
+        InventoryService.update_car_status(
+            car=cash_deal.car,
+            new_status=Car.Status.RESERVED,
+        )
+
+    else:
+        cash_deal.status = CashDeal.Status.BOOKED
+
+    cash_deal.save(
+        update_fields=[
+            "advance_amount",
+            "balance_amount",
+            "status",
+            "updated_at",
+        ]
+    )
+
+    return cash_deal
+
+
+# =========================================================
+# CASH RECEIPT SERVICES
+# =========================================================
+
+from datetime import date
+from decimal import Decimal
+
+from django.db import transaction
+from django.utils import timezone
+from rest_framework.exceptions import ValidationError
+
+from .models import CashReceipt
+from quotes.models import Quote
+
+
+CASH_RECEIPT_SEQUENCE_NAME = "cash_receipt"
+CASH_RECEIPT_NUMBER_PREFIX = "CR"
+
+STANDARD_CASH_RECEIPT_CATEGORIES = {
+    "advance",
+    "final_payment",
+    "additional_payment",
+    "down_payment",
+    "evaluation",
+    "bank_processing",
+    "rta_passing",
+    "registration",
+    "insurance",
+    "service_package",
+    "warranty_service_contract",
+    "export_transfer",
+    "other",
+}
+# =========================================================
+# RECEIPT NUMBER
+# =========================================================
+
+def generate_cash_receipt_number():
+    """
+    Generate a collision-safe Cash Receipt number.
+
+    Uses the existing QuoteSequence infrastructure with
+    a dedicated sequence name so Cash Receipt numbering
+    remains independent from Quote numbering.
+
+    Examples:
+        CR-000001
+        CR-000002
+        CR-000003
+    """
+    # Import lazily to avoid unnecessary module coupling
+    # at import time.
+    from quotes.models import QuoteSequence
+
+    with transaction.atomic():
+        sequence, _ = (
+            QuoteSequence.objects
+            .select_for_update()
+            .get_or_create(
+                name=CASH_RECEIPT_SEQUENCE_NAME,
+                defaults={
+                    "current_number": 0,
+                },
+            )
+        )
+
+        sequence.current_number += 1
+
+        sequence.save(
+            update_fields=["current_number"],
+        )
+
+        return (
+            f"{CASH_RECEIPT_NUMBER_PREFIX}-"
+            f"{sequence.current_number:06d}"
+        )
+
+
+def validate_cash_receipt_category(category):
+    category = str(category).strip()
+
+    standard_categories = {
+        choice[0]
+        for choice in CashReceipt.Category.choices
+    }
+
+    if category in standard_categories:
+        return category
+
+    from finance.models import ExpensePreset, EmiExpense
+
+    if ExpensePreset.objects.filter(
+        expense_type__iexact=category,
+        is_active=True,
+    ).exists():
+        return category
+
+    if EmiExpense.objects.filter(
+        expense_type__iexact=category,
+    ).exists():
+        return category
+
+    raise ValidationError("Invalid Cash Receipt category.")
+# =========================================================
+# CASH RECEIPT VALIDATION
+# =========================================================
+
+def validate_cash_receipt_transaction(
+    *,
+    customer,
+    quote,
+    car,
+    direction,
+    category,
+    amount,
+    description="",
+    payment_method=None,
+    transaction_date=None,
+):
+    """
+    Validate the business relationships and values for a
+    Cash Receipt before persistence.
+    """
+
+    # -----------------------------------------------------
+    # Customer
+    # -----------------------------------------------------
+
+    if customer is None:
+        raise ValidationError(
+            {"customer": "Customer is required."}
+        )
+
+    # -----------------------------------------------------
+    # Quote / Deal
+    # -----------------------------------------------------
+
+    if quote is None:
+        raise ValidationError(
+            {"quote": "Deal / Quote is required."}
+        )
+
+    # -----------------------------------------------------
+    # Customer ↔ Quote consistency
+    # -----------------------------------------------------
+
+    if quote.customer_id != customer.id:
+        raise ValidationError(
+            {
+                "quote":
+                    "The selected Quote does not belong "
+                    "to the selected Customer."
+            }
+        )
+
+    # -----------------------------------------------------
+    # Vehicle consistency
+    # -----------------------------------------------------
+
+    if car is not None:
+        if quote.car_id != car.id:
+            raise ValidationError(
+                {
+                    "car":
+                        "The selected vehicle does not belong "
+                        "to the selected Quote."
+                }
+            )
+
+    # -----------------------------------------------------
+    # Direction
+    # -----------------------------------------------------
+
+    valid_directions = {
+        choice[0]
+        for choice in CashReceipt.Direction.choices
+    }
+
+    if direction not in valid_directions:
+        raise ValidationError(
+            {
+                "direction":
+                    "Invalid Cash Receipt direction."
+            }
+        )
+
+    # -----------------------------------------------------
+    # Category
+    # -----------------------------------------------------
+
+    category = validate_cash_receipt_category(category)
+
+    # -----------------------------------------------------
+    # Payment method
+    # -----------------------------------------------------
+
+    valid_payment_methods = {
+        choice[0]
+        for choice in CashReceipt.PaymentMethod.choices
+    }
+
+    if payment_method not in valid_payment_methods:
+        raise ValidationError(
+            {
+                "payment_method":
+                    "Invalid Cash Receipt payment method."
+            }
+        )
+
+    # -----------------------------------------------------
+    # Amount
+    # -----------------------------------------------------
+
+    if amount is None:
+        raise ValidationError(
+            {"amount": "Amount is required."}
+        )
+
+    amount = Decimal(amount)
+
+    if amount <= Decimal("0.00"):
+        raise ValidationError(
+            {"amount": "Amount must be greater than zero."}
+        )
+
+    # -----------------------------------------------------
+    # Other category
+    # -----------------------------------------------------
+
+    if (
+        category == CashReceipt.Category.OTHER
+        and not (description or "").strip()
+    ):
+        raise ValidationError(
+            {
+                "description":
+                    "Description is required when category is Other."
+            }
+        )
+
+    # -----------------------------------------------------
+    # Normalize date
+    # -----------------------------------------------------
+
+    if transaction_date is None:
+        transaction_date = timezone.localdate()
+
+    if not isinstance(transaction_date, date):
+        raise ValidationError(
+            {
+                "transaction_date":
+                    "Invalid transaction date."
+            }
+        )
+
+    return {
+        "amount": amount,
+        "transaction_date": transaction_date,
+    }
+
+
+# =========================================================
+# CREATE CASH RECEIPT
+# =========================================================
+
+@transaction.atomic
+def create_cash_receipt(
+    *,
+    customer,
+    quote,
+    car=None,
+    quote_expense=None,
+    emi_expense=None,
+    direction,
+    category,
+    amount,
+    payment_method,
+    description="",
+    transaction_date=None,
+    reference="",
+    created_by=None,
+):
+    """
+    Create one historical Cash Receipt.
+
+    This records an actual financial movement.
+    Previous receipts are never overwritten.
+    """
+
+    # -----------------------------------------------------
+    # Created by
+    # -----------------------------------------------------
+
+    if created_by is None:
+        raise ValidationError(
+            {
+                "created_by":
+                    "Created by is required."
+            }
+        )
+
+    # -----------------------------------------------------
+    # Vehicle default
+    # -----------------------------------------------------
+
+    if car is None:
+        car = quote.car
+
+    # -----------------------------------------------------
+    # Validate
+    # -----------------------------------------------------
+
+    validated = validate_cash_receipt_transaction(
+        customer=customer,
+        quote=quote,
+        car=car,
+        direction=direction,
+        category=category,
+        amount=amount,
+        description=description,
+        payment_method=payment_method,
+        transaction_date=transaction_date,
+    )
+
+    # -----------------------------------------------------
+    # Historical transaction number
+    # -----------------------------------------------------
+
+    receipt_number = generate_cash_receipt_number()
+    category = validate_cash_receipt_category(category)
+    
+    if quote_expense and emi_expense:
+        raise ValidationError(
+            "Only one expense context can be linked to a cash receipt."
+        )
+
+    if quote_expense:
+        if quote_expense.quote_id != quote.id:
+            raise ValidationError(
+                "Selected QuoteExpense does not belong to the selected quote."
+            )
+
+        if quote_expense.expense_type.lower() != category.lower():
+            raise ValidationError(
+                "Receipt category does not match the selected QuoteExpense."
+            )
+
+    if emi_expense:
+        if not quote.emi_sheet_id:
+            raise ValidationError(
+                "The selected quote does not have an EMI sheet."
+            )
+
+        if emi_expense.emi_sheet_id != quote.emi_sheet_id:
+            raise ValidationError(
+                "Selected EmiExpense does not belong to the quote's EMI sheet."
+            )
+
+        if emi_expense.expense_type.lower() != category.lower():
+            raise ValidationError(
+                "Receipt category does not match the selected EmiExpense."
+            )
+    # -----------------------------------------------------
+    # Create actual transaction
+    # -----------------------------------------------------
+
+    cash_receipt = CashReceipt.objects.create(
+        receipt_number=receipt_number,
+
+        customer=customer,
+        quote=quote,
+        car=car,
+        quote_expense=quote_expense,
+        emi_expense=emi_expense,
+
+        direction=direction,
+        category=category,
+        amount=validated["amount"],
+        payment_method=payment_method,
+
+        description=(description or "").strip(),
+        reference=(reference or "").strip(),
+
+        transaction_date=validated["transaction_date"],
+
+        # Actual source is this Cash Receipt record.
+        source="cash_receipt",
+
+        created_by=created_by,
+    )
+
+    return cash_receipt
+
+@transaction.atomic
+def reverse_cash_receipt(
+    receipt,
+    created_by,
+    description="",
+    reference="",
+):
+    if receipt is None:
+        raise DjangoValidationError(
+            "Cash Receipt is required."
+        )
+
+    if created_by is None:
+        raise DjangoValidationError(
+            "Created by user is required."
+        )
+
+    if receipt.reversal_of_id is not None:
+        raise DjangoValidationError(
+            "A reversal transaction cannot itself be reversed."
+        )
+
+    if hasattr(receipt, "reversal"):
+        raise DjangoValidationError(
+            "This Cash Receipt has already been reversed."
+        )
+
+    reversed_direction = (
+        CashReceipt.Direction.COMPANY_ON_BEHALF
+        if receipt.direction
+        == CashReceipt.Direction.CUSTOMER_PAYMENT
+        else CashReceipt.Direction.CUSTOMER_PAYMENT
+    )
+
+    reversal_description = (
+        description.strip()
+        if description
+        else ""
+    )
+
+    if not reversal_description:
+        reversal_description = (
+            f"Reversal of {receipt.receipt_number}"
+        )
+
+    reversal_reference = (
+        reference.strip()
+        if reference
+        else ""
+    )
+
+    if not reversal_reference:
+        reversal_reference = (
+            f"Reversal of {receipt.receipt_number}"
+        )
+
+    reversal = create_cash_receipt(
+        customer=receipt.customer,
+        quote=receipt.quote,
+        car=receipt.car,
+        quote_expense=receipt.quote_expense,
+        emi_expense=receipt.emi_expense,
+        direction=reversed_direction,
+        category=receipt.category,
+        amount=receipt.amount,
+        payment_method=receipt.payment_method,
+        description=reversal_description,
+        reference=reversal_reference,
+        transaction_date=timezone.localdate(),
+        created_by=created_by,
+    )
+
+    reversal.reversal_of = receipt
+    reversal.source = "cash_receipt_reversal"
+
+    reversal.save(
+        update_fields=[
+            "reversal_of",
+            "source",
+            "updated_at",
+        ]
+    )
+
+    return reversal
+# =========================================================
+# BALANCE SHEET
+# =========================================================
+
+def validate_balance_sheet_creation(
+    *,
+    customer,
+    quote,
+):
+    if customer is None:
+        raise DjangoValidationError(
+            {
+                "customer": "Customer is required.",
+            }
+        )
+
+    if quote is None:
+        raise DjangoValidationError(
+            {
+                "quote": "Quote/Deal is required.",
+            }
+        )
+
+    if quote.customer_id != customer.id:
+        raise DjangoValidationError(
+            {
+                "quote": (
+                    "The selected Quote does not belong "
+                    "to the selected Customer."
+                ),
+            }
+        )
+
+    if BalanceSheet.objects.filter(
+        quote_id=quote.id
+    ).exists():
+        raise DjangoValidationError(
+            {
+                "quote": (
+                    "A Balance Sheet already exists "
+                    "for this Quote/Deal."
+                ),
+            }
+        )
+
+    return True
+
+
+@transaction.atomic
+def create_balance_sheet(
+    *,
+    customer,
+    quote,
+    created_by,
+):
+    if created_by is None:
+        raise DjangoValidationError(
+            {
+                "created_by": "Created by is required.",
+            }
+        )
+
+    validate_balance_sheet_creation(
+        customer=customer,
+        quote=quote,
+    )
+
+    return BalanceSheet.objects.create(
+        customer=customer,
+        quote=quote,
+        car=quote.car,
+        created_by=created_by,
+    )
+    
+@transaction.atomic
+def update_balance_sheet_as_master(
+    *,
+    balance_sheet,
+    master_overrides,
+):
+    if balance_sheet is None:
+        raise DjangoValidationError(
+            "Balance Sheet is required."
+        )
+
+    if not isinstance(master_overrides, dict):
+        raise DjangoValidationError(
+            {
+                "master_overrides": (
+                    "Master overrides must be a JSON object."
+                )
+            }
+        )
+
+    current_overrides = (
+        balance_sheet.master_overrides
+        or {}
+    )
+
+    updated_overrides = {
+        **current_overrides,
+        **master_overrides,
+    }
+
+    balance_sheet.master_overrides = (
+        updated_overrides
+    )
+
+    balance_sheet.save(
+        update_fields=[
+            "master_overrides",
+            "updated_at",
+        ]
+    )
+
+    return balance_sheet

@@ -10,6 +10,9 @@ class CarListQuerySerializer(serializers.Serializer):
     status = serializers.CharField(
         required=False,
     )
+    vehicle_type = serializers.CharField(
+        required=False,
+    )
 
     source = serializers.CharField(
         required=False,
@@ -63,6 +66,8 @@ class CarListQuerySerializer(serializers.Serializer):
             "-mileage",
             "created_at",
             "-created_at",
+            "make",
+            "-make",
         ],
         required=False,
         default="-created_at",

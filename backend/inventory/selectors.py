@@ -32,6 +32,7 @@ class InventorySelector:
         max_price=None,
         min_mileage=None,
         max_mileage=None,
+        vehricle_type=None,
         ordering="-created_at",
     ):
 
@@ -59,6 +60,12 @@ class InventorySelector:
 
             queryset = queryset.filter(
                 status=status,
+            )
+            
+        if vehicle_type:
+
+            queryset = queryset.filter(
+                vehicle_type__iexact=vehicle_type,
             )
 
         if source:

@@ -3,8 +3,10 @@ from decimal import Decimal
 from django.db import transaction
 from rest_framework.exceptions import ValidationError
 
+
 from finance.models import EmiSheet
 from inventory.models import Car
+from inventory.services import InventoryService
 from customers.services import create_customer
 
 from .models import Quote, QuoteExpense, QuoteSequence
@@ -666,3 +668,189 @@ def update_quote(
             expense.save()
 
     return quote
+
+
+# =========================================================
+# DOWNSTREAM WORKFLOW ACTIONS
+# =========================================================
+
+@transaction.atomic
+def proceed_quote_to_bank_loan(
+    *,
+    quote,
+    bank_id,
+    agent=None,
+    priority=None,
+):
+    """
+    Explicitly proceed from a booked Finance Quote
+    to a Bank Loan.
+
+    This action is intentionally explicit.
+    Booking a Quote alone does not create a Bank Loan.
+    """
+
+    # -----------------------------------------------------
+    # Quote status
+    # -----------------------------------------------------
+
+    if quote.status != Quote.Status.BOOKED:
+        raise ValidationError(
+            "Only a booked Quote can proceed to a Bank Loan."
+        )
+
+    # -----------------------------------------------------
+    # Payment method
+    # -----------------------------------------------------
+
+    if quote.payment_method != Quote.PaymentMethod.FINANCE:
+        raise ValidationError(
+            "Only Finance Quotes can proceed to a Bank Loan."
+        )
+
+    # -----------------------------------------------------
+    # Required vehicle
+    # -----------------------------------------------------
+
+    if quote.car is None and quote.emi_sheet is None:
+        raise ValidationError(
+            "The Quote must have a vehicle or saved EMI sheet "
+            "before proceeding to a Bank Loan."
+        )
+
+    # -----------------------------------------------------
+    # Required customer
+    # -----------------------------------------------------
+
+    if quote.customer is None:
+        raise ValidationError(
+            "The Quote must have a customer before proceeding "
+            "to a Bank Loan."
+        )
+
+    # -----------------------------------------------------
+    # Prevent duplicate downstream record
+    # -----------------------------------------------------
+
+    from finance.models import BankLoan
+
+    if BankLoan.objects.filter(
+        quote=quote,
+        status__in=[
+            BankLoan.Status.PENDING,
+            BankLoan.Status.APPROVED,
+        ],
+    ).exists():
+        raise ValidationError(
+            "An active bank loan application already exists for this quote."
+        )
+
+    # -----------------------------------------------------
+    # Delegate Bank Loan business logic
+    # -----------------------------------------------------
+
+    from finance.services import create_bank_loan_from_quote
+
+    bank_loan = create_bank_loan_from_quote(
+        quote=quote,
+        bank_id=bank_id,
+        agent=agent or quote.salesperson,
+        priority=priority,
+    )
+
+    car = bank_loan.car
+
+    if car.status == Car.Status.AVAILABLE:
+        InventoryService.update_car_status(
+            car=car,
+            new_status=Car.Status.RESERVED,
+        )
+
+    InventoryService.update_car_status(
+        car=car,
+        new_status=Car.Status.BOOKED,
+    )
+
+    return bank_loan
+
+
+@transaction.atomic
+def proceed_quote_to_cash_deal(
+    *,
+    quote,
+):
+    """
+    Explicitly proceed from a booked Cash Quote
+    to a Cash Deal.
+
+    This action is intentionally explicit.
+    Booking a Quote alone does not create a Cash Deal.
+    """
+
+    # -----------------------------------------------------
+    # Quote status
+    # -----------------------------------------------------
+
+    if quote.status != Quote.Status.BOOKED:
+        raise ValidationError(
+            "Only a booked Quote can proceed to a Cash Deal."
+        )
+
+    # -----------------------------------------------------
+    # Payment method
+    # -----------------------------------------------------
+
+    if quote.payment_method != Quote.PaymentMethod.CASH:
+        raise ValidationError(
+            "Only Cash Quotes can proceed to a Cash Deal."
+        )
+
+    # -----------------------------------------------------
+    # Required vehicle
+    # -----------------------------------------------------
+
+    if quote.car is None:
+        raise ValidationError(
+            "The Quote must have a vehicle before proceeding "
+            "to a Cash Deal."
+        )
+
+    # -----------------------------------------------------
+    # Required customer
+    # -----------------------------------------------------
+
+    if quote.customer is None:
+        raise ValidationError(
+            "The Quote must have a customer before proceeding "
+            "to a Cash Deal."
+        )
+
+    # -----------------------------------------------------
+    # Prevent duplicate downstream record
+    # -----------------------------------------------------
+
+    from finance.models import CashDeal
+
+    if CashDeal.objects.filter(
+        quote=quote,
+    ).exists():
+        raise ValidationError(
+            "A Cash Deal already exists for this Quote."
+        )
+
+    # -----------------------------------------------------
+    # Delegate Cash Deal business logic
+    # -----------------------------------------------------
+
+    from finance.services import create_cash_deal
+
+    cash_deal = create_cash_deal(
+        quote=quote,
+    )
+
+    InventoryService.update_car_status(
+        car=quote.car,
+        new_status=Car.Status.BOOKED,
+    )
+
+    return cash_deal

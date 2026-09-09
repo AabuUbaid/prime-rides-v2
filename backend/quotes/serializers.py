@@ -9,6 +9,7 @@ from inventory.models import Car
 from .models import Quote, QuoteExpense
 from customers.models import CustomerDocument
 from customers.serializers import CustomerDocumentSerializer
+from finance.models import BankLoan
 
 User = get_user_model()
 
@@ -559,3 +560,19 @@ class QuotePrintSerializer(serializers.ModelSerializer):
 
             "deposit_date": data["deposit_date"],
         }
+        
+        
+# =========================================================
+# PROCEED TO BANK LOAN
+# =========================================================
+
+class QuoteProceedToBankLoanSerializer(
+    serializers.Serializer
+):
+    bank_id = serializers.IntegerField()
+
+    priority = serializers.ChoiceField(
+        choices=BankLoan.Priority.choices,
+        required=False,
+        default=BankLoan.Priority.MEDIUM,
+    )
