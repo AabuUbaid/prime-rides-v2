@@ -8,11 +8,11 @@ export default function PrintButton({
   disabled = false,
 }) {
   function handleClick() {
-    printDocument({
-      customerName,
-      documentNumber,
-    });
-  }
+  printDocument({
+    customerName,
+    documentNumber,
+  });
+}
 
   return (
     <button
@@ -24,5 +24,6 @@ export default function PrintButton({
       <Printer size={16} />
       {label}
     </button>
+    
   );
 }

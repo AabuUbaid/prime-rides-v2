@@ -4,7 +4,10 @@ import { toast } from "react-toastify";
 import {
   getQuote,
   updateQuote,
+  getQuotePrint,
 } from "../../api/quotes";
+import PrintButton from "../../components/printing/PrintButton";
+import QuotePrintTemplate from "../../components/printing/templates/QuotePrintTemplate";
 
 const STATUS_LABELS = {
   quote: "Quote",
@@ -159,6 +162,9 @@ export default function QuoteDetail() {
   const [saving, setSaving] = useState(false);
 
   const [error, setError] = useState("");
+
+  const [printing, setPrinting] = useState(false);
+const [printQuote, setPrintQuote] = useState(null);
 
   const [editingCommercial, setEditingCommercial] =
     useState(false);
@@ -422,6 +428,37 @@ export default function QuoteDetail() {
     }
   };
 
+  async function handlePrintQuote() {
+  if (!id) {
+    toast.error("Quote ID is missing.");
+    return;
+  }
+
+  try {
+    setPrinting(true);
+
+    const response = await getQuotePrint(id);
+
+    if (!response?.success || !response?.data) {
+      throw new Error("Quote print data could not be loaded.");
+    }
+
+    setPrintQuote(response.data);
+
+    // Wait for React to render the dedicated print template
+    requestAnimationFrame(() => {
+      window.print();
+    });
+  } catch (err) {
+    console.error("Quote print failed:", err);
+    toast.error(
+      err?.message || "Unable to prepare the quotation for printing."
+    );
+  } finally {
+    setPrinting(false);
+  }
+}
+
   if (loading) {
     return (
       <div className="p-6">
@@ -515,6 +552,7 @@ export default function QuoteDetail() {
 
   return (
     <div className="p-6">
+          <div className="no-print-screen">
       {/* Header */}
       <div className="mb-6 flex flex-col gap-5 lg:flex-row lg:items-start lg:justify-between">
         <div>
@@ -546,31 +584,36 @@ export default function QuoteDetail() {
           </p>
         </div>
 
-        {statusActions.length > 0 && (
-          <div className="flex flex-wrap gap-2">
-            {statusActions.map((action) => (
-              <button
-                key={action.value}
-                type="button"
-                onClick={() =>
-                  handleStatusChange(
-                    action.value,
-                  )
-                }
-                disabled={saving}
-                className={`rounded-lg px-4 py-2 text-sm font-medium text-white disabled:cursor-not-allowed disabled:opacity-50 ${
-                  action.value === "cancelled"
-                    ? "bg-red-600 hover:bg-red-700"
-                    : "bg-gray-900 hover:bg-gray-800"
-                }`}
-              >
-                {saving
-                  ? "Updating..."
-                  : action.label}
-              </button>
-            ))}
-          </div>
-        )}
+        <div className="flex flex-wrap gap-2">
+  <button
+  type="button"
+  onClick={handlePrintQuote}
+  disabled={saving || printing}
+  className="no-print inline-flex items-center gap-2 rounded-lg bg-gray-900 px-4 py-2 text-sm font-medium text-white transition hover:bg-gray-800 disabled:cursor-not-allowed disabled:opacity-60"
+>
+  {printing ? "Preparing..." : "Print Quote"}
+</button>
+
+  {statusActions.map((action) => (
+    <button
+      key={action.value}
+      type="button"
+      onClick={() =>
+        handleStatusChange(action.value)
+      }
+      disabled={saving}
+      className={`rounded-lg px-4 py-2 text-sm font-medium text-white disabled:cursor-not-allowed disabled:opacity-50 ${
+        action.value === "cancelled"
+          ? "bg-red-600 hover:bg-red-700"
+          : "bg-gray-900 hover:bg-gray-800"
+      }`}
+    >
+      {saving
+        ? "Updating..."
+        : action.label}
+    </button>
+  ))}
+</div>
       </div>
 
       <div className="grid gap-6 xl:grid-cols-2">
@@ -1096,6 +1139,8 @@ export default function QuoteDetail() {
           )}
         </Section>
       </div>
+          </div>
+<QuotePrintTemplate quote={printQuote} />
     </div>
   );
 }
