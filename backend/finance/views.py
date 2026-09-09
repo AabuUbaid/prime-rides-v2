@@ -1,12 +1,14 @@
 from django.core.exceptions import ValidationError as DjangoValidationError
 from django.shortcuts import get_object_or_404
-from django.db.models import Q
+from django.db.models import Q, Sum
 from rest_framework import status , generics
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.views import APIView
-
-
+from quotes.models import Quote
+from customers.models import Customer
+from inventory.models import Car
+from datetime import datetime
 from . import selectors, services
 from .models import (
     Bank,
@@ -15,6 +17,12 @@ from .models import (
     ExpensePreset,
     InsuranceBand,
     ServicePackage,
+    BankLoan,
+    BankLoanFollowUp,
+    CashDeal,
+    CashReceipt,
+    BalanceSheet,
+    
 )
 
 
@@ -27,9 +35,39 @@ from .serializers import (
     ExpensePresetSerializer,
     InsuranceBandSerializer,
     ServicePackageSerializer,
-    EmiSheetUpdateSerializer,   
+    EmiSheetUpdateSerializer,
+    BankLoanSerializer,
+    BankLoanCreateSerializer,
+    BankLoanStatusUpdateSerializer,
+    BankLoanFinanceUpdateSerializer,
+    BankLoanPriorityUpdateSerializer,
+    BankLoanFollowUpSerializer,
+    BankLoanFollowUpCreateSerializer,
+    BankLoanApplicationStatusUpdateSerializer,
+    BankLoanApplicationInfoUpdateSerializer,
+    CashDealSerializer,
+    CashDealCreateSerializer,
+    CashDealUpdateSerializer,
+    CashReceiptSerializer,
+    CashReceiptCreateSerializer,
+    CashReceiptUpdateSerializer,
+    BalanceSheetSerializer,
+    BalanceSheetCreateSerializer,
+    BalanceSheetMasterUpdateSerializer,
 )
 
+from .services import (
+    create_bank_loan_from_quote,
+    update_bank_loan_status,
+    update_bank_loan_finance,
+    update_bank_loan_priority,
+    create_bank_loan_follow_up,
+    create_bank_loan_with_new_bank,
+    update_bank_loan_application_status,
+    create_cash_deal,
+    update_cash_deal_financials,
+    reverse_cash_receipt,
+)
 from accounts.permissions import IsMaster
 
 
@@ -745,3 +783,1742 @@ class BankProcessingConfigurationDetailView(
     serializer_class = (
         BankProcessingConfigurationSerializer
     )
+    
+class BankLoanCreateView(APIView):
+
+    def post(self, request):
+        serializer = BankLoanCreateSerializer(
+            data=request.data
+        )
+
+        serializer.is_valid(raise_exception=True)
+
+        quote_id = serializer.validated_data["quote_id"]
+
+        quote = get_object_or_404(
+            Quote,
+            id=quote_id,
+        )
+
+        try:
+            bank_loan = create_bank_loan_from_quote(
+                quote=quote,
+                bank_id=serializer.validated_data.get(
+                    "bank_id"
+                ),
+                agent=request.user,
+                priority=serializer.validated_data.get(
+                    "priority",
+                    BankLoan.Priority.MEDIUM,
+                ),
+            )
+
+        except DjangoValidationError as exc:
+            return Response(
+                {
+                    "detail": exc.detail
+                    if hasattr(exc, "detail")
+                    else str(exc)
+                },
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        return Response(
+            BankLoanSerializer(bank_loan).data,
+            status=status.HTTP_201_CREATED,
+        )
+        
+    def get(self, request):
+        queryset = (
+            BankLoan.objects
+            .select_related(
+                "customer",
+                "car",
+                "agent",
+                "bank",
+                "quote",
+                "emi_sheet",
+            )
+            .order_by("-created_at")
+        )
+
+        serializer = BankLoanSerializer(
+            queryset,
+            many=True,
+        )
+
+        return Response(
+            serializer.data,
+            status=status.HTTP_200_OK,
+        )
+        
+class BankLoanStatusUpdateView(APIView):
+
+    def patch(self, request, pk):
+        bank_loan = get_object_or_404(
+            BankLoan,
+            pk=pk,
+        )
+
+        serializer = BankLoanStatusUpdateSerializer(
+            data=request.data
+        )
+
+        serializer.is_valid(
+            raise_exception=True
+        )
+
+        try:
+            bank_loan = update_bank_loan_status(
+                bank_loan=bank_loan,
+                new_status=serializer.validated_data[
+                    "status"
+                ],
+            )
+
+        except DjangoValidationError as exc:
+            return Response(
+                {
+                    "detail": exc.detail
+                    if hasattr(exc, "detail")
+                    else str(exc)
+                },
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        return Response(
+            BankLoanSerializer(bank_loan).data
+        )
+        
+class BankLoanFinanceUpdateView(APIView):
+
+    def patch(self, request, pk):
+        bank_loan = get_object_or_404(
+            BankLoan,
+            pk=pk,
+        )
+
+        serializer = BankLoanFinanceUpdateSerializer(
+            data=request.data
+        )
+
+        serializer.is_valid(
+            raise_exception=True
+        )
+
+        try:
+            bank_loan = update_bank_loan_finance(
+                bank_loan=bank_loan,
+                requested_finance=serializer.validated_data.get(
+                    "requested_finance"
+                ),
+                approved_finance=serializer.validated_data.get(
+                    "approved_finance"
+                ),
+            )
+
+        except DjangoValidationError as exc:
+            return Response(
+                {
+                    "detail": exc.detail
+                    if hasattr(exc, "detail")
+                    else str(exc)
+                },
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        return Response(
+            BankLoanSerializer(bank_loan).data
+        )
+        
+class BankLoanPriorityUpdateView(APIView):
+
+    def patch(self, request, pk):
+        bank_loan = get_object_or_404(
+            BankLoan,
+            pk=pk,
+        )
+
+        serializer = BankLoanPriorityUpdateSerializer(
+            data=request.data
+        )
+
+        serializer.is_valid(
+            raise_exception=True
+        )
+
+        try:
+            bank_loan = update_bank_loan_priority(
+                bank_loan=bank_loan,
+                priority=serializer.validated_data[
+                    "priority"
+                ],
+            )
+
+        except DjangoValidationError as exc:
+            return Response(
+                {
+                    "detail": exc.detail
+                    if hasattr(exc, "detail")
+                    else str(exc)
+                },
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        return Response(
+            BankLoanSerializer(bank_loan).data
+        )
+        
+        
+class BankLoanFollowUpCreateView(APIView):
+
+    def get(self, request, pk):
+        bank_loan = get_object_or_404(
+            BankLoan,
+            pk=pk,
+        )
+
+        follow_ups = (
+            BankLoanFollowUp.objects
+            .filter(
+                bank_loan=bank_loan,
+            )
+            .select_related(
+                "created_by",
+            )
+            .order_by(
+                "-created_at",
+            )
+        )
+
+        serializer = BankLoanFollowUpSerializer(
+            follow_ups,
+            many=True,
+        )
+
+        return Response(
+            serializer.data,
+            status=status.HTTP_200_OK,
+        )
+
+    def post(self, request, pk):
+        bank_loan = get_object_or_404(
+            BankLoan,
+            pk=pk,
+        )
+
+        serializer = BankLoanFollowUpCreateSerializer(
+            data=request.data,
+        )
+
+        serializer.is_valid(
+            raise_exception=True,
+        )
+
+        try:
+            follow_up = create_bank_loan_follow_up(
+                bank_loan=bank_loan,
+                note=serializer.validated_data["note"],
+                follow_up_date=serializer.validated_data.get(
+                    "follow_up_date"
+                ),
+                created_by=request.user,
+            )
+        except DjangoValidationError as exc:
+            return Response(
+                {
+                    "detail": (
+                        exc.detail
+                        if hasattr(exc, "detail")
+                        else str(exc)
+                    )
+                },
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        return Response(
+            BankLoanFollowUpSerializer(
+                follow_up,
+            ).data,
+            status=status.HTTP_201_CREATED,
+        )
+        
+class BankLoanNewBankView(APIView):
+
+    def post(self, request, pk):
+        bank_loan = get_object_or_404(
+            BankLoan,
+            pk=pk,
+        )
+
+        serializer = BankLoanCreateSerializer(
+            data={
+                "quote_id": str(
+                    bank_loan.quote_id
+                ),
+                "bank_id": request.data.get(
+                    "bank_id"
+                ),
+                "priority": request.data.get(
+                    "priority",
+                    bank_loan.priority,
+                ),
+            }
+        )
+
+        serializer.is_valid(
+            raise_exception=True
+        )
+
+        try:
+            new_bank_loan = (
+                create_bank_loan_with_new_bank(
+                    bank_loan=bank_loan,
+                    bank_id=serializer.validated_data[
+                        "bank_id"
+                    ],
+                    agent=request.user,
+                    priority=serializer.validated_data.get(
+                        "priority",
+                        bank_loan.priority,
+                    ),
+                )
+            )
+
+        except DjangoValidationError as exc:
+            return Response(
+                {
+                    "detail": exc.detail
+                    if hasattr(exc, "detail")
+                    else str(exc)
+                },
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        return Response(
+            BankLoanSerializer(
+                new_bank_loan
+            ).data,
+            status=status.HTTP_201_CREATED,
+        )
+        
+class BankLoanApplicationStatusUpdateView(APIView):
+
+    def patch(self, request, pk):
+        bank_loan = get_object_or_404(
+            BankLoan,
+            pk=pk,
+        )
+
+        serializer = BankLoanApplicationStatusUpdateSerializer(
+            data=request.data,
+        )
+
+        serializer.is_valid(
+            raise_exception=True,
+        )
+
+        try:
+            bank_loan = update_bank_loan_application_status(
+                bank_loan=bank_loan,
+                application_status=serializer.validated_data[
+                    "application_status"
+                ],
+            )
+
+        except DjangoValidationError as exc:
+            return Response(
+                {
+                    "detail": (
+                        exc.detail
+                        if hasattr(exc, "detail")
+                        else str(exc)
+                    )
+                },
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        return Response(
+            BankLoanSerializer(bank_loan).data,
+            status=status.HTTP_200_OK,
+        )
+        
+class BankLoanApplicationInfoUpdateView(APIView):
+
+    def patch(self, request, pk):
+        bank_loan = get_object_or_404(
+            BankLoan,
+            pk=pk,
+        )
+
+        serializer = BankLoanApplicationInfoUpdateSerializer(
+            bank_loan,
+            data=request.data,
+            partial=True,
+        )
+
+        serializer.is_valid(
+            raise_exception=True,
+        )
+
+        bank_loan = serializer.save()
+
+        return Response(
+            BankLoanSerializer(bank_loan).data,
+            status=status.HTTP_200_OK,
+        )
+class BankLoanListView(APIView):
+    permission_classes = [
+        IsAuthenticated,
+    ]
+
+    def get(self, request):
+        queryset = (
+            BankLoan.objects
+            .select_related(
+                "customer",
+                "car",
+                "agent",
+                "bank",
+                "quote",
+                "emi_sheet",
+            )
+            .order_by("-created_at")
+        )
+
+        serializer = BankLoanSerializer(
+            queryset,
+            many=True,
+        )
+
+        return Response(
+            serializer.data,
+            status=status.HTTP_200_OK,
+        )
+        
+class BankLoanDetailView(APIView):
+    permission_classes = [
+        IsAuthenticated,
+    ]
+
+    def get(self, request, pk):
+        bank_loan = get_object_or_404(
+            BankLoan.objects.select_related(
+                "customer",
+                "car",
+                "agent",
+                "bank",
+                "quote",
+                "emi_sheet",
+            ),
+            pk=pk,
+        )
+
+        serializer = BankLoanSerializer(
+            bank_loan,
+        )
+
+        return Response(
+            serializer.data,
+            status=status.HTTP_200_OK,
+        )
+        
+        
+# =========================================================
+# CASH DEAL LIST / CREATE
+# =========================================================
+
+class CashDealListCreateView(APIView):
+    permission_classes = [
+        IsAuthenticated,
+    ]
+
+    def get(self, request):
+        queryset = (
+            CashDeal.objects
+            .select_related(
+                "customer",
+                "car",
+                "agent",
+                "quote",
+            )
+            .order_by("-created_at")
+        )
+
+        # -------------------------------------------------
+        # Server-side search
+        # -------------------------------------------------
+
+        search = request.query_params.get("search")
+
+        if search:
+            queryset = queryset.filter(
+                Q(customer_name__icontains=search)
+                | Q(customer_mobile__icontains=search)
+                | Q(vehicle_stock_id__icontains=search)
+                | Q(vehicle_make__icontains=search)
+                | Q(vehicle_model__icontains=search)
+                | Q(vehicle_variant__icontains=search)
+                | Q(vehicle_chassis_number__icontains=search)
+                | Q(vehicle_engine_number__icontains=search)
+                | Q(quote__quote_number__icontains=search)
+                | Q(agent__first_name__icontains=search)
+                | Q(agent__last_name__icontains=search)
+                | Q(agent__email__icontains=search)
+            )
+
+        # -------------------------------------------------
+        # Status filter
+        # -------------------------------------------------
+
+        status_filter = request.query_params.get("status")
+
+        if status_filter:
+            queryset = queryset.filter(
+                status=status_filter
+            )
+
+        serializer = CashDealSerializer(
+            queryset,
+            many=True,
+        )
+
+        return Response(
+            {
+                "success": True,
+                "data": serializer.data,
+            },
+            status=status.HTTP_200_OK,
+        )
+
+    def post(self, request):
+        serializer = CashDealCreateSerializer(
+            data=request.data,
+        )
+
+        serializer.is_valid(
+            raise_exception=True,
+        )
+
+        quote = get_object_or_404(
+            Quote,
+            pk=serializer.validated_data["quote_id"],
+        )
+
+        try:
+            cash_deal = create_cash_deal(
+                quote=quote,
+            )
+
+        except DjangoValidationError as exc:
+            return Response(
+                {
+                    "detail": (
+                        exc.detail
+                        if hasattr(exc, "detail")
+                        else str(exc)
+                    )
+                },
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        return Response(
+            CashDealSerializer(cash_deal).data,
+            status=status.HTTP_201_CREATED,
+        )
+
+
+# =========================================================
+# CASH DEAL DETAIL / UPDATE
+# =========================================================
+
+class CashDealDetailView(APIView):
+    permission_classes = [
+        IsAuthenticated,
+    ]
+
+    def get(self, request, pk):
+        cash_deal = get_object_or_404(
+            CashDeal.objects.select_related(
+                "customer",
+                "car",
+                "agent",
+                "quote",
+            ),
+            pk=pk,
+        )
+
+        return Response(
+            {
+                "success": True,
+                "data": CashDealSerializer(
+                    cash_deal,
+                ).data,
+            },
+            status=status.HTTP_200_OK,
+        )
+
+    def patch(self, request, pk):
+        cash_deal = get_object_or_404(
+            CashDeal.objects.select_related(
+                "customer",
+                "car",
+                "agent",
+                "quote",
+            ),
+            pk=pk,
+        )
+
+        serializer = CashDealUpdateSerializer(
+            data=request.data,
+            partial=True,
+        )
+
+        serializer.is_valid(
+            raise_exception=True,
+        )
+
+        validated_data = serializer.validated_data
+
+        try:
+            if "advance_amount" in validated_data:
+                cash_deal = update_cash_deal_financials(
+                    cash_deal=cash_deal,
+                    advance_amount=validated_data[
+                        "advance_amount"
+                    ],
+                )
+
+            if "remark" in validated_data:
+                cash_deal.remark = validated_data["remark"]
+                cash_deal.save(
+                    update_fields=[
+                        "remark",
+                        "updated_at",
+                    ]
+                )
+
+        except DjangoValidationError as exc:
+            return Response(
+                {
+                    "detail": (
+                        exc.detail
+                        if hasattr(exc, "detail")
+                        else str(exc)
+                    )
+                },
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        return Response(
+            {
+                "success": True,
+                "message": "Cash Deal updated successfully.",
+                "data": CashDealSerializer(
+                    cash_deal,
+                ).data,
+            },
+            status=status.HTTP_200_OK,
+        )
+        
+# =========================================================
+# CASH RECEIPT HELPERS
+# =========================================================
+
+def _cash_receipt_total_received(quote_id):
+    total = (
+        CashReceipt.objects
+        .filter(
+            quote_id=quote_id,
+            direction=CashReceipt.Direction.CUSTOMER_PAYMENT,
+        )
+        .aggregate(total= Sum("amount"))
+        .get("total")
+    )
+
+    return total or 0
+
+
+# =========================================================
+# CASH RECEIPT CUSTOMER DEALS
+# =========================================================
+
+class CashReceiptCustomerDealsView(APIView):
+    permission_classes = [
+        IsAuthenticated,
+    ]
+
+    def get(self, request, customer_id):
+        customer = get_object_or_404(
+            Customer,
+            pk=customer_id,
+        )
+
+        quotes = (
+            Quote.objects
+            .filter(customer_id=customer.id)
+            .select_related("car")
+            .order_by("-created_at")
+        )
+
+        data = []
+
+        for quote in quotes:
+            data.append(
+                {
+                    "id": quote.id,
+                    "quote_number": quote.quote_number,
+                    "payment_method": quote.payment_method,
+                    "status": quote.status,
+                    "car_id": str(quote.car_id)
+                    if quote.car_id
+                    else None,
+                    "vehicle_stock_id": (
+                        quote.car.stock_id
+                        if quote.car
+                        else None
+                    ),
+                    "vehicle_make": (
+                        quote.car.make
+                        if quote.car
+                        else None
+                    ),
+                    "vehicle_model": (
+                        quote.car.model
+                        if quote.car
+                        else None
+                    ),
+                    "vehicle_chassis_number": (
+                        quote.car.chassis_number
+                        if quote.car
+                        else None
+                    ),
+                    "customer_name": quote.customer_name,
+                    "customer_mobile": quote.customer_mobile,
+                }
+            )
+
+        return Response(
+            {
+                "success": True,
+                "data": data,
+            },
+            status=status.HTTP_200_OK,
+        )
+
+
+# =========================================================
+# CASH RECEIPT LIST / CREATE
+# =========================================================
+
+class CashReceiptListCreateView(APIView):
+    permission_classes = [
+        IsAuthenticated,
+    ]
+
+    def get(self, request):
+        queryset = (
+            CashReceipt.objects
+            .select_related(
+                "customer",
+                "quote",
+                "car",
+                "created_by",
+            )
+            .order_by(
+                "-transaction_date",
+                "-created_at",
+            )
+        )
+
+        customer_id = request.query_params.get(
+            "customer_id"
+        )
+        quote_id = request.query_params.get(
+            "quote_id"
+        )
+        direction = request.query_params.get(
+            "direction"
+        )
+        category = request.query_params.get(
+            "category"
+        )
+        payment_method = request.query_params.get(
+            "payment_method"
+        )
+        receipt_number = request.GET.get("receipt_number")
+        search = request.GET.get("search")
+        date_from = request.GET.get("date_from")
+        date_to = request.GET.get("date_to")
+        transaction_date = request.GET.get("transaction_date")
+
+        if receipt_number:
+            queryset = queryset.filter(
+                receipt_number__icontains=receipt_number
+            )
+
+        if search:
+            queryset = queryset.filter(
+                Q(receipt_number__icontains=search)
+                | Q(quote__quote_number__icontains=search)
+                | Q(customer__name__icontains=search)
+                | Q(customer__mobile__icontains=search)
+                | Q(car__stock_id__icontains=search)
+                | Q(car__chassis_number__icontains=search)
+                | Q(car__make__icontains=search)
+                | Q(car__model__icontains=search)
+                | Q(car__variant__icontains=search)
+            )
+
+        if transaction_date:
+            try:
+                parsed_date = datetime.strptime(
+                    transaction_date,
+                    "%Y-%m-%d",
+                ).date()
+            except ValueError:
+                return Response(
+                    {
+                        "success": False,
+                        "message": "Invalid transaction_date. Use YYYY-MM-DD.",
+                    },
+                    status=status.HTTP_400_BAD_REQUEST,
+                )
+
+            queryset = queryset.filter(
+                transaction_date=parsed_date
+            )
+
+        if date_from:
+            try:
+                parsed_date_from = datetime.strptime(
+                    date_from,
+                    "%Y-%m-%d",
+                ).date()
+            except ValueError:
+                return Response(
+                    {
+                        "success": False,
+                        "message": "Invalid date_from. Use YYYY-MM-DD.",
+                    },
+                    status=status.HTTP_400_BAD_REQUEST,
+                )
+
+            queryset = queryset.filter(
+                transaction_date__gte=parsed_date_from
+            )
+
+        if date_to:
+            try:
+                parsed_date_to = datetime.strptime(
+                    date_to,
+                    "%Y-%m-%d",
+                ).date()
+            except ValueError:
+                return Response(
+                    {
+                        "success": False,
+                        "message": "Invalid date_to. Use YYYY-MM-DD.",
+                    },
+                    status=status.HTTP_400_BAD_REQUEST,
+                )
+
+            queryset = queryset.filter(
+                transaction_date__lte=parsed_date_to
+            )
+
+        if customer_id:
+            queryset = queryset.filter(
+                customer_id=customer_id
+            )
+
+        if quote_id:
+            queryset = queryset.filter(
+                quote_id=quote_id
+            )
+
+        if direction:
+            queryset = queryset.filter(
+                direction=direction
+            )
+
+        if category:
+            queryset = queryset.filter(
+                category=category
+            )
+
+        if payment_method:
+            queryset = queryset.filter(
+                payment_method=payment_method
+            )
+
+        serializer = CashReceiptSerializer(
+            queryset,
+            many=True,
+        )
+
+        total_received = (
+            queryset
+            .filter(
+                direction=CashReceipt.Direction.CUSTOMER_PAYMENT,
+            )
+            .aggregate(
+                total=Sum("amount")
+            )
+            .get("total")
+            or 0
+        )
+
+        return Response(
+            {
+                "success": True,
+                "data": serializer.data,
+                "summary": {
+                    "total_received": total_received,
+                },
+            },
+            status=status.HTTP_200_OK,
+        )
+
+    def post(self, request):
+        serializer = CashReceiptCreateSerializer(
+            data=request.data,
+        )
+
+        serializer.is_valid(
+            raise_exception=True,
+        )
+
+        customer = get_object_or_404(
+            Customer,
+            pk=serializer.validated_data[
+                "customer_id"
+            ],
+        )
+
+        quote = get_object_or_404(
+            Quote,
+            pk=serializer.validated_data[
+                "quote_id"
+            ],
+        )
+
+        car = None
+
+        car_id = serializer.validated_data.get(
+            "car_id"
+        )
+
+        if car_id:
+            from inventory.models import Car
+
+            car = get_object_or_404(
+                Car,
+                pk=car_id,
+            )
+            
+        quote_expense = None
+        quote_expense_id = serializer.validated_data.get(
+            "quote_expense_id"
+        )
+
+        if quote_expense_id:
+            from quotes.models import QuoteExpense
+
+            quote_expense = get_object_or_404(
+                QuoteExpense,
+                pk=quote_expense_id,
+            )
+
+        emi_expense = None
+        emi_expense_id = serializer.validated_data.get(
+            "emi_expense_id"
+        )
+
+        if emi_expense_id:
+            from .models import EmiExpense
+
+            emi_expense = get_object_or_404(
+                EmiExpense,
+                pk=emi_expense_id,
+            )
+
+        try:
+            receipt = services.create_cash_receipt(
+                customer=customer,
+                quote=quote,
+                car=car,
+                quote_expense=quote_expense,
+                emi_expense=emi_expense,
+                direction=serializer.validated_data[
+                    "direction"
+                ],
+                category=serializer.validated_data[
+                    "category"
+                ],
+                amount=serializer.validated_data[
+                    "amount"
+                ],
+                payment_method=serializer.validated_data[
+                    "payment_method"
+                ],
+                description=serializer.validated_data.get(
+                    "description",
+                    "",
+                ),
+                reference=serializer.validated_data.get(
+                    "reference",
+                    "",
+                ),
+                transaction_date=serializer.validated_data.get(
+                    "transaction_date"
+                ),
+                created_by=request.user,
+            )
+
+        except DjangoValidationError as exc:
+            return Response(
+                {
+                    "success": False,
+                    "detail": (
+                        exc.detail
+                        if hasattr(exc, "detail")
+                        else str(exc)
+                    ),
+                },
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        return Response(
+            {
+                "success": True,
+                "data": CashReceiptSerializer(
+                    receipt
+                ).data,
+                "summary": {
+                    "total_received": (
+                        _cash_receipt_total_received(
+                            receipt.quote_id
+                        )
+                    ),
+                },
+            },
+            status=status.HTTP_201_CREATED,
+        )
+
+
+# =========================================================
+# CASH RECEIPT DETAIL / UPDATE
+# =========================================================
+
+class CashReceiptDetailView(APIView):
+    permission_classes = [
+        IsAuthenticated,
+    ]
+
+    def get(self, request, pk):
+        receipt = get_object_or_404(
+            CashReceipt.objects.select_related(
+                "customer",
+                "quote",
+                "car",
+                "created_by",
+            ),
+            pk=pk,
+        )
+
+        return Response(
+            {
+                "success": True,
+                "data": CashReceiptSerializer(
+                    receipt
+                ).data,
+                "summary": {
+                    "total_received": (
+                        _cash_receipt_total_received(
+                            receipt.quote_id
+                        )
+                    ),
+                },
+            },
+            status=status.HTTP_200_OK,
+        )
+
+    def patch(self, request, pk):
+        receipt = get_object_or_404(
+            CashReceipt,
+            pk=pk,
+        )
+
+        serializer = CashReceiptUpdateSerializer(
+            data=request.data,
+            partial=True,
+        )
+
+        serializer.is_valid(
+            raise_exception=True,
+        )
+
+        receipt.description = (
+            serializer.validated_data.get(
+                "description",
+                receipt.description,
+            )
+        )
+
+        receipt.reference = (
+            serializer.validated_data.get(
+                "reference",
+                receipt.reference,
+            )
+        )
+
+        receipt.save(
+            update_fields=[
+                "description",
+                "reference",
+                "updated_at",
+            ]
+        )
+
+        receipt.refresh_from_db()
+
+        return Response(
+            {
+                "success": True,
+                "data": CashReceiptSerializer(
+                    receipt
+                ).data,
+            },
+            status=status.HTTP_200_OK,
+        )
+
+class CashReceiptCategoryListView(APIView):
+    permission_classes = [
+        IsAuthenticated,
+    ]
+
+    def get(self, request):
+        from .services import STANDARD_CASH_RECEIPT_CATEGORIES
+
+        standard_categories = [
+            {
+                "value": value,
+                "label": value.replace("_", " ").title(),
+                "source": "standard",
+            }
+            for value in sorted(
+                STANDARD_CASH_RECEIPT_CATEGORIES
+            )
+        ]
+
+        presets = (
+            ExpensePreset.objects
+            .filter(is_active=True)
+            .order_by("expense_type", "name")
+        )
+
+        dynamic_categories = []
+
+        seen = set(
+            item["value"]
+            for item in standard_categories
+        )
+
+        for preset in presets:
+            value = preset.expense_type.strip().lower()
+
+            if not value or value in seen:
+                continue
+
+            dynamic_categories.append(
+                {
+                    "value": value,
+                    "label": preset.name,
+                    "source": "finance_master",
+                    "expense_preset_id": preset.id,
+                    "expense_type": preset.expense_type,
+                }
+            )
+
+            seen.add(value)
+
+        return Response(
+            {
+                "success": True,
+                "data": (
+                    standard_categories
+                    + dynamic_categories
+                ),
+            },
+            status=status.HTTP_200_OK,
+        )
+
+
+class CashReceiptReverseView(APIView):
+    permission_classes = [
+        IsAuthenticated,
+    ]
+
+    def post(self, request, pk):
+        receipt = get_object_or_404(
+            CashReceipt.objects.select_related(
+                "customer",
+                "quote",
+                "car",
+                "created_by",
+            ),
+            pk=pk,
+        )
+
+        description = request.data.get(
+            "description",
+            "",
+        )
+
+        reference = request.data.get(
+            "reference",
+            "",
+        )
+
+        try:
+            reversal = reverse_cash_receipt(
+                receipt=receipt,
+                created_by=request.user,
+                description=description,
+                reference=reference,
+            )
+
+        except DjangoValidationError as exc:
+            return Response(
+                {
+                    "success": False,
+                    "detail": (
+                        exc.message
+                        if hasattr(exc, "message")
+                        else str(exc)
+                    ),
+                },
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        return Response(
+            {
+                "success": True,
+                "message": (
+                    "Cash Receipt reversed successfully."
+                ),
+                "data": CashReceiptSerializer(
+                    reversal,
+                ).data,
+            },
+            status=status.HTTP_201_CREATED,
+        )     
+        
+# =========================================================
+# BALANCE SHEET CUSTOMER DEALS
+# =========================================================
+
+class BalanceSheetCustomerDealsView(APIView):
+    permission_classes = [
+        IsAuthenticated,
+    ]
+
+    def get(self, request, customer_id):
+        customer = get_object_or_404(
+            Customer,
+            pk=customer_id,
+        )
+
+        quotes = (
+            Quote.objects
+            .filter(customer_id=customer.id)
+            .select_related("car")
+            .order_by("-created_at")
+        )
+
+        data = []
+
+        for quote in quotes:
+            data.append(
+                {
+                    "id": quote.id,
+                    "quote_number": quote.quote_number,
+                    "payment_method": quote.payment_method,
+                    "status": quote.status,
+                    "car_id": (
+                        str(quote.car_id)
+                        if quote.car_id
+                        else None
+                    ),
+                    "vehicle_stock_id": (
+                        quote.car.stock_id
+                        if quote.car
+                        else None
+                    ),
+                    "vehicle_make": (
+                        quote.car.make
+                        if quote.car
+                        else None
+                    ),
+                    "vehicle_model": (
+                        quote.car.model
+                        if quote.car
+                        else None
+                    ),
+                    "vehicle_variant": (
+                        quote.car.variant
+                        if quote.car
+                        else None
+                    ),
+                    "vehicle_year": (
+                        quote.car.year
+                        if quote.car
+                        else None
+                    ),
+                    "vehicle_colour": (
+                        quote.car.colour
+                        if quote.car
+                        else None
+                    ),
+                    "vehicle_chassis_number": (
+                        quote.car.chassis_number
+                        if quote.car
+                        else None
+                    ),
+                    "customer_name": quote.customer_name,
+                    "customer_mobile": quote.customer_mobile,
+                }
+            )
+
+        return Response(
+            {
+                "success": True,
+                "data": data,
+            },
+            status=status.HTTP_200_OK,
+        )
+
+
+# =========================================================
+# BALANCE SHEET LIST / CREATE
+# =========================================================
+
+class BalanceSheetListCreateView(APIView):
+    permission_classes = [
+        IsAuthenticated,
+    ]
+
+    def get(self, request):
+        queryset = (
+            BalanceSheet.objects
+            .select_related(
+                "customer",
+                "quote",
+                "car",
+                "created_by",
+            )
+            .order_by("-created_at")
+        )
+
+        customer_id = request.query_params.get(
+            "customer_id"
+        )
+
+        quote_id = request.query_params.get(
+            "quote_id"
+        )
+
+        search = request.query_params.get(
+            "search"
+        )
+
+        payment_method = request.query_params.get(
+            "payment_method"
+        )
+
+        balance_status = request.query_params.get(
+            "balance_status"
+        )
+
+        if customer_id:
+            queryset = queryset.filter(
+                customer_id=customer_id
+            )
+
+        if quote_id:
+            queryset = queryset.filter(
+                quote_id=quote_id
+            )
+            
+        if payment_method:
+            queryset = queryset.filter(
+                quote__payment_method=payment_method
+            )
+            
+         # -------------------------------------------------
+        # Search
+        #
+        # Search customer, quote, vehicle, and chassis.
+        # Use Quote customer snapshot fields so this also
+        # works with the existing project structure.
+        # -------------------------------------------------
+        if search:
+            queryset = queryset.filter(
+                Q(
+                    quote__quote_number__icontains=search
+                )
+                | Q(
+                    quote__customer_name__icontains=search
+                )
+                | Q(
+                    quote__customer_mobile__icontains=search
+                )
+                | Q(
+                    car__stock_id__icontains=search
+                )
+                | Q(
+                    car__chassis_number__icontains=search
+                )
+                | Q(
+                    car__make__icontains=search
+                )
+                | Q(
+                    car__model__icontains=search
+                )
+                | Q(
+                    car__variant__icontains=search
+                )
+            ).distinct()
+
+        # -------------------------------------------------
+        # Calculated balance-status filter
+        #
+        # Do NOT add a database balance_status column.
+        # Calculate it from CashReceipt movements.
+        # -------------------------------------------------
+        if balance_status:
+            balance_sheet_quote_ids = list(
+                queryset.values_list(
+                    "quote_id",
+                    flat=True,
+                )
+            )
+
+            receipt_totals = (
+                CashReceipt.objects
+                .filter(
+                    quote_id__in=balance_sheet_quote_ids,
+                )
+                .values("quote_id")
+                .annotate(
+                    total_received=Sum(
+                        "amount",
+                        filter=Q(
+                            direction=(
+                                CashReceipt.Direction.CUSTOMER_PAYMENT
+                            )
+                        ),
+                    ),
+                    total_spent=Sum(
+                        "amount",
+                        filter=Q(
+                            direction=(
+                                CashReceipt.Direction.COMPANY_ON_BEHALF
+                            )
+                        ),
+                    ),
+                )
+            )
+
+            status_quote_ids = []
+
+            for row in receipt_totals:
+                received = (
+                    row["total_received"]
+                    or 0
+                )
+                spent = (
+                    row["total_spent"]
+                    or 0
+                )
+
+                net = received - spent
+
+                if (
+                    balance_status == "settled"
+                    and net == 0
+                ):
+                    status_quote_ids.append(
+                        row["quote_id"]
+                    )
+
+                elif (
+                    balance_status == "customer_receivable"
+                    and net > 0
+                ):
+                    status_quote_ids.append(
+                        row["quote_id"]
+                    )
+
+                elif (
+                    balance_status == "customer_payable"
+                    and net < 0
+                ):
+                    status_quote_ids.append(
+                        row["quote_id"]
+                    )
+
+            # Deals with zero transactions are settled.
+            if balance_status == "settled":
+                receipt_quote_ids = {
+                    row["quote_id"]
+                    for row in receipt_totals
+                }
+
+                status_quote_ids.extend(
+                    quote_id
+                    for quote_id in balance_sheet_quote_ids
+                    if quote_id not in receipt_quote_ids
+                )
+
+            queryset = queryset.filter(
+                quote_id__in=status_quote_ids
+            )
+
+        serializer = BalanceSheetSerializer(
+            queryset,
+            many=True,
+        )
+
+        return Response(
+            {
+                "success": True,
+                "data": serializer.data,
+            },
+            status=status.HTTP_200_OK,
+        )
+
+    def post(self, request):
+        serializer = BalanceSheetCreateSerializer(
+            data=request.data,
+        )
+
+        serializer.is_valid(
+            raise_exception=True,
+        )
+
+        customer = get_object_or_404(
+            Customer,
+            pk=serializer.validated_data[
+                "customer_id"
+            ],
+        )
+
+        quote = get_object_or_404(
+            Quote,
+            pk=serializer.validated_data[
+                "quote_id"
+            ],
+        )
+
+        try:
+            balance_sheet = services.create_balance_sheet(
+                customer=customer,
+                quote=quote,
+                created_by=request.user,
+            )
+
+        except DjangoValidationError as exc:
+            return Response(
+                {
+                    "success": False,
+                    "detail": (
+                        exc.detail
+                        if hasattr(exc, "detail")
+                        else str(exc)
+                    ),
+                },
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        balance_sheet = (
+            BalanceSheet.objects
+            .select_related(
+                "customer",
+                "quote",
+                "car",
+                "created_by",
+            )
+            .get(pk=balance_sheet.pk)
+        )
+
+        return Response(
+            {
+                "success": True,
+                "message": (
+                    "Balance Sheet created successfully."
+                ),
+                "data": BalanceSheetSerializer(
+                    balance_sheet
+                ).data,
+            },
+            status=status.HTTP_201_CREATED,
+        )
+
+
+# =========================================================
+# BALANCE SHEET DETAIL
+# =========================================================
+
+class BalanceSheetDetailView(APIView):
+    permission_classes = [
+        IsAuthenticated,
+    ]
+
+    def get(self, request, pk):
+        balance_sheet = get_object_or_404(
+            BalanceSheet.objects.select_related(
+                "customer",
+                "quote",
+                "car",
+                "created_by",
+            ),
+            pk=pk,
+        )
+
+        return Response(
+            {
+                "success": True,
+                "data": BalanceSheetSerializer(
+                    balance_sheet
+                ).data,
+            },
+            status=status.HTTP_200_OK,
+        )
+        
+    def delete(self, request, pk):
+        """
+        Delete a Balance Sheet.
+        Master users only.
+
+        This removes only the BalanceSheet record.
+        CashReceipt financial transactions are not deleted.
+        """
+
+        permission = IsMaster()
+
+        if not permission.has_permission(
+            request,
+            self,
+        ):
+            return Response(
+                {
+                    "success": False,
+                    "message": (
+                        "You do not have permission "
+                        "to delete a Balance Sheet."
+                    ),
+                },
+                status=status.HTTP_403_FORBIDDEN,
+            )
+
+        balance_sheet = get_object_or_404(
+            BalanceSheet,
+            pk=pk,
+        )
+
+        balance_sheet.delete()
+
+        return Response(
+            {
+                "success": True,
+                "message": (
+                    "Balance Sheet deleted successfully."
+                ),
+            },
+            status=status.HTTP_200_OK,
+        )
+        
+    def patch(self, request, pk):
+        """
+        Update Balance Sheet configuration.
+
+        Master users only.
+        Financial movement fields remain backend-calculated.
+        """
+        permission = IsMaster()
+
+        if not permission.has_permission(
+            request,
+            self,
+        ):
+            return Response(
+                {
+                    "success": False,
+                    "message": (
+                        "You do not have permission "
+                        "to edit the Balance Sheet."
+                    ),
+                },
+                status=status.HTTP_403_FORBIDDEN,
+            )
+
+        balance_sheet = get_object_or_404(
+            BalanceSheet,
+            pk=pk,
+        )
+
+        serializer = BalanceSheetMasterUpdateSerializer(
+            data=request.data,
+            partial=True,
+        )
+
+        serializer.is_valid(
+            raise_exception=True,
+        )
+
+        try:
+            balance_sheet = (
+                services.update_balance_sheet_as_master(
+                    balance_sheet=balance_sheet,
+                    **serializer.validated_data,
+                )
+            )
+
+        except DjangoValidationError as exc:
+            return Response(
+                {
+                    "success": False,
+                    "message": (
+                        exc.detail
+                        if hasattr(exc, "detail")
+                        else str(exc)
+                    ),
+                },
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        balance_sheet = (
+            BalanceSheet.objects
+            .select_related(
+                "customer",
+                "quote",
+                "car",
+                "created_by",
+            )
+            .get(pk=balance_sheet.pk)
+        )
+
+        return Response(
+            {
+                "success": True,
+                "message": (
+                    "Balance Sheet updated successfully."
+                ),
+                "data": BalanceSheetSerializer(
+                    balance_sheet
+                ).data,
+            },
+            status=status.HTTP_200_OK,
+        )

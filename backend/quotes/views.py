@@ -2,7 +2,10 @@ from rest_framework import status
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.views import APIView
-from rest_framework.exceptions import NotFound
+from rest_framework.exceptions import (
+    NotFound,
+    ValidationError,
+)
 
 from .models import Quote
 from .selectors import get_quote, list_quotes
@@ -11,12 +14,15 @@ from .serializers import (
     QuoteDetailSerializer,
     QuoteListSerializer,
     QuoteUpdateSerializer,
-    QuotePrintSerializer
-    )
+    QuotePrintSerializer,
+    QuoteProceedToBankLoanSerializer,
+)
 
 from .services import (
     create_quote,
     update_quote,
+    proceed_quote_to_bank_loan,
+    proceed_quote_to_cash_deal,
 )
 
 
@@ -147,6 +153,103 @@ class QuoteDetailView(APIView):
                 "message": "Quote deleted successfully.",
             },
             status=status.HTTP_200_OK,
+        )
+        
+        
+# =========================================================
+# PROCEED TO BANK LOAN
+# =========================================================
+
+class QuoteProceedToBankLoanView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def post(self, request, pk):
+        try:
+            quote = get_quote(pk)
+        except Quote.DoesNotExist:
+            raise NotFound("Quote not found.")
+        
+        serializer = QuoteProceedToBankLoanSerializer(
+            data=request.data,
+        )
+
+        serializer.is_valid(
+            raise_exception=True,
+        )
+
+        try:
+            bank_loan = proceed_quote_to_bank_loan(
+                quote=quote,
+                bank_id=serializer.validated_data["bank_id"],
+                agent=request.user,
+                priority=serializer.validated_data.get(
+                    "priority"
+                ),
+            )
+        except ValidationError as exc:
+            return Response(
+                {
+                    "success": False,
+                    "message": str(exc),
+                },
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        return Response(
+            {
+                "success": True,
+                "message": (
+                    "Quote successfully proceeded "
+                    "to Bank Loan."
+                ),
+                "data": {
+                    "bank_loan_id": bank_loan.id,
+                    "quote_id": quote.id,
+                },
+            },
+            status=status.HTTP_201_CREATED,
+        )
+
+
+# =========================================================
+# PROCEED TO CASH DEAL
+# =========================================================
+
+class QuoteProceedToCashDealView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def post(self, request, pk):
+        try:
+            quote = get_quote(pk)
+        except Quote.DoesNotExist:
+            raise NotFound("Quote not found.")
+
+        try:
+            cash_deal = proceed_quote_to_cash_deal(
+                quote=quote,
+            )
+        except ValidationError as exc:
+            return Response(
+                {
+                    "success": False,
+                    "message": str(exc),
+                },
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        return Response(
+            {
+                "success": True,
+                "message": (
+                    "Quote successfully proceeded "
+                    "to Cash Deal."
+                ),
+                "data": {
+                    "cash_deal_id": cash_deal.id,
+                    "quote_id": quote.id,
+                },
+            },
+            status=status.HTTP_201_CREATED,
         )
 
 

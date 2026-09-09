@@ -14,7 +14,9 @@ export default function PrintDocument({
               PRIME RIDES ELECTRIC CARS TRADING LLC
             </div>
 
-            <div className="print-document-title">{documentType}</div>
+            <div className="print-document-title">
+              {documentType}
+            </div>
 
             <div className="print-company-details">
               Office No-BC 01, Jams Logistic Village, Al Qusais Industrial Area,
@@ -26,16 +28,19 @@ export default function PrintDocument({
 
           <div className="print-meta">
             <div>
-              <strong>No:</strong> {documentNumber || "-"}
+              <strong>No:</strong>{" "}
+              {documentNumber || "-"}
             </div>
 
             <div>
-              <strong>Date:</strong> {date || "-"}
+              <strong>Date:</strong>{" "}
+              {date || "-"}
             </div>
 
             {status ? (
               <div>
-                <strong>Status:</strong> {status}
+                <strong>Status:</strong>{" "}
+                {status}
               </div>
             ) : null}
           </div>
@@ -45,7 +50,9 @@ export default function PrintDocument({
 
         <footer className="print-footer">
           <div>
-            <strong>Prime Rides Electric Cars Trading LLC</strong>
+            <strong>
+              Prime Rides Electric Cars Trading LLC
+            </strong>
           </div>
 
           <div>

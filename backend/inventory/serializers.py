@@ -92,6 +92,9 @@ class CarCreateSerializer(serializers.ModelSerializer):
             "engine_number",
             "possession_certificate",
             "images",
+            "vehicle_type",
+            "actual_mileage",
+            "service_location",
             
         )
 
@@ -115,6 +118,21 @@ class CarCreateSerializer(serializers.ModelSerializer):
             "chassis_number": {"required": False},
             "engine_number": {"required": False},
             "possession_certificate": {"required": False},
+            
+            "vehicle_type": {
+                "required": False,
+                "allow_blank": True,
+            },
+
+            "actual_mileage": {
+                "required": False,
+                "allow_null": True,
+            },
+
+            "service_location": {
+                "required": False,
+                "allow_blank": True,
+            },
         }
 
     def validate(self, attrs):
@@ -276,6 +294,9 @@ class CarListSerializer(serializers.ModelSerializer):
             "mileage",
             "created_at",
             "images",
+            "vehicle_type",
+            "actual_mileage",
+            "service_location",
         )
 
 class CarDetailSerializer(serializers.ModelSerializer):
@@ -329,6 +350,9 @@ class CarDetailSerializer(serializers.ModelSerializer):
             "images",
             "expenses",
             "expense_summary",
+            "vehicle_type",
+            "actual_mileage",
+            "service_location",
         )
 
 class CarUpdateSerializer(serializers.ModelSerializer):
@@ -422,6 +446,9 @@ class CarUpdateSerializer(serializers.ModelSerializer):
             "possession_certificate",
             "remove_certificate",
             "images",
+            "vehicle_type",
+            "actual_mileage",
+            "service_location",
         )
 
     def validate(self, attrs):

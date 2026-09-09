@@ -3,7 +3,9 @@ from django.urls import path, include
 from .views import (
     QuoteDetailView,
     QuoteListCreateView,
-    QuotePrintView
+    QuotePrintView,
+    QuoteProceedToBankLoanView,
+    QuoteProceedToCashDealView,
 
 )
 
@@ -24,5 +26,20 @@ urlpatterns = [
     "<int:pk>/print/",
     QuotePrintView.as_view(),
     name="quote-print",
+),
+# -------------------------------------------------
+# Downstream workflow
+# -------------------------------------------------
+
+path(
+    "<int:pk>/proceed-to-bank-loan/",
+    QuoteProceedToBankLoanView.as_view(),
+    name="quote-proceed-to-bank-loan",
+),
+
+path(
+    "<int:pk>/proceed-to-cash-deal/",
+    QuoteProceedToCashDealView.as_view(),
+    name="quote-proceed-to-cash-deal",
 ),
 ]

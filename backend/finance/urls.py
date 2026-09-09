@@ -3,6 +3,7 @@ from django.urls import path
 from .views import (
     BankDetailView,
     BankListCreateView,
+    CashReceiptCategoryListView,
 
     ExpensePresetListCreateView,
     ExpensePresetDetailView,
@@ -19,6 +20,29 @@ from .views import (
     EmiCalculateView,
     EmiSheetDetailView,
     EmiSheetListCreateView,
+    
+    BankLoanCreateView,
+    BankLoanDetailView,
+    BankLoanStatusUpdateView,
+    BankLoanApplicationStatusUpdateView,
+    BankLoanApplicationInfoUpdateView,
+    BankLoanFinanceUpdateView,
+    BankLoanPriorityUpdateView,
+    BankLoanFollowUpCreateView,
+    BankLoanNewBankView,
+    
+    CashDealListCreateView,
+    CashDealDetailView,
+    
+    CashReceiptListCreateView,
+    CashReceiptDetailView,
+    CashReceiptCustomerDealsView,
+    CashReceiptReverseView,
+    CashReceiptCategoryListView,
+    
+    BalanceSheetListCreateView,
+    BalanceSheetDetailView,
+    BalanceSheetCustomerDealsView,
 )
 
 
@@ -126,5 +150,137 @@ urlpatterns = [
         "emi/<int:pk>/",
         EmiSheetDetailView.as_view(),
         name="finance-emi-detail",
+    ),
+    
+    # -------------------------------------------------
+    # Bank Loans
+    # -------------------------------------------------
+
+    # -------------------------------------------------
+    # Bank Loans
+    # -------------------------------------------------
+
+    path(
+        "bank-loans/",
+        BankLoanCreateView.as_view(),
+        name="finance-bank-loan-list",
+    ),
+
+    path(
+        "bank-loans/<int:pk>/",
+        BankLoanDetailView.as_view(),
+        name="finance-bank-loan-detail",
+    ),
+    path(
+        "bank-loans/<int:pk>/status/",
+        BankLoanStatusUpdateView.as_view(),
+        name="finance-bank-loan-status-update",
+    ),
+    
+    path(
+        "bank-loans/<int:pk>/application-status/",
+        BankLoanApplicationStatusUpdateView.as_view(),
+        name="finance-bank-loan-application-status-update",
+    ),
+
+    path(
+        "bank-loans/<int:pk>/finance/",
+        BankLoanFinanceUpdateView.as_view(),
+        name="finance-bank-loan-finance-update",
+    ),
+
+    path(
+        "bank-loans/<int:pk>/priority/",
+        BankLoanPriorityUpdateView.as_view(),
+        name="finance-bank-loan-priority-update",
+    ),
+
+    path(
+        "bank-loans/<int:pk>/follow-ups/",
+        BankLoanFollowUpCreateView.as_view(),
+        name="finance-bank-loan-follow-up-create",
+    ),
+
+    path(
+        "bank-loans/<int:pk>/new-bank/",
+        BankLoanNewBankView.as_view(),
+        name="finance-bank-loan-new-bank",
+    ),
+    
+    path(
+        "bank-loans/<int:pk>/application-info/",
+        BankLoanApplicationInfoUpdateView.as_view(),
+        name="finance-bank-loan-application-info-update",
+    ),
+    
+    # -------------------------------------------------
+    # Cash Deals
+    # -------------------------------------------------
+
+    path(
+        "cash-deals/",
+        CashDealListCreateView.as_view(),
+        name="finance-cash-deal-list-create",
+    ),
+
+    path(
+        "cash-deals/<int:pk>/",
+        CashDealDetailView.as_view(),
+        name="finance-cash-deal-detail",
+    ),
+    
+    # -------------------------------------------------
+    # Cash Receipts
+    # -------------------------------------------------
+
+    path(
+        "cash-receipts/",
+        CashReceiptListCreateView.as_view(),
+        name="finance-cash-receipt-list-create",
+    ),
+
+    path(
+        "cash-receipts/<int:pk>/",
+        CashReceiptDetailView.as_view(),
+        name="finance-cash-receipt-detail",
+    ),
+
+    path(
+        "cash-receipts/customers/<int:customer_id>/deals/",
+        CashReceiptCustomerDealsView.as_view(),
+        name="finance-cash-receipt-customer-deals",
+    ),
+    
+    path(
+        "cash-receipts/<int:pk>/reverse/",
+        CashReceiptReverseView.as_view(),
+        name="finance-cash-receipt-reverse",
+    ),
+    
+    path(
+        "cash-receipts/categories/",
+        CashReceiptCategoryListView.as_view(),
+        name="finance-cash-receipt-categories",
+    ),
+        # -------------------------------------------------
+    # Balance Sheets
+    # -------------------------------------------------
+
+    path(
+        "balance-sheets/",
+        BalanceSheetListCreateView.as_view(),
+        name="finance-balance-sheet-list-create",
+    ),
+
+    path(
+        "balance-sheets/<int:pk>/",
+        BalanceSheetDetailView.as_view(),
+        name="finance-balance-sheet-detail",
+    ),
+
+    path(
+        "balance-sheets/customers/<int:customer_id>/deals/",
+        BalanceSheetCustomerDealsView.as_view(),
+        name="finance-balance-sheet-customer-deals",
     ),
 ]

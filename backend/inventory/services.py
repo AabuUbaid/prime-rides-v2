@@ -12,6 +12,78 @@ from .models import (Car, CarImage, CarExpense,)
 
 
 class InventoryService:
+    
+    STATUS_TRANSITIONS = {
+        "available": {
+            "available",
+            "upcoming",
+            "reserved",
+            "in_service",
+            "in_house",
+        },
+        "upcoming": {
+            "upcoming",
+            "available",
+            "in_service",
+            "in_house",
+        },
+        "reserved": {
+            "reserved",
+            "available",
+            "booked",
+        },
+        "booked": {
+            "booked",
+            "reserved",
+        },
+        "sold": {
+            "sold",
+        },
+        "in_service": {
+            "in_service",
+            "available",
+            "in_house",
+        },
+        "in_house": {
+            "in_house",
+            "available",
+            "in_service",
+        },
+    }
+
+    @staticmethod
+    def validate_status_transition(car, new_status):
+        current_status = car.status
+
+        if current_status == new_status:
+            return
+
+        allowed_statuses = InventoryService.STATUS_TRANSITIONS.get(
+            current_status,
+            set(),
+        )
+
+        if new_status not in allowed_statuses:
+            raise ValidationError(
+                {
+                    "status": (
+                        f"Invalid vehicle status transition: "
+                        f"{current_status} → {new_status}."
+                    )
+                }
+            )
+
+    @staticmethod
+    def validate_service_location(status, service_location):
+        if status == "in_service" and not service_location:
+            raise ValidationError(
+                {
+                    "service_location": (
+                        "Service location is required when "
+                        "vehicle status is in service."
+                    )
+                }
+            )
 
     @staticmethod
     def generate_stock_id():
@@ -529,6 +601,21 @@ class InventoryService:
             validated_data,
         )
 
+        status = validated_data.get(
+            "status",
+            "available",
+        )
+
+        service_location = validated_data.get(
+            "service_location",
+            "",
+        )
+
+        InventoryService.validate_service_location(
+            status,
+            service_location,
+        )
+
         validated_data["stock_id"] = (
             InventoryService.generate_stock_id()
         )
@@ -563,6 +650,27 @@ class InventoryService:
         validated_data = InventoryService.normalize_vehicle_data(
             validated_data,
         )
+
+        new_status = validated_data.get(
+            "status",
+            car.status,
+        )
+
+        new_service_location = validated_data.get(
+            "service_location",
+            car.service_location,
+        )
+
+        InventoryService.validate_status_transition(
+            car,
+            new_status,
+        )
+
+        InventoryService.validate_service_location(
+            new_status,
+            new_service_location,
+        )
+
 
         if remove_certificate:
 
@@ -1544,3 +1652,26 @@ class InventoryService:
             "skipped_rows": skipped_rows,
             "errors": all_errors,
         }
+        
+    @staticmethod
+    @transaction.atomic
+    def update_car_status(
+        *,
+        car,
+        new_status,
+    ):
+        InventoryService.validate_status_transition(
+            car,
+            new_status,
+        )
+
+        car.status = new_status
+
+        car.save(
+            update_fields=[
+                "status",
+                "updated_at",
+            ]
+        )
+
+        return car
