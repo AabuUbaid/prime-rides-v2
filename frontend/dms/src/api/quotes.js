@@ -41,3 +41,7 @@ export function updateQuote(id, payload) {
     body: JSON.stringify(payload),
   });
 }
+
+export function getQuotePrint(id) {
+  return apiClient(`/quotes/${id}/print/`);
+}
