@@ -174,6 +174,10 @@ class QuoteCreateSerializer(serializers.ModelSerializer):
             "salesperson_id",
             "price",
             "payment_method",
+
+            "vat_enabled",
+            "vat_amount",
+
             "extra_down_payment",
             "deposit_date",
             "expenses",
@@ -184,6 +188,16 @@ class QuoteCreateSerializer(serializers.ModelSerializer):
         car = attrs.get("car")
         emi_sheet = attrs.get("emi_sheet")
         payment_method = attrs.get("payment_method")
+
+        vat_enabled = attrs.get(
+            "vat_enabled",
+            False,
+        )
+
+        vat_amount = attrs.get(
+            "vat_amount",
+            Decimal("0.00"),
+        )
 
         # -------------------------------------------------
         # STOCK SOURCE
@@ -278,6 +292,32 @@ class QuoteCreateSerializer(serializers.ModelSerializer):
                 {
                     "source": (
                         "A valid Quote source is required."
+                    )
+                }
+            )
+
+                # -------------------------------------------------
+        # VAT SNAPSHOT VALIDATION
+        # -------------------------------------------------
+
+        if vat_amount is None:
+            vat_amount = Decimal("0.00")
+
+        if vat_amount < Decimal("0.00"):
+            raise serializers.ValidationError(
+                {
+                    "vat_amount": (
+                        "VAT amount cannot be negative."
+                    )
+                }
+            )
+
+        if not vat_enabled and vat_amount != Decimal("0.00"):
+            raise serializers.ValidationError(
+                {
+                    "vat_amount": (
+                        "VAT amount must be zero when VAT "
+                        "is disabled."
                     )
                 }
             )
@@ -461,6 +501,8 @@ class QuoteDetailSerializer(serializers.ModelSerializer):
 
             "price",
             "payment_method",
+            "vat_enabled",
+            "vat_amount",
             "down_payment",
             "extra_down_payment",
             "deposit_date",
@@ -493,22 +535,34 @@ class QuoteDetailSerializer(serializers.ModelSerializer):
 # QUOTE PRINT
 # =========================================================
 
-class QuotePrintSerializer(serializers.ModelSerializer):
+# =========================================================
+# QUOTE PRINT
+# =========================================================
 
+class QuotePrintSerializer(serializers.ModelSerializer):
 
     customer_documents = CustomerDocumentSerializer(
         source="customer.documents",
         many=True,
         read_only=True,
     )
+
+    expenses = QuoteExpenseSerializer(
+        many=True,
+        read_only=True,
+    )
+
     class Meta:
         model = Quote
 
         fields = (
             "quote_number",
             "created_at",
+
             "customer_name",
             "customer_mobile",
+            "customer_documents",
+
             "vehicle_stock_id",
             "vehicle_make",
             "vehicle_model",
@@ -518,12 +572,22 @@ class QuotePrintSerializer(serializers.ModelSerializer):
             "vehicle_mileage",
             "vehicle_chassis_number",
             "vehicle_engine_number",
+
             "price",
             "payment_method",
+            "vat_enabled",
+            "vat_amount",
             "down_payment",
             "extra_down_payment",
             "deposit_date",
-            "customer_documents"
+
+            # Historical Finance snapshot
+            "emi_bank_name",
+            "emi_vat_enabled",
+            "emi_vat_amount",
+
+            # Internal Quote expenses
+            "expenses",
         )
 
         read_only_fields = fields
@@ -555,10 +619,33 @@ class QuotePrintSerializer(serializers.ModelSerializer):
 
             "price": data["price"],
             "payment_method": data["payment_method"],
+            "vat": {
+                "enabled": data["vat_enabled"],
+                "amount": data["vat_amount"],
+            },
             "down_payment": data["down_payment"],
             "extra_down_payment": data["extra_down_payment"],
-
             "deposit_date": data["deposit_date"],
+
+            "finance": {
+                "bank_name": (
+                    data["emi_bank_name"]
+                    if data["payment_method"] == Quote.PaymentMethod.FINANCE
+                    else None
+                ),
+                "vat_enabled": (
+                    data["emi_vat_enabled"]
+                    if data["payment_method"] == Quote.PaymentMethod.FINANCE
+                    else None
+                ),
+                "vat_amount": (
+                    data["emi_vat_amount"]
+                    if data["payment_method"] == Quote.PaymentMethod.FINANCE
+                    else None
+                ),
+            },
+
+            "expenses": data["expenses"],
         }
         
         

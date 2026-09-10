@@ -1,28 +1,97 @@
 import PrintDocument from "../PrintDocument";
 
 function formatDate(value) {
-  if (!value) return "-";
+  if (!value) {
+    return "-";
+  }
 
   const date = new Date(value);
 
   if (Number.isNaN(date.getTime())) {
-    return value;
+    return String(value);
   }
 
-  return date.toLocaleDateString("en-GB");
+  return date.toLocaleDateString("en-GB", {
+    day: "2-digit",
+    month: "2-digit",
+    year: "numeric",
+  });
 }
 
 function formatCurrency(value) {
-  const numericValue = Number(value);
-
-  if (!Number.isFinite(numericValue)) {
+  if (value === null || value === undefined || value === "") {
     return "AED 0.00";
   }
 
-  return `AED ${numericValue.toLocaleString("en-AE", {
+  const number = Number(value);
+
+  if (Number.isNaN(number)) {
+    return `AED ${String(value)}`;
+  }
+
+  return `AED ${number.toLocaleString("en-AE", {
     minimumFractionDigits: 2,
     maximumFractionDigits: 2,
   })}`;
+}
+
+function hasAmount(value) {
+  if (value === null || value === undefined || value === "") {
+    return false;
+  }
+
+  const number = Number(value);
+
+  return Number.isFinite(number) && number !== 0;
+}
+
+function normalizeExpenses(expenses) {
+  if (!Array.isArray(expenses)) {
+    return [];
+  }
+
+  return expenses.filter((expense) => {
+    if (!expense) {
+      return false;
+    }
+
+    const amount = Number(expense.actual_amount);
+
+    return (
+      expense.applies !== false ||
+      (Number.isFinite(amount) && amount !== 0) ||
+      expense.name ||
+      expense.description
+    );
+  });
+}
+
+function getExpenseLabel(expense) {
+  return expense?.name || expense?.expense_type || "Internal Expense";
+}
+
+function getExpenseDescription(expense) {
+  return expense?.description || "-";
+}
+
+function getExpenseAmount(expense) {
+  if (
+    expense?.actual_amount !== null &&
+    expense?.actual_amount !== undefined &&
+    expense?.actual_amount !== ""
+  ) {
+    return formatCurrency(expense.actual_amount);
+  }
+
+  if (
+    expense?.estimated_min !== null &&
+    expense?.estimated_min !== undefined &&
+    expense?.estimated_min !== ""
+  ) {
+    return formatCurrency(expense.estimated_min);
+  }
+
+  return "AED 0.00";
 }
 
 export default function QuotePrintTemplate({ quote }) {
@@ -37,6 +106,42 @@ export default function QuotePrintTemplate({ quote }) {
   ]
     .filter(Boolean)
     .join(" ");
+
+  const paymentMethod = quote.payment_method || "-";
+  const isCash = paymentMethod === "Cash";
+  const isFinance = paymentMethod === "Finance";
+
+  const vehiclePrice = Number(quote.price || 0);
+  const downPayment = Number(quote.down_payment || 0);
+  const extraDownPayment = Number(quote.extra_down_payment || 0);
+
+  /*
+   * CASH:
+   * Vehicle Price is VAT-exclusive.
+   * Total = Vehicle Price + VAT - Advance Amount - Extra Down Payment
+   *
+   * FINANCE:
+   * Saved EMI Vehicle Price is already VAT-inclusive.
+   * Do NOT add VAT again.
+   * Total = VAT-inclusive Vehicle Price - Down Payment - Extra Down Payment
+   */
+  const cashVatEnabled = quote?.vat?.enabled === true;
+  const cashVatAmount = Number(quote?.vat?.amount || 0);
+
+  const financeBank = isFinance
+    ? quote?.finance?.bank_name || "-"
+    : null;
+
+  const totalAmount = isCash
+    ? vehiclePrice +
+      (cashVatEnabled ? cashVatAmount : 0) -
+      downPayment -
+      extraDownPayment
+    : vehiclePrice -
+      downPayment -
+      extraDownPayment;
+
+  const expenses = normalizeExpenses(quote.expenses);
 
   return (
     <PrintDocument
@@ -55,22 +160,14 @@ export default function QuotePrintTemplate({ quote }) {
         </div>
 
         <div className="print-grid-2">
-          <div className="print-field">
-            <div className="print-field-label">
-              Customer Name
-            </div>
-            <div className="print-field-value">
-              {quote.customer?.name || "-"}
-            </div>
+          <div>
+            <strong>Name</strong>
+            <div>{quote.customer?.name || "-"}</div>
           </div>
 
-          <div className="print-field">
-            <div className="print-field-label">
-              Mobile
-            </div>
-            <div className="print-field-value">
-              {quote.customer?.mobile || "-"}
-            </div>
+          <div>
+            <strong>Mobile</strong>
+            <div>{quote.customer?.mobile || "-"}</div>
           </div>
         </div>
       </section>
@@ -80,58 +177,50 @@ export default function QuotePrintTemplate({ quote }) {
           Vehicle Details
         </div>
 
-        <div className="print-grid-2">
-          <div className="print-field">
-            <div className="print-field-label">
-              Vehicle
-            </div>
-            <div className="print-field-value">
-              {vehicleName || "-"}
+        <div className="print-grid-3">
+          <div>
+            <strong>Vehicle</strong>
+            <div>{vehicleName || "-"}</div>
+          </div>
+
+          <div>
+            <strong>Stock ID</strong>
+            <div>{quote.vehicle?.stock_id || "-"}</div>
+          </div>
+
+          <div>
+            <strong>Year</strong>
+            <div>{quote.vehicle?.year || "-"}</div>
+          </div>
+
+          <div>
+            <strong>Colour</strong>
+            <div>{quote.vehicle?.colour || "-"}</div>
+          </div>
+
+          <div>
+            <strong>Mileage</strong>
+            <div>
+              {quote.vehicle?.mileage !== null &&
+              quote.vehicle?.mileage !== undefined
+                ? `${Number(
+                    quote.vehicle.mileage
+                  ).toLocaleString("en-AE")} km`
+                : "-"}
             </div>
           </div>
 
-          <div className="print-field">
-            <div className="print-field-label">
-              Stock ID
-            </div>
-            <div className="print-field-value">
-              {quote.vehicle?.stock_id || "-"}
+          <div>
+            <strong>Chassis Number</strong>
+            <div>
+              {quote.vehicle?.chassis_number || "-"}
             </div>
           </div>
 
-          <div className="print-field">
-            <div className="print-field-label">
-              Year
-            </div>
-            <div className="print-field-value">
-              {quote.vehicle?.year || "-"}
-            </div>
-          </div>
-
-          <div className="print-field">
-            <div className="print-field-label">
-              Colour
-            </div>
-            <div className="print-field-value">
-              {quote.vehicle?.colour || "-"}
-            </div>
-          </div>
-
-          <div className="print-field">
-            <div className="print-field-label">
-              Mileage
-            </div>
-            <div className="print-field-value">
-              {quote.vehicle?.mileage ?? "-"}
-            </div>
-          </div>
-
-          <div className="print-field">
-            <div className="print-field-label">
-              Chassis Number
-            </div>
-            <div className="print-field-value">
-              {quote.vehicle?.chassis || "-"}
+          <div>
+            <strong>Engine Number</strong>
+            <div>
+              {quote.vehicle?.engine_number || "-"}
             </div>
           </div>
         </div>
@@ -143,47 +232,104 @@ export default function QuotePrintTemplate({ quote }) {
         </div>
 
         <table className="print-table">
-          <thead>
-            <tr>
-              <th>Description</th>
-              <th>Amount</th>
-            </tr>
-          </thead>
-
           <tbody>
-            <tr>
-              <td>Vehicle Price</td>
-              <td>{formatCurrency(quote.price)}</td>
-            </tr>
+            {isCash && (
+              <>
+                <tr>
+                  <th>Vehicle Price</th>
+                  <td>{formatCurrency(vehiclePrice)}</td>
+                </tr>
+
+                {cashVatEnabled && (
+                  <tr>
+                    <th>VAT</th>
+                    <td>{formatCurrency(cashVatAmount)}</td>
+                  </tr>
+                )}
+              </>
+            )}
+
+            {isFinance && (
+              <tr>
+                <th>Vehicle Price (Inclusive of VAT)</th>
+                <td>{formatCurrency(vehiclePrice)}</td>
+              </tr>
+            )}
 
             <tr>
-              <td>Payment Method</td>
-              <td>{quote.payment_method || "-"}</td>
+              <th>Payment Method</th>
+              <td>{paymentMethod}</td>
             </tr>
 
-            <tr>
-              <td>Down Payment</td>
-              <td>{formatCurrency(quote.down_payment)}</td>
-            </tr>
+            {isFinance && (
+              <tr>
+                <th>Bank</th>
+                <td>{financeBank}</td>
+              </tr>
+            )}
 
             <tr>
-              <td>Extra Down Payment</td>
-              <td>
-                {formatCurrency(quote.extra_down_payment)}
-              </td>
+              <th>
+                {isCash ? "Advance Amount" : "Down Payment"}
+              </th>
+              <td>{formatCurrency(downPayment)}</td>
             </tr>
+
+            {hasAmount(quote.extra_down_payment) && (
+              <tr>
+                <th>Extra Down Payment</th>
+                <td>{formatCurrency(extraDownPayment)}</td>
+              </tr>
+            )}
           </tbody>
         </table>
+
+        <div className="print-total">
+          <span>Total Amount</span>
+          <strong>{formatCurrency(totalAmount)}</strong>
+        </div>
       </section>
+
+      {expenses.length > 0 && (
+        <section className="print-section">
+          <div className="print-section-title">
+            Internal Expenses
+          </div>
+
+          <table className="print-table">
+            <thead>
+              <tr>
+                <th>Expense</th>
+                <th>Description</th>
+                <th>Amount</th>
+              </tr>
+            </thead>
+
+            <tbody>
+              {expenses.map((expense, index) => (
+                <tr
+                  key={`${expense.expense_type || "expense"}-${
+                    expense.id || index
+                  }`}
+                >
+                  <td>{getExpenseLabel(expense)}</td>
+                  <td>{getExpenseDescription(expense)}</td>
+                  <td>{getExpenseAmount(expense)}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </section>
+      )}
 
       <section className="print-section">
         <div className="print-signature">
-          <div className="print-signature-line">
-            Customer Signature
+          <div>
+            <span>Customer Signature</span>
           </div>
 
-          <div className="print-signature-line">
-            Authorized Signature
+          <div>
+            <span>Authorized Signature</span>
           </div>
         </div>
       </section>

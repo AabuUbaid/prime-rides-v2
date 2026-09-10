@@ -153,6 +153,19 @@ class Quote(models.Model):
         ],
     )
 
+    vat_enabled = models.BooleanField(
+        default=False,
+    )
+
+    vat_amount = models.DecimalField(
+        max_digits=12,
+        decimal_places=2,
+        default=Decimal("0.00"),
+        validators=[
+            MinValueValidator(Decimal("0.00")),
+        ],
+    )
+
     down_payment = models.DecimalField(
         max_digits=12,
         decimal_places=2,
