@@ -25,6 +25,14 @@ import Quotes from "./pages/deals/Quotes";
 import NewQuote from "./pages/deals/NewQuote";
 import QuoteDetail from "./pages/deals/QuoteDetail";
 
+import Customers from "./pages/customers/Customers";
+import NewCustomer from "./pages/customers/NewCustomer";
+import CustomerDetail from "./pages/customers/CustomerDetail";
+import EditCustomer from "./pages/customers/EditCustomer";
+
+import BankLoans from "./pages/finance/BankLoans";
+import BankLoanDetail from "./pages/finance/BankLoanDetail";
+
 function App() {
   return (
     <BrowserRouter>
@@ -151,6 +159,60 @@ function App() {
               </ProtectedRoute>
             }
           />
+
+          <Route
+  path="/customers"
+  element={
+    <ProtectedRoute>
+      <Customers />
+    </ProtectedRoute>
+  }
+/>
+
+<Route
+  path="/customers/new"
+  element={
+    <ProtectedRoute>
+      <NewCustomer />
+    </ProtectedRoute>
+  }
+/>
+
+<Route
+  path="/customers/:id"
+  element={
+    <ProtectedRoute>
+      <CustomerDetail />
+    </ProtectedRoute>
+  }
+/>
+
+<Route
+  path="/customers/:id/edit"
+  element={
+    <ProtectedRoute>
+      <EditCustomer />
+    </ProtectedRoute>
+  }
+/>
+
+<Route
+    path="/finance/bank-loans"
+    element={
+        <ProtectedRoute>
+            <BankLoans />
+        </ProtectedRoute>
+    }
+/>
+
+<Route
+  path="/finance/bank-loans/:id"
+  element={
+    <ProtectedRoute>
+      <BankLoanDetail />
+    </ProtectedRoute>
+  }
+/>
 
           <Route
             path="/stock/add"
