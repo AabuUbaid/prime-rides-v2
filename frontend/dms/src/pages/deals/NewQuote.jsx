@@ -752,6 +752,8 @@ export default function NewQuote() {
           customer_mobile: customerMobile.trim(),
           price,
           payment_method: "Cash",
+          vat_enabled: vatEnabled,
+  vat_amount: stockVatAmount,
         };
 
         if (extraDownPayment !== "") {
@@ -799,6 +801,13 @@ export default function NewQuote() {
           price: String(financePrice),
 
           payment_method: "Finance",
+                    vat_enabled:
+            Boolean(selectedEmi?.vat_enabled ?? selectedEmi?.emi_vat_enabled),
+
+          vat_amount:
+            selectedEmi?.vat_amount ??
+            selectedEmi?.emi_vat_amount ??
+            "0.00",
         };
 
         if (extraDownPayment !== "") {

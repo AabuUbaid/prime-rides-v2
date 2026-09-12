@@ -59,6 +59,7 @@ class QuoteListCreateView(APIView):
 
         quote = create_quote(
             **serializer.validated_data,
+            created_by=request.user,
         )
 
         return Response(

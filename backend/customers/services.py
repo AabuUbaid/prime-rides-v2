@@ -4,7 +4,6 @@ from rest_framework.exceptions import ValidationError
 from .models import Customer, CustomerDocument
 
 
-
 def normalize_phone_number(
     phone_number,
 ):
@@ -49,11 +48,20 @@ def validate_customer_name(
     return customer_name
 
 
+def normalize_email(
+    email,
+):
+    return (
+        email or ""
+    ).strip()
+
+
 @transaction.atomic
 def create_customer(
     *,
     customer_name,
     phone_number,
+    email="",
     agent=None,
     documents=None,
 ):
@@ -63,6 +71,10 @@ def create_customer(
 
     phone_number = normalize_phone_number(
         phone_number,
+    )
+
+    email = normalize_email(
+        email,
     )
 
     customer = (
@@ -79,6 +91,7 @@ def create_customer(
         customer = Customer.objects.create(
             customer_name=customer_name,
             phone_number=phone_number,
+            email=email,
             agent=agent,
         )
         created = True
@@ -107,6 +120,7 @@ def update_customer(
     customer,
     customer_name=None,
     phone_number=None,
+    email=None,
 ):
     if customer_name is not None:
         customer.customer_name = (
@@ -144,6 +158,11 @@ def update_customer(
             )
 
         customer.phone_number = normalized_phone
+
+    if email is not None:
+        customer.email = normalize_email(
+            email,
+        )
 
     customer.save()
 

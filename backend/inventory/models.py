@@ -1,8 +1,8 @@
 import uuid
 
+from django.conf import settings
+from django.core.validators import MinValueValidator
 from django.db import models
-
-
 class Car(models.Model):
     class Status(models.TextChoices):
         AVAILABLE = "available", "Available"
@@ -212,3 +212,190 @@ class CarImage(models.Model):
 
     def __str__(self):
         return f"Image - {self.car.stock_id}"
+    
+    
+    
+class SpecialPriceRequest(models.Model):
+    class Status(models.TextChoices):
+        PENDING = "pending", "Pending"
+        APPROVED = "approved", "Approved"
+        DECLINED = "declined", "Declined"
+        EXPIRED = "expired", "Expired"
+        USED = "used", "Used"
+
+    car = models.ForeignKey(
+        Car,
+        on_delete=models.PROTECT,
+        related_name="special_price_requests",
+    )
+
+    # Transaction context.
+    #
+    # These remain nullable because an enquiry can be created before
+    # the final Quote/EMI record exists. Stage 3B will bind the
+    # approved request to the relevant Quote/EMI transaction.
+    quote = models.ForeignKey(
+        "quotes.Quote",
+        on_delete=models.PROTECT,
+        null=True,
+        blank=True,
+        related_name="special_price_requests",
+    )
+
+    emi_sheet = models.ForeignKey(
+        "finance.EmiSheet",
+        on_delete=models.PROTECT,
+        null=True,
+        blank=True,
+        related_name="special_price_requests",
+    )
+
+    requested_price = models.DecimalField(
+        max_digits=12,
+        decimal_places=2,
+        validators=[
+            MinValueValidator(0),
+        ],
+    )
+
+    # Historical Inventory pricing snapshot at enquiry time.
+    inventory_asked_price = models.DecimalField(
+        max_digits=12,
+        decimal_places=2,
+        null=True,
+        blank=True,
+        validators=[
+            MinValueValidator(0),
+        ],
+    )
+
+    inventory_vehicle_expenses = models.DecimalField(
+        max_digits=12,
+        decimal_places=2,
+        default=0,
+        validators=[
+            MinValueValidator(0),
+        ],
+    )
+
+    least_selling_price_at_request = models.DecimalField(
+        max_digits=12,
+        decimal_places=2,
+        null=True,
+        blank=True,
+        validators=[
+            MinValueValidator(0),
+        ],
+    )
+
+    requested_by = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.PROTECT,
+        related_name="special_price_requests_created",
+    )
+
+    status = models.CharField(
+        max_length=20,
+        choices=Status.choices,
+        default=Status.PENDING,
+    )
+
+    approved_price = models.DecimalField(
+        max_digits=12,
+        decimal_places=2,
+        null=True,
+        blank=True,
+        validators=[
+            MinValueValidator(0),
+        ],
+    )
+
+    approved_by = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.PROTECT,
+        null=True,
+        blank=True,
+        related_name="special_price_requests_approved",
+    )
+
+    approved_at = models.DateTimeField(
+        null=True,
+        blank=True,
+    )
+
+    expires_at = models.DateTimeField(
+        null=True,
+        blank=True,
+    )
+
+    declined_at = models.DateTimeField(
+        null=True,
+        blank=True,
+    )
+
+    used_at = models.DateTimeField(
+        null=True,
+        blank=True,
+    )
+
+    used_by = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.PROTECT,
+        null=True,
+        blank=True,
+        related_name="special_price_requests_used",
+    )
+
+    decision_note = models.TextField(
+        blank=True,
+    )
+
+    created_at = models.DateTimeField(
+        auto_now_add=True,
+    )
+
+    updated_at = models.DateTimeField(
+        auto_now=True,
+    )
+
+    class Meta:
+        db_table = "inventory_special_price_requests"
+        ordering = ["-created_at"]
+        indexes = [
+            models.Index(
+                fields=["car", "status"],
+            ),
+            models.Index(
+                fields=["quote"],
+            ),
+            models.Index(
+                fields=["emi_sheet"],
+            ),
+            models.Index(
+                fields=["requested_by"],
+            ),
+            models.Index(
+                fields=["status"],
+            ),
+            models.Index(
+                fields=["expires_at"],
+            ),
+            models.Index(
+                fields=["created_at"],
+            ),
+        ]
+        constraints = [
+            models.UniqueConstraint(
+                fields=["car"],
+                condition=models.Q(status="pending"),
+                name="unique_pending_special_price_per_car",
+            ),
+        ]
+
+    def __str__(self):
+        return (
+            f"Special Price Request - "
+            f"{self.car.stock_id} - "
+            f"{self.requested_price} - "
+            f"{self.status}"
+        )

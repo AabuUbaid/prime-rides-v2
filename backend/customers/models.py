@@ -11,6 +11,10 @@ class Customer(models.Model):
         max_length=30,
         unique=True,
     )
+    email = models.EmailField(
+        max_length=254,
+        blank=True,
+    )
 
     agent = models.ForeignKey(
         settings.AUTH_USER_MODEL,

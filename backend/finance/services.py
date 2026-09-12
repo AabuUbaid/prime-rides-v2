@@ -4,7 +4,10 @@ from django.core.exceptions import ValidationError as DjangoValidationError
 from django.db import transaction
 from django.utils import timezone
 from quotes.models import Quote
-from inventory.models import Car
+from inventory.models import (
+    Car,
+    SpecialPriceRequest,
+)
 from inventory.services import InventoryService
 
 from customers.models import Customer
@@ -1926,6 +1929,7 @@ def resolve_customer(
     customer = Customer.objects.create(
         customer_name=customer_name,
         phone_number=customer_mobile,
+        email="",
         # Agent stays null for now.
     )
 
@@ -1933,8 +1937,191 @@ def resolve_customer(
 # =========================================================
 # CREATE EMI SHEET
 # =========================================================
+def _resolve_special_price_for_emi(
+    *,
+    car,
+    vehicle_price,
+    created_by=None,
+    special_price_request_id=None,
+):
+    """
+    Validate a transaction-specific Special Price approval for an EMI.
 
+    This is enforced only when the EMI is persisted.
+    calculate_emi() remains a calculation/preview function.
 
+    Returns:
+        SpecialPriceRequest | None
+    """
+
+    if car is None:
+        return None
+
+    current_price = _money(vehicle_price)
+
+    least_selling_price = car.least_selling_price
+
+    if least_selling_price is None:
+        return None
+
+    # Normal price: no Special Price approval is needed.
+    if current_price >= least_selling_price:
+        if special_price_request_id is not None:
+            raise DjangoValidationError(
+                "A Special Price approval is only valid for "
+                "a selling price below the vehicle's Least Selling Price."
+            )
+
+        return None
+
+    # A price below Least Selling Price requires either:
+    # 1. Master user, or
+    # 2. a valid approved Special Price request.
+    user_role = getattr(
+        created_by,
+        "role",
+        None,
+    )
+
+    if user_role == "MASTER":
+        if special_price_request_id is not None:
+            raise DjangoValidationError(
+                "Master users do not need a Special Price approval."
+            )
+
+        return None
+
+    if special_price_request_id is None:
+        raise DjangoValidationError(
+            {
+                "vehicle_price": (
+                    "Selling price is below the vehicle's "
+                    "Least Selling Price. Master Special Price "
+                    "approval is required."
+                )
+            }
+        )
+
+    special_request = (
+        SpecialPriceRequest.objects
+        .select_for_update()
+        .select_related("car")
+        .filter(
+            pk=special_price_request_id,
+        )
+        .first()
+    )
+
+    if special_request is None:
+        raise DjangoValidationError(
+            {
+                "special_price_request_id": (
+                    "Special Price approval was not found."
+                )
+            }
+        )
+
+    # The approval must belong to this exact vehicle.
+    if special_request.car_id != car.id:
+        raise DjangoValidationError(
+            {
+                "special_price_request_id": (
+                    "The Special Price approval does not belong "
+                    "to the selected vehicle."
+                )
+            }
+        )
+
+    # Only approved requests can be consumed.
+    if special_request.status != (
+        SpecialPriceRequest.Status.APPROVED
+    ):
+        if special_request.status == (
+            SpecialPriceRequest.Status.EXPIRED
+        ):
+            raise DjangoValidationError(
+                {
+                    "special_price_request_id": (
+                        "The Special Price approval has expired."
+                    )
+                }
+            )
+
+        if special_request.status == (
+            SpecialPriceRequest.Status.USED
+        ):
+            raise DjangoValidationError(
+                {
+                    "special_price_request_id": (
+                        "The Special Price approval has already been used."
+                    )
+                }
+            )
+
+        raise DjangoValidationError(
+            {
+                "special_price_request_id": (
+                    "The Special Price request is not approved."
+                )
+            }
+        )
+
+    # Check expiry at the moment the EMI is created.
+    if (
+        special_request.expires_at is not None
+        and special_request.expires_at <= timezone.now()
+    ):
+        special_request.status = (
+            SpecialPriceRequest.Status.EXPIRED
+        )
+
+        special_request.save(
+            update_fields=[
+                "status",
+                "updated_at",
+            ]
+        )
+
+        raise DjangoValidationError(
+            {
+                "special_price_request_id": (
+                    "The Special Price approval has expired."
+                )
+            }
+        )
+
+    # The approved transaction price must exactly match
+    # the Special Price approval.
+    if special_request.approved_price != current_price:
+        raise DjangoValidationError(
+            {
+                "vehicle_price": (
+                    "Vehicle price must match the approved "
+                    "Special Price amount."
+                )
+            }
+        )
+
+    # Approval was created for this vehicle's pricing context.
+    if (
+        special_request.least_selling_price_at_request
+        is not None
+        and current_price >= (
+            special_request.least_selling_price_at_request
+        )
+    ):
+        raise DjangoValidationError(
+            {
+                "vehicle_price": (
+                    "The approved Special Price is not below "
+                    "the Least Selling Price captured at approval."
+                )
+            }
+        )
+
+    return special_request
+
+@transaction.atomic
 @transaction.atomic
 def create_emi_sheet(
     *,
@@ -1953,6 +2140,8 @@ def create_emi_sheet(
     registration_dubai=False,
     driving_license=True,
     service_package_selected=False,
+    created_by=None,
+    special_price_request_id=None,
     **kwargs,
 ):
     """
@@ -1974,6 +2163,17 @@ def create_emi_sheet(
     vehicle = resolve_vehicle_snapshot(
         car_id=car_id,
         manual_vehicle=manual_vehicle,
+    )
+
+    # -----------------------------------------------------
+    # Special Price transaction validation
+    # -----------------------------------------------------
+
+    special_price_request = _resolve_special_price_for_emi(
+        car=vehicle["car"],
+        vehicle_price=vehicle_price,
+        created_by=created_by,
+        special_price_request_id=special_price_request_id,
     )
 
     # -----------------------------------------------------
@@ -2341,6 +2541,27 @@ def create_emi_sheet(
                 expense["amount"]
             ),
         )
+        # -----------------------------------------------------
+        # Bind / consume Special Price approval
+        # -----------------------------------------------------
+
+        if special_price_request is not None:
+            special_price_request.emi_sheet = emi_sheet
+            special_price_request.status = (
+                SpecialPriceRequest.Status.USED
+            )
+            special_price_request.used_at = timezone.now()
+            special_price_request.used_by = created_by
+
+            special_price_request.save(
+                update_fields=[
+                    "emi_sheet",
+                    "status",
+                    "used_at",
+                    "used_by",
+                    "updated_at",
+                ]
+            )
 
     return emi_sheet
 
@@ -2988,7 +3209,7 @@ def create_cash_deal(
         vehicle_variant=car.variant or "",
         vehicle_year=car.year,
         vehicle_colour=car.colour or "",
-        vehicle_mileage=car.actual_mileage,
+        vehicle_mileage=car.vehicle_mileage,
         vehicle_chassis_number=car.chassis_number or "",
         vehicle_engine_number=car.engine_number or "",
 
@@ -3040,7 +3261,13 @@ def update_cash_deal_financials(
     # -------------------------------------------------
 
     if balance_amount == Decimal("0.00"):
-        cash_deal.status = CashDeal.Status.PAYMENT_PENDING
+        cash_deal.status = CashDeal.Status.READY_FOR_DELIVERY
+
+        if cash_deal.car:
+            InventoryService.update_car_status(
+                car=cash_deal.car,
+                new_status=Car.Status.BOOKED,
+            )
 
     elif advance_amount > Decimal("0.00"):
         cash_deal.status = CashDeal.Status.ADVANCE_RECEIVED

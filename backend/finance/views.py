@@ -67,6 +67,7 @@ from .services import (
     create_cash_deal,
     update_cash_deal_financials,
     reverse_cash_receipt,
+    
 )
 from accounts.permissions import IsMaster
 
@@ -456,9 +457,10 @@ class EmiSheetListCreateView(APIView):
         )
 
         try:
-            emi_sheet = services.create_emi_sheet(
-                **serializer.validated_data
-            )
+           emi_sheet = services.create_emi_sheet(
+            created_by=request.user,
+            **serializer.validated_data,
+        )
 
         except DjangoValidationError as exc:
             return Response(

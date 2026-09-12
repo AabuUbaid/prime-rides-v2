@@ -3,6 +3,7 @@ from rest_framework import serializers
 from .models import Customer, CustomerDocument
 from quotes.models import Quote
 
+
 class CustomerDocumentSerializer(
     serializers.ModelSerializer
 ):
@@ -63,6 +64,11 @@ class CustomerCreateSerializer(
         max_length=30,
     )
 
+    email = serializers.EmailField(
+        required=False,
+        allow_blank=True,
+    )
+
     documents = CustomerDocumentCreateSerializer(
         many=True,
         required=False,
@@ -114,6 +120,11 @@ class CustomerUpdateSerializer(
         required=False,
     )
 
+    email = serializers.EmailField(
+        required=False,
+        allow_blank=True,
+    )
+
 
 class CustomerListSerializer(
     serializers.ModelSerializer
@@ -130,12 +141,14 @@ class CustomerListSerializer(
             "id",
             "customer_name",
             "phone_number",
+            "email",
             "agent_id",
             "created_at",
             "updated_at",
         )
 
         read_only_fields = fields
+
 
 class CustomerQuoteSerializer(
     serializers.ModelSerializer
@@ -156,6 +169,7 @@ class CustomerQuoteSerializer(
 
         read_only_fields = fields
 
+
 class CustomerDetailSerializer(
     serializers.ModelSerializer
 ):
@@ -168,6 +182,7 @@ class CustomerDetailSerializer(
         many=True,
         read_only=True,
     )
+
     quotes = CustomerQuoteSerializer(
         many=True,
         read_only=True,
@@ -180,6 +195,7 @@ class CustomerDetailSerializer(
             "id",
             "customer_name",
             "phone_number",
+            "email",
             "agent_id",
             "documents",
             "quotes",

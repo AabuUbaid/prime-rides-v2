@@ -11,8 +11,13 @@ from rest_framework.exceptions import ValidationError
 from django.http import QueryDict
 
 from .pagination import InventoryPagination
-from .models import Car, CarExpense
-
+from django.shortcuts import get_object_or_404
+from .models import (
+    Car,
+    CarExpense,
+    SpecialPriceRequest,
+)
+from .special_price_services import SpecialPriceService
 from .query_serializers import CarListQuerySerializer
 
 from .serializers import (
@@ -26,6 +31,9 @@ from .serializers import (
     BulkImageDeleteSerializer,
     BulkVehicleDeleteSerializer,
     BulkVehicleImportSerializer,
+    SpecialPriceRequestCreateSerializer,
+    SpecialPriceRequestSerializer,
+    SpecialPriceDecisionSerializer,
 )
 
 from .selectors import InventorySelector
@@ -138,6 +146,9 @@ class CarDetailAPIView(APIView):
 
         serializer = CarDetailSerializer(
             car,
+            context={
+                "request": request,
+            },
         )
 
         return Response(
@@ -193,8 +204,11 @@ class CarDetailAPIView(APIView):
                 "success": True,
                 "message": "Vehicle updated successfully.",
                 "data": CarDetailSerializer(
-                    car,
-                ).data,
+                            car,
+                            context={
+                                "request": request,
+                            },
+                        ).data
             }
         )
 
@@ -246,6 +260,9 @@ class CarDetailAPIView(APIView):
                 "message": "Vehicle updated successfully.",
                 "data": CarDetailSerializer(
                     car,
+                    context={
+                        "request": request,
+                    },
                 ).data,
             }
         )
@@ -735,4 +752,172 @@ class BulkVehicleImportAPIView(APIView):
                 },
             },
             status=status.HTTP_201_CREATED,
+        )
+        
+class SpecialPriceRequestAPIView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def post(self, request):
+        serializer = SpecialPriceRequestCreateSerializer(
+            data=request.data,
+        )
+
+        serializer.is_valid(
+            raise_exception=True,
+        )
+
+        special_request = (
+            SpecialPriceService.create_request(
+                car_id=serializer.validated_data["car_id"],
+                requested_price=(
+                    serializer.validated_data["requested_price"]
+                ),
+                requested_by=request.user,
+            )
+        )
+
+        return Response(
+            {
+                "success": True,
+                "message": (
+                    "Special Price enquiry submitted "
+                    "successfully."
+                ),
+                "data": SpecialPriceRequestSerializer(
+                    special_request,
+                ).data,
+            },
+            status=status.HTTP_201_CREATED,
+        )
+
+
+class SpecialPriceRequestListAPIView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request):
+        queryset = (
+            SpecialPriceRequest.objects
+            .select_related(
+                "car",
+                "quote",
+                "emi_sheet",
+                "requested_by",
+                "approved_by",
+                "used_by",
+            )
+            .order_by("-created_at")
+        )
+
+        if request.user.role != "MASTER":
+            queryset = queryset.filter(
+                requested_by=request.user,
+            )
+
+        data = []
+
+        for special_request in queryset:
+            special_request = (
+                SpecialPriceService.expire_if_required(
+                    special_request,
+                )
+            )
+
+            item = SpecialPriceRequestSerializer(
+                special_request,
+            ).data
+
+            if request.user.role != "MASTER":
+                # Requesters can see their enquiry,
+                # but not the Master-controlled approved price.
+                item.pop("approved_price", None)
+                item.pop("approved_by", None)
+                item.pop("approved_by_name", None)
+                item.pop("approved_at", None)
+
+            data.append(item)
+
+        return Response(
+            {
+                "success": True,
+                "data": data,
+            },
+            status=status.HTTP_200_OK,
+        )
+
+
+class SpecialPriceDecisionAPIView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def post(self, request, pk):
+        serializer = SpecialPriceDecisionSerializer(
+            data=request.data,
+        )
+
+        serializer.is_valid(
+            raise_exception=True,
+        )
+
+        action = serializer.validated_data["action"]
+
+        if action == "approve":
+            special_request = (
+                SpecialPriceService.approve(
+                    request_id=pk,
+                    approved_by=request.user,
+                    approved_price=(
+                        serializer.validated_data.get(
+                            "approved_price"
+                        )
+                    ),
+                    expires_at=(
+                        serializer.validated_data.get(
+                            "expires_at"
+                        )
+                    ),
+                    decision_note=(
+                        serializer.validated_data.get(
+                            "decision_note",
+                            "",
+                        )
+                    ),
+                )
+            )
+
+            return Response(
+                {
+                    "success": True,
+                    "message": (
+                        "Special Price approved successfully."
+                    ),
+                    "data": SpecialPriceRequestSerializer(
+                        special_request,
+                    ).data,
+                },
+                status=status.HTTP_200_OK,
+            )
+
+        special_request = (
+            SpecialPriceService.decline(
+                request_id=pk,
+                declined_by=request.user,
+                decision_note=(
+                    serializer.validated_data.get(
+                        "decision_note",
+                        "",
+                    )
+                ),
+            )
+        )
+
+        return Response(
+            {
+                "success": True,
+                "message": (
+                    "Special Price enquiry declined successfully."
+                ),
+                "data": SpecialPriceRequestSerializer(
+                    special_request,
+                ).data,
+            },
+            status=status.HTTP_200_OK,
         )

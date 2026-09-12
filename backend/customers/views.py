@@ -75,6 +75,10 @@ class CustomerListCreateView(APIView):
             phone_number=serializer.validated_data[
                 "phone_number"
             ],
+            email=serializer.validated_data.get(
+                "email",
+                "",
+            ),
             agent=request.user,
             documents=serializer.validated_data.get(
                 "documents",
@@ -317,3 +321,4 @@ class CustomerDocumentDetailView(
             },
             status=status.HTTP_200_OK,
         )
+

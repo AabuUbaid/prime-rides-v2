@@ -56,6 +56,24 @@ urlpatterns = [
         "api/customers/",
         include("customers.urls"),
     ),
+    path("api/insurance/", include("insurance.urls")),
+    
+    path(
+        "api/proforma/",
+        include("proforma.urls"),
+    ),
+    path(
+        "api/delivery-notes/",
+        include("delivery_note.urls"),
+    ),
+    path(
+        "api/staff/",
+        include("staff.urls"),
+    ),
+    path(
+        "api/leads/",
+        include("leads.urls"),
+    ),
 ]
 
 if settings.DEBUG:

@@ -12,6 +12,9 @@ from .views import (
     CarImageAPIView,
     DashboardAPIView,
     CarImageReorderAPIView,
+    SpecialPriceRequestAPIView,
+    SpecialPriceRequestListAPIView,
+    SpecialPriceDecisionAPIView,
 )
 
 app_name = "inventory"
@@ -107,5 +110,27 @@ urlpatterns = [
         "dashboard/",
         DashboardAPIView.as_view(),
         name="dashboard",
+    ),
+    
+    # ---------------------------------------------------------
+    # Special Price
+    # ---------------------------------------------------------
+
+    path(
+        "special-price/",
+        SpecialPriceRequestListAPIView.as_view(),
+        name="special-price-list",
+    ),
+
+    path(
+        "special-price/request/",
+        SpecialPriceRequestAPIView.as_view(),
+        name="special-price-request",
+    ),
+
+    path(
+        "special-price/<int:pk>/decision/",
+        SpecialPriceDecisionAPIView.as_view(),
+        name="special-price-decision",
     ),
 ]
