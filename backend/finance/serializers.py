@@ -641,6 +641,10 @@ class EmiSheetCreateSerializer(
         decimal_places=2,
         min_value=Decimal("0.00"),
     )
+    special_price_request_id = serializers.IntegerField(
+        required=False,
+        allow_null=True,
+    )
 
     vat_enabled = serializers.BooleanField(
         required=False,

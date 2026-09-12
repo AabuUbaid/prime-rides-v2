@@ -8,7 +8,9 @@ from finance.models import EmiSheet
 from inventory.models import Car
 from inventory.services import InventoryService
 from customers.services import create_customer
-
+from inventory.special_price_services import (
+        SpecialPriceService,
+)
 from .models import Quote, QuoteExpense, QuoteSequence
 
 
@@ -439,6 +441,8 @@ def create_quote(
     emi_sheet=None,
     salesperson=None,
     expenses=None,
+    special_price_request_id=None,
+    created_by=None,
 ):
     """
     Create a Quote and establish its historical snapshot.
@@ -479,7 +483,31 @@ def create_quote(
         validate_stock_vehicle_for_quote(
             car,
         )
+    # -----------------------------------------------------
+    # Special Price validation
+    # -----------------------------------------------------
 
+    transaction_car = car
+
+    if transaction_car is None and emi_sheet is not None:
+        transaction_car = getattr(
+            emi_sheet,
+            "car",
+            None,
+        )
+
+    special_price_request = (
+        SpecialPriceService.validate_transaction_price(
+            special_price_request_id=(
+                special_price_request_id
+            ),
+            car=transaction_car,
+            transaction_price=price,
+            actor=created_by,
+            transaction_type="quote",
+            emi_sheet=emi_sheet,
+        )
+    )
     # -----------------------------------------------------
     # Resolve Customer
     # -----------------------------------------------------
@@ -565,6 +593,14 @@ def create_quote(
 
     quote.save()
 
+    if special_price_request is not None:
+        SpecialPriceService.bind_to_transaction(
+            special_request=special_price_request,
+            transaction_type="quote",
+            transaction=quote,
+            actor=created_by,
+        )
+
     # -----------------------------------------------------
     # Create internal expenses
     # -----------------------------------------------------
@@ -575,7 +611,6 @@ def create_quote(
     )
 
     return quote
-
 
 # =========================================================
 # UPDATE QUOTE

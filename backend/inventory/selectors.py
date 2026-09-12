@@ -32,7 +32,7 @@ class InventorySelector:
         max_price=None,
         min_mileage=None,
         max_mileage=None,
-        vehricle_type=None,
+        vehicle_type=None,
         ordering="-created_at",
     ):
 

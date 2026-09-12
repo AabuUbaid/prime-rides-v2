@@ -162,6 +162,12 @@ class QuoteCreateSerializer(serializers.ModelSerializer):
         choices=Quote.PaymentMethod.choices,
         required=True,
     )
+    
+    special_price_request_id = serializers.IntegerField(
+        required=False,
+        allow_null=True,
+        write_only=True,
+    )
 
     class Meta:
         model = Quote
@@ -181,6 +187,7 @@ class QuoteCreateSerializer(serializers.ModelSerializer):
             "extra_down_payment",
             "deposit_date",
             "expenses",
+            "special_price_request_id",
         )
 
     def validate(self, attrs):

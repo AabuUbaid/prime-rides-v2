@@ -1,10 +1,11 @@
 from rest_framework import serializers
 from datetime import date
-
+from decimal import Decimal
 from .models import (
     Car,
     CarExpense,
     CarImage,
+    SpecialPriceRequest,
 )
 
 
@@ -320,7 +321,21 @@ class CarDetailSerializer(serializers.ModelSerializer):
         summary = InventorySelector.get_expense_summary(obj)
 
         return ExpenseSummarySerializer(summary).data
-    
+    def get_fields(self):
+        fields = super().get_fields()
+
+        request = self.context.get("request")
+
+        is_master = (
+            request
+            and getattr(request.user, "role", None) == "MASTER"
+        )
+
+        if not is_master:
+            fields.pop("purchase_cost", None)
+            fields.pop("actual_mileage", None)
+
+        return fields
 
     class Meta:
         model = Car
@@ -898,4 +913,138 @@ class BulkVehicleImportSerializer(serializers.Serializer):
             )
 
         return file
+    
+    
+class SpecialPriceRequestCreateSerializer(
+    serializers.Serializer
+):
+    car_id = serializers.UUIDField()
+    requested_price = serializers.DecimalField(
+        max_digits=12,
+        decimal_places=2,
+        min_value=Decimal("0.00"),
+    )
+
+
+class SpecialPriceRequestSerializer(
+    serializers.ModelSerializer
+):
+    car_stock_id = serializers.CharField(
+        source="car.stock_id",
+        read_only=True,
+    )
+
+    requested_by_name = serializers.SerializerMethodField()
+    approved_by_name = serializers.SerializerMethodField()
+    used_by_name = serializers.SerializerMethodField()
+
+    class Meta:
+        model = SpecialPriceRequest
+
+        fields = (
+            "id",
+            "car",
+            "car_stock_id",
+
+            "quote",
+            "emi_sheet",
+
+            "requested_price",
+
+            "inventory_asked_price",
+            "inventory_vehicle_expenses",
+            "least_selling_price_at_request",
+
+            "requested_by",
+            "requested_by_name",
+
+            "status",
+
+            "approved_price",
+            "approved_by",
+            "approved_by_name",
+            "approved_at",
+
+            "expires_at",
+
+            "declined_at",
+
+            "used_at",
+            "used_by",
+            "used_by_name",
+
+            "decision_note",
+
+            "created_at",
+            "updated_at",
+        )
+
+        read_only_fields = fields
+
+    def get_requested_by_name(self, obj):
+        if not obj.requested_by:
+            return None
+
+        full_name = (
+            f"{obj.requested_by.first_name} "
+            f"{obj.requested_by.last_name}"
+        ).strip()
+
+        return (
+            full_name
+            or obj.requested_by.email
+        )
+
+    def get_approved_by_name(self, obj):
+        if not obj.approved_by:
+            return None
+
+        full_name = (
+            f"{obj.approved_by.first_name} "
+            f"{obj.approved_by.last_name}"
+        ).strip()
+
+        return (
+            full_name
+            or obj.approved_by.email
+        )
+
+    def get_used_by_name(self, obj):
+        if not obj.used_by:
+            return None
+
+        full_name = (
+            f"{obj.used_by.first_name} "
+            f"{obj.used_by.last_name}"
+        ).strip()
+
+        return (
+            full_name
+            or obj.used_by.email
+        )
+
+
+class SpecialPriceDecisionSerializer(
+    serializers.Serializer
+):
+    action = serializers.ChoiceField(
+        choices=("approve", "decline"),
+    )
+
+    approved_price = serializers.DecimalField(
+        max_digits=12,
+        decimal_places=2,
+        min_value=Decimal("0.00"),
+        required=False,
+    )
+
+    expires_at = serializers.DateTimeField(
+        required=False,
+    )
+
+    decision_note = serializers.CharField(
+        required=False,
+        allow_blank=True,
+        max_length=5000,
+    )
 
