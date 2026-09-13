@@ -92,18 +92,6 @@ function getExpenseName(preset) {
   );
 }
 
-function getExpenseDescription(preset) {
-  return preset?.description || "";
-}
-
-function getEstimatedMin(preset) {
-  return preset?.estimated_min ?? preset?.amount ?? "0";
-}
-
-function getEstimatedMax(preset) {
-  return preset?.estimated_max ?? preset?.amount ?? "0";
-}
-
 function normalizeConditionValue(value) {
   if (value === true || value === "true") {
     return "true";
@@ -131,7 +119,11 @@ export default function NewQuote() {
 
   const [source, setSource] = useState(SOURCE_STOCK);
 
-  const [cars, setCars] = useState([]);
+  const [vehicleSearch, setVehicleSearch] = useState("");
+  const [vehicleResults, setVehicleResults] = useState([]);
+  const [vehicleSearchLoading, setVehicleSearchLoading] = useState(false);
+
+  const [selectedCar, setSelectedCar] = useState(null);
   const [emiSheets, setEmiSheets] = useState([]);
   const [expensePresets, setExpensePresets] = useState([]);
   const [insuranceBands, setInsuranceBands] = useState([]);
@@ -221,14 +213,12 @@ export default function NewQuote() {
         setError("");
 
         const [
-          carsResponse,
           emiResponse,
           expenseResponse,
           banksResponse,
           insuranceResponse,
           servicePackageResponse,
         ] = await Promise.all([
-          getCars(),
           getEmiEstimates(),
           getExpensePresets({
             active_only: true,
@@ -246,7 +236,6 @@ export default function NewQuote() {
           return;
         }
 
-        setCars(getApiData(carsResponse));
         setEmiSheets(getApiData(emiResponse));
         setExpensePresets(getApiData(expenseResponse));
 
@@ -276,10 +265,6 @@ export default function NewQuote() {
       cancelled = true;
     };
   }, []);
-
-  const selectedCar = cars.find(
-    (car) => String(car.id) === String(selectedCarId),
-  );
 
   const applicableInsuranceBand = (() => {
     const numericPrice = Number(price);
@@ -363,13 +348,12 @@ export default function NewQuote() {
    * Stock selection
    * -------------------------------------------------------
    */
-  const handleStockVehicleChange = async (event) => {
-    const carId = event.target.value;
-
+  const handleStockVehicleSelect = async (carId) => {
     setSelectedCarId(carId);
     setError("");
 
     if (!carId) {
+      setSelectedCar(null);
       setPrice("");
       setStockCalculation(null);
       return;
@@ -385,12 +369,26 @@ export default function NewQuote() {
         throw new Error("Vehicle details were not returned.");
       }
 
+      if (isReservedVehicle(vehicle)) {
+        throw new Error(
+          "This vehicle is reserved and cannot be used for a new Quote.",
+        );
+      }
+
+      setSelectedCar(vehicle);
+
       const vehiclePrice = vehicle.asking_price ?? "";
 
       setPrice(vehiclePrice !== "" ? String(vehiclePrice) : "");
+
+      setVehicleSearch("");
+      setVehicleResults([]);
       setStockCalculation(null);
     } catch (err) {
+      setSelectedCar(null);
+      setSelectedCarId("");
       setPrice("");
+      setVehicleSearch("");
 
       setError(err?.message || "Unable to load the selected vehicle.");
     } finally {
@@ -487,6 +485,55 @@ export default function NewQuote() {
     vatEnabled,
     servicePackageSelected,
   ]);
+
+  useEffect(() => {
+    const searchTerm = vehicleSearch.trim();
+
+    if (!searchTerm) {
+      setVehicleResults([]);
+      setVehicleSearchLoading(false);
+      return undefined;
+    }
+
+    let cancelled = false;
+
+    const timer = setTimeout(async () => {
+      try {
+        setVehicleSearchLoading(true);
+
+        const response = await getCars({
+          search: searchTerm,
+          page: 1,
+          page_size: 8,
+        });
+
+        if (cancelled) {
+          return;
+        }
+
+        const results = getApiData(response);
+
+        setVehicleResults(
+          results.filter((vehicle) => !isReservedVehicle(vehicle)),
+        );
+      } catch (error) {
+        if (!cancelled) {
+          console.error("Vehicle search failed:", error);
+
+          setVehicleResults([]);
+        }
+      } finally {
+        if (!cancelled) {
+          setVehicleSearchLoading(false);
+        }
+      }
+    }, 400);
+
+    return () => {
+      cancelled = true;
+      clearTimeout(timer);
+    };
+  }, [vehicleSearch]);
 
   const stockVatAmount = stockCalculation?.vat_amount ?? "0";
 
@@ -753,7 +800,7 @@ export default function NewQuote() {
           price,
           payment_method: "Cash",
           vat_enabled: vatEnabled,
-  vat_amount: stockVatAmount,
+          vat_amount: stockVatAmount,
         };
 
         if (extraDownPayment !== "") {
@@ -801,13 +848,12 @@ export default function NewQuote() {
           price: String(financePrice),
 
           payment_method: "Finance",
-                    vat_enabled:
-            Boolean(selectedEmi?.vat_enabled ?? selectedEmi?.emi_vat_enabled),
+          vat_enabled: Boolean(
+            selectedEmi?.vat_enabled ?? selectedEmi?.emi_vat_enabled,
+          ),
 
           vat_amount:
-            selectedEmi?.vat_amount ??
-            selectedEmi?.emi_vat_amount ??
-            "0.00",
+            selectedEmi?.vat_amount ?? selectedEmi?.emi_vat_amount ?? "0.00",
         };
 
         if (extraDownPayment !== "") {
@@ -952,23 +998,86 @@ export default function NewQuote() {
                   Stock Vehicle
                 </label>
 
-                <select
-                  value={selectedCarId}
-                  onChange={handleStockVehicleChange}
-                  className="w-full rounded-lg border border-gray-300 bg-white px-3 py-2.5 text-sm outline-none focus:border-gray-500"
-                >
-                  <option value="">Select vehicle</option>
+                <div className="relative">
+                  <input
+                    type="text"
+                    value={vehicleSearch}
+                    onChange={(event) => {
+                      setVehicleSearch(event.target.value);
 
-                  {cars
-                    .filter((car) => !isReservedVehicle(car))
-                    .map((car) => (
-                      <option key={car.id} value={car.id}>
-                        {getVehicleName(car) || `Vehicle #${car.id}`}
-                        {" — "}
-                        {car.stock_id || car.vehicle_stock_id || `ID ${car.id}`}
-                      </option>
-                    ))}
-                </select>
+                      if (selectedCar) {
+                        setSelectedCar(null);
+                        setSelectedCarId("");
+                        setPrice("");
+                        setStockCalculation(null);
+                      }
+                    }}
+                    placeholder="Search by stock ID, make, model, chassis, engine..."
+                    className="w-full rounded-lg border border-gray-300 bg-white px-3 py-2.5 text-sm text-gray-900 outline-none focus:border-gray-500 focus:ring-1 focus:ring-gray-500"
+                  />
+
+                  {vehicleSearchLoading && (
+                    <p className="mt-2 text-xs text-gray-500">
+                      Searching vehicles...
+                    </p>
+                  )}
+
+                  {!vehicleSearchLoading &&
+                    vehicleSearch.trim() &&
+                    vehicleResults.length === 0 && (
+                      <p className="mt-2 text-sm text-gray-500">
+                        No vehicles found.
+                      </p>
+                    )}
+
+                  {vehicleResults.length > 0 && (
+                    <div className="mt-2 overflow-hidden rounded-lg border border-gray-200 bg-white shadow-sm">
+                      {vehicleResults.map((vehicle) => (
+                        <button
+                          key={vehicle.id}
+                          type="button"
+                          onClick={() => handleStockVehicleSelect(vehicle.id)}
+                          className="block w-full border-b border-gray-100 px-4 py-3 text-left transition last:border-b-0 hover:bg-gray-50"
+                        >
+                          <div className="flex flex-col gap-1 sm:flex-row sm:items-center sm:justify-between">
+                            <div>
+                              <p className="text-sm font-medium text-gray-900">
+                                {vehicle.stock_id || "No Stock ID"}
+                              </p>
+
+                              <p className="text-sm text-gray-600">
+                                {[
+                                  vehicle.year,
+                                  vehicle.make,
+                                  vehicle.model,
+                                  vehicle.variant,
+                                ]
+                                  .filter(Boolean)
+                                  .join(" ")}
+                              </p>
+
+                              <p className="text-xs text-gray-500">
+                                {vehicle.chassis_number ||
+                                  vehicle.vehicle_chassis_number ||
+                                  "No chassis number"}
+                              </p>
+                            </div>
+
+                            <div className="text-left sm:text-right">
+                              <p className="text-sm font-medium text-gray-900">
+                                AED {vehicle.asking_price ?? "—"}
+                              </p>
+
+                              <p className="text-xs text-gray-500">
+                                {vehicle.mileage ?? "—"} km
+                              </p>
+                            </div>
+                          </div>
+                        </button>
+                      ))}
+                    </div>
+                  )}
+                </div>
 
                 {selectedCar && (
                   <div className="mt-4 rounded-lg bg-gray-50 p-4">

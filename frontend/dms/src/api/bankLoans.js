@@ -49,6 +49,12 @@ export function getBankLoan(bankLoanId) {
   );
 }
 
+export function getBankLoanFollowUps(bankLoanId) {
+  return apiClient(
+    `/finance/bank-loans/${bankLoanId}/follow-ups/`,
+  );
+}
+
 /**
  * Update decision status.
  *

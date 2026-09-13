@@ -52,6 +52,7 @@ from .serializers import (
     CashReceiptCreateSerializer,
     CashReceiptUpdateSerializer,
     BalanceSheetSerializer,
+    BalanceSheetListSerializer,
     BalanceSheetCreateSerializer,
     BalanceSheetMasterUpdateSerializer,
 )
@@ -844,6 +845,77 @@ class BankLoanCreateView(APIView):
             .order_by("-created_at")
         )
 
+        # -------------------------------------------------
+        # Server-side search
+        # -------------------------------------------------
+
+        search = request.query_params.get("search")
+
+        if search:
+            queryset = queryset.filter(
+                Q(customer_name__icontains=search)
+                | Q(customer_mobile__icontains=search)
+                | Q(vehicle_stock_id__icontains=search)
+                | Q(vehicle_make__icontains=search)
+                | Q(vehicle_model__icontains=search)
+                | Q(vehicle_variant__icontains=search)
+                | Q(vehicle_chassis_number__icontains=search)
+                | Q(vehicle_engine_number__icontains=search)
+                | Q(quote__quote_number__icontains=search)
+                | Q(bank_name__icontains=search)
+            )
+
+        # -------------------------------------------------
+        # Decision status
+        # -------------------------------------------------
+
+        status_filter = request.query_params.get("status")
+
+        if status_filter:
+            queryset = queryset.filter(
+                status=status_filter
+            )
+
+        # -------------------------------------------------
+        # Bank
+        # -------------------------------------------------
+
+        bank_filter = request.query_params.get("bank")
+
+        if bank_filter:
+            queryset = queryset.filter(
+                bank_id=bank_filter
+            )
+
+        # -------------------------------------------------
+        # Priority
+        # -------------------------------------------------
+
+        priority_filter = request.query_params.get(
+            "priority"
+        )
+
+        if priority_filter:
+            queryset = queryset.filter(
+                priority=priority_filter
+            )
+
+        # -------------------------------------------------
+        # Application status
+        # -------------------------------------------------
+
+        application_status_filter = (
+            request.query_params.get(
+                "application_status"
+            )
+        )
+
+        if application_status_filter:
+            queryset = queryset.filter(
+                application_status=
+                    application_status_filter
+            )
+
         serializer = BankLoanSerializer(
             queryset,
             many=True,
@@ -1555,14 +1627,14 @@ class CashReceiptListCreateView(APIView):
             queryset = queryset.filter(
                 Q(receipt_number__icontains=search)
                 | Q(quote__quote_number__icontains=search)
-                | Q(customer__name__icontains=search)
-                | Q(customer__mobile__icontains=search)
+                | Q(quote__customer_name__icontains=search)
+                | Q(quote__customer_mobile__icontains=search)
                 | Q(car__stock_id__icontains=search)
                 | Q(car__chassis_number__icontains=search)
                 | Q(car__make__icontains=search)
                 | Q(car__model__icontains=search)
                 | Q(car__variant__icontains=search)
-            )
+            ).distinct()
 
         if transaction_date:
             try:
@@ -2270,7 +2342,7 @@ class BalanceSheetListCreateView(APIView):
                 quote_id__in=status_quote_ids
             )
 
-        serializer = BalanceSheetSerializer(
+        serializer = BalanceSheetListSerializer(
             queryset,
             many=True,
         )

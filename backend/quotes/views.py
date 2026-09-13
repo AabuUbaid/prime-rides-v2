@@ -181,7 +181,7 @@ class QuoteProceedToBankLoanView(APIView):
         try:
             bank_loan = proceed_quote_to_bank_loan(
                 quote=quote,
-                bank_id=serializer.validated_data["bank_id"],
+                bank_id=serializer.validated_data.get("bank_id"),
                 agent=request.user,
                 priority=serializer.validated_data.get(
                     "priority"

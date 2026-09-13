@@ -1147,9 +1147,19 @@ class BankLoanFollowUpSerializer(
         if not obj.created_by:
             return None
 
+        full_name = " ".join(
+            part
+            for part in [
+                getattr(obj.created_by, "first_name", ""),
+                getattr(obj.created_by, "last_name", ""),
+            ]
+            if part
+        ).strip()
+
         return (
-            obj.created_by.get_full_name()
-            or obj.created_by.username
+            full_name
+            or getattr(obj.created_by, "email", None)
+            or getattr(obj.created_by, "username", None)
         )
         
 # =========================================================
@@ -1596,41 +1606,14 @@ class BalanceSheetSerializer(serializers.ModelSerializer):
         read_only=True,
     )
 
-    vehicle_stock_id = serializers.CharField(
-        source="car.stock_id",
-        read_only=True,
-        allow_null=True,
-    )
-    vehicle_make = serializers.CharField(
-        source="car.make",
-        read_only=True,
-        allow_null=True,
-    )
-    vehicle_model = serializers.CharField(
-        source="car.model",
-        read_only=True,
-        allow_null=True,
-    )
-    vehicle_variant = serializers.CharField(
-        source="car.variant",
-        read_only=True,
-        allow_null=True,
-    )
-    vehicle_year = serializers.IntegerField(
-        source="car.year",
-        read_only=True,
-        allow_null=True,
-    )
-    vehicle_colour = serializers.CharField(
-        source="car.colour",
-        read_only=True,
-        allow_null=True,
-    )
-    vehicle_chassis_number = serializers.CharField(
-        source="car.chassis_number",
-        read_only=True,
-        allow_null=True,
-    )
+    vehicle_stock_id = serializers.SerializerMethodField()
+    vehicle_make = serializers.SerializerMethodField()
+    vehicle_model = serializers.SerializerMethodField()
+    vehicle_variant = serializers.SerializerMethodField()
+    vehicle_year = serializers.SerializerMethodField()
+    vehicle_colour = serializers.SerializerMethodField()
+    vehicle_chassis_number = serializers.SerializerMethodField()
+
     master_overrides = serializers.JSONField(
         read_only=True,
     )
@@ -1709,6 +1692,71 @@ class BalanceSheetSerializer(serializers.ModelSerializer):
         ]
 
         read_only_fields = fields
+
+    def _get_vehicle_value(self, obj, field):
+        car = getattr(obj, "car", None)
+
+        if car is not None:
+            value = getattr(car, field, None)
+            if value is not None:
+                return value
+
+        quote = getattr(obj, "quote", None)
+
+        if quote is not None:
+            value = getattr(quote, field, None)
+
+            if value is not None:
+                return value
+
+            emi_sheet = getattr(quote, "emi_sheet", None)
+
+            if emi_sheet is not None:
+                return getattr(emi_sheet, field, None)
+
+        return None
+
+    def get_vehicle_stock_id(self, obj):
+        return self._get_vehicle_value(
+            obj,
+            "vehicle_stock_id",
+        )
+
+    def get_vehicle_make(self, obj):
+        return self._get_vehicle_value(
+            obj,
+            "vehicle_make",
+        )
+
+    def get_vehicle_model(self, obj):
+        return self._get_vehicle_value(
+            obj,
+            "vehicle_model",
+        )
+
+    def get_vehicle_variant(self, obj):
+        return self._get_vehicle_value(
+            obj,
+            "vehicle_variant",
+        )
+
+    def get_vehicle_year(self, obj):
+        return self._get_vehicle_value(
+            obj,
+            "vehicle_year",
+        )
+
+    def get_vehicle_colour(self, obj):
+        return self._get_vehicle_value(
+            obj,
+            "vehicle_colour",
+        )
+
+    def get_vehicle_chassis_number(self, obj):
+        return self._get_vehicle_value(
+            obj,
+            "vehicle_chassis_number",
+        )
 
     def get_total_received(self, obj):
         return (
@@ -1957,6 +2005,18 @@ class BalanceSheetSerializer(serializers.ModelSerializer):
                 data[field] = value
 
         return data
+
+class BalanceSheetListSerializer(
+        BalanceSheetSerializer
+    ):
+        class Meta(BalanceSheetSerializer.Meta):
+            fields = [
+                field
+                for field in BalanceSheetSerializer.Meta.fields
+                if field != "transactions"
+            ]
+
+            read_only_fields = fields
     
 class BalanceSheetCreateSerializer(serializers.Serializer):
     customer_id = serializers.IntegerField(

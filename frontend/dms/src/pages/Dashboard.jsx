@@ -36,9 +36,7 @@ function Dashboard() {
   if (!summary) {
     return (
       <div className="min-h-screen bg-gray-50 p-8">
-        <p className="text-red-600">
-          Failed to load dashboard.
-        </p>
+        <p className="text-red-600">Failed to load dashboard.</p>
       </div>
     );
   }
@@ -103,19 +101,15 @@ function Dashboard() {
       <header className="border-b bg-white">
         <div className="mx-auto flex max-w-7xl items-center justify-between px-6 py-4">
           <div>
-            <h1 className="text-2xl font-bold text-gray-900">
-              Prime Rides
-            </h1>
+            <h1 className="text-2xl font-bold text-gray-900">Prime Rides</h1>
 
-            <p className="text-sm text-gray-500">
-              Dealer Management System
-            </p>
+            <p className="text-sm text-gray-500">Dealer Management System</p>
           </div>
 
           <div className="flex items-center gap-3">
             {user?.role === "MASTER" && (
               <a
-                href="/finance/settings"
+                href="/finance/master"
                 className="rounded-md border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 transition hover:bg-gray-100"
               >
                 Finance Master
@@ -127,9 +121,7 @@ function Dashboard() {
                 {user?.first_name}
               </p>
 
-              <p className="text-xs uppercase text-gray-500">
-                {user?.role}
-              </p>
+              <p className="text-xs uppercase text-gray-500">{user?.role}</p>
             </div>
 
             <button
@@ -147,9 +139,7 @@ function Dashboard() {
       <main className="mx-auto max-w-7xl px-6 py-8">
         {/* Page heading */}
         <div className="mb-6">
-          <h2 className="text-xl font-semibold text-gray-900">
-            Dashboard
-          </h2>
+          <h2 className="text-xl font-semibold text-gray-900">Dashboard</h2>
 
           <p className="mt-1 text-sm text-gray-500">
             Overview of your vehicle inventory and financial position.

@@ -1,5 +1,180 @@
 @import "tailwindcss";
 
+
+/* =========================================================
+   PRINT DOCUMENT - SCREEN PREVIEW
+   ========================================================= */
+
+@media screen {
+  .print-area {
+    min-height: 100vh;
+    width: 100%;
+    padding: 32px 20px;
+    background: #f3f4f6;
+    box-sizing: border-box;
+  }
+
+  .print-document {
+    width: 210mm;
+    min-height: 297mm;
+    max-width: 100%;
+    margin: 0 auto;
+    padding: 12mm 14mm;
+    box-sizing: border-box;
+
+    background: #ffffff;
+    color: #111827;
+
+    border: 1px solid #d1d5db;
+    border-radius: 4px;
+
+    box-shadow:
+      0 20px 40px rgba(0, 0, 0, 0.10),
+      0 8px 16px rgba(0, 0, 0, 0.06);
+
+    font-family: Arial, Helvetica, sans-serif;
+  }
+
+  .print-header {
+    border-bottom: 1.5px solid #111827;
+    padding-bottom: 6px;
+    margin-bottom: 10px;
+  }
+
+  .print-section {
+    margin-bottom: 10px;
+  }
+
+  .print-section-title {
+    margin-bottom: 5px;
+    padding-bottom: 3px;
+
+    border-bottom: 1px solid #9ca3af;
+
+    font-size: 9px;
+    font-weight: 800;
+    line-height: 1.2;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+
+    color: #1f2937;
+  }
+
+  .print-grid-2 {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 7px 18px;
+  }
+
+  .print-grid-3 {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 7px 14px;
+  }
+
+  .print-field-label {
+    margin-bottom: 2px;
+
+    font-size: 7px;
+    line-height: 1.2;
+    font-weight: 700;
+    text-transform: uppercase;
+
+    color: #6b7280;
+  }
+
+  .print-field-value {
+    font-size: 9px;
+    line-height: 1.3;
+    font-weight: 500;
+    color: #111827;
+  }
+
+  .print-table {
+    width: 100%;
+    border-collapse: collapse;
+    table-layout: fixed;
+
+    font-size: 7px;
+    line-height: 1.25;
+  }
+
+  .print-table th,
+  .print-table td {
+    padding: 4px 5px;
+    border: 1px solid #d1d5db;
+    vertical-align: top;
+    word-break: break-word;
+  }
+
+  .print-table th {
+    background: #f3f4f6;
+    font-weight: 700;
+    text-align: left;
+    color: #374151;
+  }
+
+  .print-table td {
+    color: #111827;
+  }
+
+  .print-total {
+    margin-top: 6px;
+    padding-top: 5px;
+
+    border-top: 1px solid #9ca3af;
+  }
+
+  .print-total > div {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+
+    padding: 2px 0;
+
+    font-size: 8px;
+  }
+
+  .print-total strong {
+    font-weight: 800;
+  }
+
+  .print-signature {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 24px;
+
+    margin-top: 18px;
+    padding-top: 4px;
+  }
+
+  .print-signature-line {
+    min-height: 28px;
+
+    padding-top: 18px;
+
+    border-top: 1px solid #111827;
+
+    font-size: 7px;
+    text-align: center;
+
+    color: #374151;
+  }
+}
+
+/* Smaller screens: keep the A4 sheet intact and scroll horizontally */
+@media screen and (max-width: 850px) {
+  .print-area {
+    padding: 16px 8px;
+    overflow-x: auto;
+  }
+
+  .print-document {
+    min-width: 210mm;
+    margin: 0 auto;
+  }
+}
+
 /* =========================================================
    PRIME RIDES MASTER PRINT SYSTEM
    ========================================================= */

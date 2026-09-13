@@ -9,7 +9,7 @@ from inventory.models import Car
 from .models import Quote, QuoteExpense
 from customers.models import CustomerDocument
 from customers.serializers import CustomerDocumentSerializer
-from finance.models import BankLoan
+from finance.models import BankLoan, CashDeal
 
 User = get_user_model()
 
@@ -479,6 +479,45 @@ class QuoteDetailSerializer(serializers.ModelSerializer):
         read_only=True,
     )
 
+    cash_deal = serializers.SerializerMethodField()
+
+    active_bank_loan = serializers.SerializerMethodField()
+
+    def get_cash_deal(self, obj):
+        try:
+            cash_deal = obj.cash_deal
+        except CashDeal.DoesNotExist:
+            return None
+
+        return {
+            "id": cash_deal.id,
+            "status": cash_deal.status,
+        }
+
+    def get_active_bank_loan(self, obj):
+        bank_loan = (
+            obj.bank_loans
+            .filter(
+                status__in=[
+                    BankLoan.Status.PENDING,
+                    BankLoan.Status.APPROVED,
+                ]
+            )
+            .order_by("-created_at")
+            .first()
+        )
+
+        if bank_loan is None:
+            return None
+
+        return {
+            "id": bank_loan.id,
+            "bank_name": bank_loan.bank_name,
+            "status": bank_loan.status,
+            "application_status": bank_loan.application_status,
+            "priority": bank_loan.priority,
+        }
+
     class Meta:
         model = Quote
 
@@ -528,6 +567,9 @@ class QuoteDetailSerializer(serializers.ModelSerializer):
             "emi_monthly_emi",
 
             "status",
+
+            "cash_deal",
+            "active_bank_loan",
 
             "expenses",
 
@@ -663,8 +705,10 @@ class QuotePrintSerializer(serializers.ModelSerializer):
 class QuoteProceedToBankLoanSerializer(
     serializers.Serializer
 ):
-    bank_id = serializers.IntegerField()
-
+    bank_id = serializers.IntegerField(
+        required=False,
+        allow_null=True,
+    )
     priority = serializers.ChoiceField(
         choices=BankLoan.Priority.choices,
         required=False,

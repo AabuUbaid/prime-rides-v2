@@ -1,39 +1,52 @@
 import { Link } from "react-router-dom";
 import { useAuth } from "../../context/AuthContext";
 
-const SETTINGS = [
+const FINANCE_MASTER = [
   {
-    key: "banks",
-    title: "Banks",
+    key: "cash-receipts",
+    title: "Cash Receipts",
     description:
-      "Manage finance banks, interest rates, cash banks, and active status.",
+      "View, create, review, and reverse actual cash receipt transactions.",
+    path: "/finance/cash-receipts",
   },
   {
-    key: "expense-presets",
-    title: "Expense Presets",
+    key: "balance-sheets",
+    title: "Balance Sheets",
     description:
-      "Configure dynamic finance expense types and their calculation rules.",
+      "View deal-level financial positions, transaction history, and print balance sheets.",
+    path: "/finance/balance-sheets",
+  },
+
+  {
+    key: "bank-loans",
+    title: "Bank Loans",
+    description:
+      "Track finance applications, bank decisions, application progress, priorities, and follow-ups.",
+    path: "/finance/bank-loans",
   },
   {
-    key: "insurance-bands",
-    title: "Insurance Bands",
-    description: "Configure vehicle-price-based insurance bands and amounts.",
+    key: "cash-deals",
+    title: "Cash Deals",
+    description:
+      "Track cash-sale deals, advances, outstanding balances, delivery status, and remarks.",
+    path: "/finance/cash-deals",
   },
   {
-    key: "service-packages",
-    title: "Service Packages",
-    description:
-      "Manage available service packages and their configured pricing.",
+    key: "emi-estimates",
+    title: "EMI Estimates",
+    description: "View and manage saved finance estimates.",
+    path: "/finance/emi/list",
   },
   {
-    key: "bank-processing",
-    title: "Bank Processing",
+    key: "finance-settings",
+    title: "Finance Settings",
     description:
-      "Configure bank processing percentages, minimums, and application charges.",
+      "Manage banks, expense presets, insurance bands, service packages, and bank processing.",
+    path: "/finance/settings",
   },
 ];
 
-function FinanceSettings() {
+function FinanceMaster() {
   const { user } = useAuth();
 
   if (user?.role !== "MASTER") {
@@ -46,7 +59,7 @@ function FinanceSettings() {
             </h1>
 
             <p className="mt-2 text-sm text-gray-600">
-              Finance Master settings are available only to Master users.
+              Finance Master is available only to Master users.
             </p>
 
             <Link
@@ -63,7 +76,6 @@ function FinanceSettings() {
 
   return (
     <div className="min-h-screen bg-gray-50">
-      {/* Header */}
       <header className="border-b bg-white">
         <div className="mx-auto flex max-w-7xl items-center justify-between px-6 py-4">
           <div>
@@ -91,37 +103,32 @@ function FinanceSettings() {
         </div>
       </header>
 
-      {/* Main */}
       <main className="mx-auto max-w-7xl px-6 py-8">
         <div className="mb-8">
-          <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-            <div>
-              <h2 className="text-2xl font-semibold text-gray-900">
-                Finance Master Settings
-              </h2>
+          <h2 className="text-2xl font-semibold text-gray-900">
+            Finance Master
+          </h2>
 
-              <p className="mt-1 text-sm text-gray-500">
-                Manage finance configuration used by the DMS Finance module.
-              </p>
-            </div>
-          </div>
+          <p className="mt-1 text-sm text-gray-500">
+            Access finance transactions, estimates, and configuration.
+          </p>
         </div>
 
-        <div className="grid grid-cols-1 gap-5 md:grid-cols-2 xl:grid-cols-3">
-          {SETTINGS.map((setting) => (
+        <div className="grid grid-cols-1 gap-5 md:grid-cols-2">
+          {FINANCE_MASTER.map((item) => (
             <Link
-              key={setting.key}
-              to={`/finance/settings/${setting.key}`}
+              key={item.key}
+              to={item.path}
               className="group rounded-lg border border-gray-200 bg-white p-6 shadow-sm transition hover:border-gray-300 hover:shadow-md"
             >
               <div className="flex items-start justify-between gap-4">
                 <div>
                   <h3 className="text-lg font-semibold text-gray-900">
-                    {setting.title}
+                    {item.title}
                   </h3>
 
                   <p className="mt-2 text-sm leading-6 text-gray-500">
-                    {setting.description}
+                    {item.description}
                   </p>
                 </div>
 
@@ -137,4 +144,4 @@ function FinanceSettings() {
   );
 }
 
-export default FinanceSettings;
+export default FinanceMaster;

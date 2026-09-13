@@ -45,3 +45,22 @@ export function updateQuote(id, payload) {
 export function getQuotePrint(id) {
   return apiClient(`/quotes/${id}/print/`);
 }
+
+export function proceedToCashDeal(quoteId) {
+  return apiClient(`/quotes/${quoteId}/proceed-to-cash-deal/`, {
+    method: "POST",
+  });
+}
+
+export function proceedToBankLoan(
+  quoteId,
+  payload,
+) {
+  return apiClient(
+    `/quotes/${quoteId}/proceed-to-bank-loan/`,
+    {
+      method: "POST",
+      body: JSON.stringify(payload),
+    },
+  );
+}

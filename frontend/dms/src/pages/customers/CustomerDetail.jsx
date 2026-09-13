@@ -7,7 +7,6 @@ import {
   Pencil,
   Trash2,
   Upload,
-  UserRound,
 } from "lucide-react";
 import { Link, useParams } from "react-router-dom";
 import { toast } from "react-toastify";
@@ -59,11 +58,7 @@ function formatDate(value) {
 }
 
 function formatCurrency(value) {
-  if (
-    value === null ||
-    value === undefined ||
-    value === ""
-  ) {
+  if (value === null || value === undefined || value === "") {
     return "AED 0.00";
   }
 
@@ -86,9 +81,7 @@ function getStatusLabel(status) {
 
   return String(status)
     .replaceAll("_", " ")
-    .replace(/\b\w/g, (letter) =>
-      letter.toUpperCase()
-    );
+    .replace(/\b\w/g, (letter) => letter.toUpperCase());
 }
 
 function getDocumentUrl(documentPath) {
@@ -115,9 +108,7 @@ function isImageDocument(path) {
     return false;
   }
 
-  return /\.(jpg|jpeg|png|gif|webp|bmp|svg)$/i.test(
-    path.split("?")[0]
-  );
+  return /\.(jpg|jpeg|png|gif|webp|bmp|svg)$/i.test(path.split("?")[0]);
 }
 
 export default function CustomerDetail() {
@@ -128,14 +119,11 @@ export default function CustomerDetail() {
   const [customer, setCustomer] = useState(null);
   const [loading, setLoading] = useState(true);
 
-  const [documentCategory, setDocumentCategory] = useState(
-    "driving_license"
-  );
+  const [documentCategory, setDocumentCategory] = useState("driving_license");
 
   const [selectedFile, setSelectedFile] = useState(null);
   const [uploading, setUploading] = useState(false);
-  const [deletingDocumentId, setDeletingDocumentId] =
-    useState(null);
+  const [deletingDocumentId, setDeletingDocumentId] = useState(null);
 
   const loadCustomer = useCallback(async () => {
     if (!id) {
@@ -150,23 +138,14 @@ export default function CustomerDetail() {
       const response = await getCustomer(id);
 
       if (!response?.success || !response?.data) {
-        throw new Error(
-          response?.message ||
-            "Unable to load customer."
-        );
+        throw new Error(response?.message || "Unable to load customer.");
       }
 
       setCustomer(response.data);
     } catch (error) {
-      console.error(
-        "Failed to load customer:",
-        error
-      );
+      console.error("Failed to load customer:", error);
 
-      toast.error(
-        error?.message ||
-          "Unable to load customer."
-      );
+      toast.error(error?.message || "Unable to load customer.");
 
       setCustomer(null);
     } finally {
@@ -209,59 +188,36 @@ export default function CustomerDetail() {
       formData.append("category", documentCategory);
       formData.append("document", selectedFile);
 
-      const response =
-        await uploadCustomerDocument(
-          id,
-          formData
-        );
+      const response = await uploadCustomerDocument(id, formData);
 
       if (!response?.success) {
-        throw new Error(
-          response?.message ||
-            "Unable to upload document."
-        );
+        throw new Error(response?.message || "Unable to upload document.");
       }
 
       toast.success(
-        response.message ||
-          "Customer document uploaded successfully."
+        response.message || "Customer document uploaded successfully.",
       );
 
       resetUploadForm();
 
       await loadCustomer();
     } catch (error) {
-      console.error(
-        "Document upload failed:",
-        error
-      );
+      console.error("Document upload failed:", error);
 
-      const backendErrors =
-        error?.cause?.errors;
+      const backendErrors = error?.cause?.errors;
 
       if (Array.isArray(backendErrors)) {
         toast.error(backendErrors.join(" "));
-      } else if (
-        backendErrors &&
-        typeof backendErrors === "object"
-      ) {
-        const messages = Object.values(
-          backendErrors
-        )
-          .flat()
-          .filter(Boolean);
+      } else if (backendErrors && typeof backendErrors === "object") {
+        const messages = Object.values(backendErrors).flat().filter(Boolean);
 
         toast.error(
           messages.length
             ? messages.join(" ")
-            : error?.message ||
-                "Unable to upload document."
+            : error?.message || "Unable to upload document.",
         );
       } else {
-        toast.error(
-          error?.message ||
-            "Unable to upload document."
-        );
+        toast.error(error?.message || "Unable to upload document.");
       }
     } finally {
       setUploading(false);
@@ -269,9 +225,7 @@ export default function CustomerDetail() {
   }
 
   async function handleDeleteDocument(documentId) {
-    const confirmed = window.confirm(
-      "Delete this customer document?"
-    );
+    const confirmed = window.confirm("Delete this customer document?");
 
     if (!confirmed) {
       return;
@@ -280,89 +234,61 @@ export default function CustomerDetail() {
     try {
       setDeletingDocumentId(documentId);
 
-      const response =
-        await deleteCustomerDocument(
-          id,
-          documentId
-        );
+      const response = await deleteCustomerDocument(id, documentId);
 
       if (!response?.success) {
-        throw new Error(
-          response?.message ||
-            "Unable to delete document."
-        );
+        throw new Error(response?.message || "Unable to delete document.");
       }
 
       toast.success(
-        response.message ||
-          "Customer document deleted successfully."
+        response.message || "Customer document deleted successfully.",
       );
 
       await loadCustomer();
     } catch (error) {
-      console.error(
-        "Document deletion failed:",
-        error
-      );
+      console.error("Document deletion failed:", error);
 
-      toast.error(
-        error?.message ||
-          "Unable to delete document."
-      );
+      toast.error(error?.message || "Unable to delete document.");
     } finally {
       setDeletingDocumentId(null);
     }
   }
 
   async function handleDeleteCustomer() {
-  const confirmed = window.confirm(
-    `Delete customer "${customer.customer_name}"? This action cannot be undone.`
-  );
+    const confirmed = window.confirm(
+      `Delete customer "${customer.customer_name}"? This action cannot be undone.`,
+    );
 
-  if (!confirmed) {
-    return;
-  }
-
-  try {
-    setLoading(true);
-
-    const response = await deleteCustomer(id);
-
-    if (!response?.success) {
-      throw new Error(
-        response?.message ||
-          "Unable to delete customer."
-      );
+    if (!confirmed) {
+      return;
     }
 
-    toast.success(
-      response.message ||
-        "Customer deleted successfully."
-    );
+    try {
+      setLoading(true);
 
-    window.location.href = "/customers";
-  } catch (error) {
-    console.error(
-      "Customer deletion failed:",
-      error
-    );
+      const response = await deleteCustomer(id);
 
-    toast.error(
-      error?.message ||
-        "Unable to delete customer."
-    );
+      if (!response?.success) {
+        throw new Error(response?.message || "Unable to delete customer.");
+      }
 
-    setLoading(false);
+      toast.success(response.message || "Customer deleted successfully.");
+
+      window.location.href = "/customers";
+    } catch (error) {
+      console.error("Customer deletion failed:", error);
+
+      toast.error(error?.message || "Unable to delete customer.");
+
+      setLoading(false);
+    }
   }
-}
 
   if (loading) {
     return (
       <div className="min-h-screen bg-slate-50 px-4 py-10">
         <div className="mx-auto flex min-h-64 max-w-6xl items-center justify-center">
-          <div className="text-sm text-slate-500">
-            Loading customer...
-          </div>
+          <div className="text-sm text-slate-500">Loading customer...</div>
         </div>
       </div>
     );
@@ -384,13 +310,9 @@ export default function CustomerDetail() {
     );
   }
 
-  const documents = Array.isArray(customer.documents)
-    ? customer.documents
-    : [];
+  const documents = Array.isArray(customer.documents) ? customer.documents : [];
 
-  const quotes = Array.isArray(customer.quotes)
-    ? customer.quotes
-    : [];
+  const quotes = Array.isArray(customer.quotes) ? customer.quotes : [];
 
   return (
     <div className="min-h-screen bg-slate-50 px-4 py-6 sm:px-6 lg:px-8">
@@ -410,9 +332,7 @@ export default function CustomerDetail() {
                 {customer.customer_name || "-"}
               </h1>
 
-              <p className="text-sm text-slate-500">
-                Customer #{customer.id}
-              </p>
+              <p className="text-sm text-slate-500">Customer #{customer.id}</p>
             </div>
           </div>
 
@@ -424,17 +344,15 @@ export default function CustomerDetail() {
             Edit Customer
           </Link>
 
-<button
-  type="button"
-  onClick={handleDeleteCustomer}
-  className="inline-flex items-center gap-2 rounded-lg border border-red-200 bg-white px-4 py-2.5 text-sm font-medium text-red-600 hover:bg-red-50"
->
-  <Trash2 size={16} />
-  Delete Customer
-</button>
-          
+          <button
+            type="button"
+            onClick={handleDeleteCustomer}
+            className="inline-flex items-center gap-2 rounded-lg border border-red-200 bg-white px-4 py-2.5 text-sm font-medium text-red-600 hover:bg-red-50"
+          >
+            <Trash2 size={16} />
+            Delete Customer
+          </button>
         </div>
-
 
         <div className="grid gap-6">
           <section className="rounded-xl border border-slate-200 bg-white shadow-sm">
@@ -490,10 +408,7 @@ export default function CustomerDetail() {
           <section className="rounded-xl border border-slate-200 bg-white shadow-sm">
             <div className="border-b border-slate-200 px-5 py-4">
               <div className="flex items-center gap-2">
-                <Upload
-                  size={19}
-                  className="text-slate-500"
-                />
+                <Upload size={19} className="text-slate-500" />
 
                 <div>
                   <h2 className="font-semibold text-slate-900">
@@ -501,8 +416,7 @@ export default function CustomerDetail() {
                   </h2>
 
                   <p className="mt-1 text-xs text-slate-500">
-                    Upload a Driving License, Emirates ID,
-                    or Bank LPO.
+                    Upload a Driving License, Emirates ID, or Bank LPO.
                   </p>
                 </div>
               </div>
@@ -523,24 +437,15 @@ export default function CustomerDetail() {
                 <select
                   id="document-category"
                   value={documentCategory}
-                  onChange={(event) =>
-                    setDocumentCategory(
-                      event.target.value
-                    )
-                  }
+                  onChange={(event) => setDocumentCategory(event.target.value)}
                   disabled={uploading}
                   className="w-full rounded-lg border border-slate-300 bg-white px-3 py-2.5 text-sm text-slate-900 outline-none focus:border-slate-500 focus:ring-2 focus:ring-slate-200"
                 >
-                  {DOCUMENT_CATEGORIES.map(
-                    (category) => (
-                      <option
-                        key={category.value}
-                        value={category.value}
-                      >
-                        {category.label}
-                      </option>
-                    )
-                  )}
+                  {DOCUMENT_CATEGORIES.map((category) => (
+                    <option key={category.value} value={category.value}>
+                      {category.label}
+                    </option>
+                  ))}
                 </select>
               </div>
 
@@ -565,16 +470,12 @@ export default function CustomerDetail() {
               <div className="flex items-end">
                 <button
                   type="submit"
-                  disabled={
-                    uploading || !selectedFile
-                  }
+                  disabled={uploading || !selectedFile}
                   className="inline-flex w-full items-center justify-center gap-2 rounded-lg bg-slate-900 px-4 py-2.5 text-sm font-medium text-white hover:bg-slate-800 disabled:cursor-not-allowed disabled:opacity-60"
                 >
                   <Upload size={16} />
 
-                  {uploading
-                    ? "Uploading..."
-                    : "Upload Document"}
+                  {uploading ? "Uploading..." : "Upload Document"}
                 </button>
               </div>
             </form>
@@ -583,30 +484,20 @@ export default function CustomerDetail() {
           <section className="rounded-xl border border-slate-200 bg-white shadow-sm">
             <div className="flex items-center justify-between border-b border-slate-200 px-5 py-4">
               <div>
-                <h2 className="font-semibold text-slate-900">
-                  Documents
-                </h2>
+                <h2 className="font-semibold text-slate-900">Documents</h2>
 
                 <p className="mt-1 text-xs text-slate-500">
                   {documents.length} document
-                  {documents.length === 1
-                    ? ""
-                    : "s"}
+                  {documents.length === 1 ? "" : "s"}
                 </p>
               </div>
 
-              <FileText
-                size={20}
-                className="text-slate-400"
-              />
+              <FileText size={20} className="text-slate-400" />
             </div>
 
             {documents.length === 0 ? (
               <div className="px-5 py-10 text-center">
-                <FileText
-                  size={32}
-                  className="mx-auto mb-3 text-slate-300"
-                />
+                <FileText size={32} className="mx-auto mb-3 text-slate-300" />
 
                 <p className="text-sm text-slate-500">
                   No customer documents uploaded.
@@ -615,10 +506,7 @@ export default function CustomerDetail() {
             ) : (
               <div className="divide-y divide-slate-100">
                 {documents.map((document) => {
-                  const documentUrl =
-                    getDocumentUrl(
-                      document.document
-                    );
+                  const documentUrl = getDocumentUrl(document.document);
 
                   return (
                     <div
@@ -627,41 +515,29 @@ export default function CustomerDetail() {
                     >
                       <div className="flex min-w-0 items-center gap-4">
                         <div className="flex h-12 w-12 shrink-0 items-center justify-center overflow-hidden rounded-lg border border-slate-200 bg-slate-50">
-                          {isImageDocument(
-                            document.document
-                          ) ? (
+                          {isImageDocument(document.document) ? (
                             <img
                               src={documentUrl}
                               alt={
-                                DOCUMENT_LABELS[
-                                  document.category
-                                ] ||
+                                DOCUMENT_LABELS[document.category] ||
                                 "Customer document"
                               }
                               className="h-full w-full object-cover"
                             />
                           ) : (
-                            <FileText
-                              size={22}
-                              className="text-slate-400"
-                            />
+                            <FileText size={22} className="text-slate-400" />
                           )}
                         </div>
 
                         <div className="min-w-0">
                           <div className="font-medium text-slate-900">
-                            {DOCUMENT_LABELS[
-                              document.category
-                            ] ||
+                            {DOCUMENT_LABELS[document.category] ||
                               document.category ||
                               "Document"}
                           </div>
 
                           <div className="mt-1 text-xs text-slate-500">
-                            Uploaded{" "}
-                            {formatDate(
-                              document.created_at
-                            )}
+                            Uploaded {formatDate(document.created_at)}
                           </div>
                         </div>
                       </div>
@@ -692,21 +568,13 @@ export default function CustomerDetail() {
 
                         <button
                           type="button"
-                          onClick={() =>
-                            handleDeleteDocument(
-                              document.id
-                            )
-                          }
-                          disabled={
-                            deletingDocumentId ===
-                            document.id
-                          }
+                          onClick={() => handleDeleteDocument(document.id)}
+                          disabled={deletingDocumentId === document.id}
                           className="inline-flex items-center gap-2 rounded-lg border border-red-200 bg-white px-3 py-2 text-sm font-medium text-red-600 hover:bg-red-50 disabled:cursor-not-allowed disabled:opacity-60"
                         >
                           <Trash2 size={15} />
 
-                          {deletingDocumentId ===
-                          document.id
+                          {deletingDocumentId === document.id
                             ? "Deleting..."
                             : "Delete"}
                         </button>
@@ -721,9 +589,7 @@ export default function CustomerDetail() {
           <section className="rounded-xl border border-slate-200 bg-white shadow-sm">
             <div className="border-b border-slate-200 px-5 py-4">
               <div>
-                <h2 className="font-semibold text-slate-900">
-                  Quote History
-                </h2>
+                <h2 className="font-semibold text-slate-900">Quote History</h2>
 
                 <p className="mt-1 text-xs text-slate-500">
                   {quotes.length} quote
@@ -765,21 +631,15 @@ export default function CustomerDetail() {
 
                   <tbody className="divide-y divide-slate-100">
                     {quotes.map((quote) => (
-                      <tr
-                        key={quote.id}
-                        className="hover:bg-slate-50"
-                      >
+                      <tr key={quote.id} className="hover:bg-slate-50">
                         <td className="px-5 py-4">
                           <div className="font-medium text-slate-900">
-                            {quote.quote_number ||
-                              `Quote #${quote.id}`}
+                            {quote.quote_number || `Quote #${quote.id}`}
                           </div>
                         </td>
 
                         <td className="px-5 py-4 text-sm text-slate-600">
-                          {getStatusLabel(
-                            quote.status
-                          )}
+                          {getStatusLabel(quote.status)}
                         </td>
 
                         <td className="px-5 py-4 text-sm text-slate-600">
@@ -787,9 +647,7 @@ export default function CustomerDetail() {
                         </td>
 
                         <td className="px-5 py-4 text-sm text-slate-600">
-                          {formatCurrency(
-                            quote.price
-                          )}
+                          {formatCurrency(quote.price)}
                         </td>
 
                         <td className="px-5 py-4 text-right">
