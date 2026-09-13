@@ -61,6 +61,8 @@ INSTALLED_APPS = [
     "delivery_note",
     "staff",
     "leads",
+    "progression",
+    "ledger_accounts",
     
 ]
 

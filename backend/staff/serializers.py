@@ -263,6 +263,30 @@ class UserAccessUpdateSerializer(serializers.Serializer):
             )
 
         return value
+    def validate_staff_id(self, value):
+        if value is None:
+            return value
+
+        from .models import Staff
+
+        try:
+            staff = Staff.objects.get(pk=value)
+        except Staff.DoesNotExist:
+            raise serializers.ValidationError("Staff member does not exist.")
+
+        if staff.status != Staff.Status.ACTIVE:
+            raise serializers.ValidationError(
+                "Only active staff members can be linked to User Access."
+            )
+
+        current_user = self.instance
+
+        if staff.user_id is not None and staff.user_id != current_user.id:
+            raise serializers.ValidationError(
+                "This staff member is already linked to another user."
+            )
+
+        return value
 
 
 class UserAccessSerializer(serializers.ModelSerializer):
@@ -303,3 +327,17 @@ class UserAccessSerializer(serializers.ModelSerializer):
         )
 
         return staff.name if staff else None
+    
+    
+class StaffPerformanceSerializer(serializers.Serializer):
+    staff_id = serializers.IntegerField()
+    staff_name = serializers.CharField()
+    vehicles_sold = serializers.IntegerField()
+    sales_value = serializers.DecimalField(
+        max_digits=14,
+        decimal_places=2,
+    )
+    profit = serializers.DecimalField(
+        max_digits=14,
+        decimal_places=2,
+    )

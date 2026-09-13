@@ -11,7 +11,7 @@ from rest_framework.views import APIView
 
 from accounts.permissions import IsMaster
 from insurance.models import Insurance
-
+from accounts.permissions import IsMasterOrAdmin
 from .models import DeliveryNote
 from .serializers import (
     DeliveryNoteCreateSerializer,
@@ -25,7 +25,7 @@ from .services import (
 
 
 class DeliveryNoteListCreateAPIView(APIView):
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsMasterOrAdmin]
 
     def get(self, request):
         queryset = (
@@ -118,7 +118,7 @@ class DeliveryNoteListCreateAPIView(APIView):
 
 
 class DeliveryNoteDetailAPIView(APIView):
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsMasterOrAdmin]
 
     def get(self, request, pk):
         delivery_note = get_object_or_404(

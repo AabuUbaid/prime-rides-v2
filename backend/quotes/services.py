@@ -800,17 +800,11 @@ def proceed_quote_to_bank_loan(
 
     car = bank_loan.car
 
-    if car.status == Car.Status.AVAILABLE:
-        InventoryService.update_car_status(
-            car=car,
-            new_status=Car.Status.RESERVED,
-        )
-
-    InventoryService.update_car_status(
+    InventoryService.prepare_car_for_booking(
         car=car,
-        new_status=Car.Status.BOOKED,
     )
-
+    
+    
     return bank_loan
 
 
@@ -888,9 +882,8 @@ def proceed_quote_to_cash_deal(
         quote=quote,
     )
 
-    InventoryService.update_car_status(
+    InventoryService.prepare_car_for_booking(
         car=quote.car,
-        new_status=Car.Status.BOOKED,
     )
 
     return cash_deal

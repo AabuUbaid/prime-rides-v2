@@ -8,7 +8,7 @@ from rest_framework import status
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.views import APIView
-
+from accounts.permissions import IsMasterOrAdmin
 from accounts.permissions import IsMaster
 from insurance.models import Insurance
 
@@ -25,7 +25,7 @@ from .services import (
 
 
 class ProformaListCreateAPIView(APIView):
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsMasterOrAdmin]
 
     def get(self, request):
         queryset = (
@@ -118,7 +118,7 @@ class ProformaListCreateAPIView(APIView):
 
 
 class ProformaDetailAPIView(APIView):
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsMasterOrAdmin]
 
     def get(self, request, pk):
         proforma = get_object_or_404(

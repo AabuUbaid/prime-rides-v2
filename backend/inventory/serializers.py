@@ -321,6 +321,7 @@ class CarDetailSerializer(serializers.ModelSerializer):
         summary = InventorySelector.get_expense_summary(obj)
 
         return ExpenseSummarySerializer(summary).data
+    
     def get_fields(self):
         fields = super().get_fields()
 

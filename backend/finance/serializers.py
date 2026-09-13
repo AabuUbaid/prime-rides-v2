@@ -1029,7 +1029,16 @@ class BankLoanSerializer(
         if not obj.agent:
             return None
 
-        return obj.agent.get_full_name() or obj.agent.username
+        full_name = " ".join(
+            part
+            for part in [
+                obj.agent.first_name,
+                obj.agent.last_name,
+            ]
+            if part
+        ).strip()
+
+        return full_name or obj.agent.email or obj.agent.username
     
 # =========================================================
 # BANK LOAN CREATE

@@ -24,7 +24,7 @@ from .models import (
     BalanceSheet,
     
 )
-
+from accounts.permissions import IsMasterOrAdmin, IsMaster
 
 from .serializers import (
     BankSerializer,
@@ -787,7 +787,7 @@ class BankProcessingConfigurationDetailView(
     )
     
 class BankLoanCreateView(APIView):
-
+    permission_classes = [IsMaster]
     def post(self, request):
         serializer = BankLoanCreateSerializer(
             data=request.data
@@ -855,7 +855,7 @@ class BankLoanCreateView(APIView):
         )
         
 class BankLoanStatusUpdateView(APIView):
-
+    permission_classes = [IsMaster]
     def patch(self, request, pk):
         bank_loan = get_object_or_404(
             BankLoan,
@@ -893,7 +893,7 @@ class BankLoanStatusUpdateView(APIView):
         )
         
 class BankLoanFinanceUpdateView(APIView):
-
+    permission_classes = [IsMaster]
     def patch(self, request, pk):
         bank_loan = get_object_or_404(
             BankLoan,
@@ -934,7 +934,7 @@ class BankLoanFinanceUpdateView(APIView):
         )
         
 class BankLoanPriorityUpdateView(APIView):
-
+    permission_classes = [IsMaster]
     def patch(self, request, pk):
         bank_loan = get_object_or_404(
             BankLoan,
@@ -973,7 +973,7 @@ class BankLoanPriorityUpdateView(APIView):
         
         
 class BankLoanFollowUpCreateView(APIView):
-
+    permission_classes = [IsMaster]
     def get(self, request, pk):
         bank_loan = get_object_or_404(
             BankLoan,
@@ -1046,7 +1046,7 @@ class BankLoanFollowUpCreateView(APIView):
         )
         
 class BankLoanNewBankView(APIView):
-
+    permission_classes = [IsMaster]
     def post(self, request, pk):
         bank_loan = get_object_or_404(
             BankLoan,
@@ -1105,7 +1105,7 @@ class BankLoanNewBankView(APIView):
         )
         
 class BankLoanApplicationStatusUpdateView(APIView):
-
+    permission_classes = [IsMaster]
     def patch(self, request, pk):
         bank_loan = get_object_or_404(
             BankLoan,
@@ -1146,7 +1146,7 @@ class BankLoanApplicationStatusUpdateView(APIView):
         )
         
 class BankLoanApplicationInfoUpdateView(APIView):
-
+    permission_classes = [IsMaster]
     def patch(self, request, pk):
         bank_loan = get_object_or_404(
             BankLoan,
@@ -1231,9 +1231,7 @@ class BankLoanDetailView(APIView):
 # =========================================================
 
 class CashDealListCreateView(APIView):
-    permission_classes = [
-        IsAuthenticated,
-    ]
+    permission_classes = [IsMaster]
 
     def get(self, request):
         queryset = (
@@ -1335,9 +1333,7 @@ class CashDealListCreateView(APIView):
 # =========================================================
 
 class CashDealDetailView(APIView):
-    permission_classes = [
-        IsAuthenticated,
-    ]
+    permission_classes = [IsMaster]
 
     def get(self, request, pk):
         cash_deal = get_object_or_404(
@@ -1446,9 +1442,7 @@ def _cash_receipt_total_received(quote_id):
 # =========================================================
 
 class CashReceiptCustomerDealsView(APIView):
-    permission_classes = [
-        IsAuthenticated,
-    ]
+    permission_classes = [IsMasterOrAdmin]
 
     def get(self, request, customer_id):
         customer = get_object_or_404(
@@ -1514,9 +1508,7 @@ class CashReceiptCustomerDealsView(APIView):
 # =========================================================
 
 class CashReceiptListCreateView(APIView):
-    permission_classes = [
-        IsAuthenticated,
-    ]
+    permission_classes = [IsMasterOrAdmin]
 
     def get(self, request):
         queryset = (
@@ -1814,9 +1806,7 @@ class CashReceiptListCreateView(APIView):
 # =========================================================
 
 class CashReceiptDetailView(APIView):
-    permission_classes = [
-        IsAuthenticated,
-    ]
+    permission_classes = [IsMasterOrAdmin]
 
     def get(self, request, pk):
         receipt = get_object_or_404(
@@ -1896,9 +1886,7 @@ class CashReceiptDetailView(APIView):
         )
 
 class CashReceiptCategoryListView(APIView):
-    permission_classes = [
-        IsAuthenticated,
-    ]
+    permission_classes = [IsMasterOrAdmin]
 
     def get(self, request):
         from .services import STANDARD_CASH_RECEIPT_CATEGORIES
@@ -1958,9 +1946,7 @@ class CashReceiptCategoryListView(APIView):
 
 
 class CashReceiptReverseView(APIView):
-    permission_classes = [
-        IsAuthenticated,
-    ]
+    permission_classes = [IsMasterOrAdmin]
 
     def post(self, request, pk):
         receipt = get_object_or_404(
@@ -2022,10 +2008,8 @@ class CashReceiptReverseView(APIView):
 # =========================================================
 
 class BalanceSheetCustomerDealsView(APIView):
-    permission_classes = [
-        IsAuthenticated,
-    ]
-
+    permission_classes = [IsMasterOrAdmin]
+    
     def get(self, request, customer_id):
         customer = get_object_or_404(
             Customer,
@@ -2107,9 +2091,7 @@ class BalanceSheetCustomerDealsView(APIView):
 # =========================================================
 
 class BalanceSheetListCreateView(APIView):
-    permission_classes = [
-        IsAuthenticated,
-    ]
+    permission_classes = [IsMasterOrAdmin]
 
     def get(self, request):
         queryset = (
@@ -2374,9 +2356,7 @@ class BalanceSheetListCreateView(APIView):
 # =========================================================
 
 class BalanceSheetDetailView(APIView):
-    permission_classes = [
-        IsAuthenticated,
-    ]
+    permission_classes = [IsMasterOrAdmin]
 
     def get(self, request, pk):
         balance_sheet = get_object_or_404(

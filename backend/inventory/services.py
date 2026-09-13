@@ -35,6 +35,7 @@ class InventoryService:
         "booked": {
             "booked",
             "reserved",
+            "sold",
         },
         "sold": {
             "sold",
@@ -1673,5 +1674,71 @@ class InventoryService:
                 "updated_at",
             ]
         )
+
+        return car
+    
+    @staticmethod
+    @transaction.atomic
+    def prepare_car_for_reservation(
+        *,
+        car,
+    ):
+        """
+        Prepare a vehicle for reservation using the existing
+        Inventory status transition rules.
+
+        In-house vehicles must first become Available.
+        Available vehicles then become Reserved.
+
+        Existing Reserved vehicles are left unchanged.
+        """
+
+        if car.status == Car.Status.IN_HOUSE:
+            InventoryService.update_car_status(
+                car=car,
+                new_status=Car.Status.AVAILABLE,
+            )
+
+        if car.status == Car.Status.AVAILABLE:
+            InventoryService.update_car_status(
+                car=car,
+                new_status=Car.Status.RESERVED,
+            )
+
+        return car
+    
+    @staticmethod
+    @transaction.atomic
+    def prepare_car_for_booking(
+        *,
+        car,
+    ):
+        """
+        Prepare a vehicle for booking using the existing
+        Inventory status transition rules.
+
+        Valid progression:
+            In House → Available → Reserved → Booked
+
+        Existing Booked vehicles are left unchanged.
+        """
+
+        if car.status == Car.Status.IN_HOUSE:
+            InventoryService.update_car_status(
+                car=car,
+                new_status=Car.Status.AVAILABLE,
+            )
+
+        if car.status == Car.Status.AVAILABLE:
+            InventoryService.update_car_status(
+                car=car,
+                new_status=Car.Status.RESERVED,
+            )
+
+        if car.status == Car.Status.RESERVED:
+            InventoryService.update_car_status(
+                car=car,
+                new_status=Car.Status.BOOKED,
+            )
 
         return car

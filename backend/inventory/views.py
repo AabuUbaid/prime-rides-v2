@@ -7,7 +7,7 @@ from rest_framework.parsers import (
     FormParser,
 )
 from rest_framework.exceptions import ValidationError
-
+from accounts.permissions import IsMaster
 from django.http import QueryDict
 
 from .pagination import InventoryPagination
@@ -846,7 +846,7 @@ class SpecialPriceRequestListAPIView(APIView):
 
 
 class SpecialPriceDecisionAPIView(APIView):
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsMaster]
 
     def post(self, request, pk):
         serializer = SpecialPriceDecisionSerializer(

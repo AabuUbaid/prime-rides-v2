@@ -22,6 +22,7 @@ from .serializers import (
     UserAccessCreateSerializer,
     UserAccessSerializer,
     UserAccessUpdateSerializer,
+    StaffPerformanceSerializer
 )
 from .services import (
 
@@ -34,7 +35,8 @@ from .services import (
     change_user_password,
     deactivate_user,
     activate_user,
-    delete_staff
+    delete_staff,
+    get_staff_performance
 )
 
 
@@ -357,6 +359,7 @@ class UserAccessDetailView(APIView):
 
         deactivate_user(
             user=user,
+            actor=request.user,
         )
 
         return Response(
@@ -448,3 +451,19 @@ class UserAccessPasswordView(APIView):
             },
             status=status.HTTP_200_OK,
         )
+        
+class StaffPerformanceView(APIView):
+    permission_classes = [IsMasterOrAdmin]
+
+    def get(self, request, pk):
+        staff = get_staff(pk=pk)
+
+        performance = get_staff_performance(
+            staff=staff,
+        )
+
+        serializer = StaffPerformanceSerializer(
+            performance,
+        )
+
+        return Response(serializer.data)

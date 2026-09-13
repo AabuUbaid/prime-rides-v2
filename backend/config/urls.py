@@ -74,6 +74,14 @@ urlpatterns = [
         "api/leads/",
         include("leads.urls"),
     ),
+    path(
+        "api/progression/",
+        include("progression.urls"),
+    ),
+    path(
+        "api/ledger-accounts/",
+        include("ledger_accounts.urls"),
+    ),
 ]
 
 if settings.DEBUG:

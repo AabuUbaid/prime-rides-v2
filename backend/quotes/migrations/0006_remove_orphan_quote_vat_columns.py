@@ -4,7 +4,7 @@ from django.db import migrations
 class Migration(migrations.Migration):
 
     dependencies = [
-        ("quotes", "0004_quote_customer"),
+        ("quotes", "0005_quote_vat_amount_quote_vat_enabled")
     ]
 
     operations = [

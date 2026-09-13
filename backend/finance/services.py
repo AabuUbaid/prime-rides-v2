@@ -2541,27 +2541,27 @@ def create_emi_sheet(
                 expense["amount"]
             ),
         )
-        # -----------------------------------------------------
-        # Bind / consume Special Price approval
-        # -----------------------------------------------------
+    # -----------------------------------------------------
+    # Bind / consume Special Price approval
+    # -----------------------------------------------------
 
-        if special_price_request is not None:
-            special_price_request.emi_sheet = emi_sheet
-            special_price_request.status = (
-                SpecialPriceRequest.Status.USED
-            )
-            special_price_request.used_at = timezone.now()
-            special_price_request.used_by = created_by
+    if special_price_request is not None:
+        special_price_request.emi_sheet = emi_sheet
+        special_price_request.status = (
+            SpecialPriceRequest.Status.USED
+        )
+        special_price_request.used_at = timezone.now()
+        special_price_request.used_by = created_by
 
-            special_price_request.save(
-                update_fields=[
-                    "emi_sheet",
-                    "status",
-                    "used_at",
-                    "used_by",
-                    "updated_at",
-                ]
-            )
+        special_price_request.save(
+            update_fields=[
+                "emi_sheet",
+                "status",
+                "used_at",
+                "used_by",
+                "updated_at",
+            ]
+        )
 
     return emi_sheet
 
@@ -2905,7 +2905,11 @@ def update_bank_loan_status(
             "updated_at",
         ],
     )
+    from progression.services import sync_progression_for_quote
 
+    sync_progression_for_quote(
+        quote_id=bank_loan.quote_id,
+    )
     return bank_loan
 
 @transaction.atomic
@@ -3044,6 +3048,9 @@ def create_bank_loan_with_new_bank(
         vehicle_chassis_number=bank_loan.vehicle_chassis_number,
         vehicle_engine_number=bank_loan.vehicle_engine_number,
 
+        selling_price=bank_loan.selling_price,
+        evaluation=bank_loan.evaluation,
+        
         requested_finance=bank_loan.requested_finance,
         approved_finance=None,
 
@@ -3209,7 +3216,7 @@ def create_cash_deal(
         vehicle_variant=car.variant or "",
         vehicle_year=car.year,
         vehicle_colour=car.colour or "",
-        vehicle_mileage=car.vehicle_mileage,
+        vehicle_mileage=car.mileage,
         vehicle_chassis_number=car.chassis_number or "",
         vehicle_engine_number=car.engine_number or "",
 
@@ -3264,17 +3271,15 @@ def update_cash_deal_financials(
         cash_deal.status = CashDeal.Status.READY_FOR_DELIVERY
 
         if cash_deal.car:
-            InventoryService.update_car_status(
-                car=cash_deal.car,
-                new_status=Car.Status.BOOKED,
+            InventoryService.prepare_car_for_booking(
+                car=cash_deal.car
             )
 
     elif advance_amount > Decimal("0.00"):
         cash_deal.status = CashDeal.Status.ADVANCE_RECEIVED
 
-        InventoryService.update_car_status(
+        InventoryService.prepare_car_for_reservation(
             car=cash_deal.car,
-            new_status=Car.Status.RESERVED,
         )
 
     else:
@@ -3287,6 +3292,11 @@ def update_cash_deal_financials(
             "status",
             "updated_at",
         ]
+    )
+    from progression.services import sync_progression_for_quote
+
+    sync_progression_for_quote(
+        quote_id=cash_deal.quote_id,
     )
 
     return cash_deal
@@ -3682,7 +3692,17 @@ def create_cash_receipt(
 
         created_by=created_by,
     )
+    if (
+        category == CashReceipt.Category.ADVANCE
+        and direction == CashReceipt.Direction.CUSTOMER_PAYMENT
+    ):
+        from progression.services import (
+            sync_progression_for_quote,
+        )
 
+        sync_progression_for_quote(
+            quote_id=quote.id,
+        )
     return cash_receipt
 
 @transaction.atomic

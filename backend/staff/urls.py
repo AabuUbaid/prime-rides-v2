@@ -4,6 +4,7 @@ from .views import (
     StaffActivateView,
     StaffDetailView,
     StaffListCreateView,
+    StaffPerformanceView,
     UserAccessActivateView,
     UserAccessDetailView,
     UserAccessListCreateView,
@@ -53,5 +54,10 @@ urlpatterns = [
         "user-access/<uuid:pk>/password/",
         UserAccessPasswordView.as_view(),
         name="user-access-password",
+    ),
+    path(
+        "<int:pk>/performance/",
+        StaffPerformanceView.as_view(),
+        name="staff-performance",
     ),
 ]

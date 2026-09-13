@@ -7,6 +7,8 @@ from .models import Staff
 
 User = get_user_model()
 
+_UNSET = object()
+
 
 @transaction.atomic
 def create_staff(
@@ -51,13 +53,15 @@ def update_staff(
 
     return staff
 
+
 @transaction.atomic
 def delete_staff(
     *,
     staff,
 ):
     staff.delete()
-    
+
+
 @transaction.atomic
 def deactivate_staff(
     *,
@@ -116,34 +120,48 @@ def get_staff_or_raise(staff_id):
 def create_user_access(
     *,
     email,
-    password,
     first_name,
     last_name="",
     phone="",
-    role=User.Roles.SALES_STAFF,
-    staff_id=None,
+    role=None,
+    password=None,
     is_active=True,
+    staff_id=None,
+    **extra_data,
 ):
     staff = None
 
     if staff_id is not None:
-        staff = get_staff_or_raise(
-            staff_id,
-        )
+        try:
+            staff = (
+                Staff.objects
+                .select_for_update()
+                .get(pk=staff_id)
+            )
+        except Staff.DoesNotExist:
+            raise ValidationError(
+                "Staff record not found."
+            )
+
+        if staff.status != Staff.Status.ACTIVE:
+            raise ValidationError(
+                "Only active staff members can be linked to User Access."
+            )
 
         if staff.user_id is not None:
             raise ValidationError(
-                "This Staff record is already linked to a user."
+                "This staff member is already linked to a user."
             )
 
     user = User.objects.create_user(
         email=email,
-        password=password,
         first_name=first_name,
         last_name=last_name,
         phone=phone,
         role=role,
+        password=password,
         is_active=is_active,
+        **extra_data,
     )
 
     if staff is not None:
@@ -162,72 +180,89 @@ def create_user_access(
 def update_user_access(
     *,
     user,
-    email=None,
-    first_name=None,
-    last_name=None,
-    phone=None,
-    role=None,
-    staff_id=None,
-    is_active=None,
+    **validated_data,
 ):
-    if email is not None:
-        user.email = email
+    staff_id = validated_data.pop(
+        "staff_id",
+        _UNSET,
+    )
 
-    if first_name is not None:
-        user.first_name = first_name
-
-    if last_name is not None:
-        user.last_name = last_name
-
-    if phone is not None:
-        user.phone = phone
-
-    if role is not None:
-        user.role = role
-
-    if is_active is not None:
-        user.is_active = is_active
+    for field, value in validated_data.items():
+        setattr(
+            user,
+            field,
+            value,
+        )
 
     user.save()
 
-    if staff_id is not None:
-        new_staff = get_staff_or_raise(
-            staff_id,
+    if staff_id is not _UNSET:
+        current_staff = (
+            Staff.objects
+            .select_for_update()
+            .filter(user=user)
+            .first()
         )
 
-        existing_staff = getattr(
-            user,
-            "staff_profile",
-            None,
-        )
+        # Explicitly unlink the current Staff record.
+        if staff_id is None:
+            if current_staff is not None:
+                current_staff.user = None
+                current_staff.save(
+                    update_fields=[
+                        "user",
+                        "updated_at",
+                    ],
+                )
 
-        if (
-            existing_staff is not None
-            and existing_staff.id != new_staff.id
-        ):
-            existing_staff.user = None
-            existing_staff.save(
-                update_fields=[
-                    "user",
-                    "updated_at",
-                ],
-            )
+        else:
+            try:
+                new_staff = (
+                    Staff.objects
+                    .select_for_update()
+                    .get(pk=staff_id)
+                )
+            except Staff.DoesNotExist:
+                raise ValidationError(
+                    "Staff record not found."
+                )
 
-        if (
-            new_staff.user_id is not None
-            and new_staff.user_id != user.id
-        ):
-            raise ValidationError(
-                "This Staff record is already linked to another user."
-            )
+            if new_staff.status != Staff.Status.ACTIVE:
+                raise ValidationError(
+                    "Only active staff members can be linked to User Access."
+                )
 
-        new_staff.user = user
-        new_staff.save(
-            update_fields=[
-                "user",
-                "updated_at",
-            ],
-        )
+            if (
+                new_staff.user_id is not None
+                and new_staff.user_id != user.id
+            ):
+                raise ValidationError(
+                    "This staff member is already linked to another user."
+                )
+
+            # Remove the old Staff link if the user is being
+            # transferred to a different Staff record.
+            if (
+                current_staff is not None
+                and current_staff.id != new_staff.id
+            ):
+                current_staff.user = None
+                current_staff.save(
+                    update_fields=[
+                        "user",
+                        "updated_at",
+                    ],
+                )
+
+            # Link the new Staff record.
+            if new_staff.user_id != user.id:
+                new_staff.user = user
+                new_staff.save(
+                    update_fields=[
+                        "user",
+                        "updated_at",
+                    ],
+                )
 
     return user
 
@@ -239,6 +274,7 @@ def change_user_password(
     password,
 ):
     user.set_password(password)
+
     user.save(
         update_fields=[
             "password",
@@ -253,7 +289,13 @@ def change_user_password(
 def deactivate_user(
     *,
     user,
+    actor=None,
 ):
+    if actor is not None and actor.id == user.id:
+        raise ValidationError(
+            "You cannot deactivate your own user account."
+        )
+
     user.is_active = False
 
     user.save(
@@ -281,3 +323,65 @@ def activate_user(
     )
 
     return user
+
+from decimal import Decimal
+
+from django.db.models import DecimalField, F, Sum, Value
+from django.db.models.functions import Coalesce
+
+from progression.models import Progression
+
+
+def get_staff_performance(*, staff):
+    """
+    Calculate sales performance from completed Progressions.
+
+    The salesperson on the Quote is the authoritative deal owner.
+    Performance is derived rather than stored as counters.
+    """
+
+    completed_progressions = (
+        Progression.objects
+        .filter(
+            status=Progression.Status.COMPLETED,
+            quote__salesperson=staff.user,
+        )
+        .select_related(
+            "quote",
+            "quote__car",
+        )
+    )
+
+    vehicles_sold = completed_progressions.count()
+
+    sales_value = completed_progressions.aggregate(
+        total=Coalesce(
+            Sum("quote__price"),
+            Value(Decimal("0.00")),
+            output_field=DecimalField(
+                max_digits=14,
+                decimal_places=2,
+            ),
+        )
+    )["total"]
+
+    profit = completed_progressions.annotate(
+        deal_profit=F("quote__price") - F("quote__car__purchase_cost")
+    ).aggregate(
+        total=Coalesce(
+            Sum("deal_profit"),
+            Value(Decimal("0.00")),
+            output_field=DecimalField(
+                max_digits=14,
+                decimal_places=2,
+            ),
+        )
+    )["total"]
+
+    return {
+        "staff_id": staff.id,
+        "staff_name": staff.name,
+        "vehicles_sold": vehicles_sold,
+        "sales_value": sales_value,
+        "profit": profit,
+    }

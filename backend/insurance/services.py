@@ -6,15 +6,20 @@ from .models import Insurance
 from django.db import transaction, models
 
 
-def resolve_eligible_deal(*, quote):
+def resolve_eligible_deal(
+    *,
+    quote,
+    bank_loan=None,
+    cash_deal=None,
+):
     """
-    Resolve the eligible downstream transaction for Insurance.
+    Resolve the authoritative downstream transaction for Insurance.
 
     Finance:
-        BankLoan decision status must be approved.
+        Use the explicitly supplied approved BankLoan.
 
     Cash:
-        CashDeal must be fully paid, determined by balance_amount == 0.
+        Use the explicitly supplied CashDeal and require full payment.
     """
 
     if quote.status != Quote.Status.BOOKED:
@@ -22,14 +27,19 @@ def resolve_eligible_deal(*, quote):
             "Insurance is only available for a booked Quote."
         )
 
+    # -------------------------------------------------
+    # FINANCE
+    # -------------------------------------------------
+
     if quote.payment_method == Quote.PaymentMethod.FINANCE:
-        try:
-            bank_loan = BankLoan.objects.get(
-                quote=quote,
-            )
-        except BankLoan.DoesNotExist:
+        if bank_loan is None:
             raise DjangoValidationError(
-                "No Bank Loan exists for this Quote."
+                "An approved Bank Loan is required for Insurance."
+            )
+
+        if bank_loan.quote_id != quote.id:
+            raise DjangoValidationError(
+                "Bank Loan does not belong to this Quote."
             )
 
         if bank_loan.status != BankLoan.Status.APPROVED:
@@ -44,14 +54,19 @@ def resolve_eligible_deal(*, quote):
             "cash_deal": None,
         }
 
+    # -------------------------------------------------
+    # CASH
+    # -------------------------------------------------
+
     if quote.payment_method == Quote.PaymentMethod.CASH:
-        try:
-            cash_deal = CashDeal.objects.get(
-                quote=quote,
-            )
-        except CashDeal.DoesNotExist:
+        if cash_deal is None:
             raise DjangoValidationError(
-                "No Cash Deal exists for this Quote."
+                "A Cash Deal is required for Insurance."
+            )
+
+        if cash_deal.quote_id != quote.id:
+            raise DjangoValidationError(
+                "Cash Deal does not belong to this Quote."
             )
 
         if cash_deal.balance_amount != 0:
@@ -74,16 +89,18 @@ def create_insurance(
     *,
     quote,
     user,
+    bank_loan=None,
+    cash_deal=None,
 ):
     """
-    Create the initial Insurance record from an eligible Quote.
-
-    All customer and vehicle information is copied from the
-    authoritative downstream transaction / Quote records.
+    Create the initial Insurance record from the
+    authoritative downstream transaction.
     """
 
     eligible = resolve_eligible_deal(
         quote=quote,
+        bank_loan=bank_loan,
+        cash_deal=cash_deal,
     )
 
     if hasattr(quote, "insurance"):
@@ -94,7 +111,11 @@ def create_insurance(
     bank_loan = eligible["bank_loan"]
     cash_deal = eligible["cash_deal"]
 
-    if bank_loan:
+    # -------------------------------------------------
+    # Finance source
+    # -------------------------------------------------
+
+    if bank_loan is not None:
         customer_name = bank_loan.customer_name
         customer_mobile = bank_loan.customer_mobile
 
@@ -103,9 +124,17 @@ def create_insurance(
         vehicle_model = bank_loan.vehicle_model
         vehicle_year = bank_loan.vehicle_year
         vehicle_colour = bank_loan.vehicle_colour
-        vehicle_chassis_number = bank_loan.vehicle_chassis_number
-        vehicle_engine_number = bank_loan.vehicle_engine_number
+        vehicle_chassis_number = (
+            bank_loan.vehicle_chassis_number
+        )
+        vehicle_engine_number = (
+            bank_loan.vehicle_engine_number
+        )
         vehicle_mileage = bank_loan.vehicle_mileage
+
+    # -------------------------------------------------
+    # Cash source
+    # -------------------------------------------------
 
     else:
         customer_name = cash_deal.customer_name
@@ -116,11 +145,13 @@ def create_insurance(
         vehicle_model = cash_deal.vehicle_model
         vehicle_year = cash_deal.vehicle_year
         vehicle_colour = cash_deal.vehicle_colour
-        vehicle_chassis_number = cash_deal.vehicle_chassis_number
-        vehicle_engine_number = cash_deal.vehicle_engine_number
+        vehicle_chassis_number = (
+            cash_deal.vehicle_chassis_number
+        )
+        vehicle_engine_number = (
+            cash_deal.vehicle_engine_number
+        )
         vehicle_mileage = cash_deal.vehicle_mileage
-
-    from .models import Insurance
 
     return Insurance.objects.create(
         quote=quote,

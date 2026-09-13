@@ -4,7 +4,7 @@ from rest_framework import status
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.views import APIView
-
+from accounts.permissions import IsMasterOrAdmin
 from quotes.models import Quote
 from .models import Insurance
 
@@ -20,7 +20,7 @@ from .services import (
 )
 
 class InsuranceCreateAPIView(APIView):
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsMasterOrAdmin]
 
     def post(self, request, quote_id):
         try:
@@ -65,7 +65,7 @@ class InsuranceCreateAPIView(APIView):
             )
             
 class InsuranceStatusUpdateAPIView(APIView):
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsMasterOrAdmin]
 
     def patch(self, request, pk):
         try:
@@ -128,7 +128,7 @@ class InsuranceStatusUpdateAPIView(APIView):
             
             
 class InsuranceListAPIView(APIView):
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsMasterOrAdmin]
 
     def get(self, request):
         insurances = Insurance.objects.all().order_by("-created_at")
@@ -146,7 +146,7 @@ class InsuranceListAPIView(APIView):
 
 
 class InsuranceDetailAPIView(APIView):
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsMasterOrAdmin]
 
     def get(self, request, pk):
         try:
@@ -338,7 +338,7 @@ class InsuranceRenewalApproveAPIView(APIView):
             )
             
 class InsuranceRenewalStartAPIView(APIView):
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsMasterOrAdmin]
 
     def post(self, request, pk):
         try:
@@ -381,7 +381,7 @@ class InsuranceRenewalStartAPIView(APIView):
 
 
 class InsuranceRenewalStatusUpdateAPIView(APIView):
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsMasterOrAdmin]
 
     def patch(self, request, pk):
         try:
@@ -446,7 +446,7 @@ class InsuranceRenewalStatusUpdateAPIView(APIView):
 
 
 class InsuranceRenewalApproveAPIView(APIView):
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsMasterOrAdmin]
 
     def post(self, request, pk):
         try:
