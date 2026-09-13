@@ -32,6 +32,20 @@ const FINANCE_MASTER = [
     path: "/finance/cash-deals",
   },
   {
+    key: "proformas",
+    title: "Proforma Invoices",
+    description:
+      "Create, view, edit, print, and manage Proforma Invoices for approved Insurance deals.",
+    path: "/finance/proformas",
+  },
+  {
+    key: "delivery-notes",
+    title: "Delivery Notes",
+    description:
+      "Create, view, edit, print, and manage vehicle Delivery Notes for approved Insurance deals.",
+    path: "/finance/delivery-notes",
+  },
+  {
     key: "emi-estimates",
     title: "EMI Estimates",
     description: "View and manage saved finance estimates.",

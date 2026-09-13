@@ -19,7 +19,9 @@ class Proforma(models.Model):
     )
 
     proforma_number = models.CharField(max_length=50, unique=True)
-    proforma_date = models.DateField()
+    proforma_date = models.DateField(
+        auto_now_add=True,
+    )
 
     payment_type = models.CharField(
         max_length=20,

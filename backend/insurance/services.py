@@ -16,12 +16,11 @@ def resolve_eligible_deal(
     Resolve the authoritative downstream transaction for Insurance.
 
     Finance:
-        Use the explicitly supplied approved BankLoan.
+        BankLoan must belong to the Quote and be approved.
 
     Cash:
-        Use the explicitly supplied CashDeal and require full payment.
+        CashDeal must belong to the Quote and have an advance received.
     """
-
     if quote.status != Quote.Status.BOOKED:
         raise DjangoValidationError(
             "Insurance is only available for a booked Quote."
@@ -30,11 +29,21 @@ def resolve_eligible_deal(
     # -------------------------------------------------
     # FINANCE
     # -------------------------------------------------
-
     if quote.payment_method == Quote.PaymentMethod.FINANCE:
         if bank_loan is None:
+            bank_loan = (
+            BankLoan.objects
+            .filter(
+                quote=quote,
+                status=BankLoan.Status.APPROVED,
+            )
+            .order_by("-updated_at", "-created_at")
+            .first()
+        )
+
+        if bank_loan is None:
             raise DjangoValidationError(
-                "An approved Bank Loan is required for Insurance."
+                "Insurance is only available after the Bank Loan is approved."
             )
 
         if bank_loan.quote_id != quote.id:
@@ -57,21 +66,25 @@ def resolve_eligible_deal(
     # -------------------------------------------------
     # CASH
     # -------------------------------------------------
-
     if quote.payment_method == Quote.PaymentMethod.CASH:
         if cash_deal is None:
-            raise DjangoValidationError(
-                "A Cash Deal is required for Insurance."
-            )
+            try:
+                cash_deal = CashDeal.objects.get(
+                    quote=quote,
+                )
+            except CashDeal.DoesNotExist:
+                raise DjangoValidationError(
+                    "No Cash Deal exists for this Quote."
+                )
 
         if cash_deal.quote_id != quote.id:
             raise DjangoValidationError(
                 "Cash Deal does not belong to this Quote."
             )
 
-        if cash_deal.balance_amount != 0:
+        if cash_deal.advance_amount <= 0:
             raise DjangoValidationError(
-                "Insurance is only available after the Cash Deal is fully paid."
+                "Insurance is only available after an advance payment is received."
             )
 
         return {

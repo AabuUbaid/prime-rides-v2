@@ -483,6 +483,10 @@ class QuoteDetailSerializer(serializers.ModelSerializer):
 
     active_bank_loan = serializers.SerializerMethodField()
 
+    insurance_applied = serializers.SerializerMethodField()
+    loan_approved = serializers.SerializerMethodField()
+    deal_closed = serializers.SerializerMethodField()
+
     def get_cash_deal(self, obj):
         try:
             cash_deal = obj.cash_deal
@@ -517,6 +521,26 @@ class QuoteDetailSerializer(serializers.ModelSerializer):
             "application_status": bank_loan.application_status,
             "priority": bank_loan.priority,
         }
+    def get_insurance_applied(self, obj):
+        try:
+            return obj.insurance is not None
+        except Exception:
+            return False
+
+
+    def get_loan_approved(self, obj):
+        return obj.bank_loans.filter(
+            status=BankLoan.Status.APPROVED,
+        ).exists()
+
+
+    def get_deal_closed(self, obj):
+        try:
+            cash_deal = obj.cash_deal
+        except CashDeal.DoesNotExist:
+            return False
+
+        return cash_deal.status == CashDeal.Status.COMPLETED
 
     class Meta:
         model = Quote
@@ -570,6 +594,9 @@ class QuoteDetailSerializer(serializers.ModelSerializer):
 
             "cash_deal",
             "active_bank_loan",
+            "insurance_applied",
+            "loan_approved",
+            "deal_closed",
 
             "expenses",
 

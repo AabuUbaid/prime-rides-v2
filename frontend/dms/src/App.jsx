@@ -33,6 +33,16 @@ import BalanceSheets from "./pages/finance/BalanceSheets";
 import BalanceSheetDetail from "./pages/finance/BalanceSheetDetail";
 import BalanceSheetCreate from "./pages/finance/BalanceSheetCreate";
 import BalanceSheetPrint from "./pages/finance/BalanceSheetPrint";
+import Insurance from "./pages/finance/Insurance";
+import InsuranceDetail from "./pages/finance/InsuranceDetail";
+import Proformas from "./pages/finance/Proformas";
+import ProformaCreate from "./pages/finance/ProformaCreate";
+import ProformaDetail from "./pages/finance/ProformaDetail";
+import ProformaPrint from "./pages/finance/ProformaPrint";
+import DeliveryNotes from "./pages/finance/DeliveryNotes";
+import DeliveryNoteCreate from "./pages/finance/DeliveryNoteCreate";
+import DeliveryNoteDetail from "./pages/finance/DeliveryNoteDetail";
+import DeliveryNotePrint from "./pages/finance/DeliveryNotePrint";
 
 import Quotes from "./pages/deals/Quotes";
 import NewQuote from "./pages/deals/NewQuote";
@@ -148,6 +158,96 @@ function App() {
             element={
               <ProtectedRoute>
                 <EmiDetail />
+              </ProtectedRoute>
+            }
+          />
+
+          <Route
+            path="/finance/insurance"
+            element={
+              <ProtectedRoute>
+                <Insurance />
+              </ProtectedRoute>
+            }
+          />
+
+          <Route
+            path="/finance/insurance/:id"
+            element={
+              <ProtectedRoute>
+                <InsuranceDetail />
+              </ProtectedRoute>
+            }
+          />
+
+          <Route
+            path="/finance/proformas"
+            element={
+              <ProtectedRoute>
+                <Proformas />
+              </ProtectedRoute>
+            }
+          />
+
+          <Route
+            path="/finance/proformas/new"
+            element={
+              <ProtectedRoute>
+                <ProformaCreate />
+              </ProtectedRoute>
+            }
+          />
+
+          <Route
+            path="/finance/proformas/:id"
+            element={
+              <ProtectedRoute>
+                <ProformaDetail />
+              </ProtectedRoute>
+            }
+          />
+
+          <Route
+            path="/finance/proformas/:id/print"
+            element={
+              <ProtectedRoute>
+                <ProformaPrint />
+              </ProtectedRoute>
+            }
+          />
+
+          <Route
+            path="/finance/delivery-notes"
+            element={
+              <ProtectedRoute>
+                <DeliveryNotes />
+              </ProtectedRoute>
+            }
+          />
+
+          <Route
+            path="/finance/delivery-notes/new"
+            element={
+              <ProtectedRoute>
+                <DeliveryNoteCreate />
+              </ProtectedRoute>
+            }
+          />
+
+          <Route
+            path="/finance/delivery-notes/:id"
+            element={
+              <ProtectedRoute>
+                <DeliveryNoteDetail />
+              </ProtectedRoute>
+            }
+          />
+
+          <Route
+            path="/finance/delivery-notes/:id/print"
+            element={
+              <ProtectedRoute>
+                <DeliveryNotePrint />
               </ProtectedRoute>
             }
           />

@@ -8,6 +8,7 @@ import {
   proceedToCashDeal,
   proceedToBankLoan,
 } from "../../api/quotes";
+import { createInsurance } from "../../api/insurance";
 import QuotePrintTemplate from "../../components/printing/templates/QuotePrintTemplate";
 
 const STATUS_LABELS = {
@@ -449,6 +450,38 @@ export default function QuoteDetail() {
     }
   }
 
+  async function handleCreateInsurance() {
+    if (!quote || saving) {
+      return;
+    }
+
+    try {
+      setSaving(true);
+
+      const response = await createInsurance(id);
+
+      if (response?.success === false) {
+        throw new Error(response.message || "Unable to create Insurance.");
+      }
+
+      const data = response?.data ?? response;
+      const insuranceId = data?.id;
+
+      if (!insuranceId) {
+        throw new Error(
+          "Insurance was created but no Insurance ID was returned.",
+        );
+      }
+
+      toast.success("Insurance created successfully.");
+      window.location.href = `/finance/insurance/${insuranceId}`;
+    } catch (err) {
+      toast.error(err?.message || "Unable to create Insurance.");
+    } finally {
+      setSaving(false);
+    }
+  }
+
   async function handlePrintQuote() {
     if (!id) {
       toast.error("Quote ID is missing.");
@@ -540,9 +573,23 @@ export default function QuoteDetail() {
     .filter(Boolean)
     .join(" ");
 
-  const statusActions = STATUS_ACTIONS[quote.status] || [];
-
+  const statusActions = quote.deal_closed
+    ? []
+    : STATUS_ACTIONS[quote.status] || [];
   const expenses = Array.isArray(quote.expenses) ? quote.expenses : [];
+
+  const insuranceFinanceEligible =
+    quote?.payment_method === "Finance" &&
+    quote?.active_bank_loan?.status === "approved";
+
+  const insuranceCashEligible =
+    quote?.payment_method === "Cash" &&
+    quote?.cash_deal?.status === "advance_received";
+
+  const insuranceEligible =
+    quote?.status === "booked" &&
+    !quote?.insurance_applied &&
+    (insuranceFinanceEligible || insuranceCashEligible);
 
   const financeFields = [
     quote.emi_bank_name,
@@ -586,6 +633,23 @@ export default function QuoteDetail() {
               >
                 {STATUS_LABELS[quote.status] || quote.status || "-"}
               </span>
+              {quote.insurance_applied && (
+                <span className="rounded-full bg-blue-100 px-3 py-1 text-xs font-semibold text-blue-700">
+                  Insurance Applied
+                </span>
+              )}
+
+              {quote.loan_approved && (
+                <span className="rounded-full bg-green-100 px-3 py-1 text-xs font-semibold text-green-700">
+                  Loan Approved
+                </span>
+              )}
+
+              {quote.deal_closed && (
+                <span className="rounded-full bg-green-100 px-3 py-1 text-xs font-semibold text-green-700">
+                  Deal Closed
+                </span>
+              )}
             </div>
 
             <p className="mt-1 text-sm text-gray-500">
@@ -605,6 +669,7 @@ export default function QuoteDetail() {
 
             {quote.status === "booked" &&
               quote.payment_method === "Cash" &&
+              !quote.deal_closed &&
               (quote.cash_deal ? (
                 <Link
                   to={`/finance/cash-deals/${quote.cash_deal.id}`}
@@ -624,6 +689,7 @@ export default function QuoteDetail() {
               ))}
             {quote.status === "booked" &&
               quote.payment_method === "Finance" &&
+              (!quote.loan_approved && quote.active_bank_loan ? false : true) &&
               (quote.active_bank_loan ? (
                 <div className="flex flex-wrap items-center gap-2">
                   <div className="rounded-lg border border-green-300 bg-green-50 px-3 py-2 text-sm font-medium text-green-700">
@@ -653,7 +719,7 @@ export default function QuoteDetail() {
                     Open Bank Loan
                   </Link>
                 </div>
-              ) : (
+              ) : quote.loan_approved ? null : (
                 <div className="flex flex-wrap items-center gap-2">
                   <div className="rounded-lg border border-gray-300 bg-gray-50 px-3 py-2 text-sm text-gray-700">
                     Bank:{" "}
@@ -683,6 +749,18 @@ export default function QuoteDetail() {
                   </button>
                 </div>
               ))}
+
+            {insuranceEligible && (
+              <button
+                type="button"
+                onClick={handleCreateInsurance}
+                disabled={saving}
+                className="rounded-lg bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700 disabled:cursor-not-allowed disabled:opacity-50"
+              >
+                {saving ? "Processing..." : "Apply for Insurance"}
+              </button>
+            )}
+
             {statusActions.map((action) => (
               <button
                 key={action.value}

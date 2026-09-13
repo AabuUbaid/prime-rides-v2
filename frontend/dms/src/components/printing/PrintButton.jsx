@@ -6,13 +6,19 @@ export default function PrintButton({
   documentNumber,
   label = "Print",
   disabled = false,
+  onClick,
 }) {
   function handleClick() {
-  printDocument({
-    customerName,
-    documentNumber,
-  });
-}
+    if (onClick) {
+      onClick();
+      return;
+    }
+
+    printDocument({
+      customerName,
+      documentNumber,
+    });
+  }
 
   return (
     <button
@@ -24,6 +30,5 @@ export default function PrintButton({
       <Printer size={16} />
       {label}
     </button>
-    
   );
 }
