@@ -16,6 +16,16 @@ function VehicleDetails({ formData, handleChange, hideStatus = false }) {
         />
 
         <input
+          type="number"
+          name="actual_mileage"
+          placeholder="Actual Mileage"
+          value={formData.actual_mileage}
+          onChange={handleChange}
+          min="0"
+          className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm text-gray-900 outline-none transition focus:border-blue-500 focus:ring-1 focus:ring-blue-500"
+        />
+
+        <input
           type="text"
           name="supplier"
           placeholder="Supplier"
@@ -58,6 +68,16 @@ function VehicleDetails({ formData, handleChange, hideStatus = false }) {
               <option value="in_house">In House</option>
             </select>
           </div>
+        )}
+
+        {formData.status === "in_service" && (
+          <input
+            name="service_location"
+            placeholder="Specify Location"
+            value={formData.service_location}
+            onChange={handleChange}
+            className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm text-gray-900 outline-none transition focus:border-blue-500 focus:ring-1 focus:ring-blue-500"
+          />
         )}
 
         <select

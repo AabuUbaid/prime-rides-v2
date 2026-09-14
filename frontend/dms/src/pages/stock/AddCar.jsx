@@ -2,6 +2,7 @@ import { useState } from "react";
 import { createCar } from "../../api/inventory";
 import { toast } from "react-toastify";
 
+import { formatHumanText } from "../../utils/textFormatters";
 import VehicleInformation from "./components/VehicleInformation";
 import PricingInformation from "./components/PricingInformation";
 import VehicleDetails from "./components/VehicleDetails";
@@ -14,6 +15,9 @@ const initialFormData = {
   model: "",
   variant: "",
   colour: "",
+  vehicle_type: "",
+  service_location: "",
+  actual_mileage: "",
 
   purchase_cost: "",
   asking_price: "",
@@ -76,7 +80,18 @@ function AddCar() {
     try {
       setSaving(true);
 
-      const result = await createCar(formData);
+      const normalizedFormData = {
+        ...formData,
+        make: formatHumanText(formData.make),
+        model: formatHumanText(formData.model),
+        variant: formatHumanText(formData.variant),
+        colour: formatHumanText(formData.colour),
+        supplier: formatHumanText(formData.supplier),
+        service_location: formatHumanText(formData.service_location),
+        source_specify: formatHumanText(formData.source_specify),
+      };
+
+      const result = await createCar(normalizedFormData);
 
       console.log(result);
 
@@ -93,14 +108,9 @@ function AddCar() {
   };
 
   return (
-    <form
-      onSubmit={handleSubmit}
-      className="mx-auto max-w-5xl space-y-6 p-6"
-    >
+    <form onSubmit={handleSubmit} className="mx-auto max-w-5xl space-y-6 p-6">
       <div>
-        <h1 className="text-2xl font-bold text-gray-900">
-          Add Vehicle
-        </h1>
+        <h1 className="text-2xl font-bold text-gray-900">Add Vehicle</h1>
 
         <p className="mt-1 text-sm text-gray-500">
           Add a new vehicle to the inventory.
@@ -108,31 +118,19 @@ function AddCar() {
       </div>
 
       <div className="rounded-lg border border-gray-200 bg-white p-6 shadow-sm">
-        <VehicleInformation
-          formData={formData}
-          handleChange={handleChange}
-        />
+        <VehicleInformation formData={formData} handleChange={handleChange} />
       </div>
 
       <div className="rounded-lg border border-gray-200 bg-white p-6 shadow-sm">
-        <PricingInformation
-          formData={formData}
-          handleChange={handleChange}
-        />
+        <PricingInformation formData={formData} handleChange={handleChange} />
       </div>
 
       <div className="rounded-lg border border-gray-200 bg-white p-6 shadow-sm">
-        <VehicleDetails
-          formData={formData}
-          handleChange={handleChange}
-        />
+        <VehicleDetails formData={formData} handleChange={handleChange} />
       </div>
 
       <div className="rounded-lg border border-gray-200 bg-white p-6 shadow-sm">
-        <UploadSection
-          formData={formData}
-          setFormData={setFormData}
-        />
+        <UploadSection formData={formData} setFormData={setFormData} />
       </div>
 
       <div className="rounded-lg border border-gray-200 bg-white p-6 shadow-sm">

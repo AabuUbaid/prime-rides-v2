@@ -19,6 +19,7 @@ from .models import (
 )
 from .special_price_services import SpecialPriceService
 from .query_serializers import CarListQuerySerializer
+from django.db.models import Value
 
 from .serializers import (
     CarCreateSerializer,
@@ -123,7 +124,25 @@ class CarAPIView(APIView):
             },
             status=status.HTTP_201_CREATED,
         )
+class CarBrandListAPIView(APIView):
+    permission_classes = [IsAuthenticated]
 
+    def get(self, request):
+        brands = (
+            Car.objects
+            .exclude(make__isnull=True)
+            .exclude(make__exact="")
+            .values_list("make", flat=True)
+            .distinct()
+            .order_by("make")
+        )
+
+        return Response(
+            {
+                "success": True,
+                "data": list(brands),
+            }
+        )
 
 class CarDetailAPIView(APIView):
 
@@ -826,16 +845,17 @@ class SpecialPriceRequestListAPIView(APIView):
                 special_request,
             ).data
 
-        if request.user.role != "MASTER":
-            if item.status == "approved" and item.requested_by_id == request.user.id:
-                # Requester needs these fields to use the approved
-                # transaction-specific price in a Quote/EMI.
-                pass
-            else:
-                data.pop("approved_price", None)
-                data.pop("approved_by", None)
-                data.pop("approved_by_name", None)
-                data.pop("approved_at", None)
+            if request.user.role != "MASTER":
+                if not (
+                    special_request.status
+                    == SpecialPriceRequest.Status.APPROVED
+                    and special_request.requested_by_id
+                    == request.user.id
+                ):
+                    item.pop("approved_price", None)
+                    item.pop("approved_by", None)
+                    item.pop("approved_by_name", None)
+                    item.pop("approved_at", None)
 
             data.append(item)
 

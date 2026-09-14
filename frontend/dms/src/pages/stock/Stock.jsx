@@ -1,10 +1,29 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
+import { useAuth } from "../../context/AuthContext";
+import {
+  IconCalendar,
+  IconCar,
+  IconChevronLeft,
+  IconChevronRight,
+  IconEye,
+  IconGauge,
+  IconMapPin,
+  IconPencil,
+  IconShare,
+} from "@tabler/icons-react";
 
-import { getCars, bulkDeleteCars, bulkImportCars } from "../../api/inventory";
+import {
+  getCars,
+  getCarBrands,
+  bulkDeleteCars,
+  bulkImportCars,
+} from "../../api/inventory";
 
 const INITIAL_FILTERS = {
   status: "",
+  make: "",
+  vehicle_type: "",
   source: "",
   supplier: "",
   year: "",
@@ -13,6 +32,17 @@ const INITIAL_FILTERS = {
   max_price: "",
   min_mileage: "",
   max_mileage: "",
+};
+
+const VEHICLE_TYPE_LABELS = {
+  sedan: "Sedan",
+  suv: "SUV (Sport Utility Vehicle)",
+  hatchback: "Hatchback",
+  crossover: "Crossover",
+  coupe: "Coupe",
+  convertible: "Convertible",
+  pickup_truck: "Pickup Truck",
+  other: "Other",
 };
 
 const STATUS_OPTIONS = [
@@ -46,7 +76,19 @@ const SORT_OPTIONS = [
   { value: "-stock_id", label: "Stock ID: Z → A" },
 ];
 
+const STATUS_LABELS = Object.fromEntries(
+  STATUS_OPTIONS.map((option) => [option.value, option.label]),
+);
+
+const getVehicleTypeLabel = (value) =>
+  VEHICLE_TYPE_LABELS[value] || value || "-";
+
+const getStatusLabel = (value) => STATUS_LABELS[value] || value || "-";
+
 function Stock() {
+  const { user } = useAuth();
+  const isMaster = user?.role === "MASTER";
+  const [brands, setBrands] = useState([]);
   const [cars, setCars] = useState([]);
   const [loading, setLoading] = useState(true);
 
@@ -73,12 +115,39 @@ function Stock() {
   const [importResult, setImportResult] = useState(null);
 
   const navigate = useNavigate();
+  const carouselRef = useRef(null);
 
   /*
    * Existing search debounce.
    *
    * Do not change this behavior.
    */
+
+  const scrollCarousel = (direction) => {
+    if (!carouselRef.current) return;
+
+    const scrollAmount = carouselRef.current.clientWidth * 0.85;
+
+    carouselRef.current.scrollBy({
+      left: direction === "left" ? -scrollAmount : scrollAmount,
+      behavior: "smooth",
+    });
+  };
+
+  useEffect(() => {
+    async function loadBrands() {
+      try {
+        const response = await getCarBrands();
+        setBrands(response.data || []);
+      } catch (error) {
+        console.error("Failed to load vehicle brands:", error);
+        setBrands([]);
+      }
+    }
+
+    loadBrands();
+  }, []);
+
   useEffect(() => {
     const timer = setTimeout(() => {
       setSearchQuery(search);
@@ -135,21 +204,16 @@ function Stock() {
     const currentPageIds = cars.map((car) => car.id);
 
     const allCurrentPageSelected = currentPageIds.every((id) =>
-      selectedCars.includes(id)
+      selectedCars.includes(id),
     );
 
     if (allCurrentPageSelected) {
       setSelectedCars((currentSelected) =>
-        currentSelected.filter(
-          (id) => !currentPageIds.includes(id)
-        )
+        currentSelected.filter((id) => !currentPageIds.includes(id)),
       );
     } else {
       setSelectedCars((currentSelected) => [
-        ...new Set([
-          ...currentSelected,
-          ...currentPageIds,
-        ]),
+        ...new Set([...currentSelected, ...currentPageIds]),
       ]);
     }
   }
@@ -160,7 +224,7 @@ function Stock() {
     }
 
     const confirmed = window.confirm(
-      `Are you sure you want to delete ${selectedCars.length} vehicle(s)?`
+      `Are you sure you want to delete ${selectedCars.length} vehicle(s)?`,
     );
 
     if (!confirmed) {
@@ -185,36 +249,36 @@ function Stock() {
   }
 
   async function handleBulkImport() {
-  if (!selectedImportFile) {
-    return;
+    if (!selectedImportFile) {
+      return;
+    }
+
+    try {
+      setImporting(true);
+      setImportResult(null);
+
+      const response = await bulkImportCars(selectedImportFile);
+
+      console.log("Bulk import response:", response);
+
+      setImportResult(response);
+
+      setSelectedImportFile(null);
+      setShowImportModal(false);
+
+      setRefreshKey((value) => value + 1);
+    } catch (error) {
+      console.error("Bulk vehicle import failed:", error);
+
+      setImportResult({
+        success: false,
+        message: error.message || "Failed to import vehicles.",
+        data: null,
+      });
+    } finally {
+      setImporting(false);
+    }
   }
-
-  try {
-    setImporting(true);
-    setImportResult(null);
-
-    const response = await bulkImportCars(selectedImportFile);
-
-    console.log("Bulk import response:", response);
-
-    setImportResult(response);
-
-    setSelectedImportFile(null);
-    setShowImportModal(false);
-
-    setRefreshKey((value) => value + 1);
-  } catch (error) {
-    console.error("Bulk vehicle import failed:", error);
-
-    setImportResult({
-      success: false,
-      message: error.message || "Failed to import vehicles.",
-      data: null,
-    });
-  } finally {
-    setImporting(false);
-  }
-}
 
   function handleFilterChange(event) {
     const { name, value } = event.target;
@@ -244,6 +308,9 @@ function Stock() {
   }
 
   const totalPages = Math.ceil(totalCount / pageSize);
+  const startItem = totalCount === 0 ? 0 : (page - 1) * pageSize + 1;
+
+  const endItem = Math.min(page * pageSize, totalCount);
 
   function getPaginationItems() {
     const items = [];
@@ -285,9 +352,7 @@ function Stock() {
   return (
     <div className="min-h-screen bg-gray-50 p-6">
       <div className="mx-auto max-w-7xl">
-        <h1 className="mb-6 text-2xl font-semibold text-gray-900">
-          Inventory
-        </h1>
+        <h1 className="mb-6 text-2xl font-semibold text-gray-900">Inventory</h1>
 
         {/* Search + Sorting */}
         <div className="mb-4 flex flex-wrap gap-3">
@@ -335,115 +400,109 @@ function Stock() {
         </div>
 
         {importResult && (
-  <div
-    className={`mb-4 rounded-md border p-4 ${
-      importResult.success
-        ? "border-green-200 bg-green-50"
-        : "border-red-200 bg-red-50"
-    }`}
-  >
-    <div className="flex items-start justify-between gap-4">
-      <div>
-        <p
-          className={`font-medium ${
-            importResult.success
-              ? "text-green-800"
-              : "text-red-800"
-          }`}
-        >
-          {importResult.message}
-        </p>
-
-        {importResult.success && importResult.data && (
-  <div className="mt-2 text-sm text-green-700">
-    <p>
-      Imported:{" "}
-      <strong>
-        {importResult.data.created_count}
-      </strong>
-    </p>
-
-    <p>
-      Skipped:{" "}
-      <strong>
-        {importResult.data.skipped_count}
-      </strong>
-    </p>
-
-    {importResult.data.errors?.length > 0 && (
-      <div className="mt-4">
-        <p className="mb-2 font-medium text-gray-800">
-          Skipped Rows
-        </p>
-
-        <div className="overflow-x-auto rounded-md border border-gray-200 bg-white">
-          <table className="min-w-full text-left text-sm">
-            <thead className="border-b border-gray-200 bg-gray-50">
-              <tr>
-                <th className="px-3 py-2 font-medium text-gray-700">
-                  Row
-                </th>
-
-                <th className="px-3 py-2 font-medium text-gray-700">
-                  Field
-                </th>
-
-                <th className="px-3 py-2 font-medium text-gray-700">
-                  Value
-                </th>
-
-                <th className="px-3 py-2 font-medium text-gray-700">
-                  Reason
-                </th>
-              </tr>
-            </thead>
-
-            <tbody>
-              {importResult.data.errors.map((error, index) => (
-                <tr
-                  key={`${error.row}-${error.field}-${index}`}
-                  className="border-b border-gray-100 last:border-b-0"
+          <div
+            className={`mb-4 rounded-md border p-4 ${
+              importResult.success
+                ? "border-green-200 bg-green-50"
+                : "border-red-200 bg-red-50"
+            }`}
+          >
+            <div className="flex items-start justify-between gap-4">
+              <div>
+                <p
+                  className={`font-medium ${
+                    importResult.success ? "text-green-800" : "text-red-800"
+                  }`}
                 >
-                  <td className="px-3 py-2 text-gray-800">
-                    {error.row}
-                  </td>
+                  {importResult.message}
+                </p>
 
-                  <td className="px-3 py-2 text-gray-800">
-                    {error.field || "—"}
-                  </td>
+                {importResult.success && importResult.data && (
+                  <div className="mt-2 text-sm text-green-700">
+                    <p>
+                      Imported:{" "}
+                      <strong>{importResult.data.created_count}</strong>
+                    </p>
 
-                  <td className="px-3 py-2 text-gray-800">
-                    {error.value === null ||
-                    error.value === undefined ||
-                    error.value === ""
-                      ? "—"
-                      : String(error.value)}
-                  </td>
+                    <p>
+                      Skipped:{" "}
+                      <strong>{importResult.data.skipped_count}</strong>
+                    </p>
 
-                  <td className="px-3 py-2 text-gray-700">
-                    {error.message}
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-      </div>
-    )}
-  </div>
-)}
-      </div>
+                    {importResult.data.errors?.length > 0 && (
+                      <div className="mt-4">
+                        <p className="mb-2 font-medium text-gray-800">
+                          Skipped Rows
+                        </p>
 
-      <button
-        type="button"
-        onClick={() => setImportResult(null)}
-        className="text-sm text-gray-500 hover:text-gray-700"
-      >
-        ×
-      </button>
-    </div>
-  </div>
-)}
+                        <div className="overflow-x-auto rounded-md border border-gray-200 bg-white">
+                          <table className="min-w-full text-left text-sm">
+                            <thead className="border-b border-gray-200 bg-gray-50">
+                              <tr>
+                                <th className="px-3 py-2 font-medium text-gray-700">
+                                  Row
+                                </th>
+
+                                <th className="px-3 py-2 font-medium text-gray-700">
+                                  Field
+                                </th>
+
+                                <th className="px-3 py-2 font-medium text-gray-700">
+                                  Value
+                                </th>
+
+                                <th className="px-3 py-2 font-medium text-gray-700">
+                                  Reason
+                                </th>
+                              </tr>
+                            </thead>
+
+                            <tbody>
+                              {importResult.data.errors.map((error, index) => (
+                                <tr
+                                  key={`${error.row}-${error.field}-${index}`}
+                                  className="border-b border-gray-100 last:border-b-0"
+                                >
+                                  <td className="px-3 py-2 text-gray-800">
+                                    {error.row}
+                                  </td>
+
+                                  <td className="px-3 py-2 text-gray-800">
+                                    {error.field || "—"}
+                                  </td>
+
+                                  <td className="px-3 py-2 text-gray-800">
+                                    {error.value === null ||
+                                    error.value === undefined ||
+                                    error.value === ""
+                                      ? "—"
+                                      : String(error.value)}
+                                  </td>
+
+                                  <td className="px-3 py-2 text-gray-700">
+                                    {error.message}
+                                  </td>
+                                </tr>
+                              ))}
+                            </tbody>
+                          </table>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                )}
+              </div>
+
+              <button
+                type="button"
+                onClick={() => setImportResult(null)}
+                className="text-sm text-gray-500 hover:text-gray-700"
+              >
+                ×
+              </button>
+            </div>
+          </div>
+        )}
 
         {selectedCars.length > 0 && (
           <div className="mb-4 flex items-center gap-3 rounded-md border border-gray-200 bg-white px-4 py-3">
@@ -484,7 +543,10 @@ function Stock() {
               <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4">
                 {/* Status */}
                 <div>
-                  <label htmlFor="status" className="mb-1.5 block text-sm font-medium text-gray-700">
+                  <label
+                    htmlFor="status"
+                    className="mb-1.5 block text-sm font-medium text-gray-700"
+                  >
                     Status
                   </label>
                   <select
@@ -503,9 +565,67 @@ function Stock() {
                   </select>
                 </div>
 
+                {/* Brand */}
+                <div>
+                  <label
+                    htmlFor="make"
+                    className="mb-1.5 block text-sm font-medium text-gray-700"
+                  >
+                    Brand
+                  </label>
+
+                  <select
+                    id="make"
+                    name="make"
+                    value={filters.make}
+                    onChange={handleFilterChange}
+                    className="w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-sm text-gray-900 outline-none transition focus:border-gray-500 focus:ring-1 focus:ring-gray-500"
+                  >
+                    <option value="">All Brands</option>
+
+                    {brands.map((brand) => (
+                      <option key={brand} value={brand}>
+                        {brand}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+
+                {/* Vehicle Type */}
+                <div>
+                  <label
+                    htmlFor="vehicle_type"
+                    className="mb-1.5 block text-sm font-medium text-gray-700"
+                  >
+                    Vehicle Type
+                  </label>
+
+                  <select
+                    id="vehicle_type"
+                    name="vehicle_type"
+                    value={filters.vehicle_type}
+                    onChange={handleFilterChange}
+                    className="w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-sm text-gray-900 outline-none transition focus:border-gray-500 focus:ring-1 focus:ring-gray-500"
+                  >
+                    <option value="">All Types</option>
+
+                    <option value="sedan">Sedan</option>
+                    <option value="suv">SUV (Sport Utility Vehicle)</option>
+                    <option value="hatchback">Hatchback</option>
+                    <option value="crossover">Crossover</option>
+                    <option value="coupe">Coupe</option>
+                    <option value="convertible">Convertible</option>
+                    <option value="pickup_truck">Pickup Truck</option>
+                    <option value="other">Other</option>
+                  </select>
+                </div>
+
                 {/* Source */}
                 <div>
-                  <label htmlFor="source" className="mb-1.5 block text-sm font-medium text-gray-700">
+                  <label
+                    htmlFor="source"
+                    className="mb-1.5 block text-sm font-medium text-gray-700"
+                  >
                     Source
                   </label>
                   <select
@@ -526,7 +646,10 @@ function Stock() {
 
                 {/* Supplier */}
                 <div>
-                  <label htmlFor="supplier" className="mb-1.5 block text-sm font-medium text-gray-700">
+                  <label
+                    htmlFor="supplier"
+                    className="mb-1.5 block text-sm font-medium text-gray-700"
+                  >
                     Supplier
                   </label>
                   <input
@@ -542,7 +665,10 @@ function Stock() {
 
                 {/* Year */}
                 <div>
-                  <label htmlFor="year" className="mb-1.5 block text-sm font-medium text-gray-700">
+                  <label
+                    htmlFor="year"
+                    className="mb-1.5 block text-sm font-medium text-gray-700"
+                  >
                     Year
                   </label>
                   <input
@@ -559,7 +685,10 @@ function Stock() {
 
                 {/* Highlight */}
                 <div>
-                  <label htmlFor="highlight_public" className="mb-1.5 block text-sm font-medium text-gray-700">
+                  <label
+                    htmlFor="highlight_public"
+                    className="mb-1.5 block text-sm font-medium text-gray-700"
+                  >
                     Highlight
                   </label>
                   <select
@@ -577,7 +706,10 @@ function Stock() {
 
                 {/* Minimum price */}
                 <div>
-                  <label htmlFor="min_price" className="mb-1.5 block text-sm font-medium text-gray-700">
+                  <label
+                    htmlFor="min_price"
+                    className="mb-1.5 block text-sm font-medium text-gray-700"
+                  >
                     Min Price (AED)
                   </label>
                   <input
@@ -594,7 +726,10 @@ function Stock() {
 
                 {/* Maximum price */}
                 <div>
-                  <label htmlFor="max_price" className="mb-1.5 block text-sm font-medium text-gray-700">
+                  <label
+                    htmlFor="max_price"
+                    className="mb-1.5 block text-sm font-medium text-gray-700"
+                  >
                     Max Price (AED)
                   </label>
                   <input
@@ -611,7 +746,10 @@ function Stock() {
 
                 {/* Minimum mileage */}
                 <div>
-                  <label htmlFor="min_mileage" className="mb-1.5 block text-sm font-medium text-gray-700">
+                  <label
+                    htmlFor="min_mileage"
+                    className="mb-1.5 block text-sm font-medium text-gray-700"
+                  >
                     Min Mileage (km)
                   </label>
                   <input
@@ -628,7 +766,10 @@ function Stock() {
 
                 {/* Maximum mileage */}
                 <div>
-                  <label htmlFor="max_mileage" className="mb-1.5 block text-sm font-medium text-gray-700">
+                  <label
+                    htmlFor="max_mileage"
+                    className="mb-1.5 block text-sm font-medium text-gray-700"
+                  >
                     Max Mileage (km)
                   </label>
                   <input
@@ -665,133 +806,330 @@ function Stock() {
             </div>
           )}
         </div>
-
       </div>
 
+      {/* Inventory carousel */}
+      <div className="rounded-2xl border border-gray-200 bg-white p-4 shadow-sm">
+        <div className="relative">
+          {cars.length > 0 ? (
+            <>
+              {/* Carousel controls */}
+              <div className="mb-4 flex items-center justify-between">
+                <div className="flex items-center gap-3">
+                  <label className="flex items-center gap-2 text-sm text-gray-600">
+                    <input
+                      type="checkbox"
+                      checked={
+                        cars.length > 0 &&
+                        cars.every((car) => selectedCars.includes(car.id))
+                      }
+                      onChange={(e) => {
+                        if (e.target.checked) {
+                          setSelectedCars((prev) => [
+                            ...new Set([...prev, ...cars.map((car) => car.id)]),
+                          ]);
+                        } else {
+                          setSelectedCars((prev) =>
+                            prev.filter(
+                              (id) => !cars.some((car) => car.id === id),
+                            ),
+                          );
+                        }
+                      }}
+                      className="h-4 w-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                    />
+                    Select page
+                  </label>
 
-      {/* Inventory table */}
-      <div className="overflow-x-auto rounded-md border border-gray-200 bg-white">
-        <table className="w-full text-left text-sm">
-          <thead className="border-b bg-gray-50">
-            <tr>
-              <th className="px-4 py-3 font-medium">
-                <input
-                  type="checkbox"
-                  checked={
-                    cars.length > 0 &&
-                    cars.every((car) => selectedCars.includes(car.id))
-                  }
-                  onChange={handleSelectAll}
-                  aria-label="Select all vehicles"
-                />
-              </th>
+                  <span className="text-sm text-gray-500">
+                    {cars.length} vehicle{cars.length !== 1 ? "s" : ""}
+                  </span>
+                </div>
 
-              <th className="px-4 py-3 font-medium">Stock ID</th>
-              <th className="px-4 py-3 font-medium">Year</th>
-              <th className="px-4 py-3 font-medium">Make</th>
-              <th className="px-4 py-3 font-medium">Model</th>
-              <th className="px-4 py-3 font-medium">Variant</th>
-              <th className="px-4 py-3 font-medium">Colour</th>
-              <th className="px-4 py-3 font-medium">Status</th>
-              <th className="px-4 py-3 font-medium">Price</th>
-              <th className="px-4 py-3 font-medium">Mileage</th>
-              <th className="px-4 py-3 font-medium">Actions</th>
-            </tr>
-          </thead>
+                <div className="flex items-center gap-2">
+                  <button
+                    type="button"
+                    onClick={() => scrollCarousel("left")}
+                    className="flex h-9 w-9 items-center justify-center rounded-full border border-gray-200 bg-white text-gray-600 shadow-sm transition hover:bg-gray-50 hover:text-gray-900"
+                    aria-label="Previous vehicles"
+                  >
+                    <IconChevronLeft size={18} />
+                  </button>
 
-          <tbody>
-            {cars.map((car) => (
-              <tr
-                key={car.id}
-                className="border-b last:border-b-0 hover:bg-gray-50"
+                  <button
+                    type="button"
+                    onClick={() => scrollCarousel("right")}
+                    className="flex h-9 w-9 items-center justify-center rounded-full border border-gray-200 bg-white text-gray-600 shadow-sm transition hover:bg-gray-50 hover:text-gray-900"
+                    aria-label="Next vehicles"
+                  >
+                    <IconChevronRight size={18} />
+                  </button>
+                </div>
+              </div>
+
+              {/* Horizontal carousel */}
+              <div
+                ref={carouselRef}
+                className="flex gap-5 overflow-x-auto scroll-smooth pb-5 snap-x snap-mandatory [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
               >
-                <td className="px-4 py-3">
-                  <input
-                    type="checkbox"
-                    checked={selectedCars.includes(car.id)}
-                    onChange={() => handleVehicleSelect(car.id)}
-                    aria-label={`Select ${car.stock_id}`}
-                  />
-                </td>
+                {cars.map((car) => {
+                  const imagePath =
+                    car.images?.find((image) => image.is_cover)?.image ||
+                    car.images?.[0]?.image ||
+                    null;
 
-                <td className="px-4 py-3">{car.stock_id}</td>
-                <td className="px-4 py-3">{car.year}</td>
-                <td className="px-4 py-3">{car.make}</td>
-                <td className="px-4 py-3">{car.model}</td>
-                <td className="px-4 py-3">{car.variant}</td>
-                <td className="px-4 py-3">{car.colour}</td>
-                <td className="px-4 py-3">{car.status}</td>
-                <td className="px-4 py-3">
-                  {car.asking_price ?? "-"}
-                </td>
-                <td className="px-4 py-3">
-                  {car.mileage ?? "-"}
-                </td>
+                  const coverImage = imagePath
+                    ? imagePath.startsWith("http")
+                      ? imagePath
+                      : `http://localhost:8000${imagePath}`
+                    : null;
 
-                <td className="whitespace-nowrap px-4 py-3">
-                  <button
-                    onClick={() => navigate(`/stock/${car.id}`)}
-                    className="mr-2 text-sm text-gray-700 hover:underline"
-                  >
-                    👁️ View
-                  </button>
+                  const isSelected = selectedCars.includes(car.id);
 
-                  <button
-                    onClick={() => navigate(`/stock/${car.id}/edit`)}
-                    className="text-sm text-gray-700 hover:underline"
-                  >
-                    ✏️ Edit
-                  </button>
-                </td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
+                  return (
+                    <div
+                      key={car.id}
+                      className="group min-w-[320px] max-w-[320px] flex-shrink-0 snap-start overflow-hidden rounded-2xl border border-gray-200 bg-white shadow-sm transition duration-200 hover:-translate-y-1 hover:shadow-lg"
+                    >
+                      {/* Image */}
+                      <div className="relative h-52 overflow-hidden bg-gray-100">
+                        {coverImage ? (
+                          <img
+                            src={coverImage}
+                            alt={`${car.make} ${car.model}`}
+                            className="h-full w-full object-cover transition duration-300 group-hover:scale-105"
+                          />
+                        ) : (
+                          <div className="flex h-full w-full items-center justify-center bg-gray-100 text-gray-400">
+                            <IconCar size={52} strokeWidth={1.5} />
+                          </div>
+                        )}
+
+                        {/* Selection */}
+                        <div className="absolute left-3 top-3">
+                          <input
+                            type="checkbox"
+                            checked={isSelected}
+                            onChange={() => {
+                              setSelectedCars((prev) =>
+                                isSelected
+                                  ? prev.filter((id) => id !== car.id)
+                                  : [...prev, car.id],
+                              );
+                            }}
+                            className="h-5 w-5 rounded border-gray-300 bg-white text-blue-600 shadow focus:ring-blue-500"
+                          />
+                        </div>
+
+                        {/* Status */}
+                        <div className="absolute right-3 top-3">
+                          <span
+                            className={`rounded-full px-3 py-1 text-xs font-semibold shadow-sm ${
+                              car.status === "in_service"
+                                ? "bg-emerald-500 text-white"
+                                : car.status === "sold"
+                                  ? "bg-red-500 text-white"
+                                  : "bg-gray-900/80 text-white"
+                            }`}
+                          >
+                            {getStatusLabel(car.status)}
+                          </span>
+                        </div>
+                      </div>
+
+                      {/* Card content */}
+                      <div className="p-4">
+                        {/* Stock ID */}
+                        <div className="mb-2 text-xs font-semibold uppercase tracking-wide text-blue-600">
+                          {car.stock_id}
+                        </div>
+
+                        {/* Vehicle name */}
+                        <h3 className="truncate text-lg font-semibold text-gray-900">
+                          {car.make} {car.model}
+                        </h3>
+
+                        <p className="mt-1 truncate text-sm text-gray-500">
+                          {car.variant || "No variant specified"}
+                        </p>
+
+                        {/* Vehicle details */}
+                        <div className="mt-4 grid grid-cols-2 gap-3 text-sm">
+                          <div className="flex items-center gap-2 text-gray-600">
+                            <IconCalendar size={15} className="text-gray-400" />
+                            <span>{car.year || "-"}</span>
+                          </div>
+
+                          <div className="flex items-center gap-2 text-gray-600">
+                            <IconCar size={15} className="text-gray-400" />
+                            <span className="truncate">
+                              {getVehicleTypeLabel(car.vehicle_type)}
+                            </span>
+                          </div>
+
+                          <div className="flex items-center gap-2 text-gray-600">
+                            <IconGauge size={15} className="text-gray-400" />
+                            <span>{car.mileage ?? "-"} km</span>
+                          </div>
+
+                          <div className="flex items-center gap-2 text-gray-600">
+                            <span className="h-[15px] w-[15px] rounded-full border border-gray-300" />
+                            <span className="truncate">
+                              {car.colour || "-"}
+                            </span>
+                          </div>
+                        </div>
+
+                        {/* Service location */}
+                        {car.status === "in_service" && (
+                          <div className="mt-3 flex items-center gap-2 text-sm text-gray-600">
+                            <IconMapPin size={15} className="text-gray-400" />
+                            <span className="truncate">
+                              {car.service_location || "Location not specified"}
+                            </span>
+                          </div>
+                        )}
+
+                        {/* Price */}
+                        <div className="mt-4 border-t border-gray-100 pt-4">
+                          <p className="text-xs text-gray-500">Asking Price</p>
+                          <p className="text-xl font-bold text-gray-900">
+                            AED{" "}
+                            {Number(car.asking_price || 0).toLocaleString(
+                              "en-AE",
+                            )}
+                          </p>
+                        </div>
+
+                        {/* Actions */}
+                        <div className="mt-4 grid grid-cols-2 gap-2">
+                          <button
+                            type="button"
+                            onClick={() => navigate(`/stock/${car.id}`)}
+                            className="flex items-center justify-center gap-2 rounded-lg border border-gray-200 px-3 py-2 text-sm font-medium text-gray-700 transition hover:bg-gray-50"
+                          >
+                            <IconEye size={16} />
+                            View
+                          </button>
+
+                          <button
+                            type="button"
+                            onClick={() => navigate(`/stock/${car.id}/edit`)}
+                            className="flex items-center justify-center gap-2 rounded-lg bg-gray-900 px-3 py-2 text-sm font-medium text-white transition hover:bg-gray-800"
+                          >
+                            <IconPencil size={16} />
+                            Edit
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => {
+                              console.log("Share vehicle:", car.id);
+                            }}
+                            className="flex items-center justify-center gap-2 rounded-lg border border-gray-200 px-3 py-2 text-sm font-medium text-gray-700 transition hover:bg-gray-50"
+                          >
+                            <IconShare size={16} />
+                            Share
+                          </button>
+                        </div>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            </>
+          ) : (
+            <div className="rounded-2xl border border-dashed border-gray-300 bg-gray-50 px-6 py-16 text-center">
+              <IconCar
+                size={48}
+                strokeWidth={1.5}
+                className="mx-auto text-gray-300"
+              />
+              <h3 className="mt-4 text-lg font-semibold text-gray-800">
+                No vehicles found
+              </h3>
+              <p className="mt-1 text-sm text-gray-500">
+                Try changing your search or filters.
+              </p>
+            </div>
+          )}
+        </div>
       </div>
+
       {/* Pagination */}
-      <div className="mt-4 flex flex-wrap items-center gap-2 text-sm">
-        <button
-          type="button"
-          onClick={() => setPage((currentPage) => currentPage - 1)}
-          disabled={page === 1}
-          className="rounded-md border border-gray-300 bg-white px-3 py-1.5 disabled:opacity-40"
-        >
-          Previous
-        </button>
+      <div className="mt-6 flex flex-col gap-4 rounded-2xl border border-gray-200 bg-white px-4 py-4 shadow-sm sm:flex-row sm:items-center sm:justify-between">
+        {/* Result count */}
+        <div className="text-sm text-gray-500">
+          Showing{" "}
+          <span className="font-medium text-gray-900">
+            {startItem}-{endItem}
+          </span>{" "}
+          of <span className="font-medium text-gray-900">{totalCount}</span>{" "}
+          vehicles
+        </div>
 
-        {getPaginationItems().map((item, index) => {
-          if (item === "...") {
-            return <span key={`ellipsis-${index}`}>...</span>;
-          }
-
-          return (
+        {/* Pagination controls */}
+        {totalPages > 1 && (
+          <div className="flex items-center justify-center gap-1">
+            {/* Previous */}
             <button
-              key={item}
               type="button"
-              onClick={() => setPage(item)}
-              disabled={item === page}
-              className={`rounded-md border px-3 py-1.5 ${item === page
-                ? "border-gray-900 bg-gray-900 text-white"
-                : "border-gray-300 bg-white hover:bg-gray-100"
-                }`}
+              onClick={() =>
+                setPage((currentPage) => Math.max(1, currentPage - 1))
+              }
+              disabled={page === 1}
+              className="flex h-9 w-9 items-center justify-center rounded-lg border border-gray-200 bg-white text-gray-600 transition hover:bg-gray-50 hover:text-gray-900 disabled:cursor-not-allowed disabled:opacity-40"
+              aria-label="Previous page"
             >
-              {item}
+              <IconChevronLeft size={17} />
             </button>
-          );
-        })}
 
-        <button
-          type="button"
-          onClick={() => setPage((currentPage) => currentPage + 1)}
-          disabled={page >= totalPages}
-          className="rounded-md border border-gray-300 bg-white px-3 py-1.5 disabled:opacity-40"
-        >
-          Next
-        </button>
+            {/* Page numbers */}
+            {getPaginationItems().map((item, index) => {
+              if (item === "...") {
+                return (
+                  <span
+                    key={`ellipsis-${index}`}
+                    className="flex h-9 min-w-9 items-center justify-center px-1 text-sm text-gray-400"
+                  >
+                    ...
+                  </span>
+                );
+              }
 
-        <span className="ml-2 text-gray-500">
-          Showing {cars.length} of {totalCount} vehicles
-        </span>
+              const isCurrentPage = item === page;
+
+              return (
+                <button
+                  key={item}
+                  type="button"
+                  onClick={() => setPage(item)}
+                  disabled={isCurrentPage}
+                  aria-current={isCurrentPage ? "page" : undefined}
+                  className={`flex h-9 min-w-9 items-center justify-center rounded-lg border px-2.5 text-sm font-medium transition ${
+                    isCurrentPage
+                      ? "border-gray-900 bg-gray-900 text-white"
+                      : "border-gray-200 bg-white text-gray-700 hover:bg-gray-50"
+                  }`}
+                >
+                  {item}
+                </button>
+              );
+            })}
+
+            {/* Next */}
+            <button
+              type="button"
+              onClick={() =>
+                setPage((currentPage) => Math.min(totalPages, currentPage + 1))
+              }
+              disabled={page >= totalPages}
+              className="flex h-9 w-9 items-center justify-center rounded-lg border border-gray-200 bg-white text-gray-600 transition hover:bg-gray-50 hover:text-gray-900 disabled:cursor-not-allowed disabled:opacity-40"
+              aria-label="Next page"
+            >
+              <IconChevronRight size={17} />
+            </button>
+          </div>
+        )}
       </div>
 
       {showImportModal && (
@@ -857,7 +1195,6 @@ function Stock() {
           </div>
         </div>
       )}
-
     </div>
   );
 }

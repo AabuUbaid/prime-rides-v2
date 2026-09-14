@@ -1778,6 +1778,16 @@ class BalanceSheetSerializer(serializers.ModelSerializer):
     def get_total_spent(self, obj):
         quote = obj.quote
 
+        if quote.payment_method == "Finance":
+            return (
+                getattr(
+                    quote,
+                    "emi_finance_amount",
+                    None,
+                )
+                or Decimal("0.00")
+            )
+
         quote_amount = (
             getattr(quote, "price", None)
             or Decimal("0.00")
@@ -1798,6 +1808,72 @@ class BalanceSheetSerializer(serializers.ModelSerializer):
 
     def get_spent_breakdown(self, obj):
         quote = obj.quote
+
+        if quote.payment_method == "Finance":
+            evaluation = (
+                getattr(
+                    quote,
+                    "emi_vehicle_price",
+                    None,
+                )
+                or Decimal("0.00")
+            )
+
+            vat = (
+                getattr(
+                    quote,
+                    "emi_vat_amount",
+                    None,
+                )
+                or Decimal("0.00")
+            )
+
+            expense_total = (
+                getattr(
+                    quote,
+                    "emi_expense_total",
+                    None,
+                )
+                or Decimal("0.00")
+            )
+
+            down_payment = (
+                getattr(
+                    quote,
+                    "emi_down_payment",
+                    None,
+                )
+                or Decimal("0.00")
+            )
+
+            breakdown = [
+                {
+                    "type": "evaluation",
+                    "narration": "Evaluation",
+                    "amount": evaluation,
+                },
+                {
+                    "type": "vat",
+                    "narration": "VAT",
+                    "amount": vat,
+                },
+                {
+                    "type": "finance_expense",
+                    "narration": "Finance Expense",
+                    "amount": expense_total,
+                },
+            ]
+
+            if down_payment > 0:
+                breakdown.append(
+                    {
+                        "type": "down_payment",
+                        "narration": "Down Payment",
+                        "amount": -down_payment,
+                    }
+                )
+
+            return breakdown
 
         vehicle_price = (
             getattr(obj.car, "asking_price", None)
@@ -1924,7 +2000,7 @@ class BalanceSheetSerializer(serializers.ModelSerializer):
         if emi_sheet:
             return getattr(
                 emi_sheet,
-                "car_value_evaluation",
+                "vehicle_price",
                 None,
             )
 

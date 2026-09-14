@@ -25,6 +25,7 @@ class InventorySelector:
         search=None,
         status=None,
         source=None,
+        make=None,
         supplier=None,
         year=None,
         highlight_public=None,
@@ -61,7 +62,13 @@ class InventorySelector:
             queryset = queryset.filter(
                 status=status,
             )
+
+        if make:
             
+            queryset = queryset.filter(
+                make__iexact=make,
+            )
+                
         if vehicle_type:
 
             queryset = queryset.filter(

@@ -18,6 +18,10 @@ export function getCar(id) {
   return apiClient(`/inventory/cars/${id}/`);
 }
 
+export function getCarBrands() {
+  return apiClient("/inventory/cars/brands/");
+}
+
 export async function createCar(formData) {
   const data = new FormData();
 

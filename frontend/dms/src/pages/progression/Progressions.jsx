@@ -40,12 +40,18 @@ export default function Progressions() {
   const rows = useMemo(
     () =>
       [...items].sort((a, b) => {
-        const ad =
-          Number(a.status === "active") - Number(b.status === "active");
+        const aCompleted = a.status === "completed";
+        const bCompleted = b.status === "completed";
+
+        // Completed always goes to the bottom.
+        if (aCompleted !== bCompleted) {
+          return Number(aCompleted) - Number(bCompleted);
+        }
+
+        // Within the same status group, newest first.
         return (
-          ad ||
           new Date(b.updated_at || b.created_at || 0) -
-            new Date(a.updated_at || a.created_at || 0)
+          new Date(a.updated_at || a.created_at || 0)
         );
       }),
     [items],

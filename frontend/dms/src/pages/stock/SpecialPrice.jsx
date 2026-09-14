@@ -1,11 +1,11 @@
 import { useEffect, useState } from "react";
 import { toast } from "react-toastify";
-import { useAuth } from "../context/AuthContext";
+import { useAuth } from "../../context/AuthContext";
 import {
   createSpecialPriceRequest,
   decideSpecialPriceRequest,
   getSpecialPriceRequests,
-} from "../api/specialPrice";
+} from "../../api/specialPrice";
 
 function unwrapData(response) {
   return response?.data ?? response;

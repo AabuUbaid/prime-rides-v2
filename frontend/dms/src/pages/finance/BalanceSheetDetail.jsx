@@ -358,15 +358,6 @@ function BalanceSheetDetail() {
                 Selling Price
               </p>
               <p className="mt-1 text-lg font-semibold text-gray-900">
-                {formatAED(balanceSheet.selling_price)}
-              </p>
-            </div>
-
-            <div className="rounded-md border border-gray-200 p-4">
-              <p className="text-xs font-medium uppercase text-gray-500">
-                Evaluation
-              </p>
-              <p className="mt-1 text-lg font-semibold text-gray-900">
                 {formatAED(balanceSheet.evaluation)}
               </p>
             </div>

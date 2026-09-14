@@ -2,6 +2,8 @@ import { useEffect, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { toast } from "react-toastify";
 
+import { formatHumanText } from "../../utils/textFormatters";
+
 import { getCar, updateCar, deleteCar } from "../../api/inventory";
 import VehicleInformation from "./components/VehicleInformation";
 import PricingInformation from "./components/PricingInformation";
@@ -15,6 +17,10 @@ const initialFormData = {
   model: "",
   variant: "",
   colour: "",
+
+  vehicle_type: "",
+  service_location: "",
+  actual_mileage: "",
 
   purchase_cost: "",
   asking_price: "",
@@ -108,7 +114,19 @@ function EditCar() {
       setSaving(true);
 
       const { status, ...editableData } = formData;
-      await updateCar(id, editableData);
+
+      const normalizedData = {
+        ...editableData,
+        make: formatHumanText(editableData.make),
+        model: formatHumanText(editableData.model),
+        variant: formatHumanText(editableData.variant),
+        colour: formatHumanText(editableData.colour),
+        supplier: formatHumanText(editableData.supplier),
+        service_location: formatHumanText(editableData.service_location),
+        source_specify: formatHumanText(editableData.source_specify),
+      };
+
+      const result = await updateCar(id, normalizedData);
 
       console.log(result);
 

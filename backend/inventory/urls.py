@@ -6,6 +6,7 @@ from .views import (
     BulkVehicleImportAPIView,
     CarAPIView,
     CarDetailAPIView,
+    CarBrandListAPIView,
     CarImageCoverAPIView,
     CarExpenseAPIView,
     CarExpenseDetailAPIView,
@@ -30,6 +31,12 @@ urlpatterns = [
         "cars/",
         CarAPIView.as_view(),
         name="cars",
+    ),
+
+    path(
+        "cars/brands/",
+        CarBrandListAPIView.as_view(),
+        name="car-brands",
     ),
 
     path(

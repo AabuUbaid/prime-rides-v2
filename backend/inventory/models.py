@@ -13,6 +13,16 @@ class Car(models.Model):
         IN_SERVICE = "in_service", "In Service"
         IN_HOUSE = "in_house", "In House"
 
+    class VehicleType(models.TextChoices):
+        SEDAN = "sedan", "Sedan"
+        SUV = "suv", "SUV (Sport Utility Vehicle)"
+        HATCHBACK = "hatchback", "Hatchback"
+        CROSSOVER = "crossover", "Crossover"
+        COUPE = "coupe", "Coupe"
+        CONVERTIBLE = "convertible", "Convertible"
+        PICKUP_TRUCK = "pickup_truck", "Pickup Truck"
+        OTHER = "other", "Other"
+
     class Source(models.TextChoices):
         OWN_PURCHASE = "own_purchase", "Own Purchase"
         FLY_WHEEL="fly_wheel", "Fly Wheel"
@@ -34,6 +44,7 @@ class Car(models.Model):
     
     vehicle_type = models.CharField(
         max_length=100,
+        choices=VehicleType.choices,
         blank=True,
     )
 

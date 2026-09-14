@@ -10,6 +10,9 @@ class CarListQuerySerializer(serializers.Serializer):
     status = serializers.CharField(
         required=False,
     )
+    make = serializers.CharField(
+        required=False,
+    )
     vehicle_type = serializers.CharField(
         required=False,
     )

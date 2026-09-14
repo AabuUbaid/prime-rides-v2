@@ -171,11 +171,6 @@ export default function BalanceSheetPrintTemplate({ balanceSheet }) {
           <tbody>
             <tr>
               <th>Selling Price</th>
-              <td>{formatCurrency(balanceSheet.selling_price)}</td>
-            </tr>
-
-            <tr>
-              <th>Evaluation</th>
               <td>{formatCurrency(balanceSheet.evaluation)}</td>
             </tr>
 
@@ -203,6 +198,22 @@ export default function BalanceSheetPrintTemplate({ balanceSheet }) {
           </div>
         </div>
       </section>
+
+      <div className="section">
+        <h3>Spent Breakdown</h3>
+
+        <table>
+          <tbody>
+            {Array.isArray(balanceSheet.spent_breakdown) &&
+              balanceSheet.spent_breakdown.map((item, index) => (
+                <tr key={`${item.type}-${index}`}>
+                  <th>{item.narration || "-"}</th>
+                  <td>{formatCurrency(item.amount)}</td>
+                </tr>
+              ))}
+          </tbody>
+        </table>
+      </div>
 
       <section className="print-section">
         <div className="print-section-title">Transaction History</div>

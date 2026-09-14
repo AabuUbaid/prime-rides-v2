@@ -248,10 +248,30 @@ function CarDetails() {
 
           <tr className="border-b border-gray-100">
             <th className="w-1/3 bg-gray-50 px-4 py-3 text-left font-medium text-gray-600">
+              Vehicle Type
+            </th>
+            <td className="px-4 py-3 text-gray-900">
+              {car.vehicle_type || "-"}
+            </td>
+          </tr>
+
+          <tr className="border-b border-gray-100">
+            <th className="w-1/3 bg-gray-50 px-4 py-3 text-left font-medium text-gray-600">
               Status
             </th>
             <td className="px-4 py-3 text-gray-900">{car.status}</td>
           </tr>
+
+          {car.status === "in_service" && (
+            <tr className="border-b border-gray-100">
+              <th className="w-1/3 bg-gray-50 px-4 py-3 text-left font-medium text-gray-600">
+                Specify Location
+              </th>
+              <td className="px-4 py-3 text-gray-900">
+                {car.service_location || "-"}
+              </td>
+            </tr>
+          )}
 
           {user?.role === "MASTER" && (
             <tr className="border-b border-gray-100">
@@ -287,6 +307,15 @@ function CarDetails() {
               Mileage
             </th>
             <td className="px-4 py-3 text-gray-900">{car.mileage ?? "-"}</td>
+          </tr>
+
+          <tr className="border-b border-gray-100">
+            <th className="w-1/3 bg-gray-50 px-4 py-3 text-left font-medium text-gray-600">
+              Actual Mileage
+            </th>
+            <td className="px-4 py-3 text-gray-900">
+              {car.actual_mileage ?? "-"}
+            </td>
           </tr>
 
           <tr className="border-b border-gray-100">

@@ -8,6 +8,7 @@ import AddCar from "./pages/stock/AddCar";
 import Stock from "./pages/stock/Stock";
 import CarDetails from "./pages/stock/CarDetails";
 import EditCar from "./pages/stock/EditCar";
+import SpecialPrice from "./pages/stock/SpecialPrice";
 
 import Login from "./pages/Login";
 import Dashboard from "./pages/Dashboard";
@@ -526,6 +527,7 @@ function App() {
               </ProtectedRoute>
             }
           />
+          <Route path="/special-price" element={<SpecialPrice />} />
         </Routes>
       </AuthProvider>
     </BrowserRouter>
