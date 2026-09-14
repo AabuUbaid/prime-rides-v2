@@ -325,67 +325,66 @@ function App() {
               </ProtectedRoute>
             }
           />
-
           <Route
             path="/finance/bank-loans"
             element={
-              <ProtectedRoute>
+              <RoleRoute allowedRoles={["MASTER"]}>
                 <BankLoans />
-              </ProtectedRoute>
+              </RoleRoute>
             }
           />
 
           <Route
             path="/finance/bank-loans/:id"
             element={
-              <ProtectedRoute>
+              <RoleRoute allowedRoles={["MASTER"]}>
                 <BankLoanDetail />
-              </ProtectedRoute>
+              </RoleRoute>
             }
           />
 
           <Route
             path="/finance/cash-deals"
             element={
-              <ProtectedRoute>
+              <RoleRoute allowedRoles={["MASTER"]}>
                 <CashDeals />
-              </ProtectedRoute>
+              </RoleRoute>
             }
           />
 
           <Route
             path="/finance/cash-deals/:id"
             element={
-              <ProtectedRoute>
+              <RoleRoute allowedRoles={["MASTER"]}>
                 <CashDealDetail />
-              </ProtectedRoute>
+              </RoleRoute>
             }
           />
 
           <Route
             path="/finance/cash-receipts"
             element={
-              <ProtectedRoute>
+              <RoleRoute allowedRoles={["MASTER", "ADMIN"]}>
                 <CashReceipts />
-              </ProtectedRoute>
+              </RoleRoute>
             }
           />
 
           <Route
             path="/finance/cash-receipts/:id"
             element={
-              <ProtectedRoute>
+              <RoleRoute allowedRoles={["MASTER", "ADMIN"]}>
                 <CashReceiptDetail />
-              </ProtectedRoute>
+              </RoleRoute>
             }
           />
 
           <Route
             path="/finance/cash-receipts/new"
             element={
-              <ProtectedRoute>
+              <RoleRoute allowedRoles={["MASTER", "ADMIN"]}>
                 <CashReceiptCreate />
-              </ProtectedRoute>
+              </RoleRoute>
             }
           />
 

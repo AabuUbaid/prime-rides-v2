@@ -27,3 +27,9 @@ export function printDocument({
 
   window.print();
 }
+
+export function printInventoryVehicle(car) {
+  window.print();
+
+  return car;
+}

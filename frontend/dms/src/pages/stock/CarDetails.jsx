@@ -265,7 +265,7 @@ function CarDetails() {
           {car.status === "in_service" && (
             <tr className="border-b border-gray-100">
               <th className="w-1/3 bg-gray-50 px-4 py-3 text-left font-medium text-gray-600">
-                Specify Location
+                Location
               </th>
               <td className="px-4 py-3 text-gray-900">
                 {car.service_location || "-"}
@@ -309,30 +309,36 @@ function CarDetails() {
             <td className="px-4 py-3 text-gray-900">{car.mileage ?? "-"}</td>
           </tr>
 
-          <tr className="border-b border-gray-100">
-            <th className="w-1/3 bg-gray-50 px-4 py-3 text-left font-medium text-gray-600">
-              Actual Mileage
-            </th>
-            <td className="px-4 py-3 text-gray-900">
-              {car.actual_mileage ?? "-"}
-            </td>
-          </tr>
+          {user?.role === "MASTER" && (
+            <tr className="border-b border-gray-100">
+              <th className="w-1/3 bg-gray-50 px-4 py-3 text-left font-medium text-gray-600">
+                Actual Mileage
+              </th>
+              <td className="px-4 py-3 text-gray-900">
+                {car.actual_mileage ?? "-"}
+              </td>
+            </tr>
+          )}
 
-          <tr className="border-b border-gray-100">
-            <th className="w-1/3 bg-gray-50 px-4 py-3 text-left font-medium text-gray-600">
-              Supplier
-            </th>
-            <td className="px-4 py-3 text-gray-900">{car.supplier || "-"}</td>
-          </tr>
+          {user?.role === "MASTER" && (
+            <tr className="border-b border-gray-100">
+              <th className="w-1/3 bg-gray-50 px-4 py-3 text-left font-medium text-gray-600">
+                Supplier
+              </th>
+              <td className="px-4 py-3 text-gray-900">{car.supplier || "-"}</td>
+            </tr>
+          )}
 
-          <tr className="border-b border-gray-100">
-            <th className="w-1/3 bg-gray-50 px-4 py-3 text-left font-medium text-gray-600">
-              Source
-            </th>
-            <td className="px-4 py-3 text-gray-900">{car.source}</td>
-          </tr>
+          {user?.role === "MASTER" && (
+            <tr className="border-b border-gray-100">
+              <th className="w-1/3 bg-gray-50 px-4 py-3 text-left font-medium text-gray-600">
+                Source
+              </th>
+              <td className="px-4 py-3 text-gray-900">{car.source || "-"}</td>
+            </tr>
+          )}
 
-          {car.source === "other" && (
+          {user?.role === "MASTER" && car.source === "other" && (
             <tr className="border-b border-gray-100">
               <th className="w-1/3 bg-gray-50 px-4 py-3 text-left font-medium text-gray-600">
                 Source Specify
@@ -361,14 +367,16 @@ function CarDetails() {
             </td>
           </tr>
 
-          <tr className="border-b border-gray-100">
-            <th className="w-1/3 bg-gray-50 px-4 py-3 text-left font-medium text-gray-600">
-              Highlight Public
-            </th>
-            <td className="px-4 py-3 text-gray-900">
-              {car.highlight_public ? "Yes" : "No"}
-            </td>
-          </tr>
+          {user?.role === "MASTER" && (
+            <tr className="border-b border-gray-100">
+              <th className="w-1/3 bg-gray-50 px-4 py-3 text-left font-medium text-gray-600">
+                Highlight Public
+              </th>
+              <td className="px-4 py-3 text-gray-900">
+                {car.highlight_public ? "Yes" : "No"}
+              </td>
+            </tr>
+          )}
 
           <tr>
             <th className="w-1/3 bg-gray-50 px-4 py-3 text-left font-medium text-gray-600">
@@ -505,29 +513,37 @@ function CarDetails() {
         </>
       )}
 
-      <ExpenseForm onAddExpense={handleAddExpense} />
+      {user?.role === "MASTER" && (
+        <>
+          <ExpenseForm onAddExpense={handleAddExpense} />
 
-      <h2 className="text-xl font-semibold text-gray-900">Vehicle Expenses</h2>
+          <h2 className="text-xl font-semibold text-gray-900">
+            Vehicle Expenses
+          </h2>
 
-      <ExpenseList
-        expenses={car.expenses}
-        onUpdateExpense={handleUpdateExpense}
-        onDeleteExpense={handleDeleteExpense}
-      />
+          <ExpenseList
+            expenses={car.expenses}
+            onUpdateExpense={handleUpdateExpense}
+            onDeleteExpense={handleDeleteExpense}
+          />
 
-      <h3 className="text-lg font-semibold text-gray-800">Expense Summary</h3>
+          <h3 className="text-lg font-semibold text-gray-800">
+            Expense Summary
+          </h3>
 
-      <p className="text-sm text-gray-700">
-        Expense Count: {car.expense_summary?.expense_count ?? 0}
-      </p>
+          <p className="text-sm text-gray-700">
+            Expense Count: {car.expense_summary?.expense_count ?? 0}
+          </p>
 
-      <p className="text-sm text-gray-700">
-        Total Expenses: {car.expense_summary?.total_expenses ?? 0}
-      </p>
+          <p className="text-sm text-gray-700">
+            Total Expenses: {car.expense_summary?.total_expenses ?? 0}
+          </p>
 
-      <p className="text-sm font-semibold text-gray-900">
-        Net Cost: {car.expense_summary?.net_cost ?? 0}
-      </p>
+          <p className="text-sm font-semibold text-gray-900">
+            Net Cost: {car.expense_summary?.net_cost ?? 0}
+          </p>
+        </>
+      )}
     </div>
   );
 }

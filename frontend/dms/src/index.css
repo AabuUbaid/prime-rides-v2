@@ -428,3 +428,293 @@
         page-break-before: always !important;
     }
 }
+
+.inventory-vehicle-print {
+  width: 100%;
+}
+
+.inventory-vehicle-print-image {
+  width: 100%;
+  height: 420px;
+  overflow: hidden;
+  margin-bottom: 24px;
+  background: #f3f4f6;
+}
+
+.inventory-vehicle-print-image img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.inventory-vehicle-print-image-empty {
+  display: flex;
+  width: 100%;
+  height: 100%;
+  align-items: center;
+  justify-content: center;
+  color: #9ca3af;
+  font-size: 18px;
+}
+
+.inventory-vehicle-print-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 24px;
+  margin-bottom: 20px;
+}
+
+.inventory-vehicle-print-make {
+  margin: 0;
+  font-size: 20px;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+}
+
+.inventory-vehicle-print-model {
+  margin: 4px 0 0;
+  font-size: 36px;
+  font-weight: 900;
+  line-height: 1;
+}
+
+.inventory-vehicle-print-variant {
+  margin: 8px 0 0;
+  font-size: 16px;
+  color: #6b7280;
+}
+
+.inventory-vehicle-print-type {
+  padding: 8px 14px;
+  border: 1px solid #d1d5db;
+  font-size: 13px;
+  font-weight: 700;
+}
+
+.inventory-vehicle-print-status {
+  margin-bottom: 24px;
+  text-align: center;
+}
+
+.inventory-vehicle-print-price {
+  padding: 20px;
+  border: 2px solid #111827;
+}
+
+.inventory-vehicle-print-price span {
+  display: block;
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+}
+
+.inventory-vehicle-print-price strong {
+  display: block;
+  margin-top: 8px;
+  font-size: 42px;
+  font-weight: 900;
+}
+
+.inventory-vehicle-print-booked,
+.inventory-vehicle-print-coming-soon {
+  padding: 20px;
+  border: 2px solid #111827;
+  font-size: 30px;
+  font-weight: 900;
+}
+
+.inventory-vehicle-print-info {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  border-top: 1px solid #d1d5db;
+  border-left: 1px solid #d1d5db;
+}
+
+.inventory-vehicle-print-info > div {
+  padding: 14px;
+  border-right: 1px solid #d1d5db;
+  border-bottom: 1px solid #d1d5db;
+}
+
+.inventory-vehicle-print-info span {
+  display: block;
+  font-size: 11px;
+  color: #6b7280;
+}
+
+.inventory-vehicle-print-info strong {
+  display: block;
+  margin-top: 5px;
+  font-size: 16px;
+}
+
+@media print {
+  .inventory-vehicle-print-image {
+    height: 360px;
+  }
+
+  .inventory-vehicle-print-header,
+  .inventory-vehicle-print-status,
+  .inventory-vehicle-print-info {
+    break-inside: avoid;
+  }
+}
+
+.inventory-vehicle-print-wrapper {
+  display: none;
+}
+
+@media print {
+  body * {
+    visibility: hidden;
+  }
+
+  .inventory-vehicle-print-wrapper,
+  .inventory-vehicle-print-wrapper * {
+    visibility: visible;
+  }
+
+  .inventory-vehicle-print-wrapper {
+    display: block;
+    position: absolute;
+    inset: 0;
+    width: 100%;
+  }
+}
+
+.inventory-stock-print {
+  width: 100%;
+}
+
+.inventory-stock-print-title {
+  margin: 0 0 24px;
+  font-size: 28px;
+  font-weight: 700;
+}
+
+.inventory-stock-print-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 20px;
+}
+
+.inventory-stock-print-card {
+  display: flex;
+  gap: 14px;
+  overflow: hidden;
+  border: 1px solid #d1d5db;
+  border-radius: 10px;
+  padding: 12px;
+  break-inside: avoid;
+  page-break-inside: avoid;
+}
+
+.inventory-stock-print-image {
+  width: 150px;
+  height: 110px;
+  flex-shrink: 0;
+  overflow: hidden;
+  background: #f3f4f6;
+  border-radius: 8px;
+}
+
+.inventory-stock-print-image img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.inventory-stock-print-image-empty {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  height: 100%;
+  color: #6b7280;
+  font-size: 12px;
+}
+
+.inventory-stock-print-content {
+  min-width: 0;
+  flex: 1;
+}
+
+.inventory-stock-print-stock-id {
+  margin-bottom: 4px;
+  color: #4b5563;
+  font-size: 10px;
+  font-weight: 700;
+  text-transform: uppercase;
+}
+
+.inventory-stock-print-card h2 {
+  margin: 0;
+  font-size: 17px;
+  line-height: 1.25;
+}
+
+.inventory-stock-print-status {
+  display: inline-block;
+  margin-top: 6px;
+  padding: 3px 8px;
+  border-radius: 999px;
+  background: #111827;
+  color: #ffffff;
+  font-size: 10px;
+  font-weight: 700;
+}
+
+.inventory-stock-print-details {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 6px 10px;
+  margin-top: 10px;
+}
+
+.inventory-stock-print-details span {
+  display: block;
+  color: #6b7280;
+  font-size: 9px;
+}
+
+.inventory-stock-print-details strong {
+  display: block;
+  font-size: 10px;
+}
+
+.inventory-stock-print-price {
+  margin-top: 8px;
+  font-size: 16px;
+  font-weight: 800;
+}
+
+.inventory-stock-print-coming-soon {
+  margin-top: 8px;
+  font-size: 11px;
+  font-weight: 800;
+}
+
+@media print {
+  .inventory-stock-print-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+.inventory-stock-print-wrapper {
+  display: none;
+}
+
+@media print {
+  .inventory-stock-print-wrapper,
+  .inventory-stock-print-wrapper * {
+    visibility: visible;
+  }
+
+  .inventory-stock-print-wrapper {
+    display: block;
+    position: absolute;
+    inset: 0;
+    width: 100%;
+  }
+}

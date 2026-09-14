@@ -2,16 +2,17 @@ import { useEffect, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "../../context/AuthContext";
 import {
-  IconCalendar,
-  IconCar,
-  IconChevronLeft,
-  IconChevronRight,
-  IconEye,
-  IconGauge,
-  IconMapPin,
-  IconPencil,
-  IconShare,
-} from "@tabler/icons-react";
+  CalendarDays,
+  CarFront,
+  ChevronLeft,
+  ChevronRight,
+  Eye,
+  Gauge,
+  MapPin,
+  Pencil,
+  Printer,
+  Share2Icon,
+} from "lucide-react";
 
 import {
   getCars,
@@ -19,6 +20,11 @@ import {
   bulkDeleteCars,
   bulkImportCars,
 } from "../../api/inventory";
+
+import PrintButton from "../../components/printing/PrintButton";
+import InventoryVehiclePrintTemplate from "../../components/printing/templates/InventoryVehiclePrintTemplate";
+import { printInventoryVehicle } from "../../utils/print";
+import InventoryStockPrintTemplate from "../../components/printing/templates/InventoryStockPrintTemplate";
 
 const INITIAL_FILTERS = {
   status: "",
@@ -49,6 +55,7 @@ const STATUS_OPTIONS = [
   { value: "available", label: "Available" },
   { value: "upcoming", label: "Upcoming" },
   { value: "reserved", label: "Reserved" },
+  { value: "booked", label: "Booked" },
   { value: "sold", label: "Sold" },
   { value: "in_service", label: "In Service" },
   { value: "in_house", label: "In House" },
@@ -107,6 +114,11 @@ function Stock() {
   const [totalCount, setTotalCount] = useState(0);
 
   const [selectedCars, setSelectedCars] = useState([]);
+  const [shareCar, setShareCar] = useState(null);
+  const [shareImageIndex, setShareImageIndex] = useState(0);
+  const [printCar, setPrintCar] = useState(null);
+  const [printStock, setPrintStock] = useState(false);
+
   const [refreshKey, setRefreshKey] = useState(0);
 
   const [showImportModal, setShowImportModal] = useState(false);
@@ -189,6 +201,87 @@ function Stock() {
 
     loadCars();
   }, [searchQuery, appliedFilters, ordering, page, pageSize, refreshKey]);
+
+  function getImageUrl(imagePath) {
+    if (!imagePath) return null;
+
+    return imagePath.startsWith("http")
+      ? imagePath
+      : `http://localhost:8000${imagePath}`;
+  }
+
+  function getShareImages(car) {
+    const images = car?.images || [];
+
+    const coverImage =
+      images.find((image) => image.is_cover) || images[0] || null;
+
+    const remainingImages = images.filter(
+      (image) => image.id !== coverImage?.id,
+    );
+
+    return [coverImage, ...remainingImages]
+      .filter(Boolean)
+      .map((image) => getImageUrl(image.image));
+  }
+
+  async function handleShareVehicle(car) {
+    const shareText = [
+      `${car.make || ""} ${car.model || ""}`.trim(),
+      car.variant ? car.variant : null,
+      car.vehicle_type ? getVehicleTypeLabel(car.vehicle_type) : null,
+      car.year ? `Year: ${car.year}` : null,
+      car.colour ? `Colour: ${car.colour}` : null,
+      car.mileage !== null && car.mileage !== undefined
+        ? `Mileage: ${Number(car.mileage).toLocaleString("en-AE")} km`
+        : null,
+      car.status ? `Status: ${getStatusLabel(car.status)}` : null,
+      car.status === "booked"
+        ? null
+        : car.asking_price
+          ? `Price: AED ${Number(car.asking_price).toLocaleString("en-AE")}`
+          : null,
+    ]
+      .filter(Boolean)
+      .join("\n");
+
+    try {
+      if (navigator.share) {
+        await navigator.share({
+          title: `${car.make || ""} ${car.model || ""}`.trim(),
+          text: shareText,
+        });
+
+        return;
+      }
+
+      await navigator.clipboard.writeText(shareText);
+      alert("Vehicle details copied to clipboard.");
+    } catch (error) {
+      if (error?.name !== "AbortError") {
+        console.error("Vehicle sharing failed:", error);
+      }
+    }
+  }
+
+  function handlePrintVehicle(car) {
+    setPrintCar(car);
+    setTimeout(() => {
+      printInventoryVehicle(car);
+    }, 0);
+  }
+
+  function handlePrintStock() {
+    setPrintStock(true);
+
+    setTimeout(() => {
+      window.print();
+
+      setTimeout(() => {
+        setPrintStock(false);
+      }, 100);
+    }, 0);
+  }
 
   function handleVehicleSelect(vehicleId) {
     setSelectedCars((currentSelected) => {
@@ -372,6 +465,16 @@ function Stock() {
             Clear
           </button>
 
+          <button
+            type="button"
+            onClick={handlePrintStock}
+            disabled={cars.length === 0}
+            className="flex items-center gap-2 rounded-md border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 transition hover:bg-gray-100 disabled:cursor-not-allowed disabled:opacity-50"
+          >
+            <Printer size={16} />
+            Print Stock
+          </button>
+
           <select
             id="ordering"
             value={ordering}
@@ -389,15 +492,17 @@ function Stock() {
           </select>
         </div>
 
-        <div className="mb-4">
-          <button
-            type="button"
-            onClick={() => setShowImportModal(true)}
-            className="rounded-md border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-100"
-          >
-            Bulk Import
-          </button>
-        </div>
+        {isMaster && (
+          <div className="mb-4">
+            <button
+              type="button"
+              onClick={() => setShowImportModal(true)}
+              className="rounded-md border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-100"
+            >
+              Bulk Import
+            </button>
+          </div>
+        )}
 
         {importResult && (
           <div
@@ -504,7 +609,7 @@ function Stock() {
           </div>
         )}
 
-        {selectedCars.length > 0 && (
+        {isMaster && selectedCars.length > 0 && (
           <div className="mb-4 flex items-center gap-3 rounded-md border border-gray-200 bg-white px-4 py-3">
             <span className="text-sm text-gray-700">
               {selectedCars.length} vehicle(s) selected
@@ -621,47 +726,72 @@ function Stock() {
                 </div>
 
                 {/* Source */}
-                <div>
-                  <label
-                    htmlFor="source"
-                    className="mb-1.5 block text-sm font-medium text-gray-700"
-                  >
-                    Source
-                  </label>
-                  <select
-                    id="source"
-                    name="source"
-                    value={filters.source}
-                    onChange={handleFilterChange}
-                    className="w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-sm text-gray-900 outline-none transition focus:border-gray-500 focus:ring-1 focus:ring-gray-500"
-                  >
-                    <option value="">All</option>
-                    {SOURCE_OPTIONS.map((option) => (
-                      <option key={option.value} value={option.value}>
-                        {option.label}
-                      </option>
-                    ))}
-                  </select>
-                </div>
+                {isMaster && (
+                  <>
+                    <div>
+                      <label
+                        htmlFor="source"
+                        className="mb-1.5 block text-sm font-medium text-gray-700"
+                      >
+                        Source
+                      </label>
+                      <select
+                        id="source"
+                        name="source"
+                        value={filters.source}
+                        onChange={handleFilterChange}
+                        className="w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-sm text-gray-900 outline-none transition focus:border-gray-500 focus:ring-1 focus:ring-gray-500"
+                      >
+                        <option value="">All</option>
+                        {SOURCE_OPTIONS.map((option) => (
+                          <option key={option.value} value={option.value}>
+                            {option.label}
+                          </option>
+                        ))}
+                      </select>
+                    </div>
 
-                {/* Supplier */}
-                <div>
-                  <label
-                    htmlFor="supplier"
-                    className="mb-1.5 block text-sm font-medium text-gray-700"
-                  >
-                    Supplier
-                  </label>
-                  <input
-                    id="supplier"
-                    name="supplier"
-                    type="text"
-                    value={filters.supplier}
-                    onChange={handleFilterChange}
-                    placeholder="Supplier"
-                    className="w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-sm text-gray-900 outline-none transition placeholder:text-gray-400 focus:border-gray-500 focus:ring-1 focus:ring-gray-500"
-                  />
-                </div>
+                    {/* Supplier */}
+                    <div>
+                      <label
+                        htmlFor="supplier"
+                        className="mb-1.5 block text-sm font-medium text-gray-700"
+                      >
+                        Supplier
+                      </label>
+                      <input
+                        id="supplier"
+                        name="supplier"
+                        type="text"
+                        value={filters.supplier}
+                        onChange={handleFilterChange}
+                        placeholder="Supplier"
+                        className="w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-sm text-gray-900 outline-none transition placeholder:text-gray-400 focus:border-gray-500 focus:ring-1 focus:ring-gray-500"
+                      />
+                    </div>
+
+                    {/* Highlight */}
+                    <div>
+                      <label
+                        htmlFor="highlight_public"
+                        className="mb-1.5 block text-sm font-medium text-gray-700"
+                      >
+                        Highlight
+                      </label>
+                      <select
+                        id="highlight_public"
+                        name="highlight_public"
+                        value={filters.highlight_public}
+                        onChange={handleFilterChange}
+                        className="w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-sm text-gray-900 outline-none transition focus:border-gray-500 focus:ring-1 focus:ring-gray-500"
+                      >
+                        <option value="">All</option>
+                        <option value="true">Yes</option>
+                        <option value="false">No</option>
+                      </select>
+                    </div>
+                  </>
+                )}
 
                 {/* Year */}
                 <div>
@@ -681,27 +811,6 @@ function Stock() {
                     placeholder="Year"
                     className="w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-sm text-gray-900 outline-none transition placeholder:text-gray-400 focus:border-gray-500 focus:ring-1 focus:ring-gray-500"
                   />
-                </div>
-
-                {/* Highlight */}
-                <div>
-                  <label
-                    htmlFor="highlight_public"
-                    className="mb-1.5 block text-sm font-medium text-gray-700"
-                  >
-                    Highlight
-                  </label>
-                  <select
-                    id="highlight_public"
-                    name="highlight_public"
-                    value={filters.highlight_public}
-                    onChange={handleFilterChange}
-                    className="w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-sm text-gray-900 outline-none transition focus:border-gray-500 focus:ring-1 focus:ring-gray-500"
-                  >
-                    <option value="">All</option>
-                    <option value="true">Yes</option>
-                    <option value="false">No</option>
-                  </select>
                 </div>
 
                 {/* Minimum price */}
@@ -816,31 +925,35 @@ function Stock() {
               {/* Carousel controls */}
               <div className="mb-4 flex items-center justify-between">
                 <div className="flex items-center gap-3">
-                  <label className="flex items-center gap-2 text-sm text-gray-600">
-                    <input
-                      type="checkbox"
-                      checked={
-                        cars.length > 0 &&
-                        cars.every((car) => selectedCars.includes(car.id))
-                      }
-                      onChange={(e) => {
-                        if (e.target.checked) {
-                          setSelectedCars((prev) => [
-                            ...new Set([...prev, ...cars.map((car) => car.id)]),
-                          ]);
-                        } else {
-                          setSelectedCars((prev) =>
-                            prev.filter(
-                              (id) => !cars.some((car) => car.id === id),
-                            ),
-                          );
+                  {isMaster && (
+                    <label className="flex items-center gap-2 text-sm text-gray-600">
+                      <input
+                        type="checkbox"
+                        checked={
+                          cars.length > 0 &&
+                          cars.every((car) => selectedCars.includes(car.id))
                         }
-                      }}
-                      className="h-4 w-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
-                    />
-                    Select page
-                  </label>
-
+                        onChange={(e) => {
+                          if (e.target.checked) {
+                            setSelectedCars((prev) => [
+                              ...new Set([
+                                ...prev,
+                                ...cars.map((car) => car.id),
+                              ]),
+                            ]);
+                          } else {
+                            setSelectedCars((prev) =>
+                              prev.filter(
+                                (id) => !cars.some((car) => car.id === id),
+                              ),
+                            );
+                          }
+                        }}
+                        className="h-4 w-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                      />
+                      Select page
+                    </label>
+                  )}
                   <span className="text-sm text-gray-500">
                     {cars.length} vehicle{cars.length !== 1 ? "s" : ""}
                   </span>
@@ -853,7 +966,7 @@ function Stock() {
                     className="flex h-9 w-9 items-center justify-center rounded-full border border-gray-200 bg-white text-gray-600 shadow-sm transition hover:bg-gray-50 hover:text-gray-900"
                     aria-label="Previous vehicles"
                   >
-                    <IconChevronLeft size={18} />
+                    <ChevronLeft size={18} />
                   </button>
 
                   <button
@@ -862,7 +975,7 @@ function Stock() {
                     className="flex h-9 w-9 items-center justify-center rounded-full border border-gray-200 bg-white text-gray-600 shadow-sm transition hover:bg-gray-50 hover:text-gray-900"
                     aria-label="Next vehicles"
                   >
-                    <IconChevronRight size={18} />
+                    <ChevronRight size={18} />
                   </button>
                 </div>
               </div>
@@ -901,25 +1014,27 @@ function Stock() {
                           />
                         ) : (
                           <div className="flex h-full w-full items-center justify-center bg-gray-100 text-gray-400">
-                            <IconCar size={52} strokeWidth={1.5} />
+                            <CarFront size={52} strokeWidth={1.5} />
                           </div>
                         )}
 
                         {/* Selection */}
-                        <div className="absolute left-3 top-3">
-                          <input
-                            type="checkbox"
-                            checked={isSelected}
-                            onChange={() => {
-                              setSelectedCars((prev) =>
-                                isSelected
-                                  ? prev.filter((id) => id !== car.id)
-                                  : [...prev, car.id],
-                              );
-                            }}
-                            className="h-5 w-5 rounded border-gray-300 bg-white text-blue-600 shadow focus:ring-blue-500"
-                          />
-                        </div>
+                        {isMaster && (
+                          <div className="absolute left-3 top-3">
+                            <input
+                              type="checkbox"
+                              checked={isSelected}
+                              onChange={() => {
+                                setSelectedCars((prev) =>
+                                  isSelected
+                                    ? prev.filter((id) => id !== car.id)
+                                    : [...prev, car.id],
+                                );
+                              }}
+                              className="h-5 w-5 rounded border-gray-300 bg-white text-blue-600 shadow focus:ring-blue-500"
+                            />
+                          </div>
+                        )}
 
                         {/* Status */}
                         <div className="absolute right-3 top-3">
@@ -956,19 +1071,19 @@ function Stock() {
                         {/* Vehicle details */}
                         <div className="mt-4 grid grid-cols-2 gap-3 text-sm">
                           <div className="flex items-center gap-2 text-gray-600">
-                            <IconCalendar size={15} className="text-gray-400" />
+                            <CalendarDays size={15} className="text-gray-400" />
                             <span>{car.year || "-"}</span>
                           </div>
 
                           <div className="flex items-center gap-2 text-gray-600">
-                            <IconCar size={15} className="text-gray-400" />
+                            <CarFront size={15} className="text-gray-400" />
                             <span className="truncate">
                               {getVehicleTypeLabel(car.vehicle_type)}
                             </span>
                           </div>
 
                           <div className="flex items-center gap-2 text-gray-600">
-                            <IconGauge size={15} className="text-gray-400" />
+                            <Gauge size={15} className="text-gray-400" />
                             <span>{car.mileage ?? "-"} km</span>
                           </div>
 
@@ -983,7 +1098,7 @@ function Stock() {
                         {/* Service location */}
                         {car.status === "in_service" && (
                           <div className="mt-3 flex items-center gap-2 text-sm text-gray-600">
-                            <IconMapPin size={15} className="text-gray-400" />
+                            <MapPin size={15} className="text-gray-400" />
                             <span className="truncate">
                               {car.service_location || "Location not specified"}
                             </span>
@@ -1002,33 +1117,48 @@ function Stock() {
                         </div>
 
                         {/* Actions */}
-                        <div className="mt-4 grid grid-cols-2 gap-2">
+                        <div
+                          className={`mt-4 grid gap-2 ${
+                            isMaster ? "grid-cols-3" : "grid-cols-2"
+                          }`}
+                        >
                           <button
                             type="button"
                             onClick={() => navigate(`/stock/${car.id}`)}
                             className="flex items-center justify-center gap-2 rounded-lg border border-gray-200 px-3 py-2 text-sm font-medium text-gray-700 transition hover:bg-gray-50"
                           >
-                            <IconEye size={16} />
+                            <Eye size={16} />
                             View
                           </button>
 
-                          <button
-                            type="button"
-                            onClick={() => navigate(`/stock/${car.id}/edit`)}
-                            className="flex items-center justify-center gap-2 rounded-lg bg-gray-900 px-3 py-2 text-sm font-medium text-white transition hover:bg-gray-800"
-                          >
-                            <IconPencil size={16} />
-                            Edit
-                          </button>
+                          {isMaster && (
+                            <button
+                              type="button"
+                              onClick={() => navigate(`/stock/${car.id}/edit`)}
+                              className="flex items-center justify-center gap-2 rounded-lg bg-gray-900 px-3 py-2 text-sm font-medium text-white transition hover:bg-gray-800"
+                            >
+                              <Pencil size={16} />
+                              Edit
+                            </button>
+                          )}
                           <button
                             type="button"
                             onClick={() => {
-                              console.log("Share vehicle:", car.id);
+                              setShareCar(car);
+                              setShareImageIndex(0);
                             }}
                             className="flex items-center justify-center gap-2 rounded-lg border border-gray-200 px-3 py-2 text-sm font-medium text-gray-700 transition hover:bg-gray-50"
                           >
-                            <IconShare size={16} />
+                            <Share2Icon size={16} />
                             Share
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => handlePrintVehicle(car)}
+                            className="inline-flex items-center gap-2"
+                          >
+                            <Printer size={16} />
+                            Print
                           </button>
                         </div>
                       </div>
@@ -1039,7 +1169,7 @@ function Stock() {
             </>
           ) : (
             <div className="rounded-2xl border border-dashed border-gray-300 bg-gray-50 px-6 py-16 text-center">
-              <IconCar
+              <CarFront
                 size={48}
                 strokeWidth={1.5}
                 className="mx-auto text-gray-300"
@@ -1080,7 +1210,7 @@ function Stock() {
               className="flex h-9 w-9 items-center justify-center rounded-lg border border-gray-200 bg-white text-gray-600 transition hover:bg-gray-50 hover:text-gray-900 disabled:cursor-not-allowed disabled:opacity-40"
               aria-label="Previous page"
             >
-              <IconChevronLeft size={17} />
+              <ChevronLeft size={17} />
             </button>
 
             {/* Page numbers */}
@@ -1126,11 +1256,185 @@ function Stock() {
               className="flex h-9 w-9 items-center justify-center rounded-lg border border-gray-200 bg-white text-gray-600 transition hover:bg-gray-50 hover:text-gray-900 disabled:cursor-not-allowed disabled:opacity-40"
               aria-label="Next page"
             >
-              <IconChevronRight size={17} />
+              <ChevronRight size={17} />
             </button>
           </div>
         )}
       </div>
+
+      {shareCar && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
+          <div className="w-full max-w-lg overflow-hidden rounded-2xl bg-white shadow-2xl">
+            {(() => {
+              const shareImages = getShareImages(shareCar);
+              const currentImage =
+                shareImages[shareImageIndex] || shareImages[0] || null;
+
+              return (
+                <>
+                  {/* Header */}
+                  <div className="flex items-center justify-between border-b border-gray-100 px-5 py-4">
+                    <div>
+                      <h2 className="text-lg font-semibold text-gray-900">
+                        {shareCar.make} {shareCar.model}
+                      </h2>
+
+                      <p className="text-sm text-gray-500">
+                        {shareCar.variant || "Vehicle details"}
+                      </p>
+                    </div>
+
+                    <button
+                      type="button"
+                      onClick={() => setShareCar(null)}
+                      className="flex h-9 w-9 items-center justify-center rounded-full text-xl text-gray-500 transition hover:bg-gray-100 hover:text-gray-900"
+                      aria-label="Close share preview"
+                    >
+                      ×
+                    </button>
+                  </div>
+
+                  {/* Photo carousel */}
+                  <div className="relative bg-gray-100">
+                    <div className="h-72 w-full overflow-hidden">
+                      {currentImage ? (
+                        <img
+                          src={currentImage}
+                          alt={`${shareCar.make} ${shareCar.model}`}
+                          className="h-full w-full object-cover"
+                        />
+                      ) : (
+                        <div className="flex h-full items-center justify-center text-gray-400">
+                          <CarFront size={56} strokeWidth={1.5} />
+                        </div>
+                      )}
+                    </div>
+
+                    {shareImages.length > 1 && (
+                      <>
+                        <button
+                          type="button"
+                          onClick={() =>
+                            setShareImageIndex(
+                              (currentIndex) =>
+                                (currentIndex - 1 + shareImages.length) %
+                                shareImages.length,
+                            )
+                          }
+                          className="absolute left-3 top-1/2 flex h-9 w-9 -translate-y-1/2 items-center justify-center rounded-full bg-white/90 text-gray-700 shadow-sm hover:bg-white"
+                          aria-label="Previous photo"
+                        >
+                          <ChevronLeft size={18} />
+                        </button>
+
+                        <button
+                          type="button"
+                          onClick={() =>
+                            setShareImageIndex(
+                              (currentIndex) =>
+                                (currentIndex + 1) % shareImages.length,
+                            )
+                          }
+                          className="absolute right-3 top-1/2 flex h-9 w-9 -translate-y-1/2 items-center justify-center rounded-full bg-white/90 text-gray-700 shadow-sm hover:bg-white"
+                          aria-label="Next photo"
+                        >
+                          <ChevronRight size={18} />
+                        </button>
+
+                        <div className="absolute bottom-3 left-1/2 flex -translate-x-1/2 gap-1.5">
+                          {shareImages.map((_, index) => (
+                            <button
+                              key={index}
+                              type="button"
+                              onClick={() => setShareImageIndex(index)}
+                              className={`h-2 w-2 rounded-full transition ${
+                                index === shareImageIndex
+                                  ? "w-5 bg-white"
+                                  : "bg-white/60"
+                              }`}
+                              aria-label={`Show photo ${index + 1}`}
+                            />
+                          ))}
+                        </div>
+                      </>
+                    )}
+                  </div>
+
+                  {/* Vehicle information */}
+                  <div className="space-y-4 p-5">
+                    <div className="grid grid-cols-2 gap-3">
+                      <div className="rounded-lg bg-gray-50 p-3">
+                        <p className="text-xs text-gray-500">Vehicle Type</p>
+                        <p className="mt-1 text-sm font-semibold text-gray-900">
+                          {getVehicleTypeLabel(shareCar.vehicle_type)}
+                        </p>
+                      </div>
+
+                      <div className="rounded-lg bg-gray-50 p-3">
+                        <p className="text-xs text-gray-500">Year</p>
+                        <p className="mt-1 text-sm font-semibold text-gray-900">
+                          {shareCar.year || "-"}
+                        </p>
+                      </div>
+
+                      <div className="rounded-lg bg-gray-50 p-3">
+                        <p className="text-xs text-gray-500">Mileage</p>
+                        <p className="mt-1 text-sm font-semibold text-gray-900">
+                          {shareCar.mileage !== null &&
+                          shareCar.mileage !== undefined
+                            ? `${Number(shareCar.mileage).toLocaleString("en-AE")} km`
+                            : "-"}
+                        </p>
+                      </div>
+
+                      <div className="rounded-lg bg-gray-50 p-3">
+                        <p className="text-xs text-gray-500">Colour</p>
+                        <p className="mt-1 text-sm font-semibold text-gray-900">
+                          {shareCar.colour || "-"}
+                        </p>
+                      </div>
+                    </div>
+
+                    {/* Status */}
+                    <div className="rounded-xl border border-gray-200 p-4">
+                      <div className="flex items-center justify-between">
+                        <span className="text-sm text-gray-500">Status</span>
+
+                        <span className="rounded-full bg-gray-900 px-3 py-1 text-xs font-semibold text-white">
+                          {getStatusLabel(shareCar.status)}
+                        </span>
+                      </div>
+                    </div>
+
+                    {/* Price */}
+                    {shareCar.status !== "booked" && (
+                      <div className="rounded-xl border border-gray-200 bg-gray-50 p-4">
+                        <p className="text-xs text-gray-500">Asking Price</p>
+
+                        <p className="mt-1 text-2xl font-bold text-gray-900">
+                          AED{" "}
+                          {Number(shareCar.asking_price || 0).toLocaleString(
+                            "en-AE",
+                          )}
+                        </p>
+                      </div>
+                    )}
+
+                    <button
+                      type="button"
+                      onClick={() => handleShareVehicle(shareCar)}
+                      className="flex w-full items-center justify-center gap-2 rounded-xl bg-gray-900 px-4 py-3 text-sm font-semibold text-white transition hover:bg-gray-800"
+                    >
+                      <Share2Icon size={18} />
+                      Share Vehicle
+                    </button>
+                  </div>
+                </>
+              );
+            })()}
+          </div>
+        </div>
+      )}
 
       {showImportModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4">
@@ -1193,6 +1497,17 @@ function Stock() {
               </button>
             </div>
           </div>
+        </div>
+      )}
+      {printCar && (
+        <div className="inventory-vehicle-print-wrapper">
+          <InventoryVehiclePrintTemplate car={printCar} />
+        </div>
+      )}
+
+      {printStock && (
+        <div className="inventory-stock-print-wrapper">
+          <InventoryStockPrintTemplate cars={cars} />
         </div>
       )}
     </div>
