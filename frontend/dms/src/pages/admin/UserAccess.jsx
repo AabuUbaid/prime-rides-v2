@@ -1,3 +1,248 @@
-import {useEffect,useState} from "react";import {toast} from "react-toastify";import {activateUserAccess,changeUserPassword,createUserAccess,deactivateUserAccess,getUserAccess,updateUserAccess} from "../../api/userAccess";import {getStaff} from "../../api/staff";
-const EMPTY={email:"",password:"",first_name:"",last_name:"",phone:"",role:"SALES_STAFF",staff_id:"",is_active:true};const rows=r=>Array.isArray(r?.data)?r.data:Array.isArray(r)?r:[];
-export default function UserAccess(){const[items,setItems]=useState([]),[staff,setStaff]=useState([]),[form,setForm]=useState(EMPTY),[editing,setEditing]=useState(null),[saving,setSaving]=useState(false);async function load(){try{setItems(rows(await getUserAccess()));setStaff(rows(await getStaff()))}catch(e){toast.error(e?.message||"Unable to load User Access.")}}useEffect(()=>{load()},[]);async function save(e){e.preventDefault();if(!editing&&form.password.length<8){toast.error("Password must contain at least 8 characters.");return}try{setSaving(true);if(editing){const p={...form};delete p.password;await updateUserAccess(editing,p)}else await createUserAccess(form);toast.success(editing?'User updated':'User created');setEditing(null);setForm(EMPTY);await load()}catch(e){toast.error(e?.message||"Unable to save user.")}finally{setSaving(false)}}async function toggle(x){try{if(x.is_active)await deactivateUserAccess(x.id);else await activateUserAccess(x.id);await load()}catch(e){toast.error(e?.message||"Unable to change user status.")}}async function password(x){const p=window.prompt('New password (minimum 8 characters):');if(!p)return;try{await changeUserPassword(x.id,p);toast.success('Password changed')}catch(e){toast.error(e?.message||'Unable to change password')}}return <div className="min-h-screen bg-gray-50 p-6"><div className="mx-auto max-w-7xl space-y-6"><div><h1 className="text-2xl font-semibold">User Access / RBAC</h1><p className="mt-1 text-sm text-gray-500">MASTER-only access administration.</p></div><form onSubmit={save} className="grid gap-4 rounded-xl border bg-white p-5 md:grid-cols-3">{[["email","Email"],["first_name","First Name"],["last_name","Last Name"],["phone","Phone"],["password","Password"]].map(([k,l])=><label key={k} className="text-sm font-medium">{l}<input type={k==='password'?'password':'text'} value={form[k]} onChange={e=>setForm({...form,[k]:e.target.value})} className="mt-2 w-full rounded-lg border px-3 py-2.5" required={!editing&&(k==='email'||k==='password')}/></label>)}<label className="text-sm font-medium">Role<select value={form.role} onChange={e=>setForm({...form,role:e.target.value})} className="mt-2 w-full rounded-lg border px-3 py-2.5"><option>MASTER</option><option>ADMIN</option><option>SALES_STAFF</option></select></label><label className="text-sm font-medium">Staff<select value={form.staff_id} onChange={e=>setForm({...form,staff_id:e.target.value})} className="mt-2 w-full rounded-lg border px-3 py-2.5"><option value="">No linked staff</option>{staff.map(s=><option key={s.id} value={s.id}>{s.name}</option>)}</select></label><label className="flex items-center gap-2 text-sm"><input type="checkbox" checked={form.is_active} onChange={e=>setForm({...form,is_active:e.target.checked})}/> Active</label><div className="md:col-span-3"><button disabled={saving} className="rounded-lg bg-gray-900 px-4 py-2 text-sm text-white">{saving?'Saving...':editing?'Update User':'Create User'}</button></div></form><div className="overflow-hidden rounded-xl border bg-white"><div className="overflow-x-auto"><table className="min-w-full text-sm"><thead className="bg-gray-50 text-left text-xs uppercase text-gray-500"><tr><th className="px-4 py-3">User</th><th className="px-4 py-3">Role</th><th className="px-4 py-3">Staff</th><th className="px-4 py-3">Status</th><th/></tr></thead><tbody className="divide-y">{items.map(x=><tr key={x.id}><td className="px-4 py-3">{x.first_name} {x.last_name}<div className="text-xs text-gray-500">{x.email}</div></td><td className="px-4 py-3">{x.role}</td><td className="px-4 py-3">{x.staff_name||'-'}</td><td className="px-4 py-3">{x.is_active?'Active':'Inactive'}</td><td className="px-4 py-3 text-right"><button onClick={()=>{setEditing(x.id);setForm({...EMPTY,...x,password:""})}} className="mr-3 font-medium">Edit</button><button onClick={()=>password(x)} className="mr-3 font-medium">Password</button><button onClick={()=>toggle(x)} className="text-red-600">{x.is_active?'Deactivate':'Activate'}</button></td></tr>)}</tbody></table></div></div></div></div>}
+import { useEffect, useState } from "react";
+import { toast } from "react-toastify";
+import {
+  activateUserAccess,
+  changeUserPassword,
+  createUserAccess,
+  deactivateUserAccess,
+  getUserAccess,
+  getUserAccessMember,
+  updateUserAccess,
+} from "../../api/userAccess";
+import { getStaff } from "../../api/staff";
+const EMPTY = {
+  email: "",
+  password: "",
+  first_name: "",
+  last_name: "",
+  phone: "",
+  role: "SALES_STAFF",
+  staff_id: "",
+  is_active: true,
+};
+const rows = (r) =>
+  Array.isArray(r?.data) ? r.data : Array.isArray(r) ? r : [];
+export default function UserAccess() {
+  const [items, setItems] = useState([]),
+    [staff, setStaff] = useState([]),
+    [form, setForm] = useState(EMPTY),
+    [editing, setEditing] = useState(null),
+    [saving, setSaving] = useState(false);
+  async function load() {
+    try {
+      setItems(rows(await getUserAccess()));
+      setStaff(rows(await getStaff()));
+    } catch (e) {
+      toast.error(e?.message || "Unable to load User Access.");
+    }
+  }
+  useEffect(() => {
+    load();
+  }, []);
+  async function save(e) {
+    e.preventDefault();
+    if (!editing && form.password.length < 8) {
+      toast.error("Password must contain at least 8 characters.");
+      return;
+    }
+    try {
+      setSaving(true);
+      if (editing) {
+        const p = { ...form };
+        delete p.password;
+        await updateUserAccess(editing, p);
+      } else await createUserAccess(form);
+      toast.success(editing ? "User updated" : "User created");
+      setEditing(null);
+      setForm(EMPTY);
+      await load();
+    } catch (e) {
+      toast.error(e?.message || "Unable to save user.");
+    } finally {
+      setSaving(false);
+    }
+  }
+  async function toggle(x) {
+    try {
+      if (x.is_active) await deactivateUserAccess(x.id);
+      else await activateUserAccess(x.id);
+      await load();
+    } catch (e) {
+      toast.error(e?.message || "Unable to change user status.");
+    }
+  }
+  async function password(x) {
+    const p = window.prompt("New password (minimum 8 characters):");
+    if (!p) return;
+    try {
+      await changeUserPassword(x.id, p);
+      toast.success("Password changed");
+    } catch (e) {
+      toast.error(e?.message || "Unable to change password");
+    }
+  }
+
+  return (
+    <div className="min-h-screen bg-gray-50 p-6">
+      <div className="mx-auto max-w-7xl space-y-6">
+        <div>
+          <h1 className="text-2xl font-semibold">User Access Management</h1>
+          <p className="mt-1 text-sm text-gray-500">
+            MASTER-only access administration.
+          </p>
+        </div>
+        <form
+          onSubmit={save}
+          className="grid gap-4 rounded-xl border bg-white p-5 md:grid-cols-3"
+        >
+          {[
+            ["email", "Email"],
+            ["first_name", "First Name"],
+            ["last_name", "Last Name"],
+            ["phone", "Phone"],
+            ["password", "Password"],
+          ].map(([k, l]) => (
+            <label key={k} className="text-sm font-medium">
+              {l}
+              <input
+                type={k === "password" ? "password" : "text"}
+                value={form[k]}
+                onChange={(e) => setForm({ ...form, [k]: e.target.value })}
+                className="mt-2 w-full rounded-lg border px-3 py-2.5"
+                required={!editing && (k === "email" || k === "password")}
+              />
+            </label>
+          ))}
+          <label className="text-sm font-medium">
+            Role
+            <select
+              value={form.role}
+              onChange={(e) =>
+                setForm({
+                  ...form,
+                  role: e.target.value,
+                  staff_id: e.target.value === "MASTER" ? "" : form.staff_id,
+                })
+              }
+              className="mt-2 w-full rounded-lg border px-3 py-2.5"
+            >
+              <option>MASTER</option>
+              <option>ADMIN</option>
+              <option>SALES_STAFF</option>
+            </select>
+          </label>
+          {form.role !== "MASTER" && (
+            <label className="text-sm font-medium">
+              Staff
+              <select
+                value={form.staff_id || ""}
+                onChange={(e) =>
+                  setForm({
+                    ...form,
+                    staff_id: e.target.value,
+                  })
+                }
+                className="mt-2 w-full rounded-lg border px-3 py-2.5"
+              >
+                <option value="">No linked staff</option>
+
+                {staff.map((s) => (
+                  <option key={s.id} value={s.id}>
+                    {s.name}
+                  </option>
+                ))}
+              </select>
+            </label>
+          )}
+          <label className="flex items-center gap-2 text-sm">
+            <input
+              type="checkbox"
+              checked={form.is_active}
+              onChange={(e) =>
+                setForm({ ...form, is_active: e.target.checked })
+              }
+            />{" "}
+            Active
+          </label>
+          <div className="md:col-span-3">
+            <button
+              disabled={saving}
+              className="rounded-lg bg-gray-900 px-4 py-2 text-sm text-white"
+            >
+              {saving ? "Saving..." : editing ? "Update User" : "Create User"}
+            </button>
+          </div>
+        </form>
+        <div className="overflow-hidden rounded-xl border bg-white">
+          <div className="overflow-x-auto">
+            <table className="min-w-full text-sm">
+              <thead className="bg-gray-50 text-left text-xs uppercase text-gray-500">
+                <tr>
+                  <th className="px-4 py-3">User</th>
+                  <th className="px-4 py-3">Role</th>
+                  <th className="px-4 py-3">Staff</th>
+                  <th className="px-4 py-3">Status</th>
+                  <th />
+                </tr>
+              </thead>
+              <tbody className="divide-y">
+                {items.map((x) => (
+                  <tr key={x.id}>
+                    <td className="px-4 py-3">
+                      {x.first_name} {x.last_name}
+                      <div className="text-xs text-gray-500">{x.email}</div>
+                    </td>
+                    <td className="px-4 py-3">{x.role}</td>
+                    <td className="px-4 py-3">{x.staff_name || "-"}</td>
+                    <td className="px-4 py-3">
+                      {x.is_active ? "Active" : "Inactive"}
+                    </td>
+                    <td className="px-4 py-3 text-right">
+                      <button
+                        onClick={async () => {
+                          try {
+                            const response = await getUserAccessMember(x.id);
+                            const user = response?.data || response;
+
+                            setEditing(user.id);
+
+                            setForm({
+                              ...EMPTY,
+                              ...user,
+                              password: "",
+                              staff_id:
+                                user.role === "MASTER"
+                                  ? ""
+                                  : user.staff_id || "",
+                            });
+                          } catch (e) {
+                            toast.error(e?.message || "Unable to load user.");
+                          }
+                        }}
+                        className="mr-3 font-medium"
+                      >
+                        Edit
+                      </button>
+                      <button
+                        onClick={() => password(x)}
+                        className="mr-3 font-medium"
+                      >
+                        Password
+                      </button>
+                      <button
+                        onClick={() => toggle(x)}
+                        className="text-red-600"
+                      >
+                        {x.is_active ? "Deactivate" : "Activate"}
+                      </button>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}

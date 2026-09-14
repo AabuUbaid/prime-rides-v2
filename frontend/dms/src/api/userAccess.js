@@ -35,3 +35,7 @@ export async function changeUserPassword(id, password) {
     body: JSON.stringify({ password }),
   });
 }
+
+export async function getUserAccessMember(id) {
+  return apiClient(`/staff/user-access/${id}/`);
+}

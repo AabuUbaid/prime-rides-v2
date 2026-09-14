@@ -104,7 +104,11 @@ export async function apiClient(endpoint, options = {}) {
    *
    * Do not attempt refresh for the refresh endpoint itself.
    */
-  if (response.status === 401 && !endpoint.includes("/accounts/refresh/")) {
+  if (
+    response.status === 401 &&
+    !endpoint.includes("/accounts/refresh/") &&
+    !endpoint.includes("/accounts/login/")
+  ) {
     try {
       const newAccessToken = await refreshAccessToken();
 

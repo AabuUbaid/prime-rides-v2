@@ -1,3 +1,4 @@
+from attr import attrs
 from rest_framework import serializers
 
 from accounts.models import User
@@ -201,6 +202,11 @@ class UserAccessCreateSerializer(serializers.Serializer):
             )
 
         return value
+    def validate(self, attrs):
+        if attrs.get("role") == User.Roles.MASTER:
+            attrs["staff_id"] = None
+
+        return attrs
 
 
 class UserAccessUpdateSerializer(serializers.Serializer):
@@ -279,14 +285,23 @@ class UserAccessUpdateSerializer(serializers.Serializer):
                 "Only active staff members can be linked to User Access."
             )
 
-        current_user = self.instance
+        current_user = self.context.get("user")
 
-        if staff.user_id is not None and staff.user_id != current_user.id:
+        if (
+            staff.user_id is not None
+            and (current_user is None or staff.user_id != current_user.id)
+        ):
             raise serializers.ValidationError(
                 "This staff member is already linked to another user."
             )
 
         return value
+
+    def validate(self, attrs):
+        if attrs.get("role") == User.Roles.MASTER:
+            attrs["staff_id"] = None
+
+        return attrs
 
 
 class UserAccessSerializer(serializers.ModelSerializer):

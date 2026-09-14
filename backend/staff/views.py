@@ -25,7 +25,6 @@ from .serializers import (
     StaffPerformanceSerializer
 )
 from .services import (
-
     create_staff,
     update_staff,
     deactivate_staff,
@@ -36,7 +35,8 @@ from .services import (
     deactivate_user,
     activate_user,
     delete_staff,
-    get_staff_performance
+    get_staff_performance,
+    get_user_or_raise,
 )
 
 

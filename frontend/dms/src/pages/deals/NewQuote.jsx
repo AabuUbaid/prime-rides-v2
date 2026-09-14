@@ -897,6 +897,10 @@ export default function NewQuote() {
    */
   const handleSubmit = async (event) => {
     event.preventDefault();
+    if (!user?.id) {
+      toast.error("Your user account could not be identified.");
+      return;
+    }
 
     const validationError =
       source === SOURCE_STOCK ? validateCashQuote() : validateSavedEmiQuote();
@@ -924,6 +928,7 @@ export default function NewQuote() {
           car_id: selectedCarId,
           customer_name: customerName.trim(),
           customer_mobile: customerMobile.trim(),
+          salesperson_id: user.id,
           price: String(price),
           payment_method: "Cash",
           vat_enabled: vatEnabled,
@@ -968,6 +973,7 @@ export default function NewQuote() {
           customer_name: financeCustomerName.trim(),
 
           customer_mobile: financeCustomerMobile.trim(),
+          salesperson_id: user.id,
 
           price: String(financePrice),
 

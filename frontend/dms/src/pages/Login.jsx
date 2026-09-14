@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
+import { toast } from "react-toastify";
 
 function Login() {
   const [email, setEmail] = useState("");
@@ -18,10 +19,15 @@ function Login() {
     setSubmitting(true);
 
     try {
-      await login(email, password);
+      await login(email.trim(), password);
+
+      toast.success("Login successful. Welcome to Prime Rides!");
+
       navigate("/dashboard", { replace: true });
     } catch (err) {
-      setError(err.message || "Login failed");
+      setError(
+        err?.message || err?.cause?.detail || "Invalid email or password.",
+      );
     } finally {
       setSubmitting(false);
     }
@@ -32,13 +38,9 @@ function Login() {
       <div className="w-full max-w-md">
         {/* Logo / Title */}
         <div className="mb-8 text-center">
-          <h1 className="text-3xl font-bold text-gray-900">
-            Prime Rides
-          </h1>
+          <h1 className="text-3xl font-bold text-gray-900">Prime Rides</h1>
 
-          <p className="mt-2 text-sm text-gray-500">
-            Dealer Management System
-          </p>
+          <p className="mt-2 text-sm text-gray-500">Dealer Management System</p>
         </div>
 
         {/* Login Card */}
@@ -46,9 +48,7 @@ function Login() {
           onSubmit={handleSubmit}
           className="rounded-xl border border-gray-200 bg-white p-6 shadow-sm"
         >
-          <h2 className="text-xl font-semibold text-gray-900">
-            Sign in
-          </h2>
+          <h2 className="text-xl font-semibold text-gray-900">Sign in</h2>
 
           <p className="mt-1 mb-6 text-sm text-gray-500">
             Enter your credentials to access the dashboard.
