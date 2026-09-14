@@ -1,4 +1,8 @@
+import { useAuth } from "../../../context/AuthContext";
+
 function PricingInformation({ formData, handleChange }) {
+  const { user } = useAuth();
+
   return (
     <div className="space-y-4">
       <h2 className="text-lg font-semibold text-gray-900">
@@ -6,16 +10,18 @@ function PricingInformation({ formData, handleChange }) {
       </h2>
 
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-        <input
-          type="number"
-          name="purchase_cost"
-          placeholder="Purchase Cost"
-          min="0"
-          step={1}
-          value={formData.purchase_cost ?? ""}
-          onChange={handleChange}
-          className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm text-gray-900 outline-none transition focus:border-blue-500 focus:ring-1 focus:ring-blue-500"
-        />
+        {user?.role === "MASTER" && (
+          <input
+            type="number"
+            name="purchase_cost"
+            placeholder="Purchase Cost"
+            min="0"
+            step={1}
+            value={formData.purchase_cost ?? ""}
+            onChange={handleChange}
+            className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm text-gray-900 outline-none transition focus:border-blue-500 focus:ring-1 focus:ring-blue-500"
+          />
+        )}
 
         <input
           type="number"

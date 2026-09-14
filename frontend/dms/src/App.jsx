@@ -53,6 +53,16 @@ import NewCustomer from "./pages/customers/NewCustomer";
 import CustomerDetail from "./pages/customers/CustomerDetail";
 import EditCustomer from "./pages/customers/EditCustomer";
 
+import Progressions from "./pages/progression/Progressions";
+import ProgressionDetail from "./pages/progression/ProgressionDetail";
+import Staff from "./pages/staff/Staff";
+import StaffPerformance from "./pages/staff/StaffPerformance";
+import UserAccess from "./pages/admin/UserAccess";
+import Leads from "./pages/leads/Leads";
+import LeadDetail from "./pages/leads/LeadDetail";
+import LedgerAccounts from "./pages/ledger/LedgerAccounts";
+import RoleRoute from "./routes/RoleRoute";
+
 function App() {
   return (
     <BrowserRouter>
@@ -415,6 +425,73 @@ function App() {
           />
 
           <Route
+            path="/progression"
+            element={
+              <ProtectedRoute>
+                <Progressions />
+              </ProtectedRoute>
+            }
+          />
+
+          <Route
+            path="/progression/:id"
+            element={
+              <ProtectedRoute>
+                <ProgressionDetail />
+              </ProtectedRoute>
+            }
+          />
+
+          <Route
+            path="/staff"
+            element={
+              <RoleRoute allowedRoles={["MASTER", "ADMIN"]}>
+                <Staff />
+              </RoleRoute>
+            }
+          />
+          <Route
+            path="/staff/:id/performance"
+            element={
+              <RoleRoute allowedRoles={["MASTER", "ADMIN"]}>
+                <StaffPerformance />
+              </RoleRoute>
+            }
+          />
+          <Route
+            path="/user-access"
+            element={
+              <RoleRoute allowedRoles={["MASTER"]}>
+                <UserAccess />
+              </RoleRoute>
+            }
+          />
+          <Route
+            path="/leads"
+            element={
+              <ProtectedRoute>
+                <Leads />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/leads/:id"
+            element={
+              <ProtectedRoute>
+                <LeadDetail />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/ledger-accounts"
+            element={
+              <ProtectedRoute>
+                <LedgerAccounts />
+              </ProtectedRoute>
+            }
+          />
+
+          <Route
             path="/stock/add"
             element={
               <ProtectedRoute>
@@ -441,7 +518,14 @@ function App() {
             }
           />
 
-          <Route path="/stock/:id/edit" element={<EditCar />} />
+          <Route
+            path="/stock/:id/edit"
+            element={
+              <ProtectedRoute>
+                <EditCar />
+              </ProtectedRoute>
+            }
+          />
         </Routes>
       </AuthProvider>
     </BrowserRouter>

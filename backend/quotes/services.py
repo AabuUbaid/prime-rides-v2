@@ -545,6 +545,33 @@ def create_quote(
     # Create base Quote
     # -----------------------------------------------------
 
+        # -----------------------------------------------------
+    # Final Cash/Stock quotation amount
+    # Vehicle Price + VAT + applicable Quote Expenses
+    # -----------------------------------------------------
+    quote_price = price
+
+    if source == Quote.Source.STOCK:
+        base_price = Decimal(str(price or "0.00"))
+
+        vat_component = (
+            Decimal(str(vat_amount or "0.00"))
+            if vat_enabled
+            else Decimal("0.00")
+        )
+
+        expense_total = sum(
+            Decimal(str(expense_data.get("actual_amount") or "0.00"))
+            for expense_data in (expenses or [])
+            if expense_data.get("applies", True)
+        )
+
+        quote_price = (
+            base_price
+            + vat_component
+            + expense_total
+        )
+
     quote = Quote(
     quote_number=quote_number,
     source=source,
@@ -559,7 +586,7 @@ def create_quote(
 
     salesperson=salesperson,
 
-    price=price,
+    price=quote_price,
     payment_method=payment_method,
 
     vat_enabled=vat_enabled,

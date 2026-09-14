@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { Link, useParams } from "react-router-dom";
+import { Link, useNavigate, useParams } from "react-router-dom";
 import { toast } from "react-toastify";
 import {
   getQuote,
@@ -25,19 +25,11 @@ const STATUS_ACTIONS = {
       label: "Mark as Booked",
     },
     {
-      value: "sold",
-      label: "Mark as Sold",
-    },
-    {
       value: "cancelled",
       label: "Cancel Quote",
     },
   ],
   booked: [
-    {
-      value: "sold",
-      label: "Mark as Sold",
-    },
     {
       value: "cancelled",
       label: "Cancel Deal",
@@ -145,6 +137,7 @@ function EditableField({ label, children }) {
 
 export default function QuoteDetail() {
   const { id } = useParams();
+  const navigate = useNavigate();
 
   const [quote, setQuote] = useState(null);
 
@@ -210,6 +203,19 @@ export default function QuoteDetail() {
       cancelled = true;
     };
   }, [id]);
+
+  async function refreshQuote() {
+    if (!id) {
+      return null;
+    }
+
+    const response = await getQuote(id);
+    const nextQuote = response?.data || null;
+
+    setQuote(nextQuote);
+
+    return nextQuote;
+  }
 
   const startCommercialEdit = () => {
     setExtraDownPayment(quote?.extra_down_payment ?? "");
@@ -368,8 +374,23 @@ export default function QuoteDetail() {
       return;
     }
 
-    if (quote.status !== "booked" || quote.payment_method !== "Cash") {
-      toast.error("Cash Deal can only be started from a booked Cash quote.");
+    if (quote.status !== "booked") {
+      toast.error("Cash Deal can only be started from a booked Quote.");
+      return;
+    }
+
+    if (quote.payment_method !== "Cash") {
+      toast.error("Only Cash Quotes can proceed to a Cash Deal.");
+      return;
+    }
+
+    if (quote.deal_closed) {
+      toast.error("This deal is already closed.");
+      return;
+    }
+
+    if (quote.cash_deal?.id) {
+      navigate(`/finance/cash-deals/${quote.cash_deal.id}`);
       return;
     }
 
@@ -391,13 +412,16 @@ export default function QuoteDetail() {
       }
 
       const data = response?.data ?? response;
-      const cashDealId = data?.cash_deal_id ?? data?.id;
+      const cashDealId = data?.cash_deal_id ?? data?.cash_deal?.id ?? data?.id;
 
       toast.success("Cash Deal created successfully.");
 
       if (cashDealId) {
-        window.location.href = `/finance/cash-deals/${cashDealId}`;
+        navigate(`/finance/cash-deals/${cashDealId}`);
+        return;
       }
+
+      await refreshQuote();
     } catch (err) {
       toast.error(err?.message || "Unable to proceed to Cash Deal.");
     } finally {
@@ -410,8 +434,28 @@ export default function QuoteDetail() {
       return;
     }
 
-    if (quote.status !== "booked" || quote.payment_method !== "Finance") {
-      toast.error("Bank Loan can only be started from a booked Finance quote.");
+    if (quote.status !== "booked") {
+      toast.error("Bank Loan can only be started from a booked Quote.");
+      return;
+    }
+
+    if (quote.payment_method !== "Finance") {
+      toast.error("Only Finance Quotes can proceed to a Bank Loan.");
+      return;
+    }
+
+    if (quote.deal_closed) {
+      toast.error("This deal is already closed.");
+      return;
+    }
+
+    if (quote.active_bank_loan?.id) {
+      navigate(`/finance/bank-loans/${quote.active_bank_loan.id}`);
+      return;
+    }
+
+    if (quote.loan_approved) {
+      toast.info("This Quote already has an approved Bank Loan.");
       return;
     }
 
@@ -436,13 +480,16 @@ export default function QuoteDetail() {
 
       const data = response?.data ?? response;
 
-      const bankLoanId = data?.bank_loan_id ?? data?.id;
+      const bankLoanId = data?.bank_loan_id ?? data?.bank_loan?.id ?? data?.id;
 
       toast.success("Bank Loan created successfully.");
 
       if (bankLoanId) {
-        window.location.href = `/finance/bank-loans/${bankLoanId}`;
+        navigate(`/finance/bank-loans/${bankLoanId}`);
+        return;
       }
+
+      await refreshQuote();
     } catch (err) {
       toast.error(err?.message || "Unable to proceed to Bank Loan.");
     } finally {
@@ -670,12 +717,12 @@ export default function QuoteDetail() {
             {quote.status === "booked" &&
               quote.payment_method === "Cash" &&
               !quote.deal_closed &&
-              (quote.cash_deal ? (
+              (quote.cash_deal?.id ? (
                 <Link
                   to={`/finance/cash-deals/${quote.cash_deal.id}`}
                   className="rounded-lg border border-green-300 bg-green-50 px-3 py-2 text-sm font-medium text-green-700 hover:bg-green-100"
                 >
-                  Cash Deal Proceeded
+                  Open Cash Deal
                 </Link>
               ) : (
                 <button
@@ -687,13 +734,14 @@ export default function QuoteDetail() {
                   {saving ? "Processing..." : "Proceed to Cash Deal"}
                 </button>
               ))}
+
             {quote.status === "booked" &&
               quote.payment_method === "Finance" &&
-              (!quote.loan_approved && quote.active_bank_loan ? false : true) &&
-              (quote.active_bank_loan ? (
+              !quote.deal_closed &&
+              (quote.active_bank_loan?.id ? (
                 <div className="flex flex-wrap items-center gap-2">
                   <div className="rounded-lg border border-green-300 bg-green-50 px-3 py-2 text-sm font-medium text-green-700">
-                    Bank Loan Proceeded
+                    Bank Loan Created
                   </div>
 
                   <div className="rounded-lg border border-gray-300 bg-gray-50 px-3 py-2 text-sm text-gray-700">
@@ -708,7 +756,7 @@ export default function QuoteDetail() {
                   <div className="rounded-lg border border-gray-300 bg-gray-50 px-3 py-2 text-sm text-gray-700">
                     Priority:{" "}
                     <span className="font-medium capitalize">
-                      {quote.active_bank_loan.priority}
+                      {quote.active_bank_loan.priority || "-"}
                     </span>
                   </div>
 
@@ -719,7 +767,11 @@ export default function QuoteDetail() {
                     Open Bank Loan
                   </Link>
                 </div>
-              ) : quote.loan_approved ? null : (
+              ) : quote.loan_approved ? (
+                <div className="rounded-lg border border-green-300 bg-green-50 px-3 py-2 text-sm font-medium text-green-700">
+                  Bank Loan Approved
+                </div>
+              ) : (
                 <div className="flex flex-wrap items-center gap-2">
                   <div className="rounded-lg border border-gray-300 bg-gray-50 px-3 py-2 text-sm text-gray-700">
                     Bank:{" "}

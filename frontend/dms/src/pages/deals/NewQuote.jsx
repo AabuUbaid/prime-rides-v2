@@ -14,6 +14,9 @@ import {
   getServicePackages,
 } from "../../api/finance";
 
+import { useAuth } from "../../context/AuthContext";
+import { getSpecialPriceRequests } from "../../api/specialPrice";
+
 const SOURCE_STOCK = "stock";
 const SOURCE_SAVED_EMI = "saved_emi";
 
@@ -116,8 +119,14 @@ function getConditionValue(preset) {
 
 export default function NewQuote() {
   const navigate = useNavigate();
+  const { user } = useAuth();
 
   const [source, setSource] = useState(SOURCE_STOCK);
+
+  const [specialPriceRequests, setSpecialPriceRequests] = useState([]);
+  const [selectedSpecialPriceRequestId, setSelectedSpecialPriceRequestId] =
+    useState("");
+  const [loadingSpecialPrices, setLoadingSpecialPrices] = useState(false);
 
   const [vehicleSearch, setVehicleSearch] = useState("");
   const [vehicleResults, setVehicleResults] = useState([]);
@@ -266,6 +275,40 @@ export default function NewQuote() {
     };
   }, []);
 
+  useEffect(() => {
+    let cancelled = false;
+
+    async function loadSpecialPriceRequests() {
+      try {
+        setLoadingSpecialPrices(true);
+
+        const response = await getSpecialPriceRequests();
+        const data = getApiData(response);
+
+        if (cancelled) {
+          return;
+        }
+
+        setSpecialPriceRequests(data);
+      } catch (err) {
+        if (!cancelled) {
+          setSpecialPriceRequests([]);
+          console.error("Special price requests failed:", err);
+        }
+      } finally {
+        if (!cancelled) {
+          setLoadingSpecialPrices(false);
+        }
+      }
+    }
+
+    loadSpecialPriceRequests();
+
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
   const applicableInsuranceBand = (() => {
     const numericPrice = Number(price);
 
@@ -292,6 +335,38 @@ export default function NewQuote() {
 
   const defaultServicePackage =
     (servicePackages || []).find((item) => Boolean(item?.is_default)) || null;
+
+  const quoteVehicleStockId =
+    source === SOURCE_STOCK
+      ? selectedCar?.stock_id || selectedCar?.vehicle_stock_id || ""
+      : selectedEmi?.vehicle_stock_id || "";
+
+  const usableSpecialPriceRequests = (specialPriceRequests || []).filter(
+    (request) => {
+      if (String(request?.status || "").toLowerCase() !== "approved") {
+        return false;
+      }
+
+      if (!quoteVehicleStockId) {
+        return false;
+      }
+
+      return (
+        String(request?.car_stock_id || "").trim() ===
+          String(quoteVehicleStockId).trim() ||
+        String(request?.car?.stock_id || "").trim() ===
+          String(quoteVehicleStockId).trim()
+      );
+    },
+  );
+
+  const selectedSpecialPriceRequest =
+    usableSpecialPriceRequests.find(
+      (request) => String(request.id) === String(selectedSpecialPriceRequestId),
+    ) || null;
+
+  const selectedApprovedSpecialPrice =
+    selectedSpecialPriceRequest?.approved_price ?? null;
 
   const isSelectedExpenseType = (expenseType) =>
     selectedExpenses.some((expense) => getExpenseType(expense) === expenseType);
@@ -327,6 +402,7 @@ export default function NewQuote() {
     setSelectedCarId("");
     setSelectedEmiId("");
     setSelectedEmi(null);
+    setSelectedSpecialPriceRequestId("");
 
     setCustomerName("");
     setCustomerMobile("");
@@ -350,6 +426,7 @@ export default function NewQuote() {
    */
   const handleStockVehicleSelect = async (carId) => {
     setSelectedCarId(carId);
+    setSelectedSpecialPriceRequestId("");
     setError("");
 
     if (!carId) {
@@ -387,6 +464,7 @@ export default function NewQuote() {
     } catch (err) {
       setSelectedCar(null);
       setSelectedCarId("");
+      setSelectedSpecialPriceRequestId("");
       setPrice("");
       setVehicleSearch("");
 
@@ -535,6 +613,26 @@ export default function NewQuote() {
     };
   }, [vehicleSearch]);
 
+  useEffect(() => {
+    if (!selectedSpecialPriceRequest) {
+      if (
+        selectedCar?.asking_price !== undefined &&
+        selectedCar?.asking_price !== null
+      ) {
+        setPrice(String(selectedCar.asking_price));
+      }
+      return;
+    }
+
+    if (
+      selectedApprovedSpecialPrice !== null &&
+      selectedApprovedSpecialPrice !== undefined &&
+      selectedApprovedSpecialPrice !== ""
+    ) {
+      setPrice(String(selectedApprovedSpecialPrice));
+    }
+  }, [selectedSpecialPriceRequest, selectedApprovedSpecialPrice, selectedCar]);
+
   const stockVatAmount = stockCalculation?.vat_amount ?? "0";
 
   const stockPriceAfterVat = stockCalculation?.price_after_vat ?? "";
@@ -571,6 +669,7 @@ export default function NewQuote() {
 
     setSelectedEmiId(emiId);
     setSelectedEmi(null);
+    setSelectedSpecialPriceRequestId("");
     setCustomerName("");
     setCustomerMobile("");
     setPrice("");
@@ -732,6 +831,20 @@ export default function NewQuote() {
       return "No active default Service Package is configured.";
     }
 
+    if (selectedSpecialPriceRequestId) {
+      if (!selectedSpecialPriceRequest) {
+        return "The selected special price approval is no longer available.";
+      }
+
+      if (
+        selectedApprovedSpecialPrice === null ||
+        selectedApprovedSpecialPrice === undefined ||
+        selectedApprovedSpecialPrice === ""
+      ) {
+        return "The approved special price amount is not available.";
+      }
+    }
+
     if (calculatingStock || !stockCalculation) {
       return "Please wait for the quotation calculation to finish.";
     }
@@ -758,6 +871,20 @@ export default function NewQuote() {
 
     if (!financePrice) {
       return "The saved EMI does not contain a vehicle price.";
+    }
+
+    if (selectedSpecialPriceRequestId) {
+      if (!selectedSpecialPriceRequest) {
+        return "The selected special price approval is no longer available.";
+      }
+
+      if (
+        selectedApprovedSpecialPrice === null ||
+        selectedApprovedSpecialPrice === undefined ||
+        selectedApprovedSpecialPrice === ""
+      ) {
+        return "The approved special price amount is not available.";
+      }
     }
 
     return "";
@@ -797,15 +924,12 @@ export default function NewQuote() {
           car_id: selectedCarId,
           customer_name: customerName.trim(),
           customer_mobile: customerMobile.trim(),
-          price,
+          price: String(price),
           payment_method: "Cash",
           vat_enabled: vatEnabled,
           vat_amount: stockVatAmount,
+          special_price_request_id: selectedSpecialPriceRequestId || null,
         };
-
-        if (extraDownPayment !== "") {
-          payload.extra_down_payment = extraDownPayment;
-        }
 
         if (depositDate) {
           payload.deposit_date = depositDate;
@@ -854,6 +978,7 @@ export default function NewQuote() {
 
           vat_amount:
             selectedEmi?.vat_amount ?? selectedEmi?.emi_vat_amount ?? "0.00",
+          special_price_request_id: selectedSpecialPriceRequestId || null,
         };
 
         if (extraDownPayment !== "") {
@@ -1008,6 +1133,7 @@ export default function NewQuote() {
                       if (selectedCar) {
                         setSelectedCar(null);
                         setSelectedCarId("");
+                        setSelectedSpecialPriceRequestId("");
                         setPrice("");
                         setStockCalculation(null);
                       }
@@ -1221,24 +1347,6 @@ export default function NewQuote() {
 
                 <div>
                   <label className="mb-2 block text-sm font-medium text-gray-700">
-                    Extra Down Payment
-                  </label>
-
-                  <input
-                    type="number"
-                    min="0"
-                    step="0.01"
-                    value={extraDownPayment}
-                    onChange={(event) =>
-                      setExtraDownPayment(event.target.value)
-                    }
-                    placeholder="0.00"
-                    className="w-full rounded-lg border border-gray-300 px-3 py-2.5 text-sm outline-none focus:border-gray-500"
-                  />
-                </div>
-
-                <div>
-                  <label className="mb-2 block text-sm font-medium text-gray-700">
                     Deposit Date
                   </label>
 
@@ -1249,6 +1357,90 @@ export default function NewQuote() {
                     className="w-full rounded-lg border border-gray-300 px-3 py-2.5 text-sm outline-none focus:border-gray-500"
                   />
                 </div>
+              </div>
+            </section>
+
+            {/* Special Price */}
+            <section className="rounded-xl border border-gray-200 bg-white shadow-sm">
+              <div className="border-b border-gray-200 px-5 py-4">
+                <h2 className="font-semibold text-gray-900">Special Price</h2>
+                <p className="mt-1 text-xs text-gray-500">
+                  Use an approved transaction-specific special price for this
+                  vehicle.
+                </p>
+              </div>
+
+              <div className="p-5">
+                {loadingSpecialPrices ? (
+                  <div className="text-sm text-gray-500">
+                    Loading approved special prices...
+                  </div>
+                ) : usableSpecialPriceRequests.length === 0 ? (
+                  <div className="rounded-lg border border-gray-200 bg-gray-50 p-4 text-sm text-gray-500">
+                    No approved special price is available for this vehicle.
+                  </div>
+                ) : (
+                  <>
+                    <label className="mb-2 block text-sm font-medium text-gray-700">
+                      Approved Special Price
+                    </label>
+
+                    <select
+                      value={selectedSpecialPriceRequestId}
+                      onChange={(event) =>
+                        setSelectedSpecialPriceRequestId(event.target.value)
+                      }
+                      className="w-full rounded-lg border border-gray-300 bg-white px-3 py-2.5 text-sm outline-none focus:border-gray-500"
+                    >
+                      <option value="">Use standard vehicle price</option>
+
+                      {usableSpecialPriceRequests.map((request) => (
+                        <option key={request.id} value={request.id}>
+                          Request #{request.id} — AED{" "}
+                          {formatCurrency(request.approved_price)}
+                        </option>
+                      ))}
+                    </select>
+
+                    {selectedSpecialPriceRequest && (
+                      <div className="mt-4 rounded-lg border border-gray-200 bg-gray-50 p-4">
+                        <div className="grid gap-3 sm:grid-cols-3">
+                          <div>
+                            <div className="text-xs text-gray-500">
+                              Requested
+                            </div>
+                            <div className="mt-1 text-sm font-semibold text-gray-900">
+                              AED{" "}
+                              {formatCurrency(
+                                selectedSpecialPriceRequest.requested_price,
+                              )}
+                            </div>
+                          </div>
+
+                          <div>
+                            <div className="text-xs text-gray-500">
+                              Approved
+                            </div>
+                            <div className="mt-1 text-sm font-semibold text-gray-900">
+                              AED {formatCurrency(selectedApprovedSpecialPrice)}
+                            </div>
+                          </div>
+
+                          <div>
+                            <div className="text-xs text-gray-500">Expires</div>
+                            <div className="mt-1 text-sm font-semibold text-gray-900">
+                              {selectedSpecialPriceRequest.expires_at
+                                ? new Date(
+                                    selectedSpecialPriceRequest.expires_at,
+                                  ).toLocaleString()
+                                : "-"}
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    )}
+                  </>
+                )}
               </div>
             </section>
 
@@ -1731,6 +1923,96 @@ export default function NewQuote() {
                         {selectedEmi.vehicle_engine_number || "-"}
                       </div>
                     </div>
+                  </div>
+                </section>
+
+                {/* Special Price */}
+                <section className="rounded-xl border border-gray-200 bg-white shadow-sm">
+                  <div className="border-b border-gray-200 px-5 py-4">
+                    <h2 className="font-semibold text-gray-900">
+                      Special Price
+                    </h2>
+
+                    <p className="mt-1 text-xs text-gray-500">
+                      Use an approved transaction-specific special price for
+                      this vehicle.
+                    </p>
+                  </div>
+
+                  <div className="p-5">
+                    {loadingSpecialPrices ? (
+                      <div className="text-sm text-gray-500">
+                        Loading approved special prices...
+                      </div>
+                    ) : usableSpecialPriceRequests.length === 0 ? (
+                      <div className="rounded-lg border border-gray-200 bg-gray-50 p-4 text-sm text-gray-500">
+                        No approved special price is available for this vehicle.
+                      </div>
+                    ) : (
+                      <>
+                        <label className="mb-2 block text-sm font-medium text-gray-700">
+                          Approved Special Price
+                        </label>
+
+                        <select
+                          value={selectedSpecialPriceRequestId}
+                          onChange={(event) =>
+                            setSelectedSpecialPriceRequestId(event.target.value)
+                          }
+                          className="w-full rounded-lg border border-gray-300 bg-white px-3 py-2.5 text-sm outline-none focus:border-gray-500"
+                        >
+                          <option value="">Use saved EMI price</option>
+
+                          {usableSpecialPriceRequests.map((request) => (
+                            <option key={request.id} value={request.id}>
+                              Request #{request.id} — AED{" "}
+                              {formatCurrency(request.approved_price)}
+                            </option>
+                          ))}
+                        </select>
+
+                        {selectedSpecialPriceRequest && (
+                          <div className="mt-4 rounded-lg border border-gray-200 bg-gray-50 p-4">
+                            <div className="grid gap-3 sm:grid-cols-3">
+                              <div>
+                                <div className="text-xs text-gray-500">
+                                  Requested
+                                </div>
+                                <div className="mt-1 text-sm font-semibold text-gray-900">
+                                  AED{" "}
+                                  {formatCurrency(
+                                    selectedSpecialPriceRequest.requested_price,
+                                  )}
+                                </div>
+                              </div>
+
+                              <div>
+                                <div className="text-xs text-gray-500">
+                                  Approved
+                                </div>
+                                <div className="mt-1 text-sm font-semibold text-gray-900">
+                                  AED{" "}
+                                  {formatCurrency(selectedApprovedSpecialPrice)}
+                                </div>
+                              </div>
+
+                              <div>
+                                <div className="text-xs text-gray-500">
+                                  Expires
+                                </div>
+                                <div className="mt-1 text-sm font-semibold text-gray-900">
+                                  {selectedSpecialPriceRequest.expires_at
+                                    ? new Date(
+                                        selectedSpecialPriceRequest.expires_at,
+                                      ).toLocaleString()
+                                    : "-"}
+                                </div>
+                              </div>
+                            </div>
+                          </div>
+                        )}
+                      </>
+                    )}
                   </div>
                 </section>
 

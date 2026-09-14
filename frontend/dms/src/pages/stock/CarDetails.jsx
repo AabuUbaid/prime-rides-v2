@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { useParams } from "react-router-dom";
+import { useAuth } from "../../context/AuthContext";
 import {
   getCar,
   deleteImage,
@@ -12,6 +13,7 @@ import ExpenseForm from "./components/ExpenseForm";
 import { createExpense, updateExpense, deleteExpense } from "../../api/expense";
 
 function CarDetails() {
+  const { user } = useAuth();
   const { id } = useParams();
 
   const [car, setCar] = useState(null);
@@ -191,14 +193,14 @@ function CarDetails() {
   };
 
   if (loading) {
-    return <h2 className="p-6 text-xl font-semibold text-gray-900">Loading...</h2>;
+    return (
+      <h2 className="p-6 text-xl font-semibold text-gray-900">Loading...</h2>
+    );
   }
 
   return (
     <div className="space-y-6 p-6">
-      <h1 className="text-2xl font-bold text-gray-900">
-        Vehicle Details
-      </h1>
+      <h1 className="text-2xl font-bold text-gray-900">Vehicle Details</h1>
 
       <table className="w-full overflow-hidden rounded-lg border border-gray-200 bg-white text-sm">
         <tbody>
@@ -251,14 +253,16 @@ function CarDetails() {
             <td className="px-4 py-3 text-gray-900">{car.status}</td>
           </tr>
 
-          <tr className="border-b border-gray-100">
-            <th className="w-1/3 bg-gray-50 px-4 py-3 text-left font-medium text-gray-600">
-              Purchase Cost
-            </th>
-            <td className="px-4 py-3 text-gray-900">
-              {car.purchase_cost ?? "-"}
-            </td>
-          </tr>
+          {user?.role === "MASTER" && (
+            <tr className="border-b border-gray-100">
+              <th className="w-1/3 bg-gray-50 px-4 py-3 text-left font-medium text-gray-600">
+                Purchase Cost
+              </th>
+              <td className="px-4 py-3 text-gray-900">
+                {car.purchase_cost ?? "-"}
+              </td>
+            </tr>
+          )}
 
           <tr className="border-b border-gray-100">
             <th className="w-1/3 bg-gray-50 px-4 py-3 text-left font-medium text-gray-600">
@@ -282,18 +286,14 @@ function CarDetails() {
             <th className="w-1/3 bg-gray-50 px-4 py-3 text-left font-medium text-gray-600">
               Mileage
             </th>
-            <td className="px-4 py-3 text-gray-900">
-              {car.mileage ?? "-"}
-            </td>
+            <td className="px-4 py-3 text-gray-900">{car.mileage ?? "-"}</td>
           </tr>
 
           <tr className="border-b border-gray-100">
             <th className="w-1/3 bg-gray-50 px-4 py-3 text-left font-medium text-gray-600">
               Supplier
             </th>
-            <td className="px-4 py-3 text-gray-900">
-              {car.supplier || "-"}
-            </td>
+            <td className="px-4 py-3 text-gray-900">{car.supplier || "-"}</td>
           </tr>
 
           <tr className="border-b border-gray-100">
@@ -363,9 +363,7 @@ function CarDetails() {
         </tbody>
       </table>
 
-      <h2 className="text-xl font-semibold text-gray-900">
-        Vehicle Images
-      </h2>
+      <h2 className="text-xl font-semibold text-gray-900">Vehicle Images</h2>
 
       {car.images.length === 0 ? (
         <p className="rounded-lg border border-dashed border-gray-300 bg-gray-50 p-6 text-center text-sm text-gray-500">
@@ -373,9 +371,7 @@ function CarDetails() {
         </p>
       ) : (
         <>
-          <h3 className="text-lg font-semibold text-gray-800">
-            Gallery
-          </h3>
+          <h3 className="text-lg font-semibold text-gray-800">Gallery</h3>
 
           {selectedImageIds.length > 0 && (
             <button
@@ -445,9 +441,7 @@ function CarDetails() {
                     }}
                     onError={() => {
                       setBrokenImageIds((prev) =>
-                        prev.includes(image.id)
-                          ? prev
-                          : [...prev, image.id],
+                        prev.includes(image.id) ? prev : [...prev, image.id],
                       );
                     }}
                   />
@@ -484,9 +478,7 @@ function CarDetails() {
 
       <ExpenseForm onAddExpense={handleAddExpense} />
 
-      <h2 className="text-xl font-semibold text-gray-900">
-        Vehicle Expenses
-      </h2>
+      <h2 className="text-xl font-semibold text-gray-900">Vehicle Expenses</h2>
 
       <ExpenseList
         expenses={car.expenses}
@@ -494,9 +486,7 @@ function CarDetails() {
         onDeleteExpense={handleDeleteExpense}
       />
 
-      <h3 className="text-lg font-semibold text-gray-800">
-        Expense Summary
-      </h3>
+      <h3 className="text-lg font-semibold text-gray-800">Expense Summary</h3>
 
       <p className="text-sm text-gray-700">
         Expense Count: {car.expense_summary?.expense_count ?? 0}

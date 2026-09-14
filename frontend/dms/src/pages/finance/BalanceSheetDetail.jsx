@@ -414,6 +414,54 @@ function BalanceSheetDetail() {
         <section className="mt-6 rounded-lg border border-gray-200 bg-white shadow-sm">
           <div className="border-b border-gray-200 px-6 py-4">
             <h3 className="text-lg font-semibold text-gray-900">
+              Spent Breakdown
+            </h3>
+          </div>
+
+          {Array.isArray(balanceSheet.spent_breakdown) &&
+          balanceSheet.spent_breakdown.length > 0 ? (
+            <div className="divide-y divide-gray-200">
+              {balanceSheet.spent_breakdown.map((item, index) => (
+                <div
+                  key={`${item.type}-${item.expense_id || item.receipt_id || index}`}
+                  className="flex items-center justify-between gap-4 px-6 py-4"
+                >
+                  <div>
+                    <p className="text-sm font-medium text-gray-900">
+                      {item.type === "quote_amount"
+                        ? "Vehicle Price"
+                        : item.narration || "-"}{" "}
+                    </p>
+
+                    <p className="mt-1 text-xs text-gray-500">
+                      {item.type === "quote_expense"
+                        ? "Quote Expense"
+                        : item.type === "vat"
+                          ? "VAT"
+                          : item.type === "company_on_behalf"
+                            ? "Company Expense"
+                            : "Quote"}
+                    </p>
+                  </div>
+
+                  <p className="text-sm font-semibold text-gray-900">
+                    {formatAED(item.amount)}
+                  </p>
+                </div>
+              ))}
+            </div>
+          ) : (
+            <div className="p-6">
+              <p className="text-sm text-gray-500">
+                No spending breakdown available.
+              </p>
+            </div>
+          )}
+        </section>
+
+        <section className="mt-6 rounded-lg border border-gray-200 bg-white shadow-sm">
+          <div className="border-b border-gray-200 px-6 py-4">
+            <h3 className="text-lg font-semibold text-gray-900">
               Transaction History
             </h3>
           </div>

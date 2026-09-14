@@ -107,7 +107,8 @@ function EditCar() {
     try {
       setSaving(true);
 
-      const result = await updateCar(id, formData);
+      const { status, ...editableData } = formData;
+      await updateCar(id, editableData);
 
       console.log(result);
 
@@ -149,18 +150,14 @@ function EditCar() {
 
   if (loading) {
     return (
-      <h2 className="p-6 text-xl font-semibold text-gray-900">
-        Loading...
-      </h2>
+      <h2 className="p-6 text-xl font-semibold text-gray-900">Loading...</h2>
     );
   }
 
   return (
     <div className="mx-auto max-w-5xl space-y-6 p-6">
       <div>
-        <h1 className="text-2xl font-bold text-gray-900">
-          Edit Vehicle
-        </h1>
+        <h1 className="text-2xl font-bold text-gray-900">Edit Vehicle</h1>
 
         <p className="mt-1 text-sm text-gray-500">
           Update vehicle information and inventory details.
@@ -169,23 +166,18 @@ function EditCar() {
 
       <form onSubmit={handleSubmit} className="space-y-6">
         <div className="rounded-lg border border-gray-200 bg-white p-6 shadow-sm">
-          <VehicleInformation
-            formData={formData}
-            handleChange={handleChange}
-          />
+          <VehicleInformation formData={formData} handleChange={handleChange} />
         </div>
 
         <div className="rounded-lg border border-gray-200 bg-white p-6 shadow-sm">
-          <PricingInformation
-            formData={formData}
-            handleChange={handleChange}
-          />
+          <PricingInformation formData={formData} handleChange={handleChange} />
         </div>
 
         <div className="rounded-lg border border-gray-200 bg-white p-6 shadow-sm">
           <VehicleDetails
             formData={formData}
             handleChange={handleChange}
+            hideStatus
           />
         </div>
 

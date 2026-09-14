@@ -826,13 +826,16 @@ class SpecialPriceRequestListAPIView(APIView):
                 special_request,
             ).data
 
-            if request.user.role != "MASTER":
-                # Requesters can see their enquiry,
-                # but not the Master-controlled approved price.
-                item.pop("approved_price", None)
-                item.pop("approved_by", None)
-                item.pop("approved_by_name", None)
-                item.pop("approved_at", None)
+        if request.user.role != "MASTER":
+            if item.status == "approved" and item.requested_by_id == request.user.id:
+                # Requester needs these fields to use the approved
+                # transaction-specific price in a Quote/EMI.
+                pass
+            else:
+                data.pop("approved_price", None)
+                data.pop("approved_by", None)
+                data.pop("approved_by_name", None)
+                data.pop("approved_at", None)
 
             data.append(item)
 

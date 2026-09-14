@@ -500,42 +500,48 @@ def advance_progression_stage(
     # -------------------------------------------------
 
     elif current_stage == Progression.Stage.PASSING:
-        if progression.source_type == (
-            Progression.SourceType.FINANCE
-        ):
-            if progression.bank_loan is None:
-                raise ValidationError(
-                    "Bank Loan source is required "
-                    "before Insurance."
+        try:
+            insurance = progression.quote.insurance
+        except Exception:
+            insurance = None
+
+        if insurance is None:
+            if progression.source_type == (
+                Progression.SourceType.FINANCE
+            ):
+                if progression.bank_loan is None:
+                    raise ValidationError(
+                        "Bank Loan source is required "
+                        "before Insurance."
+                    )
+
+                create_insurance(
+                    quote=progression.quote,
+                    user=user,
+                    bank_loan=progression.bank_loan,
+                    cash_deal=None,
                 )
 
-            create_insurance(
-                quote=progression.quote,
-                user=user,
-                bank_loan=progression.bank_loan,
-                cash_deal=None,
-            )
+            elif progression.source_type == (
+                Progression.SourceType.CASH
+            ):
+                if progression.cash_deal is None:
+                    raise ValidationError(
+                        "Cash Deal source is required "
+                        "before Insurance."
+                    )
 
-        elif progression.source_type == (
-            Progression.SourceType.CASH
-        ):
-            if progression.cash_deal is None:
-                raise ValidationError(
-                    "Cash Deal source is required "
-                    "before Insurance."
+                create_insurance(
+                    quote=progression.quote,
+                    user=user,
+                    bank_loan=None,
+                    cash_deal=progression.cash_deal,
                 )
 
-            create_insurance(
-                quote=progression.quote,
-                user=user,
-                bank_loan=None,
-                cash_deal=progression.cash_deal,
-            )
-
-        else:
-            raise ValidationError(
-                "Invalid Progression source type."
-            )
+            else:
+                raise ValidationError(
+                    "Invalid Progression source type."
+                )
 
         progression.current_stage = (
             Progression.Stage.INSURANCE

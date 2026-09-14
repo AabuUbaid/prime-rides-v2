@@ -1638,6 +1638,8 @@ class BalanceSheetSerializer(serializers.ModelSerializer):
     total_received = serializers.SerializerMethodField()
     total_spent = serializers.SerializerMethodField()
 
+    spent_breakdown = serializers.SerializerMethodField()
+
     created_by_name = serializers.SerializerMethodField()
 
     class Meta:
@@ -1678,6 +1680,7 @@ class BalanceSheetSerializer(serializers.ModelSerializer):
 
             "total_received",
             "total_spent",
+            "spent_breakdown",
             "net_difference",
             "balance_status",
 
@@ -1773,18 +1776,105 @@ class BalanceSheetSerializer(serializers.ModelSerializer):
         )
 
     def get_total_spent(self, obj):
-        return (
+        quote = obj.quote
+
+        quote_amount = (
+            getattr(quote, "price", None)
+            or Decimal("0.00")
+        )
+
+        company_on_behalf = (
             CashReceipt.objects
             .filter(
                 quote_id=obj.quote_id,
                 direction=CashReceipt.Direction.COMPANY_ON_BEHALF,
             )
-            .aggregate(
-                total=Sum("amount")
-            )
+            .aggregate(total=Sum("amount"))
             .get("total")
-            or 0
+            or Decimal("0.00")
         )
+
+        return quote_amount + company_on_behalf
+
+    def get_spent_breakdown(self, obj):
+        quote = obj.quote
+
+        vehicle_price = (
+            getattr(obj.car, "asking_price", None)
+            or Decimal("0.00")
+        )
+
+        quote_vat = (
+            getattr(quote, "vat_amount", None)
+            or Decimal("0.00")
+        )
+
+        quote_expenses = (
+            quote.expenses
+            .filter(
+                actual_amount__isnull=False,
+                applies=True,
+            )
+            .order_by("created_at")
+        )
+
+        breakdown = [
+            {
+                "type": "quote_amount",
+                "narration": "Vehicle Price",
+                "amount": vehicle_price,
+            }
+        ]
+
+        if quote_vat > 0:
+            breakdown.append(
+                {
+                    "type": "vat",
+                    "narration": "VAT",
+                    "amount": quote_vat,
+                }
+            )
+
+        for expense in quote_expenses:
+            breakdown.append(
+                {
+                    "type": "quote_expense",
+                    "narration": expense.name or expense.expense_type,
+                    "amount": expense.actual_amount,
+                    "expense_id": expense.id,
+                    "expense_type": expense.expense_type,
+                }
+            )
+
+        company_receipts = (
+            CashReceipt.objects
+            .filter(
+                quote_id=obj.quote_id,
+                direction=CashReceipt.Direction.COMPANY_ON_BEHALF,
+            )
+            .order_by(
+                "transaction_date",
+                "created_at",
+            )
+        )
+
+        for receipt in company_receipts:
+            breakdown.append(
+                {
+                    "type": "company_on_behalf",
+                    "narration": (
+                        receipt.description
+                        or receipt.category
+                        or "Company Expense"
+                    ),
+                    "amount": receipt.amount,
+                    "receipt_id": receipt.id,
+                    "receipt_number": receipt.receipt_number,
+                    "transaction_date": receipt.transaction_date,
+                }
+            )
+
+        return breakdown
 
     def get_created_by_name(self, obj):
         if not obj.created_by:
@@ -1949,6 +2039,21 @@ class BalanceSheetSerializer(serializers.ModelSerializer):
             - self.get_total_spent(obj)
         )
 
+        company_on_behalf = (
+            CashReceipt.objects
+            .filter(
+                quote_id=obj.quote_id,
+                direction=CashReceipt.Direction.COMPANY_ON_BEHALF,
+            )
+            .aggregate(
+                total=Sum("amount")
+            )
+            .get("total")
+            or Decimal("0.00")
+        )
+
+        return customer_received - company_on_behalf
+
     def get_balance_status(self, obj):
         net = self.get_net_difference(obj)
 
@@ -1991,6 +2096,7 @@ class BalanceSheetSerializer(serializers.ModelSerializer):
             "total_spent",
             "net_difference",
             "balance_status",
+            "spent_breakdown",
             "transactions",
             "id",
             "created_at",
