@@ -17,27 +17,27 @@ function ExpenseRow({ expense, onUpdateExpense, onDeleteExpense }) {
   };
 
   return (
-    <tr className="border-b border-gray-100 last:border-b-0 hover:bg-gray-50">
-      <td className="px-4 py-3 text-sm text-gray-800">
+    <tr className="border-b border-slate-100 last:border-b-0 hover:bg-slate-50/70">
+      <td className="px-4 py-3 text-sm text-slate-700">
         {editing ? (
           <input
             value={description}
             onChange={(e) => setDescription(e.target.value)}
-            className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm text-gray-900 outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500"
+            className="h-9 w-full rounded-xl border border-slate-200 px-3 text-sm text-slate-800 outline-none focus:border-amber-400 focus:ring-2 focus:ring-amber-400/15"
           />
         ) : (
           expense.description
         )}
       </td>
 
-      <td className="px-4 py-3 text-sm font-medium text-gray-900">
+      <td className="px-4 py-3 font-mono text-sm font-semibold text-slate-900">
         {editing ? (
           <input
             type="number"
             step="0.01"
             value={amount}
             onChange={(e) => setAmount(e.target.value)}
-            className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm text-gray-900 outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500"
+            className="h-9 w-full rounded-xl border border-slate-200 px-3 text-sm text-slate-800 outline-none focus:border-amber-400 focus:ring-2 focus:ring-amber-400/15"
           />
         ) : (
           expense.amount
@@ -48,19 +48,21 @@ function ExpenseRow({ expense, onUpdateExpense, onDeleteExpense }) {
         {editing ? (
           <div className="flex flex-wrap gap-2">
             <button
+              type="button"
               onClick={handleSave}
-              className="rounded-md bg-blue-600 px-3 py-1.5 text-sm font-medium text-white hover:bg-blue-700"
+              className="rounded-xl bg-emerald-500 px-3 py-1.5 text-xs font-semibold text-white hover:bg-emerald-600"
             >
               Save
             </button>
 
             <button
+              type="button"
               onClick={() => {
                 setEditing(false);
                 setDescription(expense.description);
                 setAmount(expense.amount);
               }}
-              className="rounded-md border border-gray-300 px-3 py-1.5 text-sm font-medium text-gray-700 hover:bg-gray-50"
+              className="rounded-xl border border-slate-200 bg-white px-3 py-1.5 text-xs font-semibold text-slate-700 hover:bg-slate-50"
             >
               Cancel
             </button>
@@ -68,17 +70,19 @@ function ExpenseRow({ expense, onUpdateExpense, onDeleteExpense }) {
         ) : (
           <div className="flex flex-wrap gap-2">
             <button
+              type="button"
               onClick={() => setEditing(true)}
-              className="rounded-md border border-gray-300 px-3 py-1.5 text-sm font-medium text-gray-700 hover:bg-gray-50"
+              className="rounded-xl border border-slate-200 bg-white px-3 py-1.5 text-xs font-semibold text-slate-700 hover:bg-slate-50"
             >
-              ✏️ Edit
+              Edit
             </button>
 
             <button
+              type="button"
               onClick={() => onDeleteExpense(expense.id)}
-              className="rounded-md bg-red-600 px-3 py-1.5 text-sm font-medium text-white hover:bg-red-700"
+              className="rounded-xl bg-rose-500 px-3 py-1.5 text-xs font-semibold text-white hover:bg-rose-600"
             >
-              🗑 Delete
+              Delete
             </button>
           </div>
         )}

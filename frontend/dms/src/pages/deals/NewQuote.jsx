@@ -1090,7 +1090,7 @@ export default function NewQuote() {
 
   if (loadingOptions) {
     return (
-      <div className="p-6">
+      <div className="mx-auto w-full max-w-[1600px] px-4 py-6 sm:px-6 lg:px-8">
         <div className="rounded-xl border border-gray-200 bg-white p-10 text-center text-sm text-gray-500">
           Loading quote options...
         </div>

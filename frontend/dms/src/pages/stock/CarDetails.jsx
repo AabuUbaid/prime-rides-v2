@@ -194,201 +194,255 @@ function CarDetails() {
 
   if (loading) {
     return (
-      <h2 className="p-6 text-xl font-semibold text-gray-900">Loading...</h2>
+      <div className="flex min-h-[50vh] items-center justify-center">
+        <div className="text-center">
+          <div className="mx-auto mb-3 h-8 w-8 animate-spin rounded-full border-2 border-slate-200 border-t-amber-500" />
+
+          <p className="text-sm font-medium text-slate-600">
+            Loading vehicle...
+          </p>
+
+          <p className="mt-1 text-xs text-slate-400">
+            Loading vehicle details and inventory records.
+          </p>
+        </div>
+      </div>
     );
   }
 
   return (
-    <div className="space-y-6 p-6">
-      <h1 className="text-2xl font-bold text-gray-900">Vehicle Details</h1>
+    <div className="mx-auto w-full max-w-[1400px] space-y-6 px-4 py-6 sm:px-6 lg:px-8">
+      <div>
+        <div className="mb-2 flex items-center gap-2">
+          <span className="h-1.5 w-1.5 rounded-full bg-amber-500" />
 
-      <table className="w-full overflow-hidden rounded-lg border border-gray-200 bg-white text-sm">
+          <span className="text-[10px] font-bold uppercase tracking-[0.14em] text-amber-600">
+            Inventory
+          </span>
+        </div>
+
+        <div className="flex flex-wrap items-end justify-between gap-4">
+          <div>
+            <h1 className="text-2xl font-bold tracking-tight text-slate-900">
+              Vehicle Details
+            </h1>
+
+            <p className="mt-1 text-sm text-slate-500">
+              Vehicle information, pricing, images, and expenses.
+            </p>
+          </div>
+
+          <div className="rounded-xl border border-slate-200 bg-white px-3 py-2 shadow-sm">
+            <span className="font-mono text-xs font-semibold text-slate-700">
+              {car.stock_id}
+            </span>
+          </div>
+        </div>
+      </div>
+      <table className="w-full overflow-hidden rounded-2xl border border-slate-200 bg-white text-sm shadow-[0_2px_8px_rgba(15,23,42,0.04)]">
+        {" "}
         <tbody>
-          <tr className="border-b border-gray-100">
-            <th className="w-1/3 bg-gray-50 px-4 py-3 text-left font-medium text-gray-600">
+          <tr className="border-b border-slate-100 last:border-b-0">
+            <th className="w-1/3 bg-slate-50 px-4 py-3 text-left text-[11px] font-bold uppercase tracking-[0.06em] text-slate-500">
               Stock ID
             </th>
-            <td className="px-4 py-3 text-gray-900">{car.stock_id}</td>
+            <td className="px-4 py-3 font-medium text-slate-800">
+              {car.stock_id}
+            </td>
           </tr>
 
-          <tr className="border-b border-gray-100">
-            <th className="w-1/3 bg-gray-50 px-4 py-3 text-left font-medium text-gray-600">
+          <tr className="border-b border-slate-100 last:border-b-0">
+            <th className="w-1/3 bg-slate-50 px-4 py-3 text-left text-[11px] font-bold uppercase tracking-[0.06em] text-slate-500">
               Year
             </th>
-            <td className="px-4 py-3 text-gray-900">{car.year}</td>
+            <td className="px-4 py-3 font-medium text-slate-800">{car.year}</td>
           </tr>
 
-          <tr className="border-b border-gray-100">
-            <th className="w-1/3 bg-gray-50 px-4 py-3 text-left font-medium text-gray-600">
+          <tr className="border-b border-slate-100 last:border-b-0">
+            <th className="w-1/3 bg-slate-50 px-4 py-3 text-left text-[11px] font-bold uppercase tracking-[0.06em] text-slate-500">
               Make
             </th>
-            <td className="px-4 py-3 text-gray-900">{car.make}</td>
+            <td className="px-4 py-3 font-medium text-slate-800">{car.make}</td>
           </tr>
 
-          <tr className="border-b border-gray-100">
-            <th className="w-1/3 bg-gray-50 px-4 py-3 text-left font-medium text-gray-600">
+          <tr className="border-b border-slate-100 last:border-b-0">
+            <th className="w-1/3 bg-slate-50 px-4 py-3 text-left text-[11px] font-bold uppercase tracking-[0.06em] text-slate-500">
               Model
             </th>
-            <td className="px-4 py-3 text-gray-900">{car.model}</td>
+            <td className="px-4 py-3 font-medium text-slate-800">
+              {car.model}
+            </td>
           </tr>
 
-          <tr className="border-b border-gray-100">
-            <th className="w-1/3 bg-gray-50 px-4 py-3 text-left font-medium text-gray-600">
+          <tr className="border-b border-slate-100 last:border-b-0">
+            <th className="w-1/3 bg-slate-50 px-4 py-3 text-left text-[11px] font-bold uppercase tracking-[0.06em] text-slate-500">
               Variant
             </th>
-            <td className="px-4 py-3 text-gray-900">{car.variant}</td>
+            <td className="px-4 py-3 font-medium text-slate-800">
+              {car.variant}
+            </td>
           </tr>
 
-          <tr className="border-b border-gray-100">
-            <th className="w-1/3 bg-gray-50 px-4 py-3 text-left font-medium text-gray-600">
+          <tr className="border-b border-slate-100 last:border-b-0">
+            <th className="w-1/3 bg-slate-50 px-4 py-3 text-left text-[11px] font-bold uppercase tracking-[0.06em] text-slate-500">
               Colour
             </th>
-            <td className="px-4 py-3 text-gray-900">{car.colour}</td>
+            <td className="px-4 py-3 font-medium text-slate-800">
+              {car.colour}
+            </td>
           </tr>
 
-          <tr className="border-b border-gray-100">
-            <th className="w-1/3 bg-gray-50 px-4 py-3 text-left font-medium text-gray-600">
+          <tr className="border-b border-slate-100 last:border-b-0">
+            <th className="w-1/3 bg-slate-50 px-4 py-3 text-left text-[11px] font-bold uppercase tracking-[0.06em] text-slate-500">
               Vehicle Type
             </th>
-            <td className="px-4 py-3 text-gray-900">
+            <td className="px-4 py-3 font-medium text-slate-800">
               {car.vehicle_type || "-"}
             </td>
           </tr>
 
-          <tr className="border-b border-gray-100">
-            <th className="w-1/3 bg-gray-50 px-4 py-3 text-left font-medium text-gray-600">
+          <tr className="border-b border-slate-100 last:border-b-0">
+            <th className="w-1/3 bg-slate-50 px-4 py-3 text-left text-[11px] font-bold uppercase tracking-[0.06em] text-slate-500">
               Status
             </th>
-            <td className="px-4 py-3 text-gray-900">{car.status}</td>
+            <td className="px-4 py-3 font-medium text-slate-800">
+              {car.status}
+            </td>
           </tr>
 
           {car.status === "in_service" && (
-            <tr className="border-b border-gray-100">
-              <th className="w-1/3 bg-gray-50 px-4 py-3 text-left font-medium text-gray-600">
+            <tr className="border-b border-slate-100 last:border-b-0">
+              <th className="w-1/3 bg-slate-50 px-4 py-3 text-left text-[11px] font-bold uppercase tracking-[0.06em] text-slate-500">
                 Location
               </th>
-              <td className="px-4 py-3 text-gray-900">
+              <td className="px-4 py-3 font-medium text-slate-800">
                 {car.service_location || "-"}
               </td>
             </tr>
           )}
 
           {user?.role === "MASTER" && (
-            <tr className="border-b border-gray-100">
-              <th className="w-1/3 bg-gray-50 px-4 py-3 text-left font-medium text-gray-600">
+            <tr className="border-b border-slate-100 last:border-b-0">
+              <th className="w-1/3 bg-slate-50 px-4 py-3 text-left text-[11px] font-bold uppercase tracking-[0.06em] text-slate-500">
                 Purchase Cost
               </th>
-              <td className="px-4 py-3 text-gray-900">
+              <td className="px-4 py-3 font-medium text-slate-800">
                 {car.purchase_cost ?? "-"}
               </td>
             </tr>
           )}
 
-          <tr className="border-b border-gray-100">
-            <th className="w-1/3 bg-gray-50 px-4 py-3 text-left font-medium text-gray-600">
+          <tr className="border-b border-slate-100 last:border-b-0">
+            <th className="w-1/3 bg-slate-50 px-4 py-3 text-left text-[11px] font-bold uppercase tracking-[0.06em] text-slate-500">
               Asking Price
             </th>
-            <td className="px-4 py-3 text-gray-900">
+            <td className="px-4 py-3 font-medium text-slate-800">
               {car.asking_price ?? "-"}
             </td>
           </tr>
 
-          <tr className="border-b border-gray-100">
-            <th className="w-1/3 bg-gray-50 px-4 py-3 text-left font-medium text-gray-600">
+          <tr className="border-b border-slate-100 last:border-b-0">
+            <th className="w-1/3 bg-slate-50 px-4 py-3 text-left text-[11px] font-bold uppercase tracking-[0.06em] text-slate-500">
               Least Selling Price
             </th>
-            <td className="px-4 py-3 text-gray-900">
+            <td className="px-4 py-3 font-medium text-slate-800">
               {car.least_selling_price ?? "-"}
             </td>
           </tr>
 
-          <tr className="border-b border-gray-100">
-            <th className="w-1/3 bg-gray-50 px-4 py-3 text-left font-medium text-gray-600">
+          <tr className="border-b border-slate-100 last:border-b-0">
+            <th className="w-1/3 bg-slate-50 px-4 py-3 text-left text-[11px] font-bold uppercase tracking-[0.06em] text-slate-500">
               Mileage
             </th>
-            <td className="px-4 py-3 text-gray-900">{car.mileage ?? "-"}</td>
+            <td className="px-4 py-3 font-medium text-slate-800">
+              {car.mileage ?? "-"}
+            </td>
           </tr>
 
           {user?.role === "MASTER" && (
-            <tr className="border-b border-gray-100">
-              <th className="w-1/3 bg-gray-50 px-4 py-3 text-left font-medium text-gray-600">
+            <tr className="border-b border-slate-100 last:border-b-0">
+              <th className="w-1/3 bg-slate-50 px-4 py-3 text-left text-[11px] font-bold uppercase tracking-[0.06em] text-slate-500">
                 Actual Mileage
               </th>
-              <td className="px-4 py-3 text-gray-900">
+              <td className="px-4 py-3 font-medium text-slate-800">
                 {car.actual_mileage ?? "-"}
               </td>
             </tr>
           )}
 
           {user?.role === "MASTER" && (
-            <tr className="border-b border-gray-100">
-              <th className="w-1/3 bg-gray-50 px-4 py-3 text-left font-medium text-gray-600">
+            <tr className="border-b border-slate-100 last:border-b-0">
+              <th className="w-1/3 bg-slate-50 px-4 py-3 text-left text-[11px] font-bold uppercase tracking-[0.06em] text-slate-500">
                 Supplier
               </th>
-              <td className="px-4 py-3 text-gray-900">{car.supplier || "-"}</td>
+              <td className="px-4 py-3 font-medium text-slate-800">
+                {car.supplier || "-"}
+              </td>
             </tr>
           )}
 
           {user?.role === "MASTER" && (
-            <tr className="border-b border-gray-100">
-              <th className="w-1/3 bg-gray-50 px-4 py-3 text-left font-medium text-gray-600">
+            <tr className="border-b border-slate-100 last:border-b-0">
+              <th className="w-1/3 bg-slate-50 px-4 py-3 text-left text-[11px] font-bold uppercase tracking-[0.06em] text-slate-500">
                 Source
               </th>
-              <td className="px-4 py-3 text-gray-900">{car.source || "-"}</td>
+              <td className="px-4 py-3 font-medium text-slate-800">
+                {car.source || "-"}
+              </td>
             </tr>
           )}
 
           {user?.role === "MASTER" && car.source === "other" && (
-            <tr className="border-b border-gray-100">
-              <th className="w-1/3 bg-gray-50 px-4 py-3 text-left font-medium text-gray-600">
+            <tr className="border-b border-slate-100 last:border-b-0">
+              <th className="w-1/3 bg-slate-50 px-4 py-3 text-left text-[11px] font-bold uppercase tracking-[0.06em] text-slate-500">
                 Source Specify
               </th>
-              <td className="px-4 py-3 text-gray-900">
+              <td className="px-4 py-3 font-medium text-slate-800">
                 {car.source_specify || "-"}
               </td>
             </tr>
           )}
 
-          <tr className="border-b border-gray-100">
-            <th className="w-1/3 bg-gray-50 px-4 py-3 text-left font-medium text-gray-600">
+          <tr className="border-b border-slate-100 last:border-b-0">
+            <th className="w-1/3 bg-slate-50 px-4 py-3 text-left text-[11px] font-bold uppercase tracking-[0.06em] text-slate-500">
               Chassis Number
             </th>
-            <td className="px-4 py-3 text-gray-900">
+            <td className="px-4 py-3 font-medium text-slate-800">
               {car.chassis_number || "-"}
             </td>
           </tr>
 
-          <tr className="border-b border-gray-100">
-            <th className="w-1/3 bg-gray-50 px-4 py-3 text-left font-medium text-gray-600">
+          <tr className="border-b border-slate-100 last:border-b-0">
+            <th className="w-1/3 bg-slate-50 px-4 py-3 text-left text-[11px] font-bold uppercase tracking-[0.06em] text-slate-500">
               Engine Number
             </th>
-            <td className="px-4 py-3 text-gray-900">
+            <td className="px-4 py-3 font-medium text-slate-800">
               {car.engine_number || "-"}
             </td>
           </tr>
 
           {user?.role === "MASTER" && (
-            <tr className="border-b border-gray-100">
-              <th className="w-1/3 bg-gray-50 px-4 py-3 text-left font-medium text-gray-600">
+            <tr className="border-b border-slate-100 last:border-b-0">
+              <th className="w-1/3 bg-slate-50 px-4 py-3 text-left text-[11px] font-bold uppercase tracking-[0.06em] text-slate-500">
                 Highlight Public
               </th>
-              <td className="px-4 py-3 text-gray-900">
+              <td className="px-4 py-3 font-medium text-slate-800">
                 {car.highlight_public ? "Yes" : "No"}
               </td>
             </tr>
           )}
 
           <tr>
-            <th className="w-1/3 bg-gray-50 px-4 py-3 text-left font-medium text-gray-600">
+            <th className="w-1/3 bg-slate-50 px-4 py-3 text-left text-[11px] font-bold uppercase tracking-[0.06em] text-slate-500">
               Possession Certificate
             </th>
-            <td className="px-4 py-3 text-gray-900">
+            <td className="px-4 py-3 font-medium text-slate-800">
               {car.possession_certificate ? (
                 <a
                   href={`${import.meta.env.VITE_URL}${car.possession_certificate}`}
                   target="_blank"
                   rel="noreferrer"
-                  className="text-blue-600 hover:text-blue-800 hover:underline"
+                  className="text-amber-600 underline-offset-2 hover:text-amber-700 hover:underline "
                 >
                   View Certificate
                 </a>
@@ -400,10 +454,16 @@ function CarDetails() {
         </tbody>
       </table>
 
-      <h2 className="text-xl font-semibold text-gray-900">Vehicle Images</h2>
+      <h2 className="text-lg font-bold tracking-tight text-slate-900">
+        Vehicle Images
+      </h2>
+
+      <p className="mt-1 text-sm text-slate-500">
+        Manage vehicle photos, cover image, ordering, and selection.
+      </p>
 
       {car.images.length === 0 ? (
-        <p className="rounded-lg border border-dashed border-gray-300 bg-gray-50 p-6 text-center text-sm text-gray-500">
+        <p className="rounded-2xl border border-dashed border-slate-300 bg-slate-50 p-10 text-center text-sm text-slate-500">
           No images uploaded.
         </p>
       ) : (
@@ -414,20 +474,13 @@ function CarDetails() {
             <button
               type="button"
               onClick={handleBulkDeleteImages}
-              className="rounded-md bg-red-600 px-4 py-2 text-sm font-medium text-white hover:bg-red-700"
+              className="rounded-xl bg-rose-500 px-4 py-2 text-sm font-semibold text-white transition hover:bg-rose-600 disabled:opacity-50"
             >
               Delete Selected ({selectedImageIds.length})
             </button>
           )}
 
-          <div
-            className="mt-4"
-            style={{
-              display: "flex",
-              gap: "15px",
-              flexWrap: "wrap",
-            }}
-          >
+          <div className="mt-4 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
             {car.images.map((image) => (
               <div
                 key={image.id}
@@ -435,12 +488,8 @@ function CarDetails() {
                 onDragStart={() => handleDragStart(image.id)}
                 onDragOver={(e) => e.preventDefault()}
                 onDrop={() => handleDrop(image.id)}
-                className="rounded-lg bg-white shadow-sm transition hover:shadow-md"
-                style={{
-                  border: "1px solid #ccc",
-                  padding: "10px",
-                  cursor: "grab",
-                }}
+                className="group overflow-hidden rounded-2xl border border-slate-200 bg-white p-3 shadow-[0_2px_8px_rgba(15,23,42,0.04)] transition-all hover:-translate-y-0.5 hover:border-slate-300 hover:shadow-[0_10px_24px_rgba(15,23,42,0.08)]"
+                style={{ cursor: "grab" }}
               >
                 <input
                   type="checkbox"
@@ -485,7 +534,7 @@ function CarDetails() {
                 )}
 
                 {image.is_cover && (
-                  <p className="mt-2 text-sm font-semibold text-green-700">
+                  <p className="mt-2 text-[11px] font-bold uppercase tracking-wide text-emerald-600">
                     Cover Image
                   </p>
                 )}
@@ -494,7 +543,7 @@ function CarDetails() {
                   <button
                     type="button"
                     onClick={() => handleSetCoverImage(image.id)}
-                    className="mt-2 mr-2 rounded-md border border-gray-300 px-3 py-1.5 text-sm text-gray-700 hover:bg-gray-50"
+                    className="mt-2 mr-2 rounded-xl border border-slate-200 bg-white px-3 py-1.5 text-xs font-semibold text-slate-700 transition hover:bg-slate-50"
                   >
                     Set as Cover
                   </button>
@@ -503,7 +552,7 @@ function CarDetails() {
                 <button
                   type="button"
                   onClick={() => handleDeleteImage(image.id)}
-                  className="mt-2 rounded-md bg-red-600 px-3 py-1.5 text-sm text-white hover:bg-red-700"
+                  className="mt-2 rounded-xl bg-rose-500 px-3 py-1.5 text-xs font-semibold text-white transition hover:bg-rose-600"
                 >
                   Delete
                 </button>
@@ -517,7 +566,7 @@ function CarDetails() {
         <>
           <ExpenseForm onAddExpense={handleAddExpense} />
 
-          <h2 className="text-xl font-semibold text-gray-900">
+          <h2 className="text-lg font-bold tracking-tight text-slate-900">
             Vehicle Expenses
           </h2>
 
@@ -527,11 +576,11 @@ function CarDetails() {
             onDeleteExpense={handleDeleteExpense}
           />
 
-          <h3 className="text-lg font-semibold text-gray-800">
+          <h3 className="text-sm font-bold uppercase tracking-[0.08em] text-slate-700">
             Expense Summary
           </h3>
 
-          <p className="text-sm text-gray-700">
+          <p className="text-sm text-slate-600">
             Expense Count: {car.expense_summary?.expense_count ?? 0}
           </p>
 
@@ -539,7 +588,7 @@ function CarDetails() {
             Total Expenses: {car.expense_summary?.total_expenses ?? 0}
           </p>
 
-          <p className="text-sm font-semibold text-gray-900">
+          <p className="font-mono text-base font-bold text-slate-900">
             Net Cost: {car.expense_summary?.net_cost ?? 0}
           </p>
         </>

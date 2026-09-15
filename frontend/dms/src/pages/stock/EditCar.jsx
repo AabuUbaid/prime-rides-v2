@@ -166,30 +166,48 @@ function EditCar() {
 
   if (loading) {
     return (
-      <h2 className="p-6 text-xl font-semibold text-gray-900">Loading...</h2>
+      <div className="flex min-h-[50vh] items-center justify-center">
+        <div className="text-center">
+          <div className="mx-auto mb-3 h-8 w-8 animate-spin rounded-full border-2 border-slate-200 border-t-amber-500" />
+
+          <p className="text-sm font-medium text-slate-600">
+            Loading vehicle...
+          </p>
+        </div>
+      </div>
     );
   }
 
   return (
-    <div className="mx-auto max-w-5xl space-y-6 p-6">
+    <div className="mx-auto w-full max-w-[1400px] space-y-6 px-4 py-6 sm:px-6 lg:px-8">
       <div>
-        <h1 className="text-2xl font-bold text-gray-900">Edit Vehicle</h1>
+        <div className="mb-2 flex items-center gap-2">
+          <span className="h-1.5 w-1.5 rounded-full bg-amber-500" />
 
-        <p className="mt-1 text-sm text-gray-500">
+          <span className="text-[10px] font-bold uppercase tracking-[0.14em] text-amber-600">
+            Inventory
+          </span>
+        </div>
+
+        <h1 className="text-2xl font-bold tracking-tight text-slate-900">
+          Edit Vehicle
+        </h1>
+
+        <p className="mt-1 text-sm text-slate-500">
           Update vehicle information and inventory details.
         </p>
       </div>
 
       <form onSubmit={handleSubmit} className="space-y-6">
-        <div className="rounded-lg border border-gray-200 bg-white p-6 shadow-sm">
+        <div className="overflow-hidden rounded-2xl border border-slate-200 bg-white p-5 shadow-[0_2px_8px_rgba(15,23,42,0.04)] sm:p-6">
           <VehicleInformation formData={formData} handleChange={handleChange} />
         </div>
 
-        <div className="rounded-lg border border-gray-200 bg-white p-6 shadow-sm">
+        <div className="overflow-hidden rounded-2xl border border-slate-200 bg-white p-5 shadow-[0_2px_8px_rgba(15,23,42,0.04)] sm:p-6">
           <PricingInformation formData={formData} handleChange={handleChange} />
         </div>
 
-        <div className="rounded-lg border border-gray-200 bg-white p-6 shadow-sm">
+        <div className="overflow-hidden rounded-2xl border border-slate-200 bg-white p-5 shadow-[0_2px_8px_rgba(15,23,42,0.04)] sm:p-6">
           <VehicleDetails
             formData={formData}
             handleChange={handleChange}
@@ -197,7 +215,7 @@ function EditCar() {
           />
         </div>
 
-        <div className="rounded-lg border border-gray-200 bg-white p-6 shadow-sm">
+        <div className="overflow-hidden rounded-2xl border border-slate-200 bg-white p-5 shadow-[0_2px_8px_rgba(15,23,42,0.04)] sm:p-6">
           <UploadSection
             car={car}
             formData={formData}
@@ -205,7 +223,7 @@ function EditCar() {
           />
         </div>
 
-        <div className="rounded-lg border border-gray-200 bg-white p-6 shadow-sm">
+        <div className="overflow-hidden rounded-2xl border border-slate-200 bg-white p-5 shadow-[0_2px_8px_rgba(15,23,42,0.04)] sm:p-6">
           <SubmitSection
             saving={saving}
             handleSubmit={handleSubmit}

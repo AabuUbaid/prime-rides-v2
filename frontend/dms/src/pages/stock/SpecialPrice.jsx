@@ -1,11 +1,18 @@
 import { useEffect, useState } from "react";
+import { Check, Clock3, DollarSign, FileText, X } from "lucide-react";
 import { toast } from "react-toastify";
 import { useAuth } from "../../context/AuthContext";
+
 import {
   createSpecialPriceRequest,
   decideSpecialPriceRequest,
   getSpecialPriceRequests,
 } from "../../api/specialPrice";
+
+import Button from "../../components/ui/Button";
+import Card from "../../components/ui/Card";
+import Input from "../../components/ui/Input";
+import StatusBadge from "../../components/ui/StatusBadge";
 
 function unwrapData(response) {
   return response?.data ?? response;
@@ -163,204 +170,291 @@ export default function SpecialPrice() {
   }
 
   return (
-    <div className="p-6">
-      <div className="mb-6">
-        <h1 className="text-2xl font-semibold text-gray-900">Special Price</h1>
+    <div className="mx-auto max-w-[1600px] px-4 py-6 sm:px-6 lg:px-8">
+      {/* Page heading */}
+      <div className="mb-7">
+        <div className="flex flex-wrap items-start justify-between gap-4">
+          <div>
+            <div className="mb-2 flex items-center gap-2">
+              <span className="h-1.5 w-1.5 rounded-full bg-amber-500" />
 
-        <p className="mt-1 text-sm text-gray-500">
-          Manage transaction-specific special price requests.
-        </p>
+              <span className="text-[10px] font-bold uppercase tracking-[0.14em] text-amber-600">
+                Inventory
+              </span>
+            </div>
+
+            <h1 className="text-2xl font-bold tracking-tight text-slate-900">
+              Special Price
+            </h1>
+
+            <p className="mt-1 text-sm text-slate-500">
+              Manage transaction-specific special price requests.
+            </p>
+          </div>
+
+          <div className="hidden items-center gap-2 rounded-xl border border-slate-200 bg-white px-3 py-2 shadow-sm sm:flex">
+            <FileText size={15} className="text-slate-400" />
+
+            <span className="text-xs font-medium text-slate-500">
+              {requests.length} request
+              {requests.length === 1 ? "" : "s"}
+            </span>
+          </div>
+        </div>
       </div>
 
+      {/* Request form */}
       {!isMaster && (
-        <section className="mb-6 rounded-xl border border-gray-200 bg-white shadow-sm">
-          <div className="border-b border-gray-200 px-5 py-4">
-            <h2 className="font-semibold text-gray-900">
-              Request Special Price
-            </h2>
-          </div>
-
+        <Card
+          className="mb-6"
+          title="Request Special Price"
+          description="Submit a transaction-specific price request for a vehicle."
+        >
           <form
             onSubmit={handleCreateRequest}
-            className="grid gap-4 p-5 md:grid-cols-3"
+            className="grid grid-cols-1 gap-4 lg:grid-cols-[1fr_1fr_auto]"
           >
-            <div>
-              <label className="mb-2 block text-sm font-medium text-gray-700">
-                Car ID
-              </label>
+            <Input
+              id="special-price-car-id"
+              label="Car ID"
+              type="number"
+              min="1"
+              value={carId}
+              onChange={(event) => setCarId(event.target.value)}
+              placeholder="Vehicle ID"
+            />
 
-              <input
-                type="number"
-                min="1"
-                value={carId}
-                onChange={(event) => setCarId(event.target.value)}
-                placeholder="Vehicle ID"
-                className="w-full rounded-lg border border-gray-300 px-3 py-2.5 text-sm outline-none focus:border-gray-500"
-              />
-            </div>
-
-            <div>
-              <label className="mb-2 block text-sm font-medium text-gray-700">
-                Requested Price
-              </label>
-
-              <input
-                type="number"
-                min="0"
-                step="0.01"
-                value={requestedPrice}
-                onChange={(event) => setRequestedPrice(event.target.value)}
-                placeholder="0.00"
-                className="w-full rounded-lg border border-gray-300 px-3 py-2.5 text-sm outline-none focus:border-gray-500"
-              />
-            </div>
+            <Input
+              id="special-price-requested-price"
+              label="Requested Price"
+              type="number"
+              min="0"
+              step="0.01"
+              value={requestedPrice}
+              onChange={(event) => setRequestedPrice(event.target.value)}
+              placeholder="0.00"
+            />
 
             <div className="flex items-end">
-              <button
+              <Button
                 type="submit"
-                disabled={saving}
-                className="w-full rounded-lg bg-gray-900 px-4 py-2.5 text-sm font-medium text-white disabled:cursor-not-allowed disabled:opacity-50"
+                variant="primary"
+                size="lg"
+                loading={saving}
+                icon={DollarSign}
+                className="w-full lg:w-auto lg:min-w-[170px]"
               >
                 {saving ? "Submitting..." : "Submit Request"}
-              </button>
+              </Button>
             </div>
           </form>
-        </section>
+        </Card>
       )}
 
-      <section className="rounded-xl border border-gray-200 bg-white shadow-sm">
-        <div className="border-b border-gray-200 px-5 py-4">
-          <h2 className="font-semibold text-gray-900">
-            {isMaster ? "All Special Price Requests" : "My Requests"}
-          </h2>
-        </div>
-
+      {/* Requests */}
+      <Card
+        title={isMaster ? "All Special Price Requests" : "My Requests"}
+        description={
+          isMaster
+            ? "Review, approve, or decline special price requests."
+            : "Track the status of your submitted special price requests."
+        }
+        noPadding
+      >
         {loading ? (
-          <div className="p-6 text-sm text-gray-500">
-            Loading special price requests...
+          <div className="flex min-h-[220px] items-center justify-center px-6">
+            <div className="text-center">
+              <div className="mx-auto mb-3 h-7 w-7 animate-spin rounded-full border-2 border-slate-200 border-t-amber-500" />
+
+              <p className="text-sm font-medium text-slate-600">
+                Loading special price requests...
+              </p>
+
+              <p className="mt-1 text-xs text-slate-400">
+                Please wait while the latest requests are loaded.
+              </p>
+            </div>
           </div>
         ) : requests.length === 0 ? (
-          <div className="p-6 text-sm text-gray-500">
-            No special price requests found.
+          <div className="flex min-h-[240px] items-center justify-center px-6">
+            <div className="max-w-sm text-center">
+              <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-2xl bg-slate-100 text-slate-400">
+                <FileText size={20} />
+              </div>
+
+              <h3 className="mt-4 text-sm font-bold text-slate-800">
+                No special price requests
+              </h3>
+
+              <p className="mt-1 text-xs leading-5 text-slate-400">
+                There are currently no special price requests to display.
+              </p>
+            </div>
           </div>
         ) : (
           <div className="overflow-x-auto">
-            <table className="min-w-full divide-y divide-gray-200">
-              <thead className="bg-gray-50">
-                <tr>
-                  <th className="px-4 py-3 text-left text-xs font-medium uppercase text-gray-500">
+            <table className="min-w-[980px] w-full border-collapse">
+              <thead>
+                <tr className="border-b border-slate-200 bg-slate-50">
+                  <th className="px-5 py-3 text-left text-[10px] font-bold uppercase tracking-[0.08em] text-slate-500">
                     Vehicle
                   </th>
-                  <th className="px-4 py-3 text-left text-xs font-medium uppercase text-gray-500">
+
+                  <th className="px-5 py-3 text-left text-[10px] font-bold uppercase tracking-[0.08em] text-slate-500">
                     Requested
                   </th>
-                  <th className="px-4 py-3 text-left text-xs font-medium uppercase text-gray-500">
+
+                  <th className="px-5 py-3 text-left text-[10px] font-bold uppercase tracking-[0.08em] text-slate-500">
                     Status
                   </th>
-                  <th className="px-4 py-3 text-left text-xs font-medium uppercase text-gray-500">
+
+                  <th className="px-5 py-3 text-left text-[10px] font-bold uppercase tracking-[0.08em] text-slate-500">
                     Requested By
                   </th>
+
                   {isMaster && (
-                    <th className="px-4 py-3 text-left text-xs font-medium uppercase text-gray-500">
+                    <th className="px-5 py-3 text-left text-[10px] font-bold uppercase tracking-[0.08em] text-slate-500">
                       Decision
                     </th>
                   )}
                 </tr>
               </thead>
 
-              <tbody className="divide-y divide-gray-100 bg-white">
+              <tbody className="divide-y divide-slate-100 bg-white">
                 {requests.map((request) => (
-                  <tr key={request.id}>
-                    <td className="px-4 py-4 text-sm font-medium text-gray-900">
-                      {getCarLabel(request)}
+                  <tr
+                    key={request.id}
+                    className="transition-colors hover:bg-slate-50/70"
+                  >
+                    {/* Vehicle */}
+                    <td className="px-5 py-4 align-top">
+                      <div className="flex items-center gap-3">
+                        <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl border border-slate-200 bg-slate-50 text-slate-500">
+                          <CarIcon />
+                        </div>
+
+                        <div className="min-w-0">
+                          <p className="truncate text-sm font-semibold text-slate-800">
+                            {getCarLabel(request)}
+                          </p>
+
+                          <p className="mt-0.5 text-[10px] font-medium uppercase tracking-wide text-slate-400">
+                            Vehicle
+                          </p>
+                        </div>
+                      </div>
                     </td>
 
-                    <td className="px-4 py-4 text-sm text-gray-700">
-                      AED {formatCurrency(request.requested_price)}
+                    {/* Requested price */}
+                    <td className="px-5 py-4 align-top">
+                      <div className="flex items-center gap-2">
+                        <DollarSign size={14} className="text-amber-500" />
+
+                        <span className="font-mono text-sm font-semibold text-slate-800">
+                          AED {formatCurrency(request.requested_price)}
+                        </span>
+                      </div>
                     </td>
 
-                    <td className="px-4 py-4">
-                      <span className="rounded-full bg-gray-100 px-2.5 py-1 text-xs font-medium text-gray-700">
-                        {request.status || "-"}
-                      </span>
+                    {/* Status */}
+                    <td className="px-5 py-4 align-top">
+                      <StatusBadge status={request.status || "-"} />
                     </td>
 
-                    <td className="px-4 py-4 text-sm text-gray-700">
-                      {request.requested_by_name || "-"}
+                    {/* Requested by */}
+                    <td className="px-5 py-4 align-top">
+                      <p className="text-sm font-medium text-slate-700">
+                        {request.requested_by_name || "-"}
+                      </p>
                     </td>
 
+                    {/* Decision */}
                     {isMaster && (
-                      <td className="px-4 py-4">
+                      <td className="px-5 py-4 align-top">
                         {request.status === "pending" ? (
-                          <div className="min-w-[280px] space-y-2">
-                            <input
-                              type="number"
-                              min="0"
-                              step="0.01"
-                              value={approvedPrices[request.id] || ""}
-                              onChange={(event) =>
-                                setApprovedPrices((current) => ({
-                                  ...current,
-                                  [request.id]: event.target.value,
-                                }))
-                              }
-                              placeholder="Approved price"
-                              className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm"
-                            />
+                          <div className="min-w-[310px] max-w-[380px] space-y-3 rounded-xl border border-slate-200 bg-slate-50 p-3">
+                            <div>
+                              <p className="mb-2 text-[10px] font-bold uppercase tracking-[0.08em] text-slate-500">
+                                Approval Details
+                              </p>
 
-                            <input
-                              type="datetime-local"
-                              value={expiresAt[request.id] || ""}
-                              onChange={(event) =>
-                                setExpiresAt((current) => ({
-                                  ...current,
-                                  [request.id]: event.target.value,
-                                }))
-                              }
-                              className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm"
-                            />
+                              <div className="space-y-2">
+                                <Input
+                                  id={`approved-price-${request.id}`}
+                                  type="number"
+                                  min="0"
+                                  step="0.01"
+                                  value={approvedPrices[request.id] || ""}
+                                  onChange={(event) =>
+                                    setApprovedPrices((current) => ({
+                                      ...current,
+                                      [request.id]: event.target.value,
+                                    }))
+                                  }
+                                  placeholder="Approved price"
+                                />
 
-                            <input
-                              type="text"
-                              value={decisionNotes[request.id] || ""}
-                              onChange={(event) =>
-                                setDecisionNotes((current) => ({
-                                  ...current,
-                                  [request.id]: event.target.value,
-                                }))
-                              }
-                              placeholder="Decision note (optional)"
-                              className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm"
-                            />
+                                <Input
+                                  id={`expires-at-${request.id}`}
+                                  type="datetime-local"
+                                  value={expiresAt[request.id] || ""}
+                                  onChange={(event) =>
+                                    setExpiresAt((current) => ({
+                                      ...current,
+                                      [request.id]: event.target.value,
+                                    }))
+                                  }
+                                />
 
-                            <div className="flex gap-2">
-                              <button
+                                <Input
+                                  id={`decision-note-${request.id}`}
+                                  type="text"
+                                  value={decisionNotes[request.id] || ""}
+                                  onChange={(event) =>
+                                    setDecisionNotes((current) => ({
+                                      ...current,
+                                      [request.id]: event.target.value,
+                                    }))
+                                  }
+                                  placeholder="Decision note (optional)"
+                                />
+                              </div>
+                            </div>
+
+                            <div className="flex flex-wrap gap-2">
+                              <Button
                                 type="button"
+                                variant="success"
+                                size="sm"
+                                loading={saving}
+                                icon={Check}
                                 onClick={() =>
                                   handleDecision(request.id, "approve")
                                 }
-                                disabled={saving}
-                                className="rounded-lg bg-gray-900 px-3 py-2 text-xs font-medium text-white disabled:opacity-50"
                               >
                                 Approve
-                              </button>
+                              </Button>
 
-                              <button
+                              <Button
                                 type="button"
+                                variant="secondary"
+                                size="sm"
+                                disabled={saving}
+                                icon={X}
                                 onClick={() =>
                                   handleDecision(request.id, "decline")
                                 }
-                                disabled={saving}
-                                className="rounded-lg border border-gray-300 px-3 py-2 text-xs font-medium text-gray-700 disabled:opacity-50"
                               >
                                 Decline
-                              </button>
+                              </Button>
                             </div>
                           </div>
                         ) : (
-                          <span className="text-sm text-gray-500">
-                            No action available
-                          </span>
+                          <div className="flex items-center gap-2 text-xs text-slate-400">
+                            <Clock3 size={14} />
+
+                            <span>No action available</span>
+                          </div>
                         )}
                       </td>
                     )}
@@ -370,7 +464,29 @@ export default function SpecialPrice() {
             </table>
           </div>
         )}
-      </section>
+      </Card>
     </div>
+  );
+}
+
+function CarIcon() {
+  return (
+    <svg
+      width="16"
+      height="16"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="1.8"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      aria-hidden="true"
+    >
+      <path d="M5 17h14" />
+      <path d="M6 17a2 2 0 1 0 4 0" />
+      <path d="M14 17a2 2 0 1 0 4 0" />
+      <path d="M4 17v-3.5a2 2 0 0 1 1.5-1.94l1.5-.38 1.5-4.18h8l1.5 4.18 1.5.38A2 2 0 0 1 20 13.5V17" />
+      <path d="M8 11h8" />
+    </svg>
   );
 }

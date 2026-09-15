@@ -1,9 +1,15 @@
 function VehicleInformation({ formData, handleChange }) {
   return (
-    <div className="space-y-4">
-      <h2 className="text-lg font-semibold text-gray-900">
-        Vehicle Information
-      </h2>
+    <div className="space-y-5">
+      <div>
+        <h2 className="text-base font-bold tracking-tight text-slate-900">
+          Vehicle Information
+        </h2>
+
+        <p className="mt-1 text-xs text-slate-500">
+          Basic vehicle identity and classification.
+        </p>
+      </div>
 
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
         <input
@@ -12,7 +18,7 @@ function VehicleInformation({ formData, handleChange }) {
           placeholder="Year"
           value={formData.year}
           onChange={handleChange}
-          className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm text-gray-900 outline-none transition focus:border-blue-500 focus:ring-1 focus:ring-blue-500"
+          className="h-10 w-full rounded-xl border border-slate-200 bg-white px-3 text-sm text-slate-800 outline-none transition placeholder:text-slate-400 focus:border-amber-400 focus:ring-2 focus:ring-amber-400/15"
         />
 
         <input
@@ -20,7 +26,7 @@ function VehicleInformation({ formData, handleChange }) {
           placeholder="Make"
           value={formData.make}
           onChange={handleChange}
-          className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm text-gray-900 outline-none transition focus:border-blue-500 focus:ring-1 focus:ring-blue-500"
+          className="h-10 w-full rounded-xl border border-slate-200 bg-white px-3 text-sm text-slate-800 outline-none transition placeholder:text-slate-400 focus:border-amber-400 focus:ring-2 focus:ring-amber-400/15"
         />
 
         <input
@@ -28,7 +34,7 @@ function VehicleInformation({ formData, handleChange }) {
           placeholder="Model"
           value={formData.model}
           onChange={handleChange}
-          className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm text-gray-900 outline-none transition focus:border-blue-500 focus:ring-1 focus:ring-blue-500"
+          className="h-10 w-full rounded-xl border border-slate-200 bg-white px-3 text-sm text-slate-800 outline-none transition placeholder:text-slate-400 focus:border-amber-400 focus:ring-2 focus:ring-amber-400/15"
         />
 
         <input
@@ -36,7 +42,7 @@ function VehicleInformation({ formData, handleChange }) {
           placeholder="Variant"
           value={formData.variant}
           onChange={handleChange}
-          className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm text-gray-900 outline-none transition focus:border-blue-500 focus:ring-1 focus:ring-blue-500"
+          className="h-10 w-full rounded-xl border border-slate-200 bg-white px-3 text-sm text-slate-800 outline-none transition placeholder:text-slate-400 focus:border-amber-400 focus:ring-2 focus:ring-amber-400/15"
         />
 
         <input
@@ -44,14 +50,14 @@ function VehicleInformation({ formData, handleChange }) {
           placeholder="Colour"
           value={formData.colour}
           onChange={handleChange}
-          className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm text-gray-900 outline-none transition focus:border-blue-500 focus:ring-1 focus:ring-blue-500"
+          className="h-10 w-full rounded-xl border border-slate-200 bg-white px-3 text-sm text-slate-800 outline-none transition placeholder:text-slate-400 focus:border-amber-400 focus:ring-2 focus:ring-amber-400/15"
         />
 
         <select
           name="vehicle_type"
           value={formData.vehicle_type}
           onChange={handleChange}
-          className="w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-sm text-gray-900 outline-none transition focus:border-blue-500 focus:ring-1 focus:ring-blue-500"
+          className="h-10 w-full rounded-xl border border-slate-200 bg-white px-3 text-sm text-slate-800 outline-none transition focus:border-amber-400 focus:ring-2 focus:ring-amber-400/15"
         >
           <option value="">Select Vehicle Type</option>
           <option value="sedan">Sedan</option>

@@ -1,11 +1,10 @@
 import PrintDocument from "../PrintDocument";
+import { resolveBackendUrl } from "../../../api/url";
 
 function getImageUrl(imagePath) {
   if (!imagePath) return null;
 
-  return imagePath.startsWith("http")
-    ? imagePath
-    : `http://localhost:8000${imagePath}`;
+  return resolveBackendUrl(imagePath);
 }
 
 function getCoverImage(car) {

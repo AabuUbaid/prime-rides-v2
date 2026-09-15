@@ -11,6 +11,8 @@ import {
 import { Link, useParams } from "react-router-dom";
 import { toast } from "react-toastify";
 
+import { resolveBackendUrl } from "../../api/url";
+
 import {
   deleteCustomer,
   deleteCustomerDocument,
@@ -96,11 +98,7 @@ function getDocumentUrl(documentPath) {
     return documentPath;
   }
 
-  if (documentPath.startsWith("/")) {
-    return `http://localhost:8000${documentPath}`;
-  }
-
-  return `http://localhost:8000/${documentPath}`;
+  return resolveBackendUrl(documentPath);
 }
 
 function isImageDocument(path) {

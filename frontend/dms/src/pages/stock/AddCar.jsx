@@ -108,32 +108,40 @@ function AddCar() {
   };
 
   return (
-    <form onSubmit={handleSubmit} className="mx-auto max-w-5xl space-y-6 p-6">
+    <form
+      onSubmit={handleSubmit}
+      className="mx-auto w-full max-w-[1400px] space-y-6 px-4 py-6 sm:px-6 lg:px-8"
+    >
       <div>
-        <h1 className="text-2xl font-bold text-gray-900">Add Vehicle</h1>
+        <div className="mb-2 flex items-center gap-2">
+          <span className="h-1.5 w-1.5 rounded-full bg-amber-500" />
 
-        <p className="mt-1 text-sm text-gray-500">
+          <span className="text-[10px] font-bold uppercase tracking-[0.14em] text-amber-600">
+            Inventory
+          </span>
+        </div>
+
+        <h1 className="text-2xl font-bold tracking-tight text-slate-900">
+          Add Vehicle
+        </h1>
+
+        <p className="mt-1 text-sm text-slate-500">
           Add a new vehicle to the inventory.
         </p>
       </div>
-
-      <div className="rounded-lg border border-gray-200 bg-white p-6 shadow-sm">
+      <div className="overflow-hidden rounded-2xl border border-slate-200 bg-white p-5 shadow-[0_2px_8px_rgba(15,23,42,0.04)] sm:p-6">
         <VehicleInformation formData={formData} handleChange={handleChange} />
       </div>
-
-      <div className="rounded-lg border border-gray-200 bg-white p-6 shadow-sm">
+      <div className="overflow-hidden rounded-2xl border border-slate-200 bg-white p-5 shadow-[0_2px_8px_rgba(15,23,42,0.04)] sm:p-6">
         <PricingInformation formData={formData} handleChange={handleChange} />
       </div>
-
-      <div className="rounded-lg border border-gray-200 bg-white p-6 shadow-sm">
+      <div className="overflow-hidden rounded-2xl border border-slate-200 bg-white p-5 shadow-[0_2px_8px_rgba(15,23,42,0.04)] sm:p-6">
         <VehicleDetails formData={formData} handleChange={handleChange} />
       </div>
-
-      <div className="rounded-lg border border-gray-200 bg-white p-6 shadow-sm">
+      <div className="overflow-hidden rounded-2xl border border-slate-200 bg-white p-5 shadow-[0_2px_8px_rgba(15,23,42,0.04)] sm:p-6">
         <UploadSection formData={formData} setFormData={setFormData} />
       </div>
-
-      <div className="rounded-lg border border-gray-200 bg-white p-6 shadow-sm">
+      <div className="overflow-hidden rounded-2xl border border-slate-200 bg-white p-5 shadow-[0_2px_8px_rgba(15,23,42,0.04)] sm:p-6">
         <SubmitSection saving={saving} />
       </div>
     </form>

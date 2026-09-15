@@ -4,6 +4,8 @@ import "react-toastify/dist/ReactToastify.css";
 
 import { AuthProvider } from "./context/AuthContext";
 import ProtectedRoute from "./routes/ProtectedRoute";
+import AppLayout from "./components/layout/AppLayout";
+
 import AddCar from "./pages/stock/AddCar";
 import Stock from "./pages/stock/Stock";
 import CarDetails from "./pages/stock/CarDetails";
@@ -69,465 +71,468 @@ function App() {
     <BrowserRouter>
       <AuthProvider>
         <ToastContainer position="top-right" autoClose={2500} />
-        <Routes>
-          <Route path="/" element={<Navigate to="/dashboard" replace />} />
 
-          <Route path="/login" element={<Login />} />
+        <AppLayout>
+          <Routes>
+            <Route path="/" element={<Navigate to="/dashboard" replace />} />
 
-          <Route
-            path="/dashboard"
-            element={
-              <ProtectedRoute>
-                <Dashboard />
-              </ProtectedRoute>
-            }
-          />
+            <Route path="/login" element={<Login />} />
 
-          <Route
-            path="/finance/master"
-            element={
-              <ProtectedRoute>
-                <FinanceMaster />
-              </ProtectedRoute>
-            }
-          />
+            <Route
+              path="/dashboard"
+              element={
+                <ProtectedRoute>
+                  <Dashboard />
+                </ProtectedRoute>
+              }
+            />
 
-          <Route
-            path="/finance/settings"
-            element={
-              <ProtectedRoute>
-                <FinanceSettings />
-              </ProtectedRoute>
-            }
-          />
+            <Route
+              path="/finance/master"
+              element={
+                <ProtectedRoute>
+                  <FinanceMaster />
+                </ProtectedRoute>
+              }
+            />
 
-          <Route
-            path="/finance/settings/banks"
-            element={
-              <ProtectedRoute>
-                <BankManagement />
-              </ProtectedRoute>
-            }
-          />
+            <Route
+              path="/finance/settings"
+              element={
+                <ProtectedRoute>
+                  <FinanceSettings />
+                </ProtectedRoute>
+              }
+            />
 
-          <Route
-            path="/finance/settings/expense-presets"
-            element={
-              <ProtectedRoute>
-                <ExpensePresetManagement />
-              </ProtectedRoute>
-            }
-          />
+            <Route
+              path="/finance/settings/banks"
+              element={
+                <ProtectedRoute>
+                  <BankManagement />
+                </ProtectedRoute>
+              }
+            />
 
-          <Route
-            path="/finance/settings/insurance-bands"
-            element={
-              <ProtectedRoute>
-                <InsuranceBandManagement />
-              </ProtectedRoute>
-            }
-          />
+            <Route
+              path="/finance/settings/expense-presets"
+              element={
+                <ProtectedRoute>
+                  <ExpensePresetManagement />
+                </ProtectedRoute>
+              }
+            />
 
-          <Route
-            path="/finance/settings/service-packages"
-            element={
-              <ProtectedRoute>
-                <ServicePackageManagement />
-              </ProtectedRoute>
-            }
-          />
+            <Route
+              path="/finance/settings/insurance-bands"
+              element={
+                <ProtectedRoute>
+                  <InsuranceBandManagement />
+                </ProtectedRoute>
+              }
+            />
 
-          <Route
-            path="/finance/settings/bank-processing"
-            element={
-              <ProtectedRoute>
-                <BankProcessingManagement />
-              </ProtectedRoute>
-            }
-          />
+            <Route
+              path="/finance/settings/service-packages"
+              element={
+                <ProtectedRoute>
+                  <ServicePackageManagement />
+                </ProtectedRoute>
+              }
+            />
 
-          <Route
-            path="/finance/emi"
-            element={
-              <ProtectedRoute>
-                <EmiCalculator />
-              </ProtectedRoute>
-            }
-          />
+            <Route
+              path="/finance/settings/bank-processing"
+              element={
+                <ProtectedRoute>
+                  <BankProcessingManagement />
+                </ProtectedRoute>
+              }
+            />
 
-          <Route
-            path="/finance/emi/list"
-            element={
-              <ProtectedRoute>
-                <EmiList />
-              </ProtectedRoute>
-            }
-          />
+            <Route
+              path="/finance/emi"
+              element={
+                <ProtectedRoute>
+                  <EmiCalculator />
+                </ProtectedRoute>
+              }
+            />
 
-          <Route
-            path="/finance/emi/:id"
-            element={
-              <ProtectedRoute>
-                <EmiDetail />
-              </ProtectedRoute>
-            }
-          />
+            <Route
+              path="/finance/emi/list"
+              element={
+                <ProtectedRoute>
+                  <EmiList />
+                </ProtectedRoute>
+              }
+            />
 
-          <Route
-            path="/finance/insurance"
-            element={
-              <ProtectedRoute>
-                <Insurance />
-              </ProtectedRoute>
-            }
-          />
+            <Route
+              path="/finance/emi/:id"
+              element={
+                <ProtectedRoute>
+                  <EmiDetail />
+                </ProtectedRoute>
+              }
+            />
 
-          <Route
-            path="/finance/insurance/:id"
-            element={
-              <ProtectedRoute>
-                <InsuranceDetail />
-              </ProtectedRoute>
-            }
-          />
+            <Route
+              path="/finance/insurance"
+              element={
+                <ProtectedRoute>
+                  <Insurance />
+                </ProtectedRoute>
+              }
+            />
 
-          <Route
-            path="/finance/proformas"
-            element={
-              <ProtectedRoute>
-                <Proformas />
-              </ProtectedRoute>
-            }
-          />
+            <Route
+              path="/finance/insurance/:id"
+              element={
+                <ProtectedRoute>
+                  <InsuranceDetail />
+                </ProtectedRoute>
+              }
+            />
 
-          <Route
-            path="/finance/proformas/new"
-            element={
-              <ProtectedRoute>
-                <ProformaCreate />
-              </ProtectedRoute>
-            }
-          />
+            <Route
+              path="/finance/proformas"
+              element={
+                <ProtectedRoute>
+                  <Proformas />
+                </ProtectedRoute>
+              }
+            />
 
-          <Route
-            path="/finance/proformas/:id"
-            element={
-              <ProtectedRoute>
-                <ProformaDetail />
-              </ProtectedRoute>
-            }
-          />
+            <Route
+              path="/finance/proformas/new"
+              element={
+                <ProtectedRoute>
+                  <ProformaCreate />
+                </ProtectedRoute>
+              }
+            />
 
-          <Route
-            path="/finance/proformas/:id/print"
-            element={
-              <ProtectedRoute>
-                <ProformaPrint />
-              </ProtectedRoute>
-            }
-          />
+            <Route
+              path="/finance/proformas/:id"
+              element={
+                <ProtectedRoute>
+                  <ProformaDetail />
+                </ProtectedRoute>
+              }
+            />
 
-          <Route
-            path="/finance/delivery-notes"
-            element={
-              <ProtectedRoute>
-                <DeliveryNotes />
-              </ProtectedRoute>
-            }
-          />
+            <Route
+              path="/finance/proformas/:id/print"
+              element={
+                <ProtectedRoute>
+                  <ProformaPrint />
+                </ProtectedRoute>
+              }
+            />
 
-          <Route
-            path="/finance/delivery-notes/new"
-            element={
-              <ProtectedRoute>
-                <DeliveryNoteCreate />
-              </ProtectedRoute>
-            }
-          />
+            <Route
+              path="/finance/delivery-notes"
+              element={
+                <ProtectedRoute>
+                  <DeliveryNotes />
+                </ProtectedRoute>
+              }
+            />
 
-          <Route
-            path="/finance/delivery-notes/:id"
-            element={
-              <ProtectedRoute>
-                <DeliveryNoteDetail />
-              </ProtectedRoute>
-            }
-          />
+            <Route
+              path="/finance/delivery-notes/new"
+              element={
+                <ProtectedRoute>
+                  <DeliveryNoteCreate />
+                </ProtectedRoute>
+              }
+            />
 
-          <Route
-            path="/finance/delivery-notes/:id/print"
-            element={
-              <ProtectedRoute>
-                <DeliveryNotePrint />
-              </ProtectedRoute>
-            }
-          />
+            <Route
+              path="/finance/delivery-notes/:id"
+              element={
+                <ProtectedRoute>
+                  <DeliveryNoteDetail />
+                </ProtectedRoute>
+              }
+            />
 
-          <Route
-            path="/deals"
-            element={
-              <ProtectedRoute>
-                <Quotes />
-              </ProtectedRoute>
-            }
-          />
+            <Route
+              path="/finance/delivery-notes/:id/print"
+              element={
+                <ProtectedRoute>
+                  <DeliveryNotePrint />
+                </ProtectedRoute>
+              }
+            />
 
-          <Route
-            path="/deals/new"
-            element={
-              <ProtectedRoute>
-                <NewQuote />
-              </ProtectedRoute>
-            }
-          />
+            <Route
+              path="/deals"
+              element={
+                <ProtectedRoute>
+                  <Quotes />
+                </ProtectedRoute>
+              }
+            />
 
-          <Route
-            path="/deals/:id"
-            element={
-              <ProtectedRoute>
-                <QuoteDetail />
-              </ProtectedRoute>
-            }
-          />
+            <Route
+              path="/deals/new"
+              element={
+                <ProtectedRoute>
+                  <NewQuote />
+                </ProtectedRoute>
+              }
+            />
 
-          <Route
-            path="/customers"
-            element={
-              <ProtectedRoute>
-                <Customers />
-              </ProtectedRoute>
-            }
-          />
+            <Route
+              path="/deals/:id"
+              element={
+                <ProtectedRoute>
+                  <QuoteDetail />
+                </ProtectedRoute>
+              }
+            />
 
-          <Route
-            path="/customers/new"
-            element={
-              <ProtectedRoute>
-                <NewCustomer />
-              </ProtectedRoute>
-            }
-          />
+            <Route
+              path="/customers"
+              element={
+                <ProtectedRoute>
+                  <Customers />
+                </ProtectedRoute>
+              }
+            />
 
-          <Route
-            path="/customers/:id"
-            element={
-              <ProtectedRoute>
-                <CustomerDetail />
-              </ProtectedRoute>
-            }
-          />
+            <Route
+              path="/customers/new"
+              element={
+                <ProtectedRoute>
+                  <NewCustomer />
+                </ProtectedRoute>
+              }
+            />
 
-          <Route
-            path="/customers/:id/edit"
-            element={
-              <ProtectedRoute>
-                <EditCustomer />
-              </ProtectedRoute>
-            }
-          />
-          <Route
-            path="/finance/bank-loans"
-            element={
-              <RoleRoute allowedRoles={["MASTER"]}>
-                <BankLoans />
-              </RoleRoute>
-            }
-          />
+            <Route
+              path="/customers/:id"
+              element={
+                <ProtectedRoute>
+                  <CustomerDetail />
+                </ProtectedRoute>
+              }
+            />
 
-          <Route
-            path="/finance/bank-loans/:id"
-            element={
-              <RoleRoute allowedRoles={["MASTER"]}>
-                <BankLoanDetail />
-              </RoleRoute>
-            }
-          />
+            <Route
+              path="/customers/:id/edit"
+              element={
+                <ProtectedRoute>
+                  <EditCustomer />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/finance/bank-loans"
+              element={
+                <RoleRoute allowedRoles={["MASTER"]}>
+                  <BankLoans />
+                </RoleRoute>
+              }
+            />
 
-          <Route
-            path="/finance/cash-deals"
-            element={
-              <RoleRoute allowedRoles={["MASTER"]}>
-                <CashDeals />
-              </RoleRoute>
-            }
-          />
+            <Route
+              path="/finance/bank-loans/:id"
+              element={
+                <RoleRoute allowedRoles={["MASTER"]}>
+                  <BankLoanDetail />
+                </RoleRoute>
+              }
+            />
 
-          <Route
-            path="/finance/cash-deals/:id"
-            element={
-              <RoleRoute allowedRoles={["MASTER"]}>
-                <CashDealDetail />
-              </RoleRoute>
-            }
-          />
+            <Route
+              path="/finance/cash-deals"
+              element={
+                <RoleRoute allowedRoles={["MASTER"]}>
+                  <CashDeals />
+                </RoleRoute>
+              }
+            />
 
-          <Route
-            path="/finance/cash-receipts"
-            element={
-              <RoleRoute allowedRoles={["MASTER", "ADMIN"]}>
-                <CashReceipts />
-              </RoleRoute>
-            }
-          />
+            <Route
+              path="/finance/cash-deals/:id"
+              element={
+                <RoleRoute allowedRoles={["MASTER"]}>
+                  <CashDealDetail />
+                </RoleRoute>
+              }
+            />
 
-          <Route
-            path="/finance/cash-receipts/:id"
-            element={
-              <RoleRoute allowedRoles={["MASTER", "ADMIN"]}>
-                <CashReceiptDetail />
-              </RoleRoute>
-            }
-          />
+            <Route
+              path="/finance/cash-receipts"
+              element={
+                <RoleRoute allowedRoles={["MASTER", "ADMIN"]}>
+                  <CashReceipts />
+                </RoleRoute>
+              }
+            />
 
-          <Route
-            path="/finance/cash-receipts/new"
-            element={
-              <RoleRoute allowedRoles={["MASTER", "ADMIN"]}>
-                <CashReceiptCreate />
-              </RoleRoute>
-            }
-          />
+            <Route
+              path="/finance/cash-receipts/:id"
+              element={
+                <RoleRoute allowedRoles={["MASTER", "ADMIN"]}>
+                  <CashReceiptDetail />
+                </RoleRoute>
+              }
+            />
 
-          <Route
-            path="/finance/balance-sheets"
-            element={
-              <ProtectedRoute>
-                <BalanceSheets />
-              </ProtectedRoute>
-            }
-          />
+            <Route
+              path="/finance/cash-receipts/new"
+              element={
+                <RoleRoute allowedRoles={["MASTER", "ADMIN"]}>
+                  <CashReceiptCreate />
+                </RoleRoute>
+              }
+            />
 
-          <Route
-            path="/finance/balance-sheets/:id"
-            element={
-              <ProtectedRoute>
-                <BalanceSheetDetail />
-              </ProtectedRoute>
-            }
-          />
+            <Route
+              path="/finance/balance-sheets"
+              element={
+                <ProtectedRoute>
+                  <BalanceSheets />
+                </ProtectedRoute>
+              }
+            />
 
-          <Route
-            path="/finance/balance-sheets/new"
-            element={
-              <ProtectedRoute>
-                <BalanceSheetCreate />
-              </ProtectedRoute>
-            }
-          />
+            <Route
+              path="/finance/balance-sheets/:id"
+              element={
+                <ProtectedRoute>
+                  <BalanceSheetDetail />
+                </ProtectedRoute>
+              }
+            />
 
-          <Route
-            path="/finance/balance-sheets/:id/print"
-            element={
-              <ProtectedRoute>
-                <BalanceSheetPrint />
-              </ProtectedRoute>
-            }
-          />
+            <Route
+              path="/finance/balance-sheets/new"
+              element={
+                <ProtectedRoute>
+                  <BalanceSheetCreate />
+                </ProtectedRoute>
+              }
+            />
 
-          <Route
-            path="/progression"
-            element={
-              <ProtectedRoute>
-                <Progressions />
-              </ProtectedRoute>
-            }
-          />
+            <Route
+              path="/finance/balance-sheets/:id/print"
+              element={
+                <ProtectedRoute>
+                  <BalanceSheetPrint />
+                </ProtectedRoute>
+              }
+            />
 
-          <Route
-            path="/progression/:id"
-            element={
-              <ProtectedRoute>
-                <ProgressionDetail />
-              </ProtectedRoute>
-            }
-          />
+            <Route
+              path="/progression"
+              element={
+                <ProtectedRoute>
+                  <Progressions />
+                </ProtectedRoute>
+              }
+            />
 
-          <Route
-            path="/staff"
-            element={
-              <RoleRoute allowedRoles={["MASTER", "ADMIN"]}>
-                <Staff />
-              </RoleRoute>
-            }
-          />
-          <Route
-            path="/staff/:id/performance"
-            element={
-              <RoleRoute allowedRoles={["MASTER", "ADMIN"]}>
-                <StaffPerformance />
-              </RoleRoute>
-            }
-          />
-          <Route
-            path="/user-access"
-            element={
-              <RoleRoute allowedRoles={["MASTER"]}>
-                <UserAccess />
-              </RoleRoute>
-            }
-          />
-          <Route
-            path="/leads"
-            element={
-              <ProtectedRoute>
-                <Leads />
-              </ProtectedRoute>
-            }
-          />
-          <Route
-            path="/leads/:id"
-            element={
-              <ProtectedRoute>
-                <LeadDetail />
-              </ProtectedRoute>
-            }
-          />
-          <Route
-            path="/ledger-accounts"
-            element={
-              <ProtectedRoute>
-                <LedgerAccounts />
-              </ProtectedRoute>
-            }
-          />
+            <Route
+              path="/progression/:id"
+              element={
+                <ProtectedRoute>
+                  <ProgressionDetail />
+                </ProtectedRoute>
+              }
+            />
 
-          <Route
-            path="/stock/add"
-            element={
-              <ProtectedRoute>
-                <AddCar />
-              </ProtectedRoute>
-            }
-          />
+            <Route
+              path="/staff"
+              element={
+                <RoleRoute allowedRoles={["MASTER", "ADMIN"]}>
+                  <Staff />
+                </RoleRoute>
+              }
+            />
+            <Route
+              path="/staff/:id/performance"
+              element={
+                <RoleRoute allowedRoles={["MASTER", "ADMIN"]}>
+                  <StaffPerformance />
+                </RoleRoute>
+              }
+            />
+            <Route
+              path="/user-access"
+              element={
+                <RoleRoute allowedRoles={["MASTER"]}>
+                  <UserAccess />
+                </RoleRoute>
+              }
+            />
+            <Route
+              path="/leads"
+              element={
+                <ProtectedRoute>
+                  <Leads />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/leads/:id"
+              element={
+                <ProtectedRoute>
+                  <LeadDetail />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/ledger-accounts"
+              element={
+                <ProtectedRoute>
+                  <LedgerAccounts />
+                </ProtectedRoute>
+              }
+            />
 
-          <Route
-            path="/stock"
-            element={
-              <ProtectedRoute>
-                <Stock />
-              </ProtectedRoute>
-            }
-          />
+            <Route
+              path="/stock/add"
+              element={
+                <ProtectedRoute>
+                  <AddCar />
+                </ProtectedRoute>
+              }
+            />
 
-          <Route
-            path="/stock/:id"
-            element={
-              <ProtectedRoute>
-                <CarDetails />
-              </ProtectedRoute>
-            }
-          />
+            <Route
+              path="/stock"
+              element={
+                <ProtectedRoute>
+                  <Stock />
+                </ProtectedRoute>
+              }
+            />
 
-          <Route
-            path="/stock/:id/edit"
-            element={
-              <ProtectedRoute>
-                <EditCar />
-              </ProtectedRoute>
-            }
-          />
-          <Route path="/special-price" element={<SpecialPrice />} />
-        </Routes>
+            <Route
+              path="/stock/:id"
+              element={
+                <ProtectedRoute>
+                  <CarDetails />
+                </ProtectedRoute>
+              }
+            />
+
+            <Route
+              path="/stock/:id/edit"
+              element={
+                <ProtectedRoute>
+                  <EditCar />
+                </ProtectedRoute>
+              }
+            />
+            <Route path="/special-price" element={<SpecialPrice />} />
+          </Routes>
+        </AppLayout>
       </AuthProvider>
     </BrowserRouter>
   );

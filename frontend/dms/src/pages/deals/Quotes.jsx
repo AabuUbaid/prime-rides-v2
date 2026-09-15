@@ -19,11 +19,7 @@ const STATUS_LABELS = {
 };
 
 function formatCurrency(value) {
-  if (
-    value === null ||
-    value === undefined ||
-    value === ""
-  ) {
+  if (value === null || value === undefined || value === "") {
     return "-";
   }
 
@@ -103,18 +99,13 @@ export default function Quotes() {
           search,
         });
 
-        const data = Array.isArray(response?.data)
-          ? response.data
-          : [];
+        const data = Array.isArray(response?.data) ? response.data : [];
 
         setQuotes(data);
       } catch (err) {
         setQuotes([]);
 
-        setError(
-          err?.message ||
-            "Unable to load quotes. Please try again.",
-        );
+        setError(err?.message || "Unable to load quotes. Please try again.");
       } finally {
         setLoading(false);
         setRefreshing(false);
@@ -124,50 +115,45 @@ export default function Quotes() {
   );
 
   useEffect(() => {
-  let cancelled = false;
+    let cancelled = false;
 
-  async function loadInitialQuotes() {
-    try {
-      setLoading(true);
-      setError("");
+    async function loadInitialQuotes() {
+      try {
+        setLoading(true);
+        setError("");
 
-      const response = await getQuotes({
-        status,
-        search,
-      });
+        const response = await getQuotes({
+          status,
+          search,
+        });
 
-      if (cancelled) {
-        return;
-      }
+        if (cancelled) {
+          return;
+        }
 
-      const data = Array.isArray(response?.data)
-        ? response.data
-        : [];
+        const data = Array.isArray(response?.data) ? response.data : [];
 
-      setQuotes(data);
-    } catch (err) {
-      if (cancelled) {
-        return;
-      }
+        setQuotes(data);
+      } catch (err) {
+        if (cancelled) {
+          return;
+        }
 
-      setQuotes([]);
-      setError(
-        err?.message ||
-          "Unable to load quotes. Please try again.",
-      );
-    } finally {
-      if (!cancelled) {
-        setLoading(false);
+        setQuotes([]);
+        setError(err?.message || "Unable to load quotes. Please try again.");
+      } finally {
+        if (!cancelled) {
+          setLoading(false);
+        }
       }
     }
-  }
 
-  loadInitialQuotes();
+    loadInitialQuotes();
 
-  return () => {
-    cancelled = true;
-  };
-}, [search, status]);
+    return () => {
+      cancelled = true;
+    };
+  }, [search, status]);
 
   useEffect(() => {
     return () => {
@@ -212,11 +198,18 @@ export default function Quotes() {
   };
 
   return (
-    <div className="p-6">
+    <div className="mx-auto w-full max-w-[1600px] px-4 py-6 sm:px-6 lg:px-8">
       {/* Header */}
       <div className="mb-6 flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
+        <div className="mb-2 flex items-center gap-2">
+          <span className="h-1.5 w-1.5 rounded-full bg-amber-500" />
+
+          <span className="text-[10px] font-bold uppercase tracking-[0.14em] text-amber-600">
+            Sales & Customers
+          </span>
+        </div>
         <div>
-          <h1 className="text-2xl font-semibold text-gray-900">
+          <h1 className="text-2xl font-bold tracking-tight text-slate-900">
             Quotes & Deals
           </h1>
 
@@ -226,23 +219,23 @@ export default function Quotes() {
         </div>
 
         <div className="flex flex-wrap gap-2">
-  <button
-    type="button"
-    onClick={() => navigate("/deals/new")}
-    className="rounded-lg bg-gray-900 px-4 py-2 text-sm font-medium text-white hover:bg-gray-800"
-  >
-    New Quote
-  </button>
+          <button
+            type="button"
+            onClick={() => navigate("/deals/new")}
+            className="rounded-xl bg-amber-500 px-4 py-2.5 text-sm font-bold text-slate-950 shadow-sm transition hover:bg-amber-400"
+          >
+            New Quote
+          </button>
 
-  <button
-    type="button"
-    onClick={handleRefresh}
-    disabled={loading || refreshing}
-    className="rounded-lg border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-50"
-  >
-    {refreshing ? "Refreshing..." : "Refresh"}
-  </button>
-</div>
+          <button
+            type="button"
+            onClick={handleRefresh}
+            disabled={loading || refreshing}
+            className="rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm font-semibold text-slate-700 shadow-sm transition hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-50"
+          >
+            {refreshing ? "Refreshing..." : "Refresh"}
+          </button>
+        </div>
       </div>
 
       {/* Status tabs */}
@@ -255,13 +248,11 @@ export default function Quotes() {
               <button
                 key={tab.value}
                 type="button"
-                onClick={() =>
-                  handleStatusChange(tab.value)
-                }
-                className={`rounded-lg px-4 py-2 text-sm font-medium transition ${
+                onClick={() => handleStatusChange(tab.value)}
+                className={`rounded-xl px-4 py-2 text-xs font-semibold transition ${
                   active
-                    ? "bg-gray-900 text-white"
-                    : "bg-gray-100 text-gray-700 hover:bg-gray-200"
+                    ? "border border-amber-200 bg-amber-50 text-amber-700 shadow-sm"
+                    : "border border-slate-200 bg-white text-slate-600 hover:bg-slate-50"
                 }`}
               >
                 {tab.label}
@@ -293,9 +284,7 @@ export default function Quotes() {
                 Unable to load quotes
               </h2>
 
-              <p className="mt-1 text-sm text-red-700">
-                {error}
-              </p>
+              <p className="mt-1 text-sm text-red-700">{error}</p>
             </div>
 
             <button
@@ -315,9 +304,7 @@ export default function Quotes() {
         {/* Loading */}
         {loading && (
           <div className="p-10 text-center">
-            <div className="text-sm text-gray-500">
-              Loading quotes...
-            </div>
+            <div className="text-sm text-gray-500">Loading quotes...</div>
           </div>
         )}
 
@@ -385,9 +372,7 @@ export default function Quotes() {
                   return (
                     <tr
                       key={quote.id}
-                      onClick={() =>
-                        handleRowClick(quote.id)
-                      }
+                      onClick={() => handleRowClick(quote.id)}
                       className="cursor-pointer transition hover:bg-gray-50"
                     >
                       <td className="px-5 py-4">
@@ -421,8 +406,7 @@ export default function Quotes() {
 
                         {quote.vehicle_chassis_number && (
                           <div className="mt-1 text-xs text-gray-500">
-                            Chassis:{" "}
-                            {quote.vehicle_chassis_number}
+                            Chassis: {quote.vehicle_chassis_number}
                           </div>
                         )}
                       </td>
@@ -441,9 +425,7 @@ export default function Quotes() {
                             quote.status,
                           )}`}
                         >
-                          {STATUS_LABELS[quote.status] ||
-                            quote.status ||
-                            "-"}
+                          {STATUS_LABELS[quote.status] || quote.status || "-"}
                         </span>
                       </td>
 
@@ -462,8 +444,7 @@ export default function Quotes() {
       {/* Footer count */}
       {!loading && !error && quotes.length > 0 && (
         <div className="mt-3 text-sm text-gray-500">
-          Showing {quotes.length}{" "}
-          {quotes.length === 1 ? "record" : "records"}.
+          Showing {quotes.length} {quotes.length === 1 ? "record" : "records"}.
         </div>
       )}
     </div>

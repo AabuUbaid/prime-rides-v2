@@ -20,11 +20,17 @@ import {
   bulkDeleteCars,
   bulkImportCars,
 } from "../../api/inventory";
+import { resolveBackendUrl } from "../../api/url";
 
 import PrintButton from "../../components/printing/PrintButton";
 import InventoryVehiclePrintTemplate from "../../components/printing/templates/InventoryVehiclePrintTemplate";
 import { printInventoryVehicle } from "../../utils/print";
 import InventoryStockPrintTemplate from "../../components/printing/templates/InventoryStockPrintTemplate";
+import Button from "../../components/ui/Button";
+import Card from "../../components/ui/Card";
+import Input from "../../components/ui/Input";
+import Select from "../../components/ui/Select";
+import StatusBadge from "../../components/ui/StatusBadge";
 
 const INITIAL_FILTERS = {
   status: "",
@@ -205,9 +211,7 @@ function Stock() {
   function getImageUrl(imagePath) {
     if (!imagePath) return null;
 
-    return imagePath.startsWith("http")
-      ? imagePath
-      : `http://localhost:8000${imagePath}`;
+    return resolveBackendUrl(imagePath);
   }
 
   function getShareImages(car) {
@@ -439,41 +443,82 @@ function Stock() {
   }
 
   if (loading) {
-    return <h2>Loading...</h2>;
+    return (
+      <div className="flex min-h-[50vh] items-center justify-center">
+        <div className="text-center">
+          <div className="mx-auto mb-3 h-8 w-8 animate-spin rounded-full border-2 border-slate-200 border-t-amber-500" />
+
+          <p className="text-sm font-medium text-slate-600">
+            Loading inventory...
+          </p>
+
+          <p className="mt-1 text-xs text-slate-400">
+            Please wait while vehicles are loaded.
+          </p>
+        </div>
+      </div>
+    );
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 p-6">
-      <div className="mx-auto max-w-7xl">
-        <h1 className="mb-6 text-2xl font-semibold text-gray-900">Inventory</h1>
+    <div className="mx-auto w-full max-w-[1600px] px-4 py-6 sm:px-6 lg:px-8">
+      <div className="mb-7">
+        <div className="mb-2 flex items-center gap-2">
+          <span className="h-1.5 w-1.5 rounded-full bg-amber-500" />
 
-        {/* Search + Sorting */}
-        <div className="mb-4 flex flex-wrap gap-3">
+          <span className="text-[10px] font-bold uppercase tracking-[0.14em] text-amber-600">
+            Core Operations
+          </span>
+        </div>
+
+        <div className="flex flex-wrap items-end justify-between gap-4">
+          <div>
+            <h1 className="text-2xl font-bold tracking-tight text-slate-900">
+              Inventory
+            </h1>
+
+            <p className="mt-1 text-sm text-slate-500">
+              Manage vehicle stock, pricing, status, and availability.
+            </p>
+          </div>
+
+          <div className="rounded-xl border border-slate-200 bg-white px-3 py-2 shadow-sm">
+            <span className="text-xs font-medium text-slate-500">
+              {totalCount} vehicles
+            </span>
+          </div>
+        </div>
+      </div>
+      {/* Search + Sorting */}
+      <div className="mb-5 flex flex-col gap-3 lg:flex-row lg:items-center">
+        <div className="relative min-w-0 flex-1 lg:max-w-md">
           <input
             type="text"
             placeholder="Search vehicles..."
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            className="w-full max-w-sm rounded-md border border-gray-300 bg-white px-3 py-2 text-sm outline-none focus:border-gray-500"
+            className="h-10 w-full rounded-xl border border-slate-200 bg-white px-3 text-sm text-slate-800 outline-none transition placeholder:text-slate-400 focus:border-amber-400 focus:ring-2 focus:ring-amber-400/15"
           />
+        </div>
 
-          <button
+        <div className="flex flex-wrap gap-2">
+          <Button
             type="button"
+            variant="secondary"
             onClick={() => setSearch("")}
-            className="rounded-md border border-gray-300 bg-white px-4 py-2 text-sm hover:bg-gray-100"
           >
             Clear
-          </button>
+          </Button>
 
-          <button
+          <Button
             type="button"
-            onClick={handlePrintStock}
+            variant="secondary"
+            icon={Printer}
             disabled={cars.length === 0}
-            className="flex items-center gap-2 rounded-md border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 transition hover:bg-gray-100 disabled:cursor-not-allowed disabled:opacity-50"
+            onClick={handlePrintStock}
           >
-            <Printer size={16} />
             Print Stock
-          </button>
+          </Button>
 
           <select
             id="ordering"
@@ -482,7 +527,7 @@ function Stock() {
               setPage(1);
               setOrdering(e.target.value);
             }}
-            className="rounded-md border border-gray-300 bg-white px-3 py-2 text-sm"
+            className="h-9 rounded-xl border border-slate-200 bg-white px-3 text-xs font-medium text-slate-700 outline-none focus:border-amber-400 focus:ring-2 focus:ring-amber-400/15"
           >
             {SORT_OPTIONS.map((option) => (
               <option key={option.value} value={option.value}>
@@ -491,434 +536,417 @@ function Stock() {
             ))}
           </select>
         </div>
+      </div>
 
-        {isMaster && (
-          <div className="mb-4">
-            <button
-              type="button"
-              onClick={() => setShowImportModal(true)}
-              className="rounded-md border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-100"
-            >
-              Bulk Import
-            </button>
-          </div>
-        )}
-
-        {importResult && (
-          <div
-            className={`mb-4 rounded-md border p-4 ${
-              importResult.success
-                ? "border-green-200 bg-green-50"
-                : "border-red-200 bg-red-50"
-            }`}
-          >
-            <div className="flex items-start justify-between gap-4">
-              <div>
-                <p
-                  className={`font-medium ${
-                    importResult.success ? "text-green-800" : "text-red-800"
-                  }`}
-                >
-                  {importResult.message}
-                </p>
-
-                {importResult.success && importResult.data && (
-                  <div className="mt-2 text-sm text-green-700">
-                    <p>
-                      Imported:{" "}
-                      <strong>{importResult.data.created_count}</strong>
-                    </p>
-
-                    <p>
-                      Skipped:{" "}
-                      <strong>{importResult.data.skipped_count}</strong>
-                    </p>
-
-                    {importResult.data.errors?.length > 0 && (
-                      <div className="mt-4">
-                        <p className="mb-2 font-medium text-gray-800">
-                          Skipped Rows
-                        </p>
-
-                        <div className="overflow-x-auto rounded-md border border-gray-200 bg-white">
-                          <table className="min-w-full text-left text-sm">
-                            <thead className="border-b border-gray-200 bg-gray-50">
-                              <tr>
-                                <th className="px-3 py-2 font-medium text-gray-700">
-                                  Row
-                                </th>
-
-                                <th className="px-3 py-2 font-medium text-gray-700">
-                                  Field
-                                </th>
-
-                                <th className="px-3 py-2 font-medium text-gray-700">
-                                  Value
-                                </th>
-
-                                <th className="px-3 py-2 font-medium text-gray-700">
-                                  Reason
-                                </th>
-                              </tr>
-                            </thead>
-
-                            <tbody>
-                              {importResult.data.errors.map((error, index) => (
-                                <tr
-                                  key={`${error.row}-${error.field}-${index}`}
-                                  className="border-b border-gray-100 last:border-b-0"
-                                >
-                                  <td className="px-3 py-2 text-gray-800">
-                                    {error.row}
-                                  </td>
-
-                                  <td className="px-3 py-2 text-gray-800">
-                                    {error.field || "—"}
-                                  </td>
-
-                                  <td className="px-3 py-2 text-gray-800">
-                                    {error.value === null ||
-                                    error.value === undefined ||
-                                    error.value === ""
-                                      ? "—"
-                                      : String(error.value)}
-                                  </td>
-
-                                  <td className="px-3 py-2 text-gray-700">
-                                    {error.message}
-                                  </td>
-                                </tr>
-                              ))}
-                            </tbody>
-                          </table>
-                        </div>
-                      </div>
-                    )}
-                  </div>
-                )}
-              </div>
-
-              <button
-                type="button"
-                onClick={() => setImportResult(null)}
-                className="text-sm text-gray-500 hover:text-gray-700"
-              >
-                ×
-              </button>
-            </div>
-          </div>
-        )}
-
-        {isMaster && selectedCars.length > 0 && (
-          <div className="mb-4 flex items-center gap-3 rounded-md border border-gray-200 bg-white px-4 py-3">
-            <span className="text-sm text-gray-700">
-              {selectedCars.length} vehicle(s) selected
-            </span>
-
-            <button
-              type="button"
-              onClick={handleBulkDelete}
-              className="rounded-md bg-red-600 px-4 py-2 text-sm font-medium text-white hover:bg-red-700"
-            >
-              Delete Selected
-            </button>
-
-            <button
-              type="button"
-              onClick={() => setSelectedCars([])}
-              className="rounded-md border border-gray-300 bg-white px-4 py-2 text-sm hover:bg-gray-100"
-            >
-              Clear Selection
-            </button>
-          </div>
-        )}
-
-        {/* Filters */}
-        <div className="mb-6">
-          <button
+      {isMaster && (
+        <div className="mb-5">
+          <Button
             type="button"
-            onClick={() => setShowFilters((isVisible) => !isVisible)}
-            className="mb-4 rounded-md border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 transition hover:bg-gray-100"
+            variant="primary"
+            onClick={() => setShowImportModal(true)}
           >
-            {showFilters ? "Hide Filters" : "Show Filters"}
-          </button>
+            Bulk Import
+          </Button>
+        </div>
+      )}
 
-          {showFilters && (
-            <div className="rounded-lg border border-gray-200 bg-white p-5 shadow-sm">
-              <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4">
-                {/* Status */}
-                <div>
-                  <label
-                    htmlFor="status"
-                    className="mb-1.5 block text-sm font-medium text-gray-700"
-                  >
-                    Status
-                  </label>
-                  <select
-                    id="status"
-                    name="status"
-                    value={filters.status}
-                    onChange={handleFilterChange}
-                    className="w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-sm text-gray-900 outline-none transition focus:border-gray-500 focus:ring-1 focus:ring-gray-500"
-                  >
-                    <option value="">All</option>
-                    {STATUS_OPTIONS.map((option) => (
-                      <option key={option.value} value={option.value}>
-                        {option.label}
-                      </option>
-                    ))}
-                  </select>
-                </div>
+      {importResult && (
+        <div
+          className={[
+            "mb-5 rounded-2xl border p-4 shadow-sm",
+            importResult.success ? "text-emerald-800" : "text-rose-800",
+          ].join(" ")}
+        >
+          <div className="flex items-start justify-between gap-4">
+            <div>
+              <p
+                className={`font-medium ${
+                  importResult.success ? "text-emerald-800" : "text-rose-800"
+                }`}
+              >
+                {importResult.message}
+              </p>
 
-                {/* Brand */}
-                <div>
-                  <label
-                    htmlFor="make"
-                    className="mb-1.5 block text-sm font-medium text-gray-700"
-                  >
-                    Brand
-                  </label>
+              {importResult.success && importResult.data && (
+                <div className="mt-2 text-sm text-green-700">
+                  <p>
+                    Imported: <strong>{importResult.data.created_count}</strong>
+                  </p>
 
-                  <select
-                    id="make"
-                    name="make"
-                    value={filters.make}
-                    onChange={handleFilterChange}
-                    className="w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-sm text-gray-900 outline-none transition focus:border-gray-500 focus:ring-1 focus:ring-gray-500"
-                  >
-                    <option value="">All Brands</option>
+                  <p>
+                    Skipped: <strong>{importResult.data.skipped_count}</strong>
+                  </p>
 
-                    {brands.map((brand) => (
-                      <option key={brand} value={brand}>
-                        {brand}
-                      </option>
-                    ))}
-                  </select>
-                </div>
+                  {importResult.data.errors?.length > 0 && (
+                    <div className="mt-4">
+                      <p className="mb-2 font-medium text-gray-800">
+                        Skipped Rows
+                      </p>
 
-                {/* Vehicle Type */}
-                <div>
-                  <label
-                    htmlFor="vehicle_type"
-                    className="mb-1.5 block text-sm font-medium text-gray-700"
-                  >
-                    Vehicle Type
-                  </label>
+                      <div className="overflow-x-auto rounded-md border border-gray-200 bg-white">
+                        <table className="min-w-full text-left text-sm">
+                          <thead className="border-b border-gray-200 bg-gray-50">
+                            <tr>
+                              <th className="px-3 py-2 font-medium text-gray-700">
+                                Row
+                              </th>
 
-                  <select
-                    id="vehicle_type"
-                    name="vehicle_type"
-                    value={filters.vehicle_type}
-                    onChange={handleFilterChange}
-                    className="w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-sm text-gray-900 outline-none transition focus:border-gray-500 focus:ring-1 focus:ring-gray-500"
-                  >
-                    <option value="">All Types</option>
+                              <th className="px-3 py-2 font-medium text-gray-700">
+                                Field
+                              </th>
 
-                    <option value="sedan">Sedan</option>
-                    <option value="suv">SUV (Sport Utility Vehicle)</option>
-                    <option value="hatchback">Hatchback</option>
-                    <option value="crossover">Crossover</option>
-                    <option value="coupe">Coupe</option>
-                    <option value="convertible">Convertible</option>
-                    <option value="pickup_truck">Pickup Truck</option>
-                    <option value="other">Other</option>
-                  </select>
-                </div>
+                              <th className="px-3 py-2 font-medium text-gray-700">
+                                Value
+                              </th>
 
-                {/* Source */}
-                {isMaster && (
-                  <>
-                    <div>
-                      <label
-                        htmlFor="source"
-                        className="mb-1.5 block text-sm font-medium text-gray-700"
-                      >
-                        Source
-                      </label>
-                      <select
-                        id="source"
-                        name="source"
-                        value={filters.source}
-                        onChange={handleFilterChange}
-                        className="w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-sm text-gray-900 outline-none transition focus:border-gray-500 focus:ring-1 focus:ring-gray-500"
-                      >
-                        <option value="">All</option>
-                        {SOURCE_OPTIONS.map((option) => (
-                          <option key={option.value} value={option.value}>
-                            {option.label}
-                          </option>
-                        ))}
-                      </select>
+                              <th className="px-3 py-2 font-medium text-gray-700">
+                                Reason
+                              </th>
+                            </tr>
+                          </thead>
+
+                          <tbody>
+                            {importResult.data.errors.map((error, index) => (
+                              <tr
+                                key={`${error.row}-${error.field}-${index}`}
+                                className="border-b border-gray-100 last:border-b-0"
+                              >
+                                <td className="px-3 py-2 text-gray-800">
+                                  {error.row}
+                                </td>
+
+                                <td className="px-3 py-2 text-gray-800">
+                                  {error.field || "—"}
+                                </td>
+
+                                <td className="px-3 py-2 text-gray-800">
+                                  {error.value === null ||
+                                  error.value === undefined ||
+                                  error.value === ""
+                                    ? "—"
+                                    : String(error.value)}
+                                </td>
+
+                                <td className="px-3 py-2 text-gray-700">
+                                  {error.message}
+                                </td>
+                              </tr>
+                            ))}
+                          </tbody>
+                        </table>
+                      </div>
                     </div>
-
-                    {/* Supplier */}
-                    <div>
-                      <label
-                        htmlFor="supplier"
-                        className="mb-1.5 block text-sm font-medium text-gray-700"
-                      >
-                        Supplier
-                      </label>
-                      <input
-                        id="supplier"
-                        name="supplier"
-                        type="text"
-                        value={filters.supplier}
-                        onChange={handleFilterChange}
-                        placeholder="Supplier"
-                        className="w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-sm text-gray-900 outline-none transition placeholder:text-gray-400 focus:border-gray-500 focus:ring-1 focus:ring-gray-500"
-                      />
-                    </div>
-
-                    {/* Highlight */}
-                    <div>
-                      <label
-                        htmlFor="highlight_public"
-                        className="mb-1.5 block text-sm font-medium text-gray-700"
-                      >
-                        Highlight
-                      </label>
-                      <select
-                        id="highlight_public"
-                        name="highlight_public"
-                        value={filters.highlight_public}
-                        onChange={handleFilterChange}
-                        className="w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-sm text-gray-900 outline-none transition focus:border-gray-500 focus:ring-1 focus:ring-gray-500"
-                      >
-                        <option value="">All</option>
-                        <option value="true">Yes</option>
-                        <option value="false">No</option>
-                      </select>
-                    </div>
-                  </>
-                )}
-
-                {/* Year */}
-                <div>
-                  <label
-                    htmlFor="year"
-                    className="mb-1.5 block text-sm font-medium text-gray-700"
-                  >
-                    Year
-                  </label>
-                  <input
-                    id="year"
-                    name="year"
-                    type="number"
-                    min="1900"
-                    value={filters.year}
-                    onChange={handleFilterChange}
-                    placeholder="Year"
-                    className="w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-sm text-gray-900 outline-none transition placeholder:text-gray-400 focus:border-gray-500 focus:ring-1 focus:ring-gray-500"
-                  />
+                  )}
                 </div>
+              )}
+            </div>
 
-                {/* Minimum price */}
-                <div>
-                  <label
-                    htmlFor="min_price"
-                    className="mb-1.5 block text-sm font-medium text-gray-700"
-                  >
-                    Min Price (AED)
-                  </label>
-                  <input
-                    id="min_price"
-                    name="min_price"
-                    type="number"
-                    min="0"
-                    value={filters.min_price}
-                    onChange={handleFilterChange}
-                    placeholder="Min price"
-                    className="w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-sm text-gray-900 outline-none transition placeholder:text-gray-400 focus:border-gray-500 focus:ring-1 focus:ring-gray-500"
-                  />
-                </div>
+            <button
+              type="button"
+              onClick={() => setImportResult(null)}
+              className="text-sm text-gray-500 hover:text-gray-700"
+            >
+              ×
+            </button>
+          </div>
+        </div>
+      )}
 
-                {/* Maximum price */}
-                <div>
-                  <label
-                    htmlFor="max_price"
-                    className="mb-1.5 block text-sm font-medium text-gray-700"
-                  >
-                    Max Price (AED)
-                  </label>
-                  <input
-                    id="max_price"
-                    name="max_price"
-                    type="number"
-                    min="0"
-                    value={filters.max_price}
-                    onChange={handleFilterChange}
-                    placeholder="Max price"
-                    className="w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-sm text-gray-900 outline-none transition placeholder:text-gray-400 focus:border-gray-500 focus:ring-1 focus:ring-gray-500"
-                  />
-                </div>
+      {isMaster && selectedCars.length > 0 && (
+        <div className="mb-5 flex flex-wrap items-center gap-3 rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3 shadow-sm">
+          <span className="text-sm font-medium text-slate-700">
+            {selectedCars.length} vehicle(s) selected
+          </span>
+          <Button type="button" variant="danger" onClick={handleBulkDelete}>
+            Delete Selected
+          </Button>
+          <Button
+            type="button"
+            variant="secondary"
+            onClick={() => setSelectedCars([])}
+          >
+            Clear Selection
+          </Button>
+        </div>
+      )}
 
-                {/* Minimum mileage */}
-                <div>
-                  <label
-                    htmlFor="min_mileage"
-                    className="mb-1.5 block text-sm font-medium text-gray-700"
-                  >
-                    Min Mileage (km)
-                  </label>
-                  <input
-                    id="min_mileage"
-                    name="min_mileage"
-                    type="number"
-                    min="0"
-                    value={filters.min_mileage}
-                    onChange={handleFilterChange}
-                    placeholder="Min mileage"
-                    className="w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-sm text-gray-900 outline-none transition placeholder:text-gray-400 focus:border-gray-500 focus:ring-1 focus:ring-gray-500"
-                  />
-                </div>
+      {/* Filters */}
+      <div className="mb-6">
+        <Button
+          type="button"
+          variant="secondary"
+          className="mb-4"
+          onClick={() => setShowFilters((isVisible) => !isVisible)}
+        >
+          {showFilters ? "Hide Filters" : "Show Filters"}
+        </Button>
 
-                {/* Maximum mileage */}
-                <div>
-                  <label
-                    htmlFor="max_mileage"
-                    className="mb-1.5 block text-sm font-medium text-gray-700"
-                  >
-                    Max Mileage (km)
-                  </label>
-                  <input
-                    id="max_mileage"
-                    name="max_mileage"
-                    type="number"
-                    min="0"
-                    value={filters.max_mileage}
-                    onChange={handleFilterChange}
-                    placeholder="Max mileage"
-                    className="w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-sm text-gray-900 outline-none transition placeholder:text-gray-400 focus:border-gray-500 focus:ring-1 focus:ring-gray-500"
-                  />
-                </div>
+        {showFilters && (
+          <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
+            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+              {/* Status */}
+              <div>
+                <label
+                  htmlFor="status"
+                  className="mb-1.5 block text-[11px] font-bold uppercase tracking-[0.08em] text-slate-500"
+                >
+                  Status
+                </label>
+                <select
+                  id="status"
+                  name="status"
+                  value={filters.status}
+                  onChange={handleFilterChange}
+                  className="h-10 w-full rounded-xl border border-slate-200 bg-white px-3 text-sm text-slate-800 outline-none transition placeholder:text-slate-400 focus:border-amber-400 focus:ring-2 focus:ring-amber-400/15"
+                >
+                  <option value="">All</option>
+                  {STATUS_OPTIONS.map((option) => (
+                    <option key={option.value} value={option.value}>
+                      {option.label}
+                    </option>
+                  ))}
+                </select>
               </div>
-
-              {/* Filter actions */}
-              <div className="mt-5 flex flex-wrap gap-3 border-t border-gray-100 pt-4">
-                <button
-                  type="button"
-                  onClick={handleApplyFilters}
-                  className="rounded-md bg-gray-900 px-4 py-2 text-sm font-medium text-white transition hover:bg-gray-800"
+              {/* Brand */}
+              <div>
+                <label
+                  htmlFor="make"
+                  className="mb-1.5 block text-[11px] font-bold uppercase tracking-[0.08em] text-slate-500"
                 >
-                  Apply Filters
-                </button>
+                  Brand
+                </label>
 
-                <button
-                  type="button"
-                  onClick={handleResetFilters}
-                  className="rounded-md border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 transition hover:bg-gray-100"
+                <select
+                  id="make"
+                  name="make"
+                  value={filters.make}
+                  onChange={handleFilterChange}
+                  className="h-10 w-full rounded-xl border border-slate-200 bg-white px-3 text-sm text-slate-800 outline-none transition placeholder:text-slate-400 focus:border-amber-400 focus:ring-2 focus:ring-amber-400/15"
                 >
-                  Reset Filters
-                </button>
+                  <option value="">All Brands</option>
+
+                  {brands.map((brand) => (
+                    <option key={brand} value={brand}>
+                      {brand}
+                    </option>
+                  ))}
+                </select>
+              </div>
+              {/* Vehicle Type */}
+              <div>
+                <label
+                  htmlFor="vehicle_type"
+                  className="mb-1.5 block text-[11px] font-bold uppercase tracking-[0.08em] text-slate-500"
+                >
+                  Vehicle Type
+                </label>
+
+                <select
+                  id="vehicle_type"
+                  name="vehicle_type"
+                  value={filters.vehicle_type}
+                  onChange={handleFilterChange}
+                  className="h-10 w-full rounded-xl border border-slate-200 bg-white px-3 text-sm text-slate-800 outline-none transition placeholder:text-slate-400 focus:border-amber-400 focus:ring-2 focus:ring-amber-400/15"
+                >
+                  <option value="">All Types</option>
+
+                  <option value="sedan">Sedan</option>
+                  <option value="suv">SUV (Sport Utility Vehicle)</option>
+                  <option value="hatchback">Hatchback</option>
+                  <option value="crossover">Crossover</option>
+                  <option value="coupe">Coupe</option>
+                  <option value="convertible">Convertible</option>
+                  <option value="pickup_truck">Pickup Truck</option>
+                  <option value="other">Other</option>
+                </select>
+              </div>
+              {/* Source */}
+              {isMaster && (
+                <>
+                  <div>
+                    <label
+                      htmlFor="source"
+                      className="mb-1.5 block text-[11px] font-bold uppercase tracking-[0.08em] text-slate-500"
+                    >
+                      Source
+                    </label>
+                    <select
+                      id="source"
+                      name="source"
+                      value={filters.source}
+                      onChange={handleFilterChange}
+                      className="h-10 w-full rounded-xl border border-slate-200 bg-white px-3 text-sm text-slate-800 outline-none transition placeholder:text-slate-400 focus:border-amber-400 focus:ring-2 focus:ring-amber-400/15"
+                    >
+                      <option value="">All</option>
+                      {SOURCE_OPTIONS.map((option) => (
+                        <option key={option.value} value={option.value}>
+                          {option.label}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+
+                  {/* Supplier */}
+                  <div>
+                    <label
+                      htmlFor="supplier"
+                      className="mb-1.5 block text-[11px] font-bold uppercase tracking-[0.08em] text-slate-500"
+                    >
+                      Supplier
+                    </label>
+                    <input
+                      id="supplier"
+                      name="supplier"
+                      type="text"
+                      value={filters.supplier}
+                      onChange={handleFilterChange}
+                      placeholder="Supplier"
+                      className="h-10 w-full rounded-xl border border-slate-200 bg-white px-3 text-sm text-slate-800 outline-none transition placeholder:text-slate-400 focus:border-amber-400 focus:ring-2 focus:ring-amber-400/15"
+                    />
+                  </div>
+
+                  {/* Highlight */}
+                  <div>
+                    <label
+                      htmlFor="highlight_public"
+                      className="mb-1.5 block text-[11px] font-bold uppercase tracking-[0.08em] text-slate-500"
+                    >
+                      Highlight
+                    </label>
+                    <select
+                      id="highlight_public"
+                      name="highlight_public"
+                      value={filters.highlight_public}
+                      onChange={handleFilterChange}
+                      className="h-10 w-full rounded-xl border border-slate-200 bg-white px-3 text-sm text-slate-800 outline-none transition placeholder:text-slate-400 focus:border-amber-400 focus:ring-2 focus:ring-amber-400/15"
+                    >
+                      <option value="">All</option>
+                      <option value="true">Yes</option>
+                      <option value="false">No</option>
+                    </select>
+                  </div>
+                </>
+              )}
+              {/* Year */}
+              <div>
+                <label
+                  htmlFor="year"
+                  className="mb-1.5 block text-[11px] font-bold uppercase tracking-[0.08em] text-slate-500"
+                >
+                  Year
+                </label>
+                <input
+                  id="year"
+                  name="year"
+                  type="number"
+                  min="1900"
+                  value={filters.year}
+                  onChange={handleFilterChange}
+                  placeholder="Year"
+                  className="h-10 w-full rounded-xl border border-slate-200 bg-white px-3 text-sm text-slate-800 outline-none transition placeholder:text-slate-400 focus:border-amber-400 focus:ring-2 focus:ring-amber-400/15"
+                />
+              </div>
+              {/* Minimum price */}
+              <div>
+                <label
+                  htmlFor="min_price"
+                  className="mb-1.5 block text-[11px] font-bold uppercase tracking-[0.08em] text-slate-500"
+                >
+                  Min Price (AED)
+                </label>
+                <input
+                  id="min_price"
+                  name="min_price"
+                  type="number"
+                  min="0"
+                  value={filters.min_price}
+                  onChange={handleFilterChange}
+                  placeholder="Min price"
+                  className="h-10 w-full rounded-xl border border-slate-200 bg-white px-3 text-sm text-slate-800 outline-none transition placeholder:text-slate-400 focus:border-amber-400 focus:ring-2 focus:ring-amber-400/15"
+                />
+              </div>
+              {/* Maximum price */}
+              <div>
+                <label
+                  htmlFor="max_price"
+                  className="mb-1.5 block text-[11px] font-bold uppercase tracking-[0.08em] text-slate-500"
+                >
+                  Max Price (AED)
+                </label>
+                <input
+                  id="max_price"
+                  name="max_price"
+                  type="number"
+                  min="0"
+                  value={filters.max_price}
+                  onChange={handleFilterChange}
+                  placeholder="Max price"
+                  className="h-10 w-full rounded-xl border border-slate-200 bg-white px-3 text-sm text-slate-800 outline-none transition placeholder:text-slate-400 focus:border-amber-400 focus:ring-2 focus:ring-amber-400/15"
+                />
+              </div>
+              {/* Minimum mileage */}
+              <div>
+                <label
+                  htmlFor="min_mileage"
+                  className="mb-1.5 block text-[11px] font-bold uppercase tracking-[0.08em] text-slate-500"
+                >
+                  Min Mileage (km)
+                </label>
+                <input
+                  id="min_mileage"
+                  name="min_mileage"
+                  type="number"
+                  min="0"
+                  value={filters.min_mileage}
+                  onChange={handleFilterChange}
+                  placeholder="Min mileage"
+                  className="h-10 w-full rounded-xl border border-slate-200 bg-white px-3 text-sm text-slate-800 outline-none transition placeholder:text-slate-400 focus:border-amber-400 focus:ring-2 focus:ring-amber-400/15"
+                />
+              </div>
+              {/* Maximum mileage */}
+              <div>
+                <label
+                  htmlFor="max_mileage"
+                  className="mb-1.5 block text-[11px] font-bold uppercase tracking-[0.08em] text-slate-500"
+                >
+                  Max Mileage (km)
+                </label>
+                <input
+                  id="max_mileage"
+                  name="max_mileage"
+                  type="number"
+                  min="0"
+                  value={filters.max_mileage}
+                  onChange={handleFilterChange}
+                  placeholder="Max mileage"
+                  className="h-10 w-full rounded-xl border border-slate-200 bg-white px-3 text-sm text-slate-800 outline-none transition placeholder:text-slate-400 focus:border-amber-400 focus:ring-2 focus:ring-amber-400/15"
+                />
               </div>
             </div>
-          )}
-        </div>
+            {/* Filter actions */}
+            <div className="mt-5 flex flex-wrap gap-3 border-t border-gray-100 pt-4">
+              <Button
+                type="button"
+                variant="primary"
+                onClick={handleApplyFilters}
+              >
+                Apply Filters
+              </Button>
+
+              <Button
+                type="button"
+                variant="secondary"
+                onClick={handleResetFilters}
+              >
+                Reset Filters
+              </Button>
+            </div>
+          </div>
+        )}
       </div>
 
       {/* Inventory carousel */}
-      <div className="rounded-2xl border border-gray-200 bg-white p-4 shadow-sm">
+      <div className="overflow-hidden rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
         <div className="relative">
           {cars.length > 0 ? (
             <>
@@ -991,21 +1019,17 @@ function Stock() {
                     car.images?.[0]?.image ||
                     null;
 
-                  const coverImage = imagePath
-                    ? imagePath.startsWith("http")
-                      ? imagePath
-                      : `http://localhost:8000${imagePath}`
-                    : null;
+                  const coverImage = resolveBackendUrl(imagePath);
 
                   const isSelected = selectedCars.includes(car.id);
 
                   return (
                     <div
                       key={car.id}
-                      className="group min-w-[320px] max-w-[320px] flex-shrink-0 snap-start overflow-hidden rounded-2xl border border-gray-200 bg-white shadow-sm transition duration-200 hover:-translate-y-1 hover:shadow-lg"
+                      className="group min-w-[300px] max-w-[300px] flex-shrink-0 snap-start overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-[0_2px_8px_rgba(15,23,42,0.04)] transition-all duration-200 hover:-translate-y-1 hover:border-slate-300 hover:shadow-[0_12px_28px_rgba(15,23,42,0.08)] sm:min-w-[320px] sm:max-w-[320px]"
                     >
                       {/* Image */}
-                      <div className="relative h-52 overflow-hidden bg-gray-100">
+                      <div className="relative h-52 overflow-hidden bg-slate-100">
                         {coverImage ? (
                           <img
                             src={coverImage}
@@ -1038,56 +1062,51 @@ function Stock() {
 
                         {/* Status */}
                         <div className="absolute right-3 top-3">
-                          <span
-                            className={`rounded-full px-3 py-1 text-xs font-semibold shadow-sm ${
-                              car.status === "in_service"
-                                ? "bg-emerald-500 text-white"
-                                : car.status === "sold"
-                                  ? "bg-red-500 text-white"
-                                  : "bg-gray-900/80 text-white"
-                            }`}
-                          >
+                          <StatusBadge status={car.status}>
                             {getStatusLabel(car.status)}
-                          </span>
+                          </StatusBadge>
                         </div>
                       </div>
 
                       {/* Card content */}
                       <div className="p-4">
                         {/* Stock ID */}
-                        <div className="mb-2 text-xs font-semibold uppercase tracking-wide text-blue-600">
+                        <div className="mb-2 text-xs font-semibold uppercase tracking-wide text-[10px] font-bold uppercase tracking-[0.12em] text-amber-600">
                           {car.stock_id}
                         </div>
 
                         {/* Vehicle name */}
-                        <h3 className="truncate text-lg font-semibold text-gray-900">
+                        <h3 className="truncate text-lg font-bold tracking-tight text-slate-900">
                           {car.make} {car.model}
                         </h3>
 
-                        <p className="mt-1 truncate text-sm text-gray-500">
+                        <p className="mt-1 truncate text-sm text-slate-500">
                           {car.variant || "No variant specified"}
                         </p>
 
                         {/* Vehicle details */}
                         <div className="mt-4 grid grid-cols-2 gap-3 text-sm">
-                          <div className="flex items-center gap-2 text-gray-600">
-                            <CalendarDays size={15} className="text-gray-400" />
+                          <div className="flex items-center gap-2 text-slate-600">
+                            <CalendarDays
+                              size={15}
+                              className="text-slate-400"
+                            />
                             <span>{car.year || "-"}</span>
                           </div>
 
-                          <div className="flex items-center gap-2 text-gray-600">
-                            <CarFront size={15} className="text-gray-400" />
+                          <div className="flex items-center gap-2 text-slate-600">
+                            <CarFront size={15} className="text-slate-400" />
                             <span className="truncate">
                               {getVehicleTypeLabel(car.vehicle_type)}
                             </span>
                           </div>
 
-                          <div className="flex items-center gap-2 text-gray-600">
-                            <Gauge size={15} className="text-gray-400" />
+                          <div className="flex items-center gap-2 text-slate-600">
+                            <Gauge size={15} className="text-slate-400" />
                             <span>{car.mileage ?? "-"} km</span>
                           </div>
 
-                          <div className="flex items-center gap-2 text-gray-600">
+                          <div className="flex items-center gap-2 text-slate-600">
                             <span className="h-[15px] w-[15px] rounded-full border border-gray-300" />
                             <span className="truncate">
                               {car.colour || "-"}
@@ -1106,10 +1125,12 @@ function Stock() {
                         )}
 
                         {/* Price */}
-                        <div className="mt-4 border-t border-gray-100 pt-4">
-                          <p className="text-xs text-gray-500">Asking Price</p>
-                          <p className="text-xl font-bold text-gray-900">
-                            AED{" "}
+                        <div className="mt-4 border-t border-slate-100 pt-4">
+                          <p className="text-[10px] font-bold uppercase tracking-[0.08em] text-slate-400">
+                            Asking Price
+                          </p>
+                          <p className="mt-1 font-mono text-xl font-bold tracking-tight text-slate-900">
+                            AED
                             {Number(car.asking_price || 0).toLocaleString(
                               "en-AE",
                             )}
@@ -1122,44 +1143,48 @@ function Stock() {
                             isMaster ? "grid-cols-3" : "grid-cols-2"
                           }`}
                         >
-                          <button
+                          <Button
                             type="button"
+                            variant="secondary"
+                            size="sm"
+                            icon={Eye}
                             onClick={() => navigate(`/stock/${car.id}`)}
-                            className="flex items-center justify-center gap-2 rounded-lg border border-gray-200 px-3 py-2 text-sm font-medium text-gray-700 transition hover:bg-gray-50"
                           >
-                            <Eye size={16} />
                             View
-                          </button>
+                          </Button>
 
                           {isMaster && (
-                            <button
+                            <Button
                               type="button"
+                              variant="primary"
+                              size="sm"
+                              icon={Pencil}
                               onClick={() => navigate(`/stock/${car.id}/edit`)}
-                              className="flex items-center justify-center gap-2 rounded-lg bg-gray-900 px-3 py-2 text-sm font-medium text-white transition hover:bg-gray-800"
                             >
-                              <Pencil size={16} />
                               Edit
-                            </button>
+                            </Button>
                           )}
-                          <button
+                          <Button
                             type="button"
+                            variant="secondary"
+                            size="sm"
+                            icon={Share2Icon}
                             onClick={() => {
                               setShareCar(car);
                               setShareImageIndex(0);
                             }}
-                            className="flex items-center justify-center gap-2 rounded-lg border border-gray-200 px-3 py-2 text-sm font-medium text-gray-700 transition hover:bg-gray-50"
                           >
-                            <Share2Icon size={16} />
                             Share
-                          </button>
-                          <button
+                          </Button>
+                          <Button
                             type="button"
+                            variant="secondary"
+                            size="sm"
+                            icon={Printer}
                             onClick={() => handlePrintVehicle(car)}
-                            className="inline-flex items-center gap-2"
                           >
-                            <Printer size={16} />
                             Print
-                          </button>
+                          </Button>
                         </div>
                       </div>
                     </div>
@@ -1168,16 +1193,16 @@ function Stock() {
               </div>
             </>
           ) : (
-            <div className="rounded-2xl border border-dashed border-gray-300 bg-gray-50 px-6 py-16 text-center">
+            <div className="rounded-2xl border border-dashed border-slate-300 bg-slate-50 px-6 py-16 text-center">
               <CarFront
                 size={48}
                 strokeWidth={1.5}
-                className="mx-auto text-gray-300"
+                className="mx-auto text-slate-300"
               />
-              <h3 className="mt-4 text-lg font-semibold text-gray-800">
+              <h3 className="mt-4 text-base font-bold text-slate-800">
                 No vehicles found
               </h3>
-              <p className="mt-1 text-sm text-gray-500">
+              <p className="mt-1 text-sm text-slate-500">
                 Try changing your search or filters.
               </p>
             </div>
@@ -1186,17 +1211,16 @@ function Stock() {
       </div>
 
       {/* Pagination */}
-      <div className="mt-6 flex flex-col gap-4 rounded-2xl border border-gray-200 bg-white px-4 py-4 shadow-sm sm:flex-row sm:items-center sm:justify-between">
+      <div className="mt-5 flex flex-col gap-4 rounded-2xl border border-slate-200 bg-white px-4 py-4 shadow-sm sm:flex-row sm:items-center sm:justify-between">
         {/* Result count */}
-        <div className="text-sm text-gray-500">
-          Showing{" "}
+        <div className="text-xs text-slate-500">
+          Showing
           <span className="font-medium text-gray-900">
             {startItem}-{endItem}
-          </span>{" "}
-          of <span className="font-medium text-gray-900">{totalCount}</span>{" "}
+          </span>
+          of <span className="font-semibold text-slate-800">{totalCount}</span>{" "}
           vehicles
         </div>
-
         {/* Pagination controls */}
         {totalPages > 1 && (
           <div className="flex items-center justify-center gap-1">
@@ -1263,8 +1287,8 @@ function Stock() {
       </div>
 
       {shareCar && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
-          <div className="w-full max-w-lg overflow-hidden rounded-2xl bg-white shadow-2xl">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/45 backdrop-blur-sm p-4">
+          <div className="w-full max-w-lg overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-2xl">
             {(() => {
               const shareImages = getShareImages(shareCar);
               const currentImage =
@@ -1273,7 +1297,7 @@ function Stock() {
               return (
                 <>
                   {/* Header */}
-                  <div className="flex items-center justify-between border-b border-gray-100 px-5 py-4">
+                  <div className="flex items-center justify-between border-b border-slate-100 px-5 py-4">
                     <div>
                       <h2 className="text-lg font-semibold text-gray-900">
                         {shareCar.make} {shareCar.model}
@@ -1287,7 +1311,7 @@ function Stock() {
                     <button
                       type="button"
                       onClick={() => setShareCar(null)}
-                      className="flex h-9 w-9 items-center justify-center rounded-full text-xl text-gray-500 transition hover:bg-gray-100 hover:text-gray-900"
+                      className="flex h-9 w-9 items-center justify-center rounded-xl text-slate-400 transition hover:bg-slate-100 hover:text-slate-700"
                       aria-label="Close share preview"
                     >
                       ×
@@ -1363,7 +1387,7 @@ function Stock() {
                   {/* Vehicle information */}
                   <div className="space-y-4 p-5">
                     <div className="grid grid-cols-2 gap-3">
-                      <div className="rounded-lg bg-gray-50 p-3">
+                      <div className="rounded-xl border border-slate-100 bg-slate-50 p-3">
                         <p className="text-xs text-gray-500">Vehicle Type</p>
                         <p className="mt-1 text-sm font-semibold text-gray-900">
                           {getVehicleTypeLabel(shareCar.vehicle_type)}
@@ -1437,7 +1461,7 @@ function Stock() {
       )}
 
       {showImportModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/45 p-4 backdrop-blur-sm">
           <div className="w-full max-w-lg rounded-lg bg-white p-6 shadow-xl">
             <div className="mb-4 flex items-center justify-between">
               <h2 className="text-lg font-semibold text-gray-900">
@@ -1475,26 +1499,25 @@ function Stock() {
             )}
 
             <div className="mt-6 flex justify-end gap-3">
-              <button
+              <Button
                 type="button"
-                onClick={() => {
-                  setSelectedImportFile(null);
-                  setShowImportModal(false);
-                }}
-                disabled={importing}
-                className="rounded-md border border-gray-300 bg-white px-4 py-2 text-sm hover:bg-gray-100 disabled:opacity-50"
-              >
-                Cancel
-              </button>
-
-              <button
-                type="button"
+                variant="primary"
+                loading={importing}
                 onClick={handleBulkImport}
-                disabled={!selectedImportFile || importing}
-                className="rounded-md bg-gray-900 px-4 py-2 text-sm font-medium text-white hover:bg-gray-800 disabled:cursor-not-allowed disabled:opacity-50"
+                disabled={!selectedImportFile}
               >
                 {importing ? "Importing..." : "Import"}
-              </button>
+              </Button>
+
+              <Button
+                type="button"
+                variant="primary"
+                loading={importing}
+                onClick={handleBulkImport}
+                disabled={!selectedImportFile}
+              >
+                {importing ? "Importing..." : "Import"}
+              </Button>
             </div>
           </div>
         </div>

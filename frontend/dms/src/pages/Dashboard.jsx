@@ -1,11 +1,20 @@
 import { useEffect, useState } from "react";
-import { useAuth } from "../context/AuthContext";
+import {
+  Car,
+  CheckCircle2,
+  Clock3,
+  Package,
+  ShieldCheck,
+  Sparkles,
+  Wrench,
+  WalletCards,
+} from "lucide-react";
+
+import KPICard from "../components/ui/KPICard";
 import { getDashboardSummary } from "../api/inventory";
 import { formatAED } from "../utils/formatters";
 
 function Dashboard() {
-  const { user, logout } = useAuth();
-
   const [summary, setSummary] = useState(null);
   const [loading, setLoading] = useState(true);
 
@@ -27,174 +36,142 @@ function Dashboard() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gray-50 p-8">
-        <p className="text-gray-600">Loading dashboard...</p>
+      <div className="flex min-h-screen items-center justify-center bg-[#f5f6fa]">
+        <div className="text-center">
+          <div className="mx-auto mb-3 h-8 w-8 animate-spin rounded-full border-2 border-slate-300 border-t-amber-500" />
+          <p className="text-sm text-slate-500">Loading dashboard...</p>
+        </div>
       </div>
     );
   }
-
   if (!summary) {
     return (
-      <div className="min-h-screen bg-gray-50 p-8">
-        <p className="text-red-600">Failed to load dashboard.</p>
+      <div className="flex min-h-screen items-center justify-center bg-[#f5f6fa] px-4">
+        <div className="rounded-2xl border border-rose-200 bg-white px-6 py-5 text-center shadow-sm">
+          <p className="text-sm font-medium text-rose-600">
+            Failed to load dashboard.
+          </p>
+        </div>
       </div>
     );
   }
 
-  const inventoryStats = [
-    {
-      label: "Total Vehicles",
-      value: summary.total_vehicles,
-    },
-    {
-      label: "Available",
-      value: summary.available,
-    },
-    {
-      label: "Upcoming",
-      value: summary.upcoming,
-    },
-    {
-      label: "Reserved",
-      value: summary.reserved,
-    },
-    {
-      label: "Sold",
-      value: summary.sold,
-    },
-    {
-      label: "In House",
-      value: summary.in_house,
-    },
-    {
-      label: "In Service",
-      value: summary.in_service,
-    },
-    {
-      label: "Highlighted",
-      value: summary.highlighted_vehicles,
-    },
-  ];
-
-  const financialStats = [
-    {
-      label: "Inventory Value",
-      value: formatAED(summary.inventory_value),
-    },
-    {
-      label: "Average Purchase Cost",
-      value: formatAED(summary.average_purchase_cost),
-    },
-    {
-      label: "Average Asking Price",
-      value: formatAED(summary.average_asking_price),
-    },
-    {
-      label: "Total Expenses",
-      value: formatAED(summary.total_expenses),
-    },
-  ];
-
   return (
-    <div className="min-h-screen bg-gray-50">
-      {/* Header */}
-      <header className="border-b bg-white">
-        <div className="mx-auto flex max-w-7xl items-center justify-between px-6 py-4">
-          <div>
-            <h1 className="text-2xl font-bold text-gray-900">Prime Rides</h1>
-
-            <p className="text-sm text-gray-500">Dealer Management System</p>
-          </div>
-
-          <div className="flex items-center gap-3">
-            {user?.role === "MASTER" && (
-              <a
-                href="/finance/master"
-                className="rounded-md border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 transition hover:bg-gray-100"
-              >
-                Finance Master
-              </a>
-            )}
-
-            <div className="text-right">
-              <p className="text-sm font-medium text-gray-900">
-                {user?.first_name}
-              </p>
-
-              <p className="text-xs uppercase text-gray-500">{user?.role}</p>
-            </div>
-
-            <button
-              type="button"
-              onClick={logout}
-              className="rounded-md border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 transition hover:bg-gray-100"
-            >
-              Logout
-            </button>
-          </div>
-        </div>
-      </header>
-
+    <main className="mx-auto max-w-[1600px] px-4 py-6 sm:px-6 lg:px-8">
       {/* Main */}
-      <main className="mx-auto max-w-7xl px-6 py-8">
-        {/* Page heading */}
+      {/* Page heading */}
+      <div className="mb-8">
         <div className="mb-6">
-          <h2 className="text-xl font-semibold text-gray-900">Dashboard</h2>
-
-          <p className="mt-1 text-sm text-gray-500">
+          <h1 className="text-2xl font-bold tracking-tight text-slate-900">
+            Dashboard
+          </h1>
+          <p className="mt-1 text-sm text-slate-500">
             Overview of your vehicle inventory and financial position.
           </p>
         </div>
 
         {/* Inventory Overview */}
-        <section>
-          <h3 className="mb-4 text-lg font-semibold text-gray-900">
-            Inventory Overview
-          </h3>
+        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
+          <KPICard
+            label="Total Vehicles"
+            value={summary.total_vehicles}
+            icon={Car}
+            accent="cyan"
+          />
 
-          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
-            {inventoryStats.map((stat) => (
-              <div
-                key={stat.label}
-                className="rounded-lg border border-gray-200 bg-white p-5 shadow-sm"
-              >
-                <p className="text-sm font-medium text-gray-500">
-                  {stat.label}
-                </p>
+          <KPICard
+            label="Available"
+            value={summary.available}
+            icon={CheckCircle2}
+            accent="emerald"
+          />
 
-                <p className="mt-2 text-2xl font-bold text-gray-900">
-                  {stat.value}
-                </p>
-              </div>
-            ))}
-          </div>
-        </section>
+          <KPICard
+            label="Upcoming"
+            value={summary.upcoming}
+            icon={Clock3}
+            accent="blue"
+          />
 
-        {/* Financial Overview */}
-        <section className="mt-8">
-          <h3 className="mb-4 text-lg font-semibold text-gray-900">
+          <KPICard
+            label="Reserved"
+            value={summary.reserved}
+            icon={Package}
+            accent="amber"
+          />
+
+          <KPICard
+            label="Sold"
+            value={summary.sold}
+            icon={ShieldCheck}
+            accent="rose"
+          />
+
+          <KPICard
+            label="In House"
+            value={summary.in_house}
+            icon={Car}
+            accent="cyan"
+          />
+
+          <KPICard
+            label="In Service"
+            value={summary.in_service}
+            icon={Wrench}
+            accent="amber"
+          />
+
+          <KPICard
+            label="Highlighted"
+            value={summary.highlighted_vehicles}
+            icon={Sparkles}
+            accent="blue"
+          />
+        </div>
+      </div>
+
+      {/* Financial Overview */}
+      <div className="mt-8">
+        <div className="mb-4">
+          <h2 className="text-base font-semibold text-slate-800">
             Financial Overview
-          </h3>
+          </h2>
+          <p className="mt-1 text-xs text-slate-500">
+            Current inventory and expense position.
+          </p>
+        </div>
 
-          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
-            {financialStats.map((stat) => (
-              <div
-                key={stat.label}
-                className="rounded-lg border border-gray-200 bg-white p-5 shadow-sm"
-              >
-                <p className="text-sm font-medium text-gray-500">
-                  {stat.label}
-                </p>
+        <div className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-4">
+          <KPICard
+            label="Inventory Value"
+            value={formatAED(summary.inventory_value)}
+            icon={WalletCards}
+            accent="amber"
+          />
 
-                <p className="mt-2 text-xl font-bold text-gray-900">
-                  {stat.value}
-                </p>
-              </div>
-            ))}
-          </div>
-        </section>
-      </main>
-    </div>
+          <KPICard
+            label="Average Purchase Cost"
+            value={formatAED(summary.average_purchase_cost)}
+            icon={WalletCards}
+            accent="cyan"
+          />
+
+          <KPICard
+            label="Average Asking Price"
+            value={formatAED(summary.average_asking_price)}
+            icon={WalletCards}
+            accent="blue"
+          />
+
+          <KPICard
+            label="Total Expenses"
+            value={formatAED(summary.total_expenses)}
+            icon={WalletCards}
+            accent="rose"
+          />
+        </div>
+      </div>
+    </main>
   );
 }
 

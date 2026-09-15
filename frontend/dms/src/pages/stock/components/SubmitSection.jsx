@@ -1,10 +1,10 @@
 function SubmitSection({ saving, handleSubmit, handleDelete }) {
   return (
-    <div className="flex flex-col gap-3 sm:flex-row sm:justify-between">
+    <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
       <button
         type="button"
         onClick={handleDelete}
-        className="rounded-md border border-red-300 px-4 py-2 text-sm font-medium text-red-600 transition hover:bg-red-50"
+        className="rounded-xl border border-rose-200 bg-white px-4 py-2.5 text-sm font-semibold text-rose-600 transition hover:bg-rose-50"
       >
         Delete Vehicle
       </button>
@@ -13,7 +13,7 @@ function SubmitSection({ saving, handleSubmit, handleDelete }) {
         type="submit"
         disabled={saving}
         onClick={handleSubmit}
-        className="rounded-md bg-blue-600 px-5 py-2 text-sm font-medium text-white transition hover:bg-blue-700 disabled:cursor-not-allowed disabled:opacity-50"
+        className="rounded-xl bg-amber-500 px-5 py-2.5 text-sm font-bold text-slate-950 transition hover:bg-amber-400 disabled:cursor-not-allowed disabled:opacity-50"
       >
         {saving ? "Saving..." : "Save Vehicle"}
       </button>

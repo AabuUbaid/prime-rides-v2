@@ -1,5 +1,758 @@
 @import "tailwindcss";
 
+/* =========================================================
+   PRIME RIDES — NEW REFERENCE THEME
+   Light workspace + dark navigation shell
+   ========================================================= */
+
+@layer base {
+  :root {
+    /* Workspace */
+    --pr-workspace: #f5f6fa;
+    --pr-surface: #ffffff;
+    --pr-surface-soft: #f8f9fb;
+
+    /* Navigation */
+    --pr-sidebar: #070a12;
+    --pr-sidebar-surface: #0b0f18;
+    --pr-header: #070a12;
+
+    /* Borders */
+    --pr-border: #e5e7eb;
+    --pr-border-soft: #edf0f3;
+    --pr-border-dark: #1e293b;
+
+    /* Text */
+    --pr-text: #172033;
+    --pr-text-secondary: #475569;
+    --pr-text-muted: #64748b;
+    --pr-text-subtle: #94a3b8;
+
+    /* Brand */
+    --pr-brand: #f59e0b;
+    --pr-brand-hover: #d97706;
+    --pr-brand-soft: #fff7e6;
+
+    /* Semantic */
+    --pr-success: #10b981;
+    --pr-warning: #f59e0b;
+    --pr-danger: #e11d48;
+    --pr-info: #0ea5e9;
+  }
+
+  html {
+    min-width: 320px;
+    background: var(--pr-workspace);
+  }
+
+  body {
+    margin: 0;
+    min-width: 320px;
+    background: var(--pr-workspace);
+    color: var(--pr-text);
+
+    font-family:
+      "Plus Jakarta Sans",
+      -apple-system,
+      BlinkMacSystemFont,
+      "Segoe UI",
+      Roboto,
+      sans-serif;
+
+    overflow-x: hidden;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+
+  code,
+  pre,
+  .font-mono {
+    font-family: "JetBrains Mono", monospace;
+  }
+
+  *,
+  *::before,
+  *::after {
+    box-sizing: border-box;
+  }
+
+  button,
+  input,
+  select,
+  textarea {
+    font: inherit;
+  }
+}
+
+/* =========================================================
+   SCROLLBAR
+   ========================================================= */
+
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: var(--pr-workspace);
+}
+
+::-webkit-scrollbar-thumb {
+  background: #cbd5e1;
+  border-radius: 999px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #94a3b8;
+}
+
+/* =========================================================
+   REFERENCE LIGHT-WORKSPACE UTILITIES
+   ========================================================= */
+
+.pr-workspace {
+  min-height: 100vh;
+  background: var(--pr-workspace);
+}
+
+.pr-surface {
+  background: var(--pr-surface);
+  border: 1px solid var(--pr-border);
+}
+
+.pr-card {
+  background: var(--pr-surface);
+  border: 1px solid var(--pr-border);
+  border-radius: 16px;
+  box-shadow:
+    0 2px 8px rgba(15, 23, 42, 0.04),
+    0 1px 2px rgba(15, 23, 42, 0.03);
+}
+
+.pr-card-hover {
+  transition:
+    transform 180ms ease,
+    box-shadow 180ms ease,
+    border-color 180ms ease;
+}
+
+.pr-card-hover:hover {
+  transform: translateY(-1px);
+  border-color: #d7dde5;
+  box-shadow:
+    0 8px 24px rgba(15, 23, 42, 0.07),
+    0 2px 6px rgba(15, 23, 42, 0.04);
+}
+
+/* =========================================================
+   REFERENCE TYPOGRAPHY
+   ========================================================= */
+
+.pr-page-title {
+  color: var(--pr-text);
+  font-size: 24px;
+  line-height: 1.2;
+  font-weight: 800;
+  letter-spacing: -0.025em;
+}
+
+.pr-section-title {
+  color: var(--pr-text);
+  font-size: 15px;
+  line-height: 1.3;
+  font-weight: 700;
+}
+
+.pr-label {
+  color: var(--pr-text-muted);
+  font-size: 11px;
+  line-height: 1.3;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+}
+
+.pr-number {
+  font-variant-numeric: tabular-nums;
+}
+
+.pr-number-mono {
+  font-family: "JetBrains Mono", monospace;
+  font-variant-numeric: tabular-nums;
+}
+
+/* =========================================================
+   AMBER BRAND ACCENT
+   ========================================================= */
+
+.pr-accent {
+  color: var(--pr-brand);
+}
+
+.pr-accent-bg {
+  background: var(--pr-brand);
+}
+
+.pr-accent-soft {
+  background: var(--pr-brand-soft);
+}
+
+/* =========================================================
+   LIGHT CONTENT GRID
+   ========================================================= */
+
+.pr-light-grid {
+  background-image:
+    linear-gradient(
+      rgba(148, 163, 184, 0.045) 1px,
+      transparent 1px
+    ),
+    linear-gradient(
+      90deg,
+      rgba(148, 163, 184, 0.045) 1px,
+      transparent 1px
+    );
+  background-size: 32px 32px;
+}
+
+/* =========================================================
+   NAVIGATION SHELL HELPERS
+   ========================================================= */
+
+.pr-dark-shell {
+  background: var(--pr-sidebar);
+  color: #f8fafc;
+}
+
+.pr-dark-surface {
+  background: var(--pr-sidebar-surface);
+}
+
+.pr-dark-border {
+  border-color: var(--pr-border-dark);
+}
+
+/* =========================================================
+   PRIME RIDES — GLOBAL UI FOUNDATION
+   Screen/application styles only.
+   Print styles remain below and are intentionally isolated.
+   ========================================================= */
+
+:root {
+  /* Brand / semantic colors */
+  --pr-primary: #111827;
+  --pr-primary-hover: #1f2937;
+
+  --pr-background: #f9fafb;
+  --pr-surface: #ffffff;
+
+  --pr-border: #e5e7eb;
+  --pr-border-strong: #d1d5db;
+
+  --pr-text: #111827;
+  --pr-text-secondary: #374151;
+  --pr-text-muted: #6b7280;
+  --pr-text-subtle: #9ca3af;
+
+  --pr-success: #16a34a;
+  --pr-success-bg: #f0fdf4;
+
+  --pr-warning: #d97706;
+  --pr-warning-bg: #fffbeb;
+
+  --pr-danger: #dc2626;
+  --pr-danger-bg: #fef2f2;
+
+  --pr-info: #2563eb;
+  --pr-info-bg: #eff6ff;
+
+  /* Layout */
+  --pr-page-max-width: 1440px;
+  --pr-page-padding: 24px;
+  --pr-page-padding-mobile: 16px;
+
+  /* Control sizing */
+  --pr-control-height: 40px;
+  --pr-control-radius: 8px;
+
+  /* Cards */
+  --pr-card-radius: 12px;
+  --pr-card-padding: 20px;
+
+  /* Motion */
+  --pr-transition-fast: 150ms ease;
+}
+
+/* =========================================================
+   BASE SCREEN NORMALIZATION
+   ========================================================= */
+
+html {
+  min-width: 320px;
+  background: var(--pr-background);
+}
+
+body {
+  margin: 0;
+  min-width: 320px;
+  background: var(--pr-background);
+  color: var(--pr-text);
+  font-family:
+    Inter,
+    ui-sans-serif,
+    system-ui,
+    -apple-system,
+    BlinkMacSystemFont,
+    "Segoe UI",
+    sans-serif;
+  font-size: 14px;
+  line-height: 1.5;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+button,
+input,
+select,
+textarea {
+  font: inherit;
+}
+
+button {
+  cursor: pointer;
+}
+
+button:disabled {
+  cursor: not-allowed;
+}
+
+img {
+  max-width: 100%;
+}
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+/* =========================================================
+   CONSISTENT FOCUS TREATMENT
+   ========================================================= */
+
+button:focus-visible,
+a:focus-visible,
+input:focus-visible,
+select:focus-visible,
+textarea:focus-visible {
+  outline: 2px solid var(--pr-info);
+  outline-offset: 2px;
+}
+
+/* =========================================================
+   SHARED SCREEN VISUAL PRIMITIVES
+   These are additive and can be adopted page-by-page.
+   ========================================================= */
+
+.pr-page {
+  width: 100%;
+  max-width: var(--pr-page-max-width);
+  margin: 0 auto;
+  padding: var(--pr-page-padding);
+}
+
+.pr-card {
+  background: var(--pr-surface);
+  border: 1px solid var(--pr-border);
+  border-radius: var(--pr-card-radius);
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.04);
+}
+
+.pr-card-header {
+  padding: 20px 20px 16px;
+  border-bottom: 1px solid var(--pr-border);
+}
+
+.pr-card-body {
+  padding: var(--pr-card-padding);
+}
+
+.pr-card-footer {
+  padding: 16px 20px;
+  border-top: 1px solid var(--pr-border);
+}
+
+/* =========================================================
+   SHARED BUTTON VISUALS
+   ========================================================= */
+
+.pr-btn {
+  display: inline-flex;
+  min-height: var(--pr-control-height);
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  border: 1px solid transparent;
+  border-radius: var(--pr-control-radius);
+  padding: 0 14px;
+  font-size: 14px;
+  font-weight: 500;
+  line-height: 1;
+  white-space: nowrap;
+  transition:
+    background-color var(--pr-transition-fast),
+    border-color var(--pr-transition-fast),
+    color var(--pr-transition-fast),
+    box-shadow var(--pr-transition-fast);
+}
+
+.pr-btn:disabled {
+  opacity: 0.55;
+}
+
+.pr-btn-primary {
+  background: var(--pr-primary);
+  color: #ffffff;
+}
+
+.pr-btn-primary:hover:not(:disabled) {
+  background: var(--pr-primary-hover);
+}
+
+.pr-btn-secondary {
+  background: #ffffff;
+  border-color: var(--pr-border-strong);
+  color: var(--pr-text);
+}
+
+.pr-btn-secondary:hover:not(:disabled) {
+  background: #f9fafb;
+}
+
+.pr-btn-danger {
+  background: var(--pr-danger);
+  color: #ffffff;
+}
+
+.pr-btn-danger:hover:not(:disabled) {
+  background: #b91c1c;
+}
+
+.pr-btn-success {
+  background: var(--pr-success);
+  color: #ffffff;
+}
+
+.pr-btn-success:hover:not(:disabled) {
+  background: #15803d;
+}
+
+.pr-btn-ghost {
+  background: transparent;
+  color: var(--pr-text-secondary);
+}
+
+.pr-btn-ghost:hover:not(:disabled) {
+  background: #f3f4f6;
+}
+
+/* =========================================================
+   SHARED FORM CONTROLS
+   ========================================================= */
+
+.pr-label {
+  display: block;
+  margin-bottom: 6px;
+  color: var(--pr-text-secondary);
+  font-size: 13px;
+  font-weight: 500;
+  line-height: 1.3;
+}
+
+.pr-input,
+.pr-select,
+.pr-textarea {
+  width: 100%;
+  border: 1px solid var(--pr-border-strong);
+  border-radius: var(--pr-control-radius);
+  background: #ffffff;
+  color: var(--pr-text);
+  font-size: 14px;
+  transition:
+    border-color var(--pr-transition-fast),
+    box-shadow var(--pr-transition-fast);
+}
+
+.pr-input,
+.pr-select {
+  min-height: var(--pr-control-height);
+  padding: 0 12px;
+}
+
+.pr-textarea {
+  min-height: 96px;
+  padding: 10px 12px;
+  resize: vertical;
+}
+
+.pr-input::placeholder,
+.pr-textarea::placeholder {
+  color: var(--pr-text-subtle);
+}
+
+.pr-input:focus,
+.pr-select:focus,
+.pr-textarea:focus {
+  border-color: #93c5fd;
+  box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.12);
+  outline: none;
+}
+
+.pr-input:disabled,
+.pr-select:disabled,
+.pr-textarea:disabled {
+  background: #f3f4f6;
+  color: var(--pr-text-muted);
+  cursor: not-allowed;
+}
+
+.pr-helper {
+  margin-top: 5px;
+  color: var(--pr-text-muted);
+  font-size: 12px;
+  line-height: 1.4;
+}
+
+.pr-error-text {
+  margin-top: 5px;
+  color: var(--pr-danger);
+  font-size: 12px;
+  line-height: 1.4;
+}
+
+/* =========================================================
+   SHARED ALERTS
+   ========================================================= */
+
+.pr-alert {
+  border: 1px solid;
+  border-radius: 8px;
+  padding: 12px 14px;
+  font-size: 14px;
+}
+
+.pr-alert-error {
+  border-color: #fecaca;
+  background: var(--pr-danger-bg);
+  color: #991b1b;
+}
+
+.pr-alert-warning {
+  border-color: #fde68a;
+  background: var(--pr-warning-bg);
+  color: #92400e;
+}
+
+.pr-alert-success {
+  border-color: #bbf7d0;
+  background: var(--pr-success-bg);
+  color: #166534;
+}
+
+.pr-alert-info {
+  border-color: #bfdbfe;
+  background: var(--pr-info-bg);
+  color: #1e40af;
+}
+
+/* =========================================================
+   SHARED STATUS BADGES
+   ========================================================= */
+
+.pr-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  min-height: 24px;
+  border-radius: 999px;
+  padding: 3px 9px;
+  font-size: 12px;
+  font-weight: 600;
+  line-height: 1.2;
+  white-space: nowrap;
+}
+
+.pr-badge-neutral {
+  background: #f3f4f6;
+  color: #374151;
+}
+
+.pr-badge-info {
+  background: #dbeafe;
+  color: #1d4ed8;
+}
+
+.pr-badge-success {
+  background: #dcfce7;
+  color: #15803d;
+}
+
+.pr-badge-warning {
+  background: #fef3c7;
+  color: #b45309;
+}
+
+.pr-badge-danger {
+  background: #fee2e2;
+  color: #b91c1c;
+}
+
+.pr-badge-blocked {
+  background: #f3f4f6;
+  color: #4b5563;
+}
+
+.pr-badge-completed {
+  background: #dcfce7;
+  color: #166534;
+}
+
+/* =========================================================
+   SHARED TABLE FOUNDATION
+   ========================================================= */
+
+.pr-table-wrap {
+  width: 100%;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+}
+
+.pr-table {
+  width: 100%;
+  border-collapse: collapse;
+  background: #ffffff;
+}
+
+.pr-table th {
+  padding: 10px 12px;
+  border-bottom: 1px solid var(--pr-border);
+  background: #f9fafb;
+  color: var(--pr-text-muted);
+  font-size: 12px;
+  font-weight: 600;
+  line-height: 1.3;
+  text-align: left;
+  text-transform: uppercase;
+  letter-spacing: 0.025em;
+  white-space: nowrap;
+}
+
+.pr-table td {
+  padding: 12px;
+  border-bottom: 1px solid var(--pr-border);
+  color: var(--pr-text);
+  font-size: 13px;
+  vertical-align: middle;
+}
+
+.pr-table tbody tr:hover {
+  background: #f9fafb;
+}
+
+.pr-table th.pr-number,
+.pr-table td.pr-number {
+  text-align: right;
+  white-space: nowrap;
+}
+
+.pr-table th.pr-actions,
+.pr-table td.pr-actions {
+  text-align: right;
+  white-space: nowrap;
+}
+
+/* =========================================================
+   FINANCIAL NUMBER TREATMENT
+   ========================================================= */
+
+.pr-financial {
+  font-variant-numeric: tabular-nums;
+  font-feature-settings: "tnum";
+}
+
+.pr-financial-lg {
+  font-size: 22px;
+  font-weight: 600;
+  line-height: 1.2;
+  font-variant-numeric: tabular-nums;
+}
+
+.pr-financial-xl {
+  font-size: 28px;
+  font-weight: 700;
+  line-height: 1.15;
+  font-variant-numeric: tabular-nums;
+}
+
+/* =========================================================
+   SHARED EMPTY / LOADING STATES
+   ========================================================= */
+
+.pr-state {
+  display: flex;
+  min-height: 160px;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+  border: 1px dashed var(--pr-border-strong);
+  border-radius: 10px;
+  background: #ffffff;
+  color: var(--pr-text-muted);
+  text-align: center;
+}
+
+.pr-state-title {
+  color: var(--pr-text-secondary);
+  font-size: 14px;
+  font-weight: 600;
+}
+
+.pr-state-description {
+  margin-top: 4px;
+  color: var(--pr-text-muted);
+  font-size: 13px;
+}
+
+/* =========================================================
+   RESPONSIVE PAGE FOUNDATION
+   ========================================================= */
+
+@media (max-width: 767px) {
+  :root {
+    --pr-page-padding: var(--pr-page-padding-mobile);
+    --pr-card-padding: 16px;
+  }
+
+  .pr-page {
+    padding: var(--pr-page-padding-mobile);
+  }
+
+  .pr-card-header {
+    padding: 16px;
+  }
+
+  .pr-card-body {
+    padding: 16px;
+  }
+
+  .pr-card-footer {
+    padding: 14px 16px;
+  }
+
+  .pr-btn {
+    min-height: 42px;
+  }
+}
 
 /* =========================================================
    PRINT DOCUMENT - SCREEN PREVIEW

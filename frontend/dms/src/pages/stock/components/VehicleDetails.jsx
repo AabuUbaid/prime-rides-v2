@@ -1,7 +1,15 @@
 function VehicleDetails({ formData, handleChange, hideStatus = false }) {
   return (
-    <div className="space-y-4">
-      <h2 className="text-lg font-semibold text-gray-900">Vehicle Details</h2>
+    <div className="space-y-5">
+      <div>
+        <h2 className="text-base font-bold tracking-tight text-slate-900">
+          Vehicle Details
+        </h2>
+
+        <p className="mt-1 text-xs text-slate-500">
+          Mileage, sourcing, identifiers, and operational information.
+        </p>
+      </div>
 
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
         <input
@@ -12,7 +20,7 @@ function VehicleDetails({ formData, handleChange, hideStatus = false }) {
           step={1}
           value={formData.mileage}
           onChange={handleChange}
-          className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm text-gray-900 outline-none transition focus:border-blue-500 focus:ring-1 focus:ring-blue-500"
+          className="h-10 w-full rounded-xl border border-slate-200 bg-white px-3 font-mono text-sm text-slate-800 outline-none transition placeholder:text-slate-400 focus:border-amber-400 focus:ring-2 focus:ring-amber-400/15"
         />
 
         <input
@@ -22,7 +30,7 @@ function VehicleDetails({ formData, handleChange, hideStatus = false }) {
           value={formData.actual_mileage}
           onChange={handleChange}
           min="0"
-          className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm text-gray-900 outline-none transition focus:border-blue-500 focus:ring-1 focus:ring-blue-500"
+          className="h-10 w-full rounded-xl border border-slate-200 bg-white px-3 font-mono text-sm text-slate-800 outline-none transition placeholder:text-slate-400 focus:border-amber-400 focus:ring-2 focus:ring-amber-400/15"
         />
 
         <input
@@ -31,7 +39,7 @@ function VehicleDetails({ formData, handleChange, hideStatus = false }) {
           placeholder="Supplier"
           value={formData.supplier}
           onChange={handleChange}
-          className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm text-gray-900 outline-none transition focus:border-blue-500 focus:ring-1 focus:ring-blue-500"
+          className="h-10 w-full rounded-xl border border-slate-200 bg-white px-3 text-sm text-slate-800 outline-none transition placeholder:text-slate-400 focus:border-amber-400 focus:ring-2 focus:ring-amber-400/15"
         />
 
         <input
@@ -40,7 +48,7 @@ function VehicleDetails({ formData, handleChange, hideStatus = false }) {
           placeholder="Chassis Number(VIN)"
           value={formData.chassis_number}
           onChange={handleChange}
-          className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm text-gray-900 outline-none transition focus:border-blue-500 focus:ring-1 focus:ring-blue-500"
+          className="h-10 w-full rounded-xl border border-slate-200 bg-white px-3 font-mono text-sm text-slate-800 outline-none transition placeholder:text-slate-400 focus:border-amber-400 focus:ring-2 focus:ring-amber-400/15"
         />
 
         <input
@@ -49,24 +57,26 @@ function VehicleDetails({ formData, handleChange, hideStatus = false }) {
           placeholder="Engine Number"
           value={formData.engine_number}
           onChange={handleChange}
-          className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm text-gray-900 outline-none transition focus:border-blue-500 focus:ring-1 focus:ring-blue-500"
+          className="h-10 w-full rounded-xl border border-slate-200 bg-white px-3 font-mono text-sm text-slate-800 outline-none transition placeholder:text-slate-400 focus:border-amber-400 focus:ring-2 focus:ring-amber-400/15"
         />
 
-        <div>
-          <select
-            name="status"
-            value={formData.status}
-            onChange={handleChange}
-            className="w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-sm text-gray-900 outline-none transition focus:border-blue-500 focus:ring-1 focus:ring-blue-500"
-          >
-            <option value="available">Available</option>
-            <option value="reserved">Reserved</option>
-            <option value="sold">Sold</option>
-            <option value="upcoming">Upcoming</option>
-            <option value="in_service">In Service</option>
-            <option value="in_house">In House</option>
-          </select>
-        </div>
+        {!hideStatus && (
+          <div>
+            <select
+              name="status"
+              value={formData.status}
+              onChange={handleChange}
+              className="h-10 w-full rounded-xl border border-slate-200 bg-white px-3 text-sm text-slate-800 outline-none transition focus:border-amber-400 focus:ring-2 focus:ring-amber-400/15"
+            >
+              <option value="available">Available</option>
+              <option value="reserved">Reserved</option>
+              <option value="sold">Sold</option>
+              <option value="upcoming">Upcoming</option>
+              <option value="in_service">In Service</option>
+              <option value="in_house">In House</option>
+            </select>
+          </div>
+        )}
 
         {formData.status === "in_service" && (
           <input
@@ -74,7 +84,7 @@ function VehicleDetails({ formData, handleChange, hideStatus = false }) {
             placeholder="Specify Location"
             value={formData.service_location}
             onChange={handleChange}
-            className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm text-gray-900 outline-none transition focus:border-blue-500 focus:ring-1 focus:ring-blue-500"
+            className="h-10 w-full rounded-xl border border-slate-200 bg-white px-3 text-sm text-slate-800 outline-none transition placeholder:text-slate-400 focus:border-amber-400 focus:ring-2 focus:ring-amber-400/15"
           />
         )}
 
@@ -82,7 +92,7 @@ function VehicleDetails({ formData, handleChange, hideStatus = false }) {
           name="source"
           value={formData.source}
           onChange={handleChange}
-          className="w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-sm text-gray-900 outline-none transition focus:border-blue-500 focus:ring-1 focus:ring-blue-500"
+          className="h-10 w-full rounded-xl border border-slate-200 bg-white px-3 text-sm text-slate-800 outline-none transition focus:border-amber-400 focus:ring-2 focus:ring-amber-400/15"
         >
           <option value="own_purchase">Own Purchase</option>
           <option value="fly_wheel">Flywheel</option>
@@ -99,20 +109,21 @@ function VehicleDetails({ formData, handleChange, hideStatus = false }) {
             placeholder="Specify Source"
             value={formData.source_specify}
             onChange={handleChange}
-            className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm text-gray-900 outline-none transition focus:border-blue-500 focus:ring-1 focus:ring-blue-500"
+            className="h-10 w-full rounded-xl border border-slate-200 bg-white px-3 text-sm text-slate-800 outline-none transition placeholder:text-slate-400 focus:border-amber-400 focus:ring-2 focus:ring-amber-400/15"
           />
         )}
       </div>
 
-      <label className="flex cursor-pointer items-center gap-2 text-sm text-gray-700">
+      <label className="flex cursor-pointer items-center gap-2 rounded-xl border border-slate-200 bg-slate-50 px-3 py-3 text-sm font-medium text-slate-700">
         <input
           type="checkbox"
           name="highlight_public"
           checked={formData.highlight_public}
           onChange={handleChange}
-          className="h-4 w-4 rounded border-gray-300"
+          className="h-4 w-4 rounded border-slate-300 text-amber-500 focus:ring-amber-400"
         />
-        Highlight Public
+
+        <span>Highlight Public</span>
       </label>
     </div>
   );
