@@ -34,7 +34,7 @@ ALLOWED_HOSTS = [
     "localhost",
     "172.28.5.226",
     "192.168.0.148",
-    "https://prime-rides-v2-bak2.onrender.com",
+    "https://dms.primerides.ae",
 ]
 
 
@@ -199,7 +199,7 @@ CORS_ALLOWED_ORIGINS = [
     "http://172.28.5.8:5173",
     "http://192.168.0.180:5173",
     "http://192.168.0.179:5173",
-    "https://dms.primerides.ae/",
+    "https://dms.primerides.ae",
 ]
 
 # Default primary key field type
