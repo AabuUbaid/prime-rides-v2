@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { Link, useNavigate, useParams } from "react-router-dom";
 import { toast } from "react-toastify";
+import { useAuth } from "../../context/AuthContext";
 import {
   getQuote,
   updateQuote,
@@ -137,6 +138,10 @@ function EditableField({ label, children }) {
 
 export default function QuoteDetail() {
   const { id } = useParams();
+  const { user } = useAuth();
+
+  const isSalesStaff = user?.role === "SALES_STAFF";
+
   const navigate = useNavigate();
 
   const [quote, setQuote] = useState(null);
@@ -714,7 +719,8 @@ export default function QuoteDetail() {
               {printing ? "Preparing..." : "Print Quote"}
             </button>
 
-            {quote.status === "booked" &&
+            {!isSalesStaff &&
+              quote.status === "booked" &&
               quote.payment_method === "Cash" &&
               !quote.deal_closed &&
               (quote.cash_deal?.id ? (
@@ -735,13 +741,19 @@ export default function QuoteDetail() {
                 </button>
               ))}
 
-            {quote.status === "booked" &&
+            {!isSalesStaff &&
+              quote.status === "booked" &&
               quote.payment_method === "Finance" &&
               !quote.deal_closed &&
+              !quote.loan_approved &&
               (quote.active_bank_loan?.id ? (
                 <div className="flex flex-wrap items-center gap-2">
                   <div className="rounded-lg border border-green-300 bg-green-50 px-3 py-2 text-sm font-medium text-green-700">
-                    Bank Loan Created
+                    <Link
+                      to={`/finance/bank-loans/${quote.active_bank_loan.id}`}
+                    >
+                      Bank Loan Created
+                    </Link>
                   </div>
 
                   <div className="rounded-lg border border-gray-300 bg-gray-50 px-3 py-2 text-sm text-gray-700">
@@ -759,13 +771,6 @@ export default function QuoteDetail() {
                       {quote.active_bank_loan.priority || "-"}
                     </span>
                   </div>
-
-                  <Link
-                    to={`/finance/bank-loans/${quote.active_bank_loan.id}`}
-                    className="rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50"
-                  >
-                    Open Bank Loan
-                  </Link>
                 </div>
               ) : quote.loan_approved ? (
                 <div className="rounded-lg border border-green-300 bg-green-50 px-3 py-2 text-sm font-medium text-green-700">

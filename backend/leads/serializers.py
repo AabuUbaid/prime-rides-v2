@@ -100,7 +100,13 @@ class LeadSerializer(serializers.ModelSerializer):
             days=7,
         )
 
-        return obj.last_activity_at < threshold
+        def get_is_high_priority(self, obj):
+            threshold = timezone.now() - timedelta(days=7)
+
+            if not obj.last_activity_at:
+                return True
+
+            return obj.last_activity_at < threshold
 
 
 class LeadCreateSerializer(serializers.ModelSerializer):

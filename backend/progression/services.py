@@ -33,11 +33,18 @@ def _cash_advance_received(*, quote, cash_deal):
     if cash_deal.advance_amount <= Decimal("0.00"):
         return False
 
+    payment_categories = {
+        CashReceipt.Category.ADVANCE,
+        CashReceipt.Category.DOWN_PAYMENT,
+        CashReceipt.Category.ADDITIONAL_PAYMENT,
+        CashReceipt.Category.FINAL_PAYMENT,
+    }
+
     customer_payments = (
         CashReceipt.objects
         .filter(
             quote=quote,
-            category=CashReceipt.Category.ADVANCE,
+            category__in=payment_categories,
             direction=CashReceipt.Direction.CUSTOMER_PAYMENT,
         )
         .aggregate(total=Sum("amount"))
@@ -57,9 +64,7 @@ def _cash_advance_received(*, quote, cash_deal):
         or Decimal("0.00")
     )
 
-    actual_received = (
-        customer_payments - reversed_payments
-    )
+    actual_received = customer_payments - reversed_payments
 
     return actual_received >= cash_deal.advance_amount
 
@@ -206,8 +211,8 @@ def sync_progression_for_quote(*, quote_id):
         return progression
 
     # -------------------------------------------------
-    # CASH
-    # -------------------------------------------------
+# CASH
+# -------------------------------------------------
 
     if quote.payment_method == Quote.PaymentMethod.CASH:
         cash_deal = (
@@ -220,16 +225,19 @@ def sync_progression_for_quote(*, quote_id):
         if cash_deal is None:
             return progression
 
+        # Fully paid / ready for delivery.
+        cash_ready_for_delivery = (
+            cash_deal.balance_amount <= Decimal("0.00")
+            or cash_deal.status == CashDeal.Status.READY_FOR_DELIVERY
+        )
+
+        # Partially paid Cash Deal requires an actual receipt.
         advance_received = _cash_advance_received(
             quote=quote,
             cash_deal=cash_deal,
         )
 
-        # ---------------------------------------------
-        # Advance Actually Received → Active
-        # ---------------------------------------------
-
-        if advance_received:
+        if advance_received or cash_ready_for_delivery:
             progression_data = {
                 "source_type": Progression.SourceType.CASH,
                 "bank_loan": None,
@@ -245,7 +253,6 @@ def sync_progression_for_quote(*, quote_id):
                     **progression_data,
                 )
 
-            # Do not overwrite a completed progression.
             if progression.status != Progression.Status.COMPLETED:
                 for field, value in progression_data.items():
                     setattr(
@@ -266,11 +273,7 @@ def sync_progression_for_quote(*, quote_id):
 
             return progression
 
-        # ---------------------------------------------
-        # Cash Deal exists but advance not received
-        # → Inactive
-        # ---------------------------------------------
-
+        # Cash Deal exists but is not financially active.
         if progression is not None:
             if progression.status != Progression.Status.COMPLETED:
                 progression.cash_deal = cash_deal
@@ -285,6 +288,7 @@ def sync_progression_for_quote(*, quote_id):
                 )
 
         return progression
+    
 
     # -------------------------------------------------
     # UNSUPPORTED PAYMENT METHOD
@@ -349,18 +353,43 @@ def _balance_sheet_is_settled(*, quote):
         or Decimal("0.00")
     )
 
-    total_spent = (
-        CashReceipt.objects
-        .filter(
-            quote=quote,
-            direction=CashReceipt.Direction.COMPANY_ON_BEHALF,
+    # Keep this calculation exactly aligned with
+    # BalanceSheetSerializer.get_total_spent().
+    if quote.payment_method == "Finance":
+        total_spent = (
+            getattr(
+                quote,
+                "emi_finance_amount",
+                None,
+            )
+            or Decimal("0.00")
         )
-        .aggregate(total=Sum("amount"))
-        .get("total")
-        or Decimal("0.00")
-    )
+    else:
+        quote_amount = (
+            getattr(
+                quote,
+                "price",
+                None,
+            )
+            or Decimal("0.00")
+        )
 
-    return (total_received - total_spent) == Decimal("0.00")
+        company_on_behalf = (
+            CashReceipt.objects
+            .filter(
+                quote=quote,
+                direction=CashReceipt.Direction.COMPANY_ON_BEHALF,
+            )
+            .aggregate(total=Sum("amount"))
+            .get("total")
+            or Decimal("0.00")
+        )
+
+        total_spent = quote_amount + company_on_behalf
+
+    return (
+        total_received - total_spent
+    ) == Decimal("0.00")
        
 @transaction.atomic
 def advance_progression_stage(

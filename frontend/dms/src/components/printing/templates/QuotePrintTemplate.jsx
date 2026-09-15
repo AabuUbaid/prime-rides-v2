@@ -116,30 +116,21 @@ export default function QuotePrintTemplate({ quote }) {
   const extraDownPayment = Number(quote.extra_down_payment || 0);
 
   /*
+   * Quote price is the backend-controlled commercial amount.
+   * Do not add VAT again to quote.price.
+   *
    * CASH:
-   * Vehicle Price is VAT-exclusive.
-   * Total = Vehicle Price + VAT - Advance Amount - Extra Down Payment
+   * Total = Quote Price - Advance Amount - Extra Down Payment
    *
    * FINANCE:
-   * Saved EMI Vehicle Price is already VAT-inclusive.
-   * Do NOT add VAT again.
-   * Total = VAT-inclusive Vehicle Price - Down Payment - Extra Down Payment
+   * Total = Quote Price - Down Payment - Extra Down Payment
    */
   const cashVatEnabled = quote?.vat?.enabled === true;
   const cashVatAmount = Number(quote?.vat?.amount || 0);
 
-  const financeBank = isFinance
-    ? quote?.finance?.bank_name || "-"
-    : null;
+  const financeBank = isFinance ? quote?.finance?.bank_name || "-" : null;
 
-  const totalAmount = isCash
-    ? vehiclePrice +
-      (cashVatEnabled ? cashVatAmount : 0) -
-      downPayment -
-      extraDownPayment
-    : vehiclePrice -
-      downPayment -
-      extraDownPayment;
+  const totalAmount = vehiclePrice - downPayment - extraDownPayment;
 
   const expenses = normalizeExpenses(quote.expenses);
 
@@ -148,16 +139,10 @@ export default function QuotePrintTemplate({ quote }) {
       documentType="QUOTATION"
       documentNumber={quote.quote_number}
       date={formatDate(quote.date)}
-      status={
-        quote.status
-          ? String(quote.status).toUpperCase()
-          : ""
-      }
+      status={quote.status ? String(quote.status).toUpperCase() : ""}
     >
       <section className="print-section">
-        <div className="print-section-title">
-          Customer Details
-        </div>
+        <div className="print-section-title">Customer Details</div>
 
         <div className="print-grid-2">
           <div>
@@ -173,9 +158,7 @@ export default function QuotePrintTemplate({ quote }) {
       </section>
 
       <section className="print-section">
-        <div className="print-section-title">
-          Vehicle Details
-        </div>
+        <div className="print-section-title">Vehicle Details</div>
 
         <div className="print-grid-3">
           <div>
@@ -203,33 +186,25 @@ export default function QuotePrintTemplate({ quote }) {
             <div>
               {quote.vehicle?.mileage !== null &&
               quote.vehicle?.mileage !== undefined
-                ? `${Number(
-                    quote.vehicle.mileage
-                  ).toLocaleString("en-AE")} km`
+                ? `${Number(quote.vehicle.mileage).toLocaleString("en-AE")} km`
                 : "-"}
             </div>
           </div>
 
           <div>
             <strong>Chassis Number</strong>
-            <div>
-              {quote.vehicle?.chassis_number || "-"}
-            </div>
+            <div>{quote.vehicle?.chassis_number || "-"}</div>
           </div>
 
           <div>
             <strong>Engine Number</strong>
-            <div>
-              {quote.vehicle?.engine_number || "-"}
-            </div>
+            <div>{quote.vehicle?.engine_number || "-"}</div>
           </div>
         </div>
       </section>
 
       <section className="print-section">
-        <div className="print-section-title">
-          Quotation
-        </div>
+        <div className="print-section-title">Quotation</div>
 
         <table className="print-table">
           <tbody>
@@ -269,9 +244,7 @@ export default function QuotePrintTemplate({ quote }) {
             )}
 
             <tr>
-              <th>
-                {isCash ? "Advance Amount" : "Down Payment"}
-              </th>
+              <th>{isCash ? "Advance Amount" : "Down Payment"}</th>
               <td>{formatCurrency(downPayment)}</td>
             </tr>
 
@@ -292,9 +265,7 @@ export default function QuotePrintTemplate({ quote }) {
 
       {expenses.length > 0 && (
         <section className="print-section">
-          <div className="print-section-title">
-            Internal Expenses
-          </div>
+          <div className="print-section-title">Internal Expenses</div>
 
           <table className="print-table">
             <thead>

@@ -149,7 +149,7 @@ export default function NewQuote() {
   const [calculatingStock, setCalculatingStock] = useState(false);
   const [drivingLicense, setDrivingLicense] = useState(true);
   const [vatEnabled, setVatEnabled] = useState(true);
-  const [servicePackageSelected, setServicePackageSelected] = useState(false);
+  const [selectedServicePackageId, setSelectedServicePackageId] = useState("");
 
   const [selectedCarId, setSelectedCarId] = useState("");
 
@@ -337,8 +337,10 @@ export default function NewQuote() {
     );
   })();
 
-  const defaultServicePackage =
-    (servicePackages || []).find((item) => Boolean(item?.is_default)) || null;
+  const selectedServicePackage =
+    (servicePackages || []).find(
+      (item) => String(item?.id) === String(selectedServicePackageId),
+    ) || null;
 
   const quoteVehicleStockId =
     source === SOURCE_STOCK
@@ -418,8 +420,7 @@ export default function NewQuote() {
     setStockCalculation(null);
     setDrivingLicense(true);
     setVatEnabled(true);
-    setServicePackageSelected(false);
-
+    setSelectedServicePackageId("");
     setError("");
   };
 
@@ -523,7 +524,10 @@ export default function NewQuote() {
             expense_type: getExpenseType(expense),
           })),
           driving_license: drivingLicense,
-          service_package_selected: servicePackageSelected,
+          service_package_selected: Boolean(selectedServicePackageId),
+          service_package_id: selectedServicePackageId
+            ? Number(selectedServicePackageId)
+            : null,
           auto_apply_conditional_expenses: false,
         });
 
@@ -565,7 +569,7 @@ export default function NewQuote() {
     selectedExpenses,
     drivingLicense,
     vatEnabled,
-    servicePackageSelected,
+    selectedServicePackageId,
   ]);
 
   useEffect(() => {
@@ -880,8 +884,8 @@ export default function NewQuote() {
       return "No active insurance band is configured for this vehicle price.";
     }
 
-    if (servicePackageSelected && !defaultServicePackage) {
-      return "No active default Service Package is configured.";
+    if (selectedServicePackageId && !selectedServicePackage) {
+      return "The selected Service Package is no longer available.";
     }
 
     if (selectedSpecialPriceRequestId) {
@@ -1719,70 +1723,40 @@ export default function NewQuote() {
                     </div>
                   </label>
 
-                  <label
-                    className={`flex cursor-pointer items-start gap-3 rounded-lg border p-4 transition ${
-                      servicePackageSelected
-                        ? "border-gray-900 bg-gray-50"
-                        : "border-gray-200 hover:bg-gray-50"
-                    }`}
-                  >
-                    <input
-                      type="checkbox"
-                      checked={servicePackageSelected}
-                      disabled={!defaultServicePackage}
+                  <div>
+                    <label
+                      htmlFor="service_package"
+                      className="mb-2 block text-sm font-medium text-gray-700"
+                    >
+                      Service Package
+                    </label>
+
+                    <select
+                      id="service_package"
+                      value={selectedServicePackageId}
                       onChange={(event) => {
-                        const checked = event.target.checked;
-                        setServicePackageSelected(checked);
-
-                        setSelectedExpenses((current) => {
-                          const withoutServicePackage = current.filter(
-                            (expense) =>
-                              getExpenseType(expense) !== "service_package",
-                          );
-
-                          if (!checked || !defaultServicePackage) {
-                            return withoutServicePackage;
-                          }
-
-                          return [
-                            ...withoutServicePackage,
-                            {
-                              id: "special-service-package",
-                              expense_type: "service_package",
-                              name:
-                                defaultServicePackage.name || "Service Package",
-                              description:
-                                defaultServicePackage.description ||
-                                "Default Service Package",
-                              estimated_min: defaultServicePackage.amount,
-                              estimated_max: defaultServicePackage.amount,
-                              applies: true,
-                            },
-                          ];
-                        });
+                        setSelectedServicePackageId(event.target.value);
+                        setStockCalculation(null);
                       }}
-                      className="mt-1"
-                    />
+                      className="w-full rounded-lg border border-gray-300 bg-white px-3 py-2.5 text-sm outline-none focus:border-gray-500"
+                    >
+                      <option value="">No Service Package</option>
 
-                    <div>
-                      <div className="text-sm font-medium text-gray-900">
-                        Service Package
-                      </div>
+                      {(servicePackages || []).map((packageItem) => (
+                        <option key={packageItem.id} value={packageItem.id}>
+                          {packageItem.name} — AED{" "}
+                          {formatCurrency(packageItem.amount)}
+                        </option>
+                      ))}
+                    </select>
 
-                      {defaultServicePackage ? (
-                        <div className="mt-1 text-xs text-gray-500">
-                          {defaultServicePackage.name ||
-                            "Default Service Package"}
-                          {" — "}
-                          {formatCurrency(defaultServicePackage.amount)}
-                        </div>
-                      ) : (
-                        <div className="mt-1 text-xs text-red-500">
-                          No active default service package is configured.
-                        </div>
-                      )}
-                    </div>
-                  </label>
+                    {selectedServicePackage && (
+                      <p className="mt-1 text-xs text-gray-500">
+                        {selectedServicePackage.description ||
+                          "Selected Service Package"}
+                      </p>
+                    )}
+                  </div>
                 </div>
 
                 {isSelectedExpenseType("insurance") && (

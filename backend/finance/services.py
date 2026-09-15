@@ -2,6 +2,7 @@ from decimal import Decimal, ROUND_HALF_UP
 
 from django.core.exceptions import ValidationError as DjangoValidationError
 from django.db import transaction
+from django.db.models import Sum
 from django.utils import timezone
 from quotes.models import Quote
 from inventory.models import (
@@ -33,8 +34,9 @@ from .selectors import (
     get_active_evaluation_preset,
     get_active_registration_preset,
     get_active_rta_preset,
-    get_active_default_service_package,
     get_insurance_band_for_vehicle_price,
+    get_active_service_package,
+
 )
 
 ZERO = Decimal("0.00")
@@ -486,14 +488,14 @@ def resolve_insurance_amount(
 def resolve_service_package(
     *,
     selected,
+    service_package_id=None,
 ):
     """
-    Resolve the current Master-configured default
+    Resolve the specifically selected active Master-configured
     Service Package.
 
-    The frontend only controls whether the package
-    is selected. The amount always comes from the
-    active default Master configuration.
+    The frontend sends only the package ID.
+    The package name/amount always comes from the database.
     """
 
     if not selected:
@@ -502,19 +504,24 @@ def resolve_service_package(
             "amount": ZERO,
         }
 
-    package = get_active_default_service_package()
-
-    if package is None:
+    if not service_package_id:
         raise DjangoValidationError(
-            "No active default Service Package is configured."
+            "A Service Package must be selected."
+        )
+
+    try:
+        package = get_active_service_package(
+            service_package_id
+        )
+    except ServicePackage.DoesNotExist:
+        raise DjangoValidationError(
+            "The selected Service Package is not active or does not exist."
         )
 
     return {
         "package": package,
         "amount": _money(package.amount),
     }
-
-
 # =========================================================
 # BANK PROCESSING
 # =========================================================
@@ -770,6 +777,7 @@ def _resolve_master_expenses(
     registration_dubai=False,
     driving_license=True,
     service_package_selected=False,
+    service_package_id=None,
 ):
     """
     Resolve all applicable expenses from Finance Master.
@@ -950,6 +958,8 @@ def _resolve_master_expenses(
     ):
         package = resolve_service_package(
             selected=True,
+            service_package_id=service_package_id,
+
         )
 
         result["service_package"] = {
@@ -1288,6 +1298,7 @@ def calculate_emi(
     registration_dubai=False,
     driving_license=True,
     service_package_selected=False,
+    service_package_id=None,
     **kwargs,
 ):
     """
@@ -1358,22 +1369,15 @@ def calculate_emi(
     # Master expenses
     # -----------------------------------------------------
 
-    resolved_expenses = (
-        _resolve_master_expenses(
-            vehicle_price=vehicle_price,
-            bank_id=bank_id,
-            expenses=expenses,
-            registration_dubai=(
-                registration_dubai
-            ),
-            driving_license=(
-                driving_license
-            ),
-            service_package_selected=(
-                service_package_selected
-            ),
-        )
-    )
+    resolved_expenses = _resolve_master_expenses(
+    vehicle_price=vehicle_price,
+    bank_id=bank_id,
+    expenses=expenses,
+    registration_dubai=registration_dubai,
+    driving_license=driving_license,
+    service_package_selected=service_package_selected,
+    service_package_id=service_package_id,
+)
 
     normalized_expenses = (
         _normalize_expenses(
@@ -2140,6 +2144,7 @@ def create_emi_sheet(
     registration_dubai=False,
     driving_license=True,
     service_package_selected=False,
+    service_package_id=None,
     created_by=None,
     special_price_request_id=None,
     **kwargs,
@@ -2202,6 +2207,7 @@ def create_emi_sheet(
         service_package_selected=(
             service_package_selected
         ),
+        service_package_id=service_package_id,
     )
 
     # -----------------------------------------------------
@@ -2224,6 +2230,8 @@ def create_emi_sheet(
 
     emi_sheet = EmiSheet.objects.create(
         emi_number=emi_number,
+        created_by=created_by,
+
 
         # ---------------------------------------------
         # Customer
@@ -3562,7 +3570,54 @@ def validate_cash_receipt_transaction(
         "transaction_date": transaction_date,
     }
 
+# =========================================================
+# CASH DEAL PAYMENT SYNC
+# =========================================================
 
+CASH_DEAL_PAYMENT_CATEGORIES = {
+    CashReceipt.Category.ADVANCE,
+    CashReceipt.Category.DOWN_PAYMENT,
+    CashReceipt.Category.ADDITIONAL_PAYMENT,
+    CashReceipt.Category.FINAL_PAYMENT,
+}
+
+
+def sync_cash_deal_from_receipts(*, quote):
+    """
+    Rebuild the Cash Deal payment state from actual customer
+    payment receipts belonging to the Quote.
+
+    Cash Receipt is the authoritative transaction record.
+    """
+
+    cash_deal = (
+        CashDeal.objects
+        .select_for_update()
+        .filter(quote_id=quote.id)
+        .first()
+    )
+
+    if cash_deal is None:
+        return None
+
+    total_received = (
+        CashReceipt.objects
+        .filter(
+            quote_id=quote.id,
+            direction=CashReceipt.Direction.CUSTOMER_PAYMENT,
+            category__in=CASH_DEAL_PAYMENT_CATEGORIES,
+        )
+        .aggregate(
+            total=Sum("amount"),
+        )
+        .get("total")
+        or ZERO
+    )
+
+    return update_cash_deal_financials(
+        cash_deal=cash_deal,
+        advance_amount=total_received,
+    )   
 # =========================================================
 # CREATE CASH RECEIPT
 # =========================================================
@@ -3693,16 +3748,22 @@ def create_cash_receipt(
         created_by=created_by,
     )
     if (
-        category == CashReceipt.Category.ADVANCE
-        and direction == CashReceipt.Direction.CUSTOMER_PAYMENT
+        direction == CashReceipt.Direction.CUSTOMER_PAYMENT
+        and category in CASH_DEAL_PAYMENT_CATEGORIES
     ):
-        from progression.services import (
-            sync_progression_for_quote,
+        cash_deal = sync_cash_deal_from_receipts(
+            quote=quote,
         )
 
-        sync_progression_for_quote(
-            quote_id=quote.id,
-        )
+        if cash_deal is None and category == CashReceipt.Category.ADVANCE:
+            from progression.services import (
+                sync_progression_for_quote,
+            )
+
+            sync_progression_for_quote(
+                quote_id=quote.id,
+            )
+
     return cash_receipt
 
 @transaction.atomic

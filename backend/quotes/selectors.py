@@ -28,6 +28,7 @@ def list_quotes(
     *,
     status=None,
     search=None,
+    user=None,
 ):
     queryset = (
         Quote.objects
@@ -39,6 +40,14 @@ def list_quotes(
         )
         .all()
     )
+
+    if (
+            user is not None
+            and getattr(user, "role", None) == "SALES_STAFF"
+        ):
+            queryset = queryset.filter(
+                salesperson=user,
+            )
 
     # -----------------------------------------------------
     # STATUS FILTER

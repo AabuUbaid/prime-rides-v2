@@ -516,6 +516,10 @@ class EmiCalculationSerializer(
         required=False,
         default=False,
     )
+    service_package_id = serializers.IntegerField(
+        required=False,
+        allow_null=True,
+    )
 
     expenses = EmiExpenseInputSerializer(
             many=True,
@@ -567,6 +571,27 @@ class EmiCalculationSerializer(
                     )
                 }
             )
+        service_package_selected = attrs.get(
+            "service_package_selected",
+            False,
+        )
+
+        service_package_id = attrs.get(
+            "service_package_id"
+        )
+
+        if service_package_selected and not service_package_id:
+            raise serializers.ValidationError(
+                {
+                    "service_package_id": (
+                        "Service Package is required when "
+                        "Service Package is selected."
+                    )
+                }
+            )
+
+        if not service_package_selected:
+            attrs["service_package_id"] = None
 
         return attrs
 
@@ -692,6 +717,11 @@ class EmiSheetCreateSerializer(
     service_package_selected = serializers.BooleanField(
         required=False,
         default=False,
+    )
+
+    service_package_id = serializers.IntegerField(
+        required=False,
+        allow_null=True,
     )
 
     expenses = EmiExpenseInputSerializer(
@@ -828,6 +858,27 @@ class EmiSheetCreateSerializer(
                     )
                 }
             )
+        service_package_selected = attrs.get(
+            "service_package_selected",
+            False,
+        )
+
+        service_package_id = attrs.get(
+            "service_package_id"
+        )
+
+        if service_package_selected and not service_package_id:
+            raise serializers.ValidationError(
+                {
+                    "service_package_id": (
+                        "Service Package is required when "
+                        "Service Package is selected."
+                    )
+                }
+            )
+
+        if not service_package_selected:
+            attrs["service_package_id"] = None
 
         return attrs
 

@@ -52,23 +52,21 @@ function VehicleDetails({ formData, handleChange, hideStatus = false }) {
           className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm text-gray-900 outline-none transition focus:border-blue-500 focus:ring-1 focus:ring-blue-500"
         />
 
-        {!hideStatus && (
-          <div>
-            <select
-              name="status"
-              value={formData.status}
-              onChange={handleChange}
-              className="w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-sm text-gray-900 outline-none transition focus:border-blue-500 focus:ring-1 focus:ring-blue-500"
-            >
-              <option value="available">Available</option>
-              <option value="reserved">Reserved</option>
-              <option value="sold">Sold</option>
-              <option value="upcoming">Upcoming</option>
-              <option value="in_service">In Service</option>
-              <option value="in_house">In House</option>
-            </select>
-          </div>
-        )}
+        <div>
+          <select
+            name="status"
+            value={formData.status}
+            onChange={handleChange}
+            className="w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-sm text-gray-900 outline-none transition focus:border-blue-500 focus:ring-1 focus:ring-blue-500"
+          >
+            <option value="available">Available</option>
+            <option value="reserved">Reserved</option>
+            <option value="sold">Sold</option>
+            <option value="upcoming">Upcoming</option>
+            <option value="in_service">In Service</option>
+            <option value="in_house">In House</option>
+          </select>
+        </div>
 
         {formData.status === "in_service" && (
           <input

@@ -1,4 +1,5 @@
 from django.core.exceptions import ValidationError as DjangoValidationError
+from django.db.models import Q
 
 from rest_framework import status
 from rest_framework.permissions import IsAuthenticated
@@ -131,7 +132,51 @@ class InsuranceListAPIView(APIView):
     permission_classes = [IsMasterOrAdmin]
 
     def get(self, request):
-        insurances = Insurance.objects.all().order_by("-created_at")
+        insurances = (
+            Insurance.objects
+            .select_related(
+                "quote",
+                "bank_loan",
+                "cash_deal",
+            )
+            .order_by("-created_at")
+        )
+
+        quote_id = request.query_params.get("quote_id")
+        customer_id = request.query_params.get("customer_id")
+        search = request.query_params.get("search", "").strip()
+        application_status = request.query_params.get(
+            "application_status"
+        )
+
+        if quote_id:
+            insurances = insurances.filter(
+                quote_id=quote_id
+            )
+
+        if customer_id:
+            insurances = insurances.filter(
+                customer_id=customer_id
+            )
+
+        if application_status:
+            insurances = insurances.filter(
+                application_status=application_status
+            )
+
+        if search:
+            insurances = insurances.filter(
+                Q(quote__quote_number__icontains=search)
+                | Q(customer_name__icontains=search)
+                | Q(customer_mobile__icontains=search)
+                | Q(policy_number__icontains=search)
+                | Q(vehicle_stock_id__icontains=search)
+                | Q(vehicle_make__icontains=search)
+                | Q(vehicle_model__icontains=search)
+                | Q(vehicle_colour__icontains=search)
+                | Q(vehicle_chassis_number__icontains=search)
+                | Q(vehicle_engine_number__icontains=search)
+            ).distinct()
 
         return Response(
             {

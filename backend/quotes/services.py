@@ -670,11 +670,56 @@ def update_quote(
     # Status
     # -----------------------------------------------------
 
-    if status is not None and status != quote.status:
+    previous_status = quote.status
+
+    if status is not None and status != previous_status:
         validate_status_transition(
-            quote.status,
+            previous_status,
             status,
         )
+
+        car = quote.car
+
+        if car is not None:
+
+            # -------------------------------------------------
+            # Quote → Booked
+            # -------------------------------------------------
+            if status == Quote.Status.BOOKED:
+                InventoryService.prepare_car_for_booking(
+                    car=car,
+                )
+
+            # -------------------------------------------------
+            # Quote → Sold
+            # -------------------------------------------------
+            elif status == Quote.Status.SOLD:
+                if car.status != Car.Status.BOOKED:
+                    InventoryService.prepare_car_for_booking(
+                        car=car,
+                    )
+
+                if car.status == Car.Status.BOOKED:
+                    InventoryService.update_car_status(
+                        car=car,
+                        new_status=Car.Status.SOLD,
+                    )
+
+            # -------------------------------------------------
+            # Quote → Cancelled
+            # -------------------------------------------------
+            elif status == Quote.Status.CANCELLED:
+                if car.status == Car.Status.BOOKED:
+                    InventoryService.update_car_status(
+                        car=car,
+                        new_status=Car.Status.RESERVED,
+                    )
+
+                if car.status == Car.Status.RESERVED:
+                    InventoryService.update_car_status(
+                        car=car,
+                        new_status=Car.Status.AVAILABLE,
+                    )
 
         quote.status = status
 

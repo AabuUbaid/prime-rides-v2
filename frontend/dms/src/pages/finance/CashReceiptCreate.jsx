@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import { toast } from "react-toastify";
 
 import {
@@ -7,6 +7,8 @@ import {
   createCashReceipt,
   getCustomerCashReceiptDeals,
 } from "../../api/cashReceipts";
+
+import { getBalanceSheets } from "../../api/balanceSheets";
 
 import { getCustomers } from "../../api/customers";
 import { getQuote } from "../../api/quotes";
@@ -44,6 +46,8 @@ function getResponseData(response) {
 function CashReceiptCreate() {
   const navigate = useNavigate();
 
+  const [searchParams] = useSearchParams();
+
   const [categories, setCategories] = useState([]);
   const [categoriesLoading, setCategoriesLoading] = useState(true);
   const [categoriesError, setCategoriesError] = useState("");
@@ -71,6 +75,10 @@ function CashReceiptCreate() {
 
   const [customerId, setCustomerId] = useState("");
   const [quoteId, setQuoteId] = useState("");
+
+  const [balance, setBalance] = useState(null);
+  const [balanceLoading, setBalanceLoading] = useState(false);
+  const [balanceError, setBalanceError] = useState("");
   const [direction, setDirection] = useState("customer_payment");
   const [category, setCategory] = useState("");
   const [amount, setAmount] = useState("");
@@ -80,6 +88,39 @@ function CashReceiptCreate() {
   const [reference, setReference] = useState("");
 
   const [saving, setSaving] = useState(false);
+
+  useEffect(() => {
+    const presetCustomerId = searchParams.get("customer_id");
+    const presetQuoteId = searchParams.get("quote_id");
+    const presetAmount = searchParams.get("amount");
+    const presetDirection = searchParams.get("direction");
+    const presetCategory = searchParams.get("category");
+    const presetPaymentMethod = searchParams.get("payment_method");
+
+    if (presetCustomerId) {
+      setCustomerId(presetCustomerId);
+    }
+
+    if (presetQuoteId) {
+      setQuoteId(presetQuoteId);
+    }
+
+    if (presetAmount) {
+      setAmount(presetAmount);
+    }
+
+    if (presetDirection) {
+      setDirection(presetDirection);
+    }
+
+    if (presetCategory) {
+      setCategory(presetCategory);
+    }
+
+    if (presetPaymentMethod) {
+      setPaymentMethod(presetPaymentMethod);
+    }
+  }, [searchParams]);
 
   useEffect(() => {
     let active = true;
@@ -142,8 +183,9 @@ function CashReceiptCreate() {
       try {
         setDealsLoading(true);
         setDealsError("");
-        setQuoteId("");
-
+        if (!searchParams.get("quote_id")) {
+          setQuoteId("");
+        }
         const response = await getCustomerCashReceiptDeals(customerId);
 
         if (!active) {
@@ -159,6 +201,15 @@ function CashReceiptCreate() {
             : [];
 
         setDeals(data);
+
+        const presetQuoteId = searchParams.get("quote_id");
+
+        if (
+          presetQuoteId &&
+          data.some((deal) => String(deal.id) === String(presetQuoteId))
+        ) {
+          setQuoteId(presetQuoteId);
+        }
       } catch (err) {
         if (!active) {
           return;
@@ -183,6 +234,63 @@ function CashReceiptCreate() {
     };
   }, [customerId]);
 
+  // Effect 1: load balance sheet whenever customer/quote changes
+  useEffect(() => {
+    let active = true;
+
+    async function loadBalance() {
+      if (!customerId || !quoteId) {
+        setBalance(null);
+        setBalanceError("");
+        setBalanceLoading(false);
+        return;
+      }
+
+      try {
+        setBalanceLoading(true);
+        setBalanceError("");
+
+        const response = await getBalanceSheets({
+          quote_id: quoteId,
+        });
+
+        if (!active) {
+          return;
+        }
+
+        const body = response?.data ?? response;
+
+        const rows = Array.isArray(body?.data)
+          ? body.data
+          : Array.isArray(body)
+            ? body
+            : [];
+
+        setBalance(rows[0] || null);
+      } catch (err) {
+        if (!active) {
+          return;
+        }
+
+        console.error("Failed to load customer balance:", err);
+
+        setBalance(null);
+        setBalanceError(err?.message || "Failed to load customer balance.");
+      } finally {
+        if (active) {
+          setBalanceLoading(false);
+        }
+      }
+    }
+
+    loadBalance();
+
+    return () => {
+      active = false;
+    };
+  }, [customerId, quoteId]);
+
+  // Effect 2: load expense context whenever quote changes
   useEffect(() => {
     let active = true;
 
@@ -659,6 +767,44 @@ function CashReceiptCreate() {
                     . The Cash Receipt amount remains separately entered by the
                     user.
                   </p>
+                )}
+              </div>
+            )}
+
+            {quoteId && (
+              <div className="mt-4 rounded-lg border border-gray-200 bg-gray-50 p-4">
+                <div className="text-xs font-medium uppercase tracking-wide text-gray-500">
+                  Current Customer Balance
+                </div>
+
+                {balanceLoading ? (
+                  <div className="mt-1 text-sm text-gray-500">
+                    Loading balance...
+                  </div>
+                ) : balanceError ? (
+                  <div className="mt-1 text-sm text-red-600">
+                    {balanceError}
+                  </div>
+                ) : balance ? (
+                  <>
+                    <div className="mt-1 text-xl font-semibold text-gray-900">
+                      AED {formatAED(balance.net_difference)}
+                    </div>
+
+                    <div className="mt-2 flex flex-wrap gap-4 text-xs text-gray-500">
+                      <span>
+                        Received: AED {formatAED(balance.total_received)}
+                      </span>
+
+                      <span>Spent: AED {formatAED(balance.total_spent)}</span>
+
+                      <span>Status: {balance.balance_status || "-"}</span>
+                    </div>
+                  </>
+                ) : (
+                  <div className="mt-1 text-sm text-gray-500">
+                    No balance information available.
+                  </div>
                 )}
               </div>
             )}

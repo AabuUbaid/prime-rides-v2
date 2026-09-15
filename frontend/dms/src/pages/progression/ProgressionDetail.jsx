@@ -4,7 +4,11 @@ import { toast } from "react-toastify";
 
 import { getBalanceSheets } from "../../api/balanceSheets";
 import { getInsurances } from "../../api/insurance";
-import { getProgression, updateProgression } from "../../api/progression";
+import {
+  advanceProgression,
+  getProgression,
+  updateProgression,
+} from "../../api/progression";
 import { useAuth } from "../../context/AuthContext";
 
 const EMIRATES = [
@@ -35,35 +39,6 @@ const DISPLAY_LABELS = {
   completed: "Completed",
 };
 
-const STORAGE_PREFIX = "prime-rides-progression-checks";
-
-function getStoredChecks(progressionId) {
-  try {
-    const raw = localStorage.getItem(`${STORAGE_PREFIX}:${progressionId}`);
-
-    if (!raw) {
-      return {};
-    }
-
-    const parsed = JSON.parse(raw);
-
-    return parsed && typeof parsed === "object" ? parsed : {};
-  } catch {
-    return {};
-  }
-}
-
-function saveStoredChecks(progressionId, checks) {
-  try {
-    localStorage.setItem(
-      `${STORAGE_PREFIX}:${progressionId}`,
-      JSON.stringify(checks),
-    );
-  } catch {
-    // Ignore localStorage failures.
-  }
-}
-
 function getResponseData(response) {
   const body = response ?? {};
 
@@ -74,53 +49,79 @@ function getResponseData(response) {
       : [];
 }
 
+/*
+ * The backend has additional internal stages:
+ *
+ * evaluation
+ * passing
+ * dubai_passing
+ * registration_passing
+ * insurance
+ * registration
+ * delivery_video
+ * completed
+ *
+ * The UI intentionally displays:
+ *
+ * Evaluation
+ * Passing
+ * Insurance
+ * Registration
+ * Delivery Video
+ * Completed
+ *
+ * Therefore this function converts the backend current_stage
+ * into the visible completed checklist.
+ */
 function getBackendCompletedStages(currentStage) {
-  if (currentStage === "completed") {
-    return {
-      evaluation: true,
-      passing: true,
-      insurance: true,
-      registration: true,
-      delivery_video: true,
-      completed: true,
-    };
-  }
+  switch (currentStage) {
+    case "passing":
+    case "dubai_passing":
+      return {
+        evaluation: true,
+      };
 
-  if (currentStage === "delivery_video") {
-    return {
-      evaluation: true,
-      passing: true,
-      insurance: true,
-      registration: true,
-    };
-  }
+    case "registration_passing":
+      return {
+        evaluation: true,
+        passing: true,
+      };
 
-  if (currentStage === "registration") {
-    return {
-      evaluation: true,
-      passing: true,
-      insurance: true,
-    };
-  }
+    case "insurance":
+      return {
+        evaluation: true,
+        passing: true,
+      };
 
-  if (currentStage === "insurance") {
-    return {
-      evaluation: true,
-      passing: true,
-    };
-  }
+    case "registration":
+      return {
+        evaluation: true,
+        passing: true,
+        insurance: true,
+      };
 
-  if (
-    currentStage === "passing" ||
-    currentStage === "dubai_passing" ||
-    currentStage === "registration_passing"
-  ) {
-    return {
-      evaluation: true,
-    };
-  }
+    case "delivery_video":
+      return {
+        evaluation: true,
+        passing: true,
+        insurance: true,
+        registration: true,
+      };
 
-  return {};
+    case "completed":
+      return {
+        evaluation: true,
+        passing: true,
+        insurance: true,
+        registration: true,
+        delivery_video: true,
+        completed: true,
+      };
+
+    case "evaluation":
+    default:
+      return {};
+  }
 }
 
 export default function ProgressionDetail() {
@@ -131,14 +132,20 @@ export default function ProgressionDetail() {
   const manage = user?.role === "MASTER" || user?.role === "ADMIN";
 
   const [p, setP] = useState(null);
+
   const [form, setForm] = useState({
     registration_emirate: "",
     remark: "",
   });
+
   const [saving, setSaving] = useState(false);
+  const [advancing, setAdvancing] = useState(false);
 
   const [checkedStages, setCheckedStages] = useState({});
+
   const [insuranceLoading, setInsuranceLoading] = useState(false);
+  const [showInsuranceModal, setShowInsuranceModal] = useState(false);
+  const [insuranceRecord, setInsuranceRecord] = useState(null);
 
   const [balanceLoading, setBalanceLoading] = useState(false);
   const [balanceSheet, setBalanceSheet] = useState(null);
@@ -162,14 +169,7 @@ export default function ProgressionDetail() {
         remark: d?.remark || "",
       });
 
-      const backendChecks = getBackendCompletedStages(d?.current_stage);
-
-      const savedChecks = getStoredChecks(id);
-
-      setCheckedStages({
-        ...backendChecks,
-        ...savedChecks,
-      });
+      setCheckedStages(getBackendCompletedStages(d?.current_stage));
     } catch (e) {
       toast.error(e?.message || "Unable to load Progression.");
     }
@@ -188,6 +188,8 @@ export default function ProgressionDetail() {
 
       setP(updated);
 
+      setCheckedStages(getBackendCompletedStages(updated?.current_stage));
+
       toast.success("Progression updated.");
     } catch (e) {
       toast.error(e?.message || "Unable to update Progression.");
@@ -196,22 +198,124 @@ export default function ProgressionDetail() {
     }
   }
 
-  function markStage(stage) {
-    setCheckedStages((previous) => {
-      const next = {
-        ...previous,
-        [stage]: true,
-      };
+  /*
+   * Backend is the source of truth.
+   *
+   * This function advances exactly one backend stage.
+   */
+  async function advanceStage(payload = {}) {
+    try {
+      setAdvancing(true);
 
-      saveStoredChecks(id, next);
+      const response = await advanceProgression(id, payload);
 
-      return next;
-    });
+      const updated = response?.data;
+
+      if (!updated) {
+        throw new Error("Progression response is missing.");
+      }
+
+      setP(updated);
+
+      setForm({
+        registration_emirate: updated?.registration_emirate || "",
+        remark: updated?.remark || "",
+      });
+
+      setCheckedStages(getBackendCompletedStages(updated?.current_stage));
+
+      return updated;
+    } catch (e) {
+      toast.error(e?.message || "Unable to advance Progression.");
+      return null;
+    } finally {
+      setAdvancing(false);
+    }
   }
 
+  /*
+   * Evaluation
+   */
+  async function handleEvaluation() {
+    if (p?.current_stage !== "evaluation") {
+      return;
+    }
+
+    if (!p?.registration_emirate) {
+      toast.error(
+        "Select the Registration Emirate before completing Evaluation.",
+      );
+      return;
+    }
+
+    const updated = await advanceStage();
+
+    if (updated) {
+      toast.success("Evaluation completed.");
+    }
+  }
+
+  /*
+   * Passing
+   *
+   * Dubai:
+   *   Passing -> Insurance
+   *
+   * Non-Dubai:
+   *   Evaluation -> Dubai Passing
+   *   Dubai Passing -> Registration Passing
+   *   Registration Passing -> Insurance
+   *
+   * We keep the two-check confirmation UI for
+   * the non-Dubai route.
+   */
+  async function confirmPassing() {
+    if (!passingChecks.dubai || !passingChecks.emirate) {
+      toast.error(
+        `Both Dubai Passing and ${p.registration_emirate} Passing must be completed.`,
+      );
+      return;
+    }
+
+    if (p.current_stage === "dubai_passing") {
+      const first = await advanceStage();
+
+      if (!first) {
+        return;
+      }
+
+      const second = await advanceStage();
+
+      if (!second) {
+        return;
+      }
+
+      setShowPassingModal(false);
+
+      toast.success("Passing completed.");
+
+      return;
+    }
+
+    if (p.current_stage === "registration_passing") {
+      const updated = await advanceStage();
+
+      if (!updated) {
+        return;
+      }
+
+      setShowPassingModal(false);
+
+      toast.success("Passing completed.");
+    }
+  }
+
+  /*
+   * Insurance
+   */
   async function openInsurance() {
     if (!p?.quote) {
-      navigate("/finance/insurance");
+      toast.error("Quote information is missing.");
       return;
     }
 
@@ -224,31 +328,12 @@ export default function ProgressionDetail() {
 
       const records = getResponseData(response);
 
-      if (!records.length) {
-        toast.info("No Insurance record was found for this customer/deal.");
+      const insurance =
+        records.find((record) => String(record.quote) === String(p.quote)) ||
+        null;
 
-        navigate(`/finance/insurance?quote_id=${encodeURIComponent(p.quote)}`);
-
-        return;
-      }
-
-      const insurance = records[0];
-      const status = String(
-        insurance?.application_status || insurance?.status || "",
-      ).toLowerCase();
-
-      if (status === "approved") {
-        markStage("insurance");
-        toast.success("Insurance is already approved.");
-        return;
-      }
-
-      if (insurance?.id) {
-        navigate(`/finance/insurance/${insurance.id}`);
-        return;
-      }
-
-      navigate(`/finance/insurance?quote_id=${encodeURIComponent(p.quote)}`);
+      setInsuranceRecord(insurance);
+      setShowInsuranceModal(true);
     } catch (e) {
       toast.error(e?.message || "Unable to load the customer's Insurance.");
     } finally {
@@ -256,6 +341,88 @@ export default function ProgressionDetail() {
     }
   }
 
+  function getInsuranceStatus() {
+    if (!insuranceRecord) {
+      return "not_created";
+    }
+
+    return String(
+      insuranceRecord.application_status || insuranceRecord.status || "unknown",
+    ).toLowerCase();
+  }
+
+  function getInsuranceStatusLabel() {
+    const status = getInsuranceStatus();
+
+    const labels = {
+      not_created: "Not Created",
+      pending: "Pending",
+      draft: "Draft",
+      submitted: "Submitted",
+      under_review: "Under Review",
+      approved: "Approved",
+      rejected: "Rejected",
+      cancelled: "Cancelled",
+      completed: "Completed",
+    };
+
+    return labels[status] || status;
+  }
+
+  function getInsuranceStatusClass() {
+    const status = getInsuranceStatus();
+
+    if (status === "approved" || status === "completed") {
+      return "bg-green-50 text-green-700 border-green-200";
+    }
+
+    if (status === "rejected" || status === "cancelled") {
+      return "bg-red-50 text-red-700 border-red-200";
+    }
+
+    if (status === "not_created") {
+      return "bg-amber-50 text-amber-700 border-amber-200";
+    }
+
+    return "bg-blue-50 text-blue-700 border-blue-200";
+  }
+
+  function goToInsurance() {
+    setShowInsuranceModal(false);
+
+    if (insuranceRecord?.id) {
+      navigate(`/finance/insurance/${insuranceRecord.id}`);
+      return;
+    }
+
+    navigate(`/finance/insurance?quote_id=${encodeURIComponent(p.quote)}`);
+  }
+
+  async function handleInsuranceContinue() {
+    const status = getInsuranceStatus();
+
+    if (status === "approved") {
+      setShowInsuranceModal(false);
+
+      if (p.current_stage === "insurance") {
+        const updated = await advanceStage();
+
+        if (updated) {
+          toast.success(
+            "Insurance approved. Progression moved to Registration.",
+          );
+        }
+      }
+
+      return;
+    }
+
+    goToInsurance();
+  }
+
+  /*
+   * Registration
+   */
   async function openRegistration() {
     if (!p?.quote) {
       toast.error("Quote information is missing.");
@@ -270,6 +437,7 @@ export default function ProgressionDetail() {
       });
 
       const records = getResponseData(response);
+
       const sheet = records[0] || null;
 
       setBalanceSheet(sheet);
@@ -281,83 +449,14 @@ export default function ProgressionDetail() {
     }
   }
 
-  function confirmPassing() {
-    if (!passingChecks.dubai || !passingChecks.emirate) {
-      toast.error(
-        `Both Dubai Passing and ${p.registration_emirate} Passing must be completed.`,
-      );
-      return;
-    }
-
-    markStage("passing");
-    setShowPassingModal(false);
-
-    toast.success("Passing marked complete.");
-  }
-
-  function handleStageClick(stage) {
-    if (stage === "passing") {
-      if (checkedStages.passing) {
-        setCheckedStages((previous) => {
-          const next = {
-            ...previous,
-            passing: false,
-          };
-
-          saveStoredChecks(id, next);
-
-          return next;
-        });
-
-        return;
-      }
-
-      if (p.registration_emirate === "Dubai") {
-        markStage("passing");
-        toast.success("Passing marked complete.");
-        return;
-      }
-
-      setPassingChecks({
-        dubai: false,
-        emirate: false,
-      });
-
-      setShowPassingModal(true);
-      return;
-    }
-
-    if (stage === "insurance") {
-      openInsurance();
-      return;
-    }
-
-    if (stage === "registration") {
-      openRegistration();
-      return;
-    }
-
-    if (checkedStages[stage]) {
-      setCheckedStages((previous) => {
-        const next = {
-          ...previous,
-          [stage]: false,
-        };
-
-        saveStoredChecks(id, next);
-
-        return next;
-      });
-
-      return;
-    }
-
-    markStage(stage);
-
-    toast.success(`${DISPLAY_LABELS[stage]} marked complete.`);
-  }
-
-  function confirmRegistration() {
+  /*
+   * Registration completion.
+   *
+   * Backend itself performs the Balance Sheet
+   * gate again, so this is safe even if the
+   * frontend data is stale.
+   */
+  async function confirmRegistration() {
     if (!balanceSheet) {
       toast.error("Balance Sheet not found.");
       return;
@@ -370,10 +469,112 @@ export default function ProgressionDetail() {
       return;
     }
 
-    markStage("registration");
+    const updated = await advanceStage();
+
+    if (!updated) {
+      return;
+    }
+
     setShowBalanceModal(false);
 
-    toast.success("Registration marked complete.");
+    toast.success("Registration completed.");
+  }
+
+  /*
+   * Delivery Video -> Completed
+   */
+  async function completeDelivery() {
+    if (p?.current_stage !== "delivery_video") {
+      return;
+    }
+
+    const confirmed = window.confirm(
+      "Complete the Delivery Video stage and mark this Progression as completed?",
+    );
+
+    if (!confirmed) {
+      return;
+    }
+
+    const updated = await advanceStage();
+
+    if (updated) {
+      toast.success("Progression completed successfully.");
+    }
+  }
+
+  async function handleStageClick(stage) {
+    if (advancing || insuranceLoading || balanceLoading) {
+      return;
+    }
+
+    /*
+     * Only the backend current_stage can determine
+     * which action is currently valid.
+     */
+
+    if (stage === "evaluation") {
+      await handleEvaluation();
+      return;
+    }
+
+    if (stage === "passing") {
+      /*
+       * Dubai route:
+       * evaluation -> passing
+       * passing -> insurance
+       */
+      if (p.current_stage === "passing") {
+        const updated = await advanceStage();
+
+        if (updated) {
+          toast.success("Passing completed.");
+        }
+
+        return;
+      }
+
+      /*
+       * Non-Dubai route.
+       *
+       * Backend may currently be at either
+       * Dubai Passing or Registration Passing.
+       */
+      if (
+        p.current_stage === "dubai_passing" ||
+        p.current_stage === "registration_passing"
+      ) {
+        setPassingChecks({
+          dubai: false,
+          emirate: false,
+        });
+
+        setShowPassingModal(true);
+
+        return;
+      }
+
+      return;
+    }
+
+    if (stage === "insurance") {
+      await openInsurance();
+      return;
+    }
+
+    if (stage === "registration") {
+      await openRegistration();
+      return;
+    }
+
+    if (stage === "delivery_video") {
+      await completeDelivery();
+      return;
+    }
+
+    if (stage === "completed") {
+      return;
+    }
   }
 
   const backendStageLabel = useMemo(() => {
@@ -389,6 +590,21 @@ export default function ProgressionDetail() {
     }
 
     return DISPLAY_LABELS[p.current_stage] || p.current_stage;
+  }, [p]);
+
+  const activeDisplayStage = useMemo(() => {
+    if (!p?.current_stage) {
+      return null;
+    }
+
+    if (
+      p.current_stage === "dubai_passing" ||
+      p.current_stage === "registration_passing"
+    ) {
+      return "passing";
+    }
+
+    return p.current_stage;
   }, [p]);
 
   if (!p) {
@@ -456,6 +672,21 @@ export default function ProgressionDetail() {
             <small className="text-xs text-gray-500">Current Stage</small>
             <div className="mt-1 font-medium">{backendStageLabel}</div>
           </div>
+
+          <div>
+            <small className="text-xs text-gray-500">Status</small>
+            <div
+              className={`mt-1 font-medium ${
+                p.status === "active"
+                  ? "text-green-700"
+                  : p.status === "completed"
+                    ? "text-blue-700"
+                    : "text-gray-600"
+              }`}
+            >
+              {p.status || "-"}
+            </div>
+          </div>
         </section>
 
         <section className="rounded-2xl border border-gray-200 bg-white p-5 shadow-sm">
@@ -466,17 +697,22 @@ export default function ProgressionDetail() {
               </h2>
 
               <p className="mt-1 text-xs text-gray-500">
-                You can complete these in any order.
+                Each action is persisted by the backend Progression state
+                machine.
               </p>
             </div>
 
-            <div className="text-xs text-gray-400">Click a stage to act</div>
+            <div className="text-xs text-gray-400">
+              {advancing ? "Updating..." : `Current: ${backendStageLabel}`}
+            </div>
           </div>
 
           <div className="mt-6 overflow-x-auto pb-2">
             <div className="flex min-w-[980px] items-center">
               {DISPLAY_STAGES.map((stage, index) => {
                 const checked = Boolean(checkedStages[stage]);
+
+                const isCurrent = activeDisplayStage === stage;
 
                 const isSpecial =
                   stage === "insurance" || stage === "registration";
@@ -486,29 +722,39 @@ export default function ProgressionDetail() {
                     ? insuranceLoading
                     : stage === "registration"
                       ? balanceLoading
-                      : false;
+                      : advancing;
+
+                const canAct =
+                  !isLoading &&
+                  !(p.status !== "active" && stage !== "completed");
 
                 return (
                   <div key={stage} className="flex flex-1 items-center">
                     <button
                       type="button"
-                      onClick={() => !isLoading && handleStageClick(stage)}
-                      disabled={isLoading}
+                      onClick={() => canAct && handleStageClick(stage)}
+                      disabled={!canAct}
                       className={`group flex items-center gap-3 rounded-xl px-2 py-2 text-left transition ${
-                        isLoading
-                          ? "cursor-wait opacity-60"
-                          : "cursor-pointer hover:bg-gray-50"
+                        !canAct
+                          ? "cursor-not-allowed opacity-50"
+                          : isLoading
+                            ? "cursor-wait opacity-60"
+                            : "cursor-pointer hover:bg-gray-50"
                       }`}
                     >
                       <span
                         className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-full border-2 transition ${
                           checked
                             ? "border-gray-900 bg-gray-900 text-white"
-                            : "border-gray-300 bg-white text-gray-400 group-hover:border-gray-500"
+                            : isCurrent
+                              ? "border-blue-600 bg-blue-50 text-blue-600"
+                              : "border-gray-300 bg-white text-gray-400 group-hover:border-gray-500"
                         }`}
                       >
                         {checked ? (
                           <span className="text-sm font-bold">✓</span>
+                        ) : isCurrent ? (
+                          <span className="h-3 w-3 rounded-full bg-blue-600" />
                         ) : (
                           <span className="h-3 w-3 rounded-sm border border-gray-300" />
                         )}
@@ -518,9 +764,11 @@ export default function ProgressionDetail() {
                         className={`whitespace-nowrap text-sm font-medium ${
                           checked
                             ? "text-gray-900"
-                            : isSpecial
-                              ? "text-blue-600 group-hover:text-blue-700"
-                              : "text-gray-500"
+                            : isCurrent
+                              ? "text-blue-700"
+                              : isSpecial
+                                ? "text-blue-600 group-hover:text-blue-700"
+                                : "text-gray-500"
                         }`}
                       >
                         {DISPLAY_LABELS[stage]}
@@ -587,7 +835,7 @@ export default function ProgressionDetail() {
             <button
               type="button"
               onClick={save}
-              disabled={saving}
+              disabled={saving || advancing}
               className="mt-4 rounded-lg bg-gray-900 px-4 py-2 text-sm font-medium text-white hover:bg-gray-800 disabled:cursor-not-allowed disabled:opacity-60"
             >
               {saving ? "Saving..." : "Save Details"}
@@ -684,11 +932,112 @@ export default function ProgressionDetail() {
               <button
                 type="button"
                 onClick={confirmPassing}
-                disabled={!passingChecks.dubai || !passingChecks.emirate}
+                disabled={
+                  !passingChecks.dubai || !passingChecks.emirate || advancing
+                }
                 className="mt-3 w-full rounded-xl bg-gray-900 px-4 py-3 text-sm font-semibold text-white transition hover:bg-gray-800 disabled:cursor-not-allowed disabled:opacity-40"
               >
-                Mark Passing Complete
+                {advancing ? "Updating..." : "Mark Passing Complete"}
               </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {showInsuranceModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4">
+          <div className="w-full max-w-md rounded-2xl bg-white shadow-2xl">
+            <div className="border-b border-gray-100 px-6 py-5">
+              <div className="flex items-start justify-between gap-4">
+                <div>
+                  <h2 className="text-lg font-semibold text-gray-900">
+                    Insurance Status
+                  </h2>
+
+                  <p className="mt-1 text-sm text-gray-500">
+                    Check the customer's insurance application before continuing
+                    the Progression.
+                  </p>
+                </div>
+
+                <button
+                  type="button"
+                  onClick={() => setShowInsuranceModal(false)}
+                  className="rounded-lg px-2 py-1 text-gray-400 hover:bg-gray-100 hover:text-gray-700"
+                >
+                  ✕
+                </button>
+              </div>
+            </div>
+
+            <div className="space-y-4 px-6 py-6">
+              <div
+                className={`rounded-xl border p-4 ${getInsuranceStatusClass()}`}
+              >
+                <div className="text-xs font-medium uppercase tracking-wide">
+                  Current Status
+                </div>
+
+                <div className="mt-1 text-lg font-semibold">
+                  {getInsuranceStatusLabel()}
+                </div>
+              </div>
+
+              {!insuranceRecord && (
+                <div className="rounded-xl border border-amber-200 bg-amber-50 p-4">
+                  <div className="text-sm font-medium text-amber-800">
+                    Insurance has not been created for this deal.
+                  </div>
+
+                  <div className="mt-1 text-xs text-amber-700">
+                    Open Insurance to create or manage the application.
+                  </div>
+                </div>
+              )}
+
+              {insuranceRecord && (
+                <div className="space-y-2 rounded-xl bg-gray-50 p-4 text-sm">
+                  {insuranceRecord.insurance_company && (
+                    <div className="flex justify-between gap-4">
+                      <span className="text-gray-500">Insurance Company</span>
+                      <span className="font-medium text-gray-900">
+                        {insuranceRecord.insurance_company}
+                      </span>
+                    </div>
+                  )}
+
+                  {insuranceRecord.policy_number && (
+                    <div className="flex justify-between gap-4">
+                      <span className="text-gray-500">Policy Number</span>
+                      <span className="font-medium text-gray-900">
+                        {insuranceRecord.policy_number}
+                      </span>
+                    </div>
+                  )}
+                </div>
+              )}
+
+              <div className="flex gap-3">
+                <button
+                  type="button"
+                  onClick={() => setShowInsuranceModal(false)}
+                  className="flex-1 rounded-xl border border-gray-300 bg-white px-4 py-3 text-sm font-medium text-gray-700 hover:bg-gray-50"
+                >
+                  Close
+                </button>
+
+                <button
+                  type="button"
+                  onClick={handleInsuranceContinue}
+                  className="flex-1 rounded-xl bg-gray-900 px-4 py-3 text-sm font-semibold text-white hover:bg-gray-800"
+                >
+                  {getInsuranceStatus() === "approved"
+                    ? "Continue Progression"
+                    : insuranceRecord
+                      ? "Open Insurance"
+                      : "Create Insurance"}
+                </button>
+              </div>
             </div>
           </div>
         </div>
@@ -822,13 +1171,13 @@ export default function ProgressionDetail() {
                   >
                     <input
                       type="checkbox"
-                      checked={Boolean(checkedStages.registration)}
-                      disabled={balanceSheet.balance_status !== "settled"}
+                      checked={false}
+                      disabled={
+                        balanceSheet.balance_status !== "settled" || advancing
+                      }
                       onChange={(e) => {
                         if (e.target.checked) {
-                          markStage("registration");
-                          setShowBalanceModal(false);
-                          toast.success("Registration marked complete.");
+                          confirmRegistration();
                         }
                       }}
                       className="h-5 w-5 rounded border-gray-300"

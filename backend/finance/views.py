@@ -324,6 +324,18 @@ class EmiCalculateView(APIView):
             raise_exception=True,
         )
 
+        if (
+            getattr(request.user, "role", None) != "MASTER"
+            and serializer.validated_data.get("manual_interest_rate") is not None
+        ):
+            return Response(
+                {
+                    "success": False,
+                    "message": "Only Master users can use a custom interest rate.",
+                },
+                status=status.HTTP_403_FORBIDDEN,
+            )
+
         try:
             calculation_data = serializer.validated_data.copy()
 
@@ -379,6 +391,11 @@ class EmiSheetListCreateView(APIView):
             )
             .all()
         )
+
+        if getattr(request.user, "role", None) == "SALES_STAFF":
+            queryset = queryset.filter(
+                created_by=request.user
+            )
 
         # -------------------------------------------------
         # Search
@@ -457,6 +474,18 @@ class EmiSheetListCreateView(APIView):
             raise_exception=True,
         )
 
+        if (
+            getattr(request.user, "role", None) != "MASTER"
+            and serializer.validated_data.get("manual_interest_rate") is not None
+        ):
+            return Response(
+                {
+                    "success": False,
+                    "message": "Only Master users can use a custom interest rate.",
+                },
+                status=status.HTTP_403_FORBIDDEN,
+            )
+
         try:
            emi_sheet = services.create_emi_sheet(
             created_by=request.user,
@@ -515,6 +544,18 @@ class EmiSheetDetailView(APIView):
             pk=pk,
         )
 
+        if (
+            getattr(request.user, "role", None) == "SALES_STAFF"
+            and emi_sheet.created_by_id != request.user.id
+        ):
+            return Response(
+                {
+                    "success": False,
+                    "message": "You do not have access to this EMI sheet.",
+                },
+                status=status.HTTP_403_FORBIDDEN,
+            )
+
         serializer = EmiSheetSerializer(
             emi_sheet,
         )
@@ -537,6 +578,18 @@ class EmiSheetDetailView(APIView):
             EmiSheet,
             pk=pk,
         )
+
+        if (
+            getattr(request.user, "role", None) == "SALES_STAFF"
+            and emi_sheet.created_by_id != request.user.id
+        ):
+            return Response(
+                {
+                    "success": False,
+                    "message": "You do not have access to this EMI sheet.",
+                },
+                status=status.HTTP_403_FORBIDDEN,
+            )
 
         serializer = EmiSheetUpdateSerializer(
             data=request.data,

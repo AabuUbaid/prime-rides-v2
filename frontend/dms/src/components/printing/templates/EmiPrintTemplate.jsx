@@ -8,13 +8,13 @@ function displayValue(value) {
 
 function formatCurrency(value) {
   if (value === null || value === undefined || value === "") {
-    return "-";
+    return "AED 0.00";
   }
 
   const numericValue = Number(value);
 
   if (!Number.isFinite(numericValue)) {
-    return "-";
+    return "AED 0.00";
   }
 
   return `AED ${numericValue.toLocaleString("en-AE", {
@@ -45,7 +45,6 @@ function PrintField({ label, value }) {
   return (
     <div className="print-field">
       <div className="print-field-label">{label}</div>
-
       <div className="print-field-value">{displayValue(value)}</div>
     </div>
   );
@@ -61,19 +60,30 @@ function PrintGrid({ children, columns = 2 }) {
 
 function PrintSummary({ label, value, highlight = false }) {
   return (
-    <div className={highlight ? "print-total-row--strong" : "print-total-row"}>
+    <div
+      className={
+        highlight
+          ? "print-total-row print-total-row--strong"
+          : "print-total-row"
+      }
+    >
       <span>{label}</span>
       <strong>{value}</strong>
     </div>
   );
 }
 
+function getStatusLabel(status) {
+  return String(status || "unknown")
+    .replaceAll("_", " ")
+    .replace(/\b\w/g, (character) => character.toUpperCase());
+}
+
 export default function EmiPrintTemplate({ emi }) {
   const expenses = Array.isArray(emi?.expenses) ? emi.expenses : [];
 
   return (
-    <>
-      {/* Customer */}
+    <div className="emi-print-content">
       <section className="print-section">
         <PrintSectionTitle title="Customer" />
 
@@ -84,7 +94,6 @@ export default function EmiPrintTemplate({ emi }) {
         </PrintGrid>
       </section>
 
-      {/* Vehicle */}
       <section className="print-section">
         <PrintSectionTitle title="Vehicle" />
 
@@ -127,7 +136,6 @@ export default function EmiPrintTemplate({ emi }) {
         </PrintGrid>
       </section>
 
-      {/* Financing */}
       <section className="print-section">
         <PrintSectionTitle title="Financing" />
 
@@ -184,11 +192,10 @@ export default function EmiPrintTemplate({ emi }) {
         </PrintGrid>
       </section>
 
-      {/* EMI Summary */}
       <section className="print-section">
         <PrintSectionTitle title="EMI Summary" />
 
-        <div className="print-total">
+        <div className="print-summary-grid">
           <PrintSummary
             label="Total Interest"
             value={formatCurrency(emi?.total_interest)}
@@ -207,7 +214,6 @@ export default function EmiPrintTemplate({ emi }) {
         </div>
       </section>
 
-      {/* Applied Finance Configuration */}
       <section className="print-section">
         <PrintSectionTitle title="Applied Finance Configuration" />
 
@@ -259,7 +265,6 @@ export default function EmiPrintTemplate({ emi }) {
         </PrintGrid>
       </section>
 
-      {/* Other Expenses */}
       <section className="print-section">
         <PrintSectionTitle title="Other Expenses" />
 
@@ -270,7 +275,7 @@ export default function EmiPrintTemplate({ emi }) {
                 <th>Type</th>
                 <th>Name</th>
                 <th>Description</th>
-                <th className="text-right">Amount</th>
+                <th className="print-number">Amount</th>
               </tr>
             </thead>
 
@@ -283,7 +288,7 @@ export default function EmiPrintTemplate({ emi }) {
 
                   <td>{displayValue(expense.description)}</td>
 
-                  <td className="text-right font-semibold">
+                  <td className="print-number">
                     {formatCurrency(expense.amount)}
                   </td>
                 </tr>
@@ -291,9 +296,7 @@ export default function EmiPrintTemplate({ emi }) {
             </tbody>
           </table>
         ) : (
-          <div className="print-field-value">
-            No additional expenses recorded.
-          </div>
+          <div className="print-empty">No additional expenses recorded.</div>
         )}
 
         <div className="print-total">
@@ -305,12 +308,21 @@ export default function EmiPrintTemplate({ emi }) {
         </div>
       </section>
 
-      {/* Signature */}
       <section className="print-signature">
-        <div className="print-signature-line">Authorized Signature</div>
+        <div className="print-signature-box">
+          <div className="print-signature-line" />
+          <span>Authorized Signature</span>
+        </div>
 
-        <div className="print-signature-line">Company Seal</div>
+        <div className="print-signature-box">
+          <div className="print-signature-line" />
+          <span>Company Seal</span>
+        </div>
       </section>
-    </>
+
+      <div className="print-document-status">
+        Status: {getStatusLabel(emi?.status)}
+      </div>
+    </div>
   );
 }

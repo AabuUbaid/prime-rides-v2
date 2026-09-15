@@ -113,17 +113,15 @@ function EditCar() {
     try {
       setSaving(true);
 
-      const { status, ...editableData } = formData;
-
       const normalizedData = {
-        ...editableData,
-        make: formatHumanText(editableData.make),
-        model: formatHumanText(editableData.model),
-        variant: formatHumanText(editableData.variant),
-        colour: formatHumanText(editableData.colour),
-        supplier: formatHumanText(editableData.supplier),
-        service_location: formatHumanText(editableData.service_location),
-        source_specify: formatHumanText(editableData.source_specify),
+        ...formData,
+        make: formatHumanText(formData.make),
+        model: formatHumanText(formData.model),
+        variant: formatHumanText(formData.variant),
+        colour: formatHumanText(formData.colour),
+        supplier: formatHumanText(formData.supplier),
+        service_location: formatHumanText(formData.service_location),
+        source_specify: formatHumanText(formData.source_specify),
       };
 
       const result = await updateCar(id, normalizedData);

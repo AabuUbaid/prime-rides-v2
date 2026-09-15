@@ -5,6 +5,7 @@ from rest_framework.views import APIView
 from rest_framework.exceptions import (
     NotFound,
     ValidationError,
+    PermissionDenied,
 )
 
 from .models import Quote
@@ -31,8 +32,9 @@ class QuoteListCreateView(APIView):
 
     def get(self, request):
         queryset = list_quotes(
-            status=request.query_params.get("status"),
-            search=request.query_params.get("search"),
+        status=request.query_params.get("status"),
+        search=request.query_params.get("search"),
+        user=request.user,
         )
 
         serializer = QuoteListSerializer(
@@ -77,11 +79,22 @@ class QuoteListCreateView(APIView):
 class QuoteDetailView(APIView):
     permission_classes = [IsAuthenticated]
 
-    def get_object(self, pk):
+    def get_object(self, pk, user=None):
         try:
-            return get_quote(pk)
+            quote = get_quote(pk)
         except Quote.DoesNotExist:
             raise NotFound("Quote not found.")
+
+        if (
+            user is not None
+            and getattr(user, "role", None) == "SALES_STAFF"
+            and quote.salesperson_id != user.id
+        ):
+            raise PermissionDenied(
+                "You do not have permission to view this Quote."
+            )
+
+        return quote
 
     def get(self, request, pk):
         quote = self.get_object(pk)
@@ -165,6 +178,17 @@ class QuoteProceedToBankLoanView(APIView):
     permission_classes = [IsAuthenticated]
 
     def post(self, request, pk):
+        if getattr(request.user, "role", None) == "SALES_STAFF":
+            return Response(
+                {
+                    "success": False,
+                    "message": (
+                        "Sales Staff do not have permission "
+                        "to proceed this Quote to a downstream deal."
+                    ),
+                },
+                status=status.HTTP_403_FORBIDDEN,
+            )
         try:
             quote = get_quote(pk)
         except Quote.DoesNotExist:
@@ -220,6 +244,17 @@ class QuoteProceedToCashDealView(APIView):
     permission_classes = [IsAuthenticated]
 
     def post(self, request, pk):
+        if getattr(request.user, "role", None) == "SALES_STAFF":
+            return Response(
+                {
+                    "success": False,
+                    "message": (
+                        "Sales Staff do not have permission "
+                        "to proceed this Quote to a downstream deal."
+                    ),
+                },
+                status=status.HTTP_403_FORBIDDEN,
+            )
         try:
             quote = get_quote(pk)
         except Quote.DoesNotExist:
