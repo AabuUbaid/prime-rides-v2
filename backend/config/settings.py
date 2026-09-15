@@ -34,8 +34,9 @@ ALLOWED_HOSTS = [
     "localhost",
     "172.28.5.226",
     "192.168.0.148",
-    "https://dms.primerides.ae",
-    "https://prime-rides-v2-r5v1.onrender.com",
+    "dms.primerides.ae",
+    "prime-rides-v2-r5v1.onrender.com",
+    "prime-rides-v2-bak2.onrender.com",
 ]
 
 
