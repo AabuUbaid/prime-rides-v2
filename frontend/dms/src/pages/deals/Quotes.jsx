@@ -56,15 +56,19 @@ function formatDate(value) {
 function getStatusClasses(status) {
   switch (status) {
     case "quote":
-      return "bg-blue-100 text-blue-700";
+      return "border border-blue-200 bg-blue-50 text-blue-700";
+
     case "booked":
-      return "bg-amber-100 text-amber-700";
+      return "border border-amber-200 bg-amber-50 text-amber-700";
+
     case "sold":
-      return "bg-green-100 text-green-700";
+      return "border border-emerald-200 bg-emerald-50 text-emerald-700";
+
     case "cancelled":
-      return "bg-red-100 text-red-700";
+      return "border border-rose-200 bg-rose-50 text-rose-700";
+
     default:
-      return "bg-gray-100 text-gray-700";
+      return "border border-slate-200 bg-slate-100 text-slate-600";
   }
 }
 
@@ -213,7 +217,7 @@ export default function Quotes() {
             Quotes & Deals
           </h1>
 
-          <p className="mt-1 text-sm text-gray-500">
+          <p className="mt-1 text-sm text-slate-400">
             Manage quotations and deal records.
           </p>
         </div>
@@ -270,21 +274,21 @@ export default function Quotes() {
             value={searchInput}
             onChange={handleSearchChange}
             placeholder="Search quote, customer, mobile, vehicle, chassis, engine..."
-            className="w-full rounded-lg border border-gray-300 bg-white px-4 py-3 text-sm text-gray-900 outline-none transition placeholder:text-gray-400 focus:border-gray-500 focus:ring-1 focus:ring-gray-500"
+            className="h-11 w-full rounded-xl border border-slate-200 bg-white px-4 text-sm text-slate-800 outline-none transition placeholder:text-slate-400 focus:border-amber-400 focus:ring-2 focus:ring-amber-400/15"
           />
         </div>
       </div>
 
       {/* Error */}
       {error && (
-        <div className="mb-5 rounded-xl border border-red-200 bg-red-50 p-4">
+        <div className="mb-5 rounded-2xl border border-rose-200 bg-rose-50 p-4">
           <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
             <div>
-              <h2 className="text-sm font-semibold text-red-800">
+              <h2 className="text-sm font-semibold text-rose-800">
                 Unable to load quotes
               </h2>
 
-              <p className="mt-1 text-sm text-red-700">{error}</p>
+              <p className="text-sm text-rose-700">{error}</p>
             </div>
 
             <button
@@ -300,22 +304,22 @@ export default function Quotes() {
       )}
 
       {/* Main content */}
-      <div className="overflow-hidden rounded-xl border border-gray-200 bg-white shadow-sm">
+      <div className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-[0_2px_8px_rgba(15,23,42,0.04)]">
         {/* Loading */}
         {loading && (
           <div className="p-10 text-center">
-            <div className="text-sm text-gray-500">Loading quotes...</div>
+            <div className="text-sm text-slate-400">Loading quotes...</div>
           </div>
         )}
 
         {/* Empty */}
         {!loading && !error && quotes.length === 0 && (
           <div className="p-10 text-center">
-            <h2 className="text-base font-semibold text-gray-900">
+            <h2 className="text-base font-semibold text-slate-800">
               No quotes found
             </h2>
 
-            <p className="mt-1 text-sm text-gray-500">
+            <p className="mt-1 text-sm text-slate-400">
               {search
                 ? "Try a different search term."
                 : "There are no records for this status yet."}
@@ -327,39 +331,39 @@ export default function Quotes() {
         {!loading && quotes.length > 0 && (
           <div className="overflow-x-auto">
             <table className="min-w-full">
-              <thead className="border-b border-gray-200 bg-gray-50">
+              <thead className="border-b border-slate-200 bg-slate-50">
                 <tr>
-                  <th className="px-5 py-3 text-left text-xs font-semibold uppercase tracking-wide text-gray-500">
+                  <th className="px-5 py-3 text-left text-[10px] font-bold uppercase tracking-[0.08em] text-slate-500">
                     Quote
                   </th>
 
-                  <th className="px-5 py-3 text-left text-xs font-semibold uppercase tracking-wide text-gray-500">
+                  <th className="px-5 py-3 text-left text-[10px] font-bold uppercase tracking-[0.08em] text-slate-500">
                     Customer
                   </th>
 
-                  <th className="px-5 py-3 text-left text-xs font-semibold uppercase tracking-wide text-gray-500">
+                  <th className="px-5 py-3 text-left text-[10px] font-bold uppercase tracking-[0.08em] text-slate-500">
                     Vehicle
                   </th>
 
-                  <th className="px-5 py-3 text-left text-xs font-semibold uppercase tracking-wide text-gray-500">
+                  <th className="px-5 py-3 text-left text-[10px] font-bold uppercase tracking-[0.08em] text-slate-500">
                     Price
                   </th>
 
-                  <th className="px-5 py-3 text-left text-xs font-semibold uppercase tracking-wide text-gray-500">
+                  <th className="px-5 py-3 text-left text-[10px] font-bold uppercase tracking-[0.08em] text-slate-500">
                     Payment
                   </th>
 
-                  <th className="px-5 py-3 text-left text-xs font-semibold uppercase tracking-wide text-gray-500">
+                  <th className="px-5 py-3 text-left text-[10px] font-bold uppercase tracking-[0.08em] text-slate-500">
                     Status
                   </th>
 
-                  <th className="px-5 py-3 text-left text-xs font-semibold uppercase tracking-wide text-gray-500">
+                  <th className="px-5 py-3 text-left text-[10px] font-bold uppercase tracking-[0.08em] text-slate-500">
                     Created
                   </th>
                 </tr>
               </thead>
 
-              <tbody className="divide-y divide-gray-100">
+              <tbody className="divide-y divide-slate-100">
                 {quotes.map((quote) => {
                   const vehicleName = [
                     quote.vehicle_make,
@@ -373,45 +377,45 @@ export default function Quotes() {
                     <tr
                       key={quote.id}
                       onClick={() => handleRowClick(quote.id)}
-                      className="cursor-pointer transition hover:bg-gray-50"
+                      className="cursor-pointer transition hover:bg-slate-50/80"
                     >
                       <td className="px-5 py-4">
-                        <div className="font-medium text-gray-900">
+                        <div className="font-medium text-slate-800">
                           {quote.quote_number || "-"}
                         </div>
 
                         {quote.vehicle_stock_id && (
-                          <div className="mt-1 text-xs text-gray-500">
-                            Stock #{quote.vehicle_stock_id}
+                          <div className="mt-1 text-xs text-slate-400">
+                            Stock {quote.vehicle_stock_id}
                           </div>
                         )}
                       </td>
 
                       <td className="px-5 py-4">
-                        <div className="font-medium text-gray-900">
+                        <div className="font-medium text-slate-800">
                           {quote.customer_name || "-"}
                         </div>
 
                         {quote.customer_mobile && (
-                          <div className="mt-1 text-xs text-gray-500">
+                          <div className="mt-1 text-xs text-slate-400">
                             {quote.customer_mobile}
                           </div>
                         )}
                       </td>
 
                       <td className="px-5 py-4">
-                        <div className="text-sm text-gray-900">
+                        <div className="text-sm text-slate-800">
                           {vehicleName || "-"}
                         </div>
 
                         {quote.vehicle_chassis_number && (
-                          <div className="mt-1 text-xs text-gray-500">
+                          <div className="mt-1 text-xs text-slate-400">
                             Chassis: {quote.vehicle_chassis_number}
                           </div>
                         )}
                       </td>
 
-                      <td className="px-5 py-4 text-sm font-medium text-gray-900">
+                      <td className="px-5 py-4 text-sm font-medium text-slate-800">
                         {formatCurrency(quote.price)}
                       </td>
 
@@ -421,7 +425,7 @@ export default function Quotes() {
 
                       <td className="px-5 py-4">
                         <span
-                          className={`inline-flex rounded-full px-2.5 py-1 text-xs font-semibold ${getStatusClasses(
+                          className={`inline-flex rounded-full px-2.5 py-1 text-[10px] font-bold uppercase tracking-wide ${getStatusClasses(
                             quote.status,
                           )}`}
                         >
@@ -443,7 +447,7 @@ export default function Quotes() {
 
       {/* Footer count */}
       {!loading && !error && quotes.length > 0 && (
-        <div className="mt-3 text-sm text-gray-500">
+        <div className="mt-3 text-sm text-slate-400">
           Showing {quotes.length} {quotes.length === 1 ? "record" : "records"}.
         </div>
       )}

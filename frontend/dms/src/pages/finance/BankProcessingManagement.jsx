@@ -431,49 +431,28 @@ function BankProcessingManagement() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      <header className="border-b bg-white">
-        <div className="mx-auto flex max-w-7xl items-center justify-between px-6 py-4">
-          <div>
-            <h1 className="text-2xl font-bold text-gray-900">Prime Rides</h1>
-
-            <p className="text-sm text-gray-500">Dealer Management System</p>
-          </div>
-
-          <div className="flex items-center gap-3">
-            <Link
-              to="/finance/settings"
-              className="rounded-md border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 transition hover:bg-gray-100"
-            >
-              Finance Master
-            </Link>
-
-            <Link
-              to="/dashboard"
-              className="rounded-md border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 transition hover:bg-gray-100"
-            >
-              Dashboard
-            </Link>
-
-            <div className="text-right">
-              <p className="text-sm font-medium text-gray-900">
-                {user?.first_name}
-              </p>
-
-              <p className="text-xs uppercase text-gray-500">{user?.role}</p>
-            </div>
-          </div>
-        </div>
-      </header>
-
-      <main className="mx-auto max-w-7xl px-6 py-8">
+    <div className="min-h-screen bg-[#f5f6fa]">
+      <main className="mx-auto w-full max-w-[1500px] px-4 py-6 sm:px-6 lg:px-8">
         <div className="mb-6 flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
           <div>
-            <h2 className="text-2xl font-semibold text-gray-900">
+            <Link
+              to="/finance/settings"
+              className="text-sm font-medium text-gray-600 hover:text-slate-800"
+            >
+              ← Back to Finance Settings
+            </Link>
+            <div className="mt-4 mb-2 flex items-center gap-2">
+              <span className="h-1.5 w-1.5 rounded-full bg-amber-500" />
+
+              <span className="text-[10px] font-mono uppercase tracking-[0.14em] text-amber-600">
+                Managements
+              </span>
+            </div>
+            <h2 className="text-2xl font-bold tracking-tight text-slate-900">
               Bank Processing
             </h2>
 
-            <p className="mt-1 text-sm text-gray-500">
+            <p className="mt-1 text-sm text-slate-500">
               Configure bank processing percentages, minimum amounts, and banker
               application charges.
             </p>
@@ -483,50 +462,50 @@ function BankProcessingManagement() {
             <button
               type="button"
               onClick={openCreateModal}
-              className="rounded-md bg-gray-900 px-4 py-2 text-sm font-medium text-white transition hover:bg-gray-800"
+              className="rounded-xl bg-amber-500 px-5 py-2.5 text-sm font-bold text-slate-950 shadow-sm transition hover:bg-amber-400 disabled:cursor-not-allowed disabled:opacity-50"
             >
               + Add Bank Processing
             </button>
           )}
         </div>
 
-        <div className="overflow-hidden rounded-lg border border-gray-200 bg-white shadow-sm">
+        <div className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-[0_2px_8px_rgba(15,23,42,0.04)]">
           {loading ? (
             <div className="p-8 text-center text-sm text-gray-500">
               Loading bank processing configurations...
             </div>
           ) : sortedConfigurations.length === 0 ? (
             <div className="p-8 text-center">
-              <p className="text-sm font-medium text-gray-700">
+              <p className="text-sm font-medium text-slate-600">
                 No bank processing configurations found.
               </p>
 
-              <p className="mt-1 text-sm text-gray-500">
+              <p className="mt-1 text-sm text-slate-500">
                 Add a configuration to begin configuring Finance.
               </p>
             </div>
           ) : (
             <div className="overflow-x-auto">
-              <table className="min-w-full divide-y divide-gray-200">
-                <thead className="bg-gray-50">
+              <table className="min-w-full divide-y divide-slate-200">
+                <thead className="bg-slate-50">
                   <tr>
-                    <th className="px-6 py-3 text-left text-xs font-semibold uppercase tracking-wide text-gray-500">
+                    <th className="px-6 py-3.5 text-left text-[10px] font-bold uppercase tracking-[0.08em] text-slate-400">
                       Bank
                     </th>
 
-                    <th className="px-6 py-3 text-left text-xs font-semibold uppercase tracking-wide text-gray-500">
+                    <th className="px-6 py-3.5 text-left text-[10px] font-bold uppercase tracking-[0.08em] text-slate-400">
                       Percentage
                     </th>
 
-                    <th className="px-6 py-3 text-left text-xs font-semibold uppercase tracking-wide text-gray-500">
+                    <th className="px-6 py-3.5 text-left text-[10px] font-bold uppercase tracking-[0.08em] text-slate-400">
                       Minimum Amount
                     </th>
 
-                    <th className="px-6 py-3 text-left text-xs font-semibold uppercase tracking-wide text-gray-500">
+                    <th className="px-6 py-3.5 text-left text-[10px] font-bold uppercase tracking-[0.08em] text-slate-400">
                       Banker Application Charge
                     </th>
 
-                    <th className="px-6 py-3 text-left text-xs font-semibold uppercase tracking-wide text-gray-500">
+                    <th className="px-6 py-3.5 text-left text-[10px] font-bold uppercase tracking-[0.08em] text-slate-400">
                       Status
                     </th>
 
@@ -538,22 +517,22 @@ function BankProcessingManagement() {
                   </tr>
                 </thead>
 
-                <tbody className="divide-y divide-gray-100">
+                <tbody className="divide-y divide-slate-100">
                   {sortedConfigurations.map((configuration) => (
                     <tr key={configuration.id}>
-                      <td className="px-6 py-4 text-sm font-medium text-gray-900">
+                      <td className="px-6 py-4 text-sm font-medium text-slate-800">
                         {getBankName(configuration, banks)}
                       </td>
 
-                      <td className="whitespace-nowrap px-6 py-4 text-sm text-gray-700">
+                      <td className="whitespace-nowrap px-6 py-4 text-sm text-slate-600">
                         {formatPercentage(configuration.percentage)}
                       </td>
 
-                      <td className="whitespace-nowrap px-6 py-4 text-sm text-gray-700">
+                      <td className="whitespace-nowrap px-6 py-4 text-sm text-slate-600">
                         {formatCurrency(configuration.minimum_amount)}
                       </td>
 
-                      <td className="whitespace-nowrap px-6 py-4 text-sm font-medium text-gray-900">
+                      <td className="whitespace-nowrap px-6 py-4 text-sm font-medium text-slate-800">
                         {formatCurrency(
                           configuration.banker_application_charge ??
                             configuration.application_charge,
@@ -562,7 +541,7 @@ function BankProcessingManagement() {
 
                       <td className="whitespace-nowrap px-6 py-4 text-sm">
                         {configuration.is_active ? (
-                          <span className="inline-flex rounded-full bg-green-100 px-2.5 py-1 text-xs font-medium text-green-700">
+                          <span className="inline-flex rounded-full border border-emerald-200 bg-emerald-50 px-2.5 py-1 text-[10px] font-bold uppercase tracking-wide text-emerald-700">
                             Active
                           </span>
                         ) : (
@@ -578,7 +557,7 @@ function BankProcessingManagement() {
                             <button
                               type="button"
                               onClick={() => openEditModal(configuration)}
-                              className="rounded-md border border-gray-300 px-3 py-1.5 font-medium text-gray-700 transition hover:bg-gray-100"
+                              className="rounded-md border border-gray-300 px-3 py-1.5 font-medium text-slate-600 transition hover:bg-gray-100"
                             >
                               Edit
                             </button>
@@ -586,7 +565,7 @@ function BankProcessingManagement() {
                             <button
                               type="button"
                               onClick={() => handleToggleActive(configuration)}
-                              className="rounded-md border border-gray-300 px-3 py-1.5 font-medium text-gray-700 transition hover:bg-gray-100"
+                              className="rounded-md border border-gray-300 px-3 py-1.5 font-medium text-slate-600 transition hover:bg-gray-100"
                             >
                               {configuration.is_active
                                 ? "Deactivate"
@@ -596,7 +575,7 @@ function BankProcessingManagement() {
                             <button
                               type="button"
                               onClick={() => handleDelete(configuration)}
-                              className="rounded-md border border-red-200 px-3 py-1.5 font-medium text-red-700 transition hover:bg-red-50"
+                              className="rounded-lg border border-rose-200 bg-white px-3 py-1.5 text-xs font-semibold text-rose-700 transition hover:bg-rose-50"
                             >
                               Delete
                             </button>
@@ -613,16 +592,16 @@ function BankProcessingManagement() {
       </main>
 
       {isModalOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 px-4 py-6">
-          <div className="max-h-[90vh] w-full max-w-xl overflow-y-auto rounded-lg bg-white shadow-xl">
-            <div className="border-b border-gray-200 px-6 py-4">
-              <h3 className="text-lg font-semibold text-gray-900">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/50 px-4 py-6 backdrop-blur-[2px]">
+          <div className="max-h-[90vh] w-full max-w-xl overflow-y-auto rounded-2xl border border-slate-200 bg-white shadow-2xl">
+            <div className="border-b border-slate-200 px-6 py-5">
+              <h3 className="text-lg font-semibold text-slate-800">
                 {editingConfiguration
                   ? "Edit Bank Processing"
                   : "Add Bank Processing"}
               </h3>
 
-              <p className="mt-1 text-sm text-gray-500">
+              <p className="mt-1 text-sm text-slate-500">
                 Configure the processing settings for one bank.
               </p>
             </div>
@@ -630,7 +609,7 @@ function BankProcessingManagement() {
             <form onSubmit={handleSubmit}>
               <div className="space-y-5 px-6 py-6">
                 {fieldErrors.non_field_errors && (
-                  <div className="rounded-md border border-red-200 bg-red-50 px-4 py-3">
+                  <div className="rounded-xl border border-rose-200 bg-rose-50 px-4 py-3">
                     <p className="text-sm font-medium text-red-700">
                       {getFieldError(fieldErrors.non_field_errors)}
                     </p>
@@ -640,7 +619,7 @@ function BankProcessingManagement() {
                 <div>
                   <label
                     htmlFor="processing-bank"
-                    className="mb-1.5 block text-sm font-medium text-gray-700"
+                    className="mb-1.5 block text-sm font-medium text-slate-600"
                   >
                     Bank
                   </label>
@@ -651,7 +630,7 @@ function BankProcessingManagement() {
                     value={form.bank_id}
                     onChange={handleChange}
                     disabled={Boolean(editingConfiguration)}
-                    className={`w-full rounded-md border px-3 py-2.5 text-sm outline-none transition focus:ring-2 focus:ring-gray-300 disabled:bg-gray-100 ${
+                    className={`w-full h-10 rounded-xl border px-3 text-sm text-slate-800 outline-none transition placeholder:text-slate-400 focus:border-amber-400 focus:ring-2 focus:ring-amber-400/15 disabled:bg-slate-50 disabled:text-slate-400 ${
                       fieldErrors.bank_id ? "border-red-400" : "border-gray-300"
                     }`}
                   >
@@ -668,13 +647,13 @@ function BankProcessingManagement() {
                   </select>
 
                   {(fieldErrors.bank_id || fieldErrors.bank) && (
-                    <p className="mt-1.5 text-xs text-red-600">
+                    <p className="mt-1.5 text-xs font-medium text-rose-600">
                       {getFieldError(fieldErrors.bank_id || fieldErrors.bank)}
                     </p>
                   )}
 
                   {editingConfiguration && (
-                    <p className="mt-1.5 text-xs text-gray-500">
+                    <p className="mt-1.5 text-xs text-slate-400">
                       The bank cannot be changed while editing an existing
                       configuration.
                     </p>
@@ -684,7 +663,7 @@ function BankProcessingManagement() {
                 <div>
                   <label
                     htmlFor="processing-percentage"
-                    className="mb-1.5 block text-sm font-medium text-gray-700"
+                    className="mb-1.5 block text-sm font-medium text-slate-600"
                   >
                     Processing Percentage (%)
                   </label>
@@ -699,7 +678,7 @@ function BankProcessingManagement() {
                     value={form.percentage}
                     onChange={handleChange}
                     placeholder="e.g. 1.25"
-                    className={`w-full rounded-md border px-3 py-2.5 text-sm outline-none transition focus:ring-2 focus:ring-gray-300 ${
+                    className={`w-full h-10 rounded-xl border px-3 text-sm text-slate-800 outline-none transition placeholder:text-slate-400 focus:border-amber-400 focus:ring-2 focus:ring-amber-400/15 ${
                       fieldErrors.percentage
                         ? "border-red-400"
                         : "border-gray-300"
@@ -707,7 +686,7 @@ function BankProcessingManagement() {
                   />
 
                   {fieldErrors.percentage && (
-                    <p className="mt-1.5 text-xs text-red-600">
+                    <p className="mt-1.5 text-xs font-medium text-rose-600">
                       {getFieldError(fieldErrors.percentage)}
                     </p>
                   )}
@@ -716,7 +695,7 @@ function BankProcessingManagement() {
                 <div>
                   <label
                     htmlFor="processing-minimum"
-                    className="mb-1.5 block text-sm font-medium text-gray-700"
+                    className="mb-1.5 block text-sm font-medium text-slate-600"
                   >
                     Minimum Amount (AED)
                   </label>
@@ -731,7 +710,7 @@ function BankProcessingManagement() {
                     value={form.minimum_amount}
                     onChange={handleChange}
                     placeholder="e.g. 500.00"
-                    className={`w-full rounded-md border px-3 py-2.5 text-sm outline-none transition focus:ring-2 focus:ring-gray-300 ${
+                    className={`w-full h-10 rounded-xl border px-3 text-sm text-slate-800 outline-none transition placeholder:text-slate-400 focus:border-amber-400 focus:ring-2 focus:ring-amber-400/15 ${
                       fieldErrors.minimum_amount
                         ? "border-red-400"
                         : "border-gray-300"
@@ -739,7 +718,7 @@ function BankProcessingManagement() {
                   />
 
                   {fieldErrors.minimum_amount && (
-                    <p className="mt-1.5 text-xs text-red-600">
+                    <p className="mt-1.5 text-xs font-medium text-rose-600">
                       {getFieldError(fieldErrors.minimum_amount)}
                     </p>
                   )}
@@ -748,7 +727,7 @@ function BankProcessingManagement() {
                 <div>
                   <label
                     htmlFor="processing-application-charge"
-                    className="mb-1.5 block text-sm font-medium text-gray-700"
+                    className="mb-1.5 block text-sm font-medium text-slate-600"
                   >
                     Banker Application Charge (AED)
                   </label>
@@ -763,7 +742,7 @@ function BankProcessingManagement() {
                     value={form.banker_application_charge}
                     onChange={handleChange}
                     placeholder="e.g. 400.00"
-                    className={`w-full rounded-md border px-3 py-2.5 text-sm outline-none transition focus:ring-2 focus:ring-gray-300 ${
+                    className={`w-full h-10 rounded-xl border px-3 text-sm text-slate-800 outline-none transition placeholder:text-slate-400 focus:border-amber-400 focus:ring-2 focus:ring-amber-400/15 ${
                       fieldErrors.banker_application_charge
                         ? "border-red-400"
                         : "border-gray-300"
@@ -771,39 +750,39 @@ function BankProcessingManagement() {
                   />
 
                   {fieldErrors.banker_application_charge && (
-                    <p className="mt-1.5 text-xs text-red-600">
+                    <p className="mt-1.5 text-xs font-medium text-rose-600">
                       {getFieldError(fieldErrors.banker_application_charge)}
                     </p>
                   )}
                 </div>
 
-                <label className="flex items-start gap-3 rounded-md border border-gray-200 p-4">
+                <label className="flex items-start gap-3 rounded-xl border border-slate-200 bg-slate-50/40 p-4 transition hover:bg-slate-50">
                   <input
                     name="is_active"
                     type="checkbox"
                     checked={form.is_active}
                     onChange={handleChange}
-                    className="mt-0.5 h-4 w-4 rounded border-gray-300"
+                    className="mt-0.5 h-4 w-4 rounded border-slate-300 accent-amber-500"
                   />
 
                   <span>
-                    <span className="block text-sm font-medium text-gray-800">
+                    <span className="block text-sm font-semibold text-slate-800">
                       Active
                     </span>
 
-                    <span className="mt-1 block text-xs text-gray-500">
+                    <span className="mt-1 block text-xs text-slate-400">
                       Active configuration can be used by Finance calculations.
                     </span>
                   </span>
                 </label>
               </div>
 
-              <div className="flex justify-end gap-3 border-t border-gray-200 px-6 py-4">
+              <div className="flex justify-end gap-3 border-t border-slate-200 px-6 py-4">
                 <button
                   type="button"
                   onClick={closeModal}
                   disabled={saving}
-                  className="rounded-md border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 transition hover:bg-gray-100 disabled:cursor-not-allowed disabled:opacity-50"
+                  className="rounded-md border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-slate-600 transition hover:bg-gray-100 disabled:cursor-not-allowed disabled:opacity-50"
                 >
                   Cancel
                 </button>
@@ -811,7 +790,7 @@ function BankProcessingManagement() {
                 <button
                   type="submit"
                   disabled={saving}
-                  className="rounded-md bg-gray-900 px-4 py-2 text-sm font-medium text-white transition hover:bg-gray-800 disabled:cursor-not-allowed disabled:opacity-50"
+                  className="rounded-xl bg-amber-500 px-5 py-2.5 text-sm font-bold text-slate-950 shadow-sm transition hover:bg-amber-400 disabled:cursor-not-allowed disabled:opacity-50"
                 >
                   {saving
                     ? "Saving..."

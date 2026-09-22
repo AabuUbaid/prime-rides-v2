@@ -47,9 +47,9 @@ function toNumberString(value) {
 
 function getCalculationLabel(value) {
   return (
-    CALCULATION_TYPES.find(
-      (type) => type.value === value,
-    )?.label || value || "-"
+    CALCULATION_TYPES.find((type) => type.value === value)?.label ||
+    value ||
+    "-"
   );
 }
 
@@ -64,11 +64,7 @@ function getFieldError(value) {
 function getApiErrors(error) {
   const errors = error?.cause?.errors;
 
-  if (
-    errors &&
-    typeof errors === "object" &&
-    !Array.isArray(errors)
-  ) {
+  if (errors && typeof errors === "object" && !Array.isArray(errors)) {
     return errors;
   }
 
@@ -76,13 +72,7 @@ function getApiErrors(error) {
 }
 
 function getResponseData(response) {
-  if (
-    response &&
-    Object.prototype.hasOwnProperty.call(
-      response,
-      "data",
-    )
-  ) {
+  if (response && Object.prototype.hasOwnProperty.call(response, "data")) {
     return response.data;
   }
 
@@ -96,11 +86,7 @@ function getApiMessage(error) {
     return getFieldError(nonFieldErrors);
   }
 
-  return (
-    error?.cause?.message ||
-    error?.message ||
-    "Something went wrong."
-  );
+  return error?.cause?.message || error?.message || "Something went wrong.";
 }
 
 function ExpensePresetManagement() {
@@ -126,14 +112,9 @@ function ExpensePresetManagement() {
 
       const data = getResponseData(response);
 
-      setPresets(
-        Array.isArray(data) ? data : [],
-      );
+      setPresets(Array.isArray(data) ? data : []);
     } catch (error) {
-      console.error(
-        "Failed to load expense presets:",
-        error,
-      );
+      console.error("Failed to load expense presets:", error);
 
       toast.error(getApiMessage(error));
 
@@ -144,38 +125,24 @@ function ExpensePresetManagement() {
   }
 
   useEffect(() => {
-     
     loadPresets();
   }, []);
 
   const sortedPresets = useMemo(() => {
     return [...presets]
-      .filter(
-        (preset) =>
-          preset &&
-          typeof preset === "object",
-      )
+      .filter((preset) => preset && typeof preset === "object")
       .sort((a, b) => {
-        const typeA = String(
-          a.expense_type || "",
-        );
+        const typeA = String(a.expense_type || "");
 
-        const typeB = String(
-          b.expense_type || "",
-        );
+        const typeB = String(b.expense_type || "");
 
-        const typeCompare =
-          typeA.localeCompare(typeB);
+        const typeCompare = typeA.localeCompare(typeB);
 
         if (typeCompare !== 0) {
           return typeCompare;
         }
 
-        return String(
-          a.name || "",
-        ).localeCompare(
-          String(b.name || ""),
-        );
+        return String(a.name || "").localeCompare(String(b.name || ""));
       });
   }, [presets]);
 
@@ -195,30 +162,19 @@ function ExpensePresetManagement() {
 
     setForm({
       name: preset.name ?? "",
-      expense_type:
-        preset.expense_type ?? "",
-      calculation_type:
-        preset.calculation_type ?? "fixed",
-      amount: toNumberString(
-        preset.amount,
-      ),
-      percentage: toNumberString(
-        preset.percentage,
-      ),
-      minimum_amount: toNumberString(
-        preset.minimum_amount,
-      ),
-      condition_key:
-        preset.condition_key ?? "",
+      expense_type: preset.expense_type ?? "",
+      calculation_type: preset.calculation_type ?? "fixed",
+      amount: toNumberString(preset.amount),
+      percentage: toNumberString(preset.percentage),
+      minimum_amount: toNumberString(preset.minimum_amount),
+      condition_key: preset.condition_key ?? "",
       condition_value:
         String(preset.condition_value ?? "").toLowerCase() === "yes"
           ? "true"
           : String(preset.condition_value ?? "").toLowerCase() === "no"
             ? "false"
             : String(preset.condition_value ?? ""),
-      is_active: Boolean(
-        preset.is_active,
-      ),
+      is_active: Boolean(preset.is_active),
     });
 
     setFieldErrors({});
@@ -235,19 +191,11 @@ function ExpensePresetManagement() {
   }
 
   function handleChange(event) {
-    const {
-      name,
-      value,
-      type,
-      checked,
-    } = event.target;
+    const { name, value, type, checked } = event.target;
 
     setForm((current) => ({
       ...current,
-      [name]:
-        type === "checkbox"
-          ? checked
-          : value,
+      [name]: type === "checkbox" ? checked : value,
     }));
 
     setFieldErrors((current) => {
@@ -270,8 +218,7 @@ function ExpensePresetManagement() {
       .filter((preset) => preset?.expense_type)
       .filter(
         (preset) =>
-          !editingPreset ||
-          String(preset.id) !== String(editingPreset.id),
+          !editingPreset || String(preset.id) !== String(editingPreset.id),
       )
       .map((preset) => ({
         value: preset.expense_type,
@@ -283,122 +230,77 @@ function ExpensePresetManagement() {
     const errors = {};
 
     if (!form.name.trim()) {
-      errors.name =
-        "Name is required.";
+      errors.name = "Name is required.";
     }
 
     if (!form.expense_type.trim()) {
-      errors.expense_type =
-        "Expense type is required.";
+      errors.expense_type = "Expense type is required.";
     }
 
     if (!form.calculation_type) {
-      errors.calculation_type =
-        "Calculation type is required.";
+      errors.calculation_type = "Calculation type is required.";
     }
 
     if (form.amount !== "") {
-      const amount = Number(
-        form.amount,
-      );
+      const amount = Number(form.amount);
 
       if (!Number.isFinite(amount)) {
-        errors.amount =
-          "Amount must be a valid number.";
+        errors.amount = "Amount must be a valid number.";
       } else if (amount < 0) {
-        errors.amount =
-          "Amount cannot be negative.";
+        errors.amount = "Amount cannot be negative.";
       }
     }
 
-    if (
-      form.calculation_type ===
-      "percentage_minimum"
-    ) {
+    if (form.calculation_type === "percentage_minimum") {
       if (form.percentage === "") {
-        errors.percentage =
-          "Percentage is required.";
-      } else if (
-        Number(form.percentage) < 0
-      ) {
-        errors.percentage =
-          "Percentage cannot be negative.";
+        errors.percentage = "Percentage is required.";
+      } else if (Number(form.percentage) < 0) {
+        errors.percentage = "Percentage cannot be negative.";
       }
 
-      if (
-        form.minimum_amount === ""
-      ) {
-        errors.minimum_amount =
-          "Minimum amount is required.";
-      } else if (
-        Number(
-          form.minimum_amount,
-        ) < 0
-      ) {
-        errors.minimum_amount =
-          "Minimum amount cannot be negative.";
+      if (form.minimum_amount === "") {
+        errors.minimum_amount = "Minimum amount is required.";
+      } else if (Number(form.minimum_amount) < 0) {
+        errors.minimum_amount = "Minimum amount cannot be negative.";
       }
     }
 
-    if (
-      form.calculation_type ===
-      "conditional"
-    ) {
-      if (
-        !form.condition_key.trim()
-      ) {
-        errors.condition_key =
-          "Condition key is required.";
+    if (form.calculation_type === "conditional") {
+      if (!form.condition_key.trim()) {
+        errors.condition_key = "Condition key is required.";
       }
 
-      if (
-        !form.condition_value.trim()
-      ) {
-        errors.condition_value =
-          "Condition value is required.";
+      if (!form.condition_value.trim()) {
+        errors.condition_value = "Condition value is required.";
       }
     }
 
     setFieldErrors(errors);
 
-    return (
-      Object.keys(errors).length === 0
-    );
+    return Object.keys(errors).length === 0;
   }
 
   function buildPayload() {
     return {
       name: form.name.trim(),
-      expense_type:
-        form.expense_type.trim(),
-      calculation_type:
-        form.calculation_type,
-      amount:
-        form.amount === ""
-          ? "0.00"
-          : form.amount,
+      expense_type: form.expense_type.trim(),
+      calculation_type: form.calculation_type,
+      amount: form.amount === "" ? "0.00" : form.amount,
       percentage:
-        form.calculation_type ===
-          "percentage_minimum"
-          ? form.percentage
-          : null,
+        form.calculation_type === "percentage_minimum" ? form.percentage : null,
       minimum_amount:
-        form.calculation_type ===
-          "percentage_minimum"
+        form.calculation_type === "percentage_minimum"
           ? form.minimum_amount
           : null,
       condition_key:
-        form.calculation_type ===
-          "conditional"
+        form.calculation_type === "conditional"
           ? form.condition_key.trim()
           : "",
       condition_value:
-        form.calculation_type ===
-          "conditional"
+        form.calculation_type === "conditional"
           ? form.condition_value.trim()
           : "",
-      is_active:
-        form.is_active,
+      is_active: form.is_active,
     };
   }
 
@@ -406,9 +308,7 @@ function ExpensePresetManagement() {
     event.preventDefault();
 
     if (!isMaster) {
-      toast.error(
-        "You do not have permission to modify expense presets.",
-      );
+      toast.error("You do not have permission to modify expense presets.");
 
       return;
     }
@@ -421,36 +321,23 @@ function ExpensePresetManagement() {
     setFieldErrors({});
 
     try {
-      const payload =
-        buildPayload();
+      const payload = buildPayload();
 
       let response;
 
       if (editingPreset) {
-        response =
-          await updateExpensePreset(
-            editingPreset.id,
-            payload,
-          );
+        response = await updateExpensePreset(editingPreset.id, payload);
       } else {
-        response =
-          await createExpensePreset(
-            payload,
-          );
+        response = await createExpensePreset(payload);
       }
 
-      const savedPreset =
-        getResponseData(response);
+      const savedPreset = getResponseData(response);
 
       /*
        * Never insert an undefined/null object
        * into the local collection.
        */
-      if (
-        !savedPreset ||
-        typeof savedPreset !==
-        "object"
-      ) {
+      if (!savedPreset || typeof savedPreset !== "object") {
         throw new Error(
           "The server returned an invalid expense preset response.",
         );
@@ -467,9 +354,9 @@ function ExpensePresetManagement() {
 
       toast.success(
         response?.message ||
-        (editingPreset
-          ? "Expense preset updated successfully."
-          : "Expense preset created successfully."),
+          (editingPreset
+            ? "Expense preset updated successfully."
+            : "Expense preset created successfully."),
       );
 
       closeModal();
@@ -481,222 +368,151 @@ function ExpensePresetManagement() {
         error,
       );
 
-      const errors =
-        getApiErrors(error);
+      const errors = getApiErrors(error);
 
-      if (
-        Object.keys(errors)
-          .length > 0
-      ) {
-        setFieldErrors(
-          errors,
-        );
+      if (Object.keys(errors).length > 0) {
+        setFieldErrors(errors);
       }
 
-      toast.error(
-        getApiMessage(error),
-      );
+      toast.error(getApiMessage(error));
     } finally {
       setSaving(false);
     }
   }
 
-  async function handleToggleActive(
-    preset,
-  ) {
+  async function handleToggleActive(preset) {
     if (!isMaster) {
-      toast.error(
-        "You do not have permission to modify expense presets.",
-      );
+      toast.error("You do not have permission to modify expense presets.");
 
       return;
     }
 
     try {
-      await updateExpensePreset(
-        preset.id,
-        {
-          is_active:
-            !preset.is_active,
-        },
-      );
+      await updateExpensePreset(preset.id, {
+        is_active: !preset.is_active,
+      });
 
       await loadPresets();
 
       toast.success(
-        `Expense preset ${preset.is_active
-          ? "deactivated"
-          : "activated"
+        `Expense preset ${
+          preset.is_active ? "deactivated" : "activated"
         } successfully.`,
       );
     } catch (error) {
-      console.error(
-        "Failed to update expense preset status:",
-        error,
-      );
+      console.error("Failed to update expense preset status:", error);
 
-      toast.error(
-        getApiMessage(error),
-      );
+      toast.error(getApiMessage(error));
     }
   }
 
-  async function handleDelete(
-    preset,
-  ) {
+  async function handleDelete(preset) {
     if (!isMaster) {
-      toast.error(
-        "You do not have permission to delete expense presets.",
-      );
+      toast.error("You do not have permission to delete expense presets.");
 
       return;
     }
 
-    const confirmed =
-      window.confirm(
-        `Delete "${preset.name}"? This action cannot be undone.`,
-      );
+    const confirmed = window.confirm(
+      `Delete "${preset.name}"? This action cannot be undone.`,
+    );
 
     if (!confirmed) {
       return;
     }
 
     try {
-      await deleteExpensePreset(
-        preset.id,
-      );
+      await deleteExpensePreset(preset.id);
 
       await loadPresets();
 
-      toast.success(
-        "Expense preset deleted successfully.",
-      );
+      toast.success("Expense preset deleted successfully.");
     } catch (error) {
-      console.error(
-        "Failed to delete expense preset:",
-        error,
-      );
+      console.error("Failed to delete expense preset:", error);
 
-      toast.error(
-        getApiMessage(error),
-      );
+      toast.error(getApiMessage(error));
     }
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      <header className="border-b bg-white">
-        <div className="mx-auto flex max-w-7xl items-center justify-between px-6 py-4">
-          <div>
-            <h1 className="text-2xl font-bold text-gray-900">
-              Prime Rides
-            </h1>
-
-            <p className="text-sm text-gray-500">
-              Dealer Management System
-            </p>
-          </div>
-
-          <div className="flex items-center gap-3">
-            <Link
-              to="/finance/settings"
-              className="rounded-md border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 transition hover:bg-gray-100"
-            >
-              Finance Master
-            </Link>
-
-            <Link
-              to="/dashboard"
-              className="rounded-md border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 transition hover:bg-gray-100"
-            >
-              Dashboard
-            </Link>
-
-            <div className="text-right">
-              <p className="text-sm font-medium text-gray-900">
-                {user?.first_name}
-              </p>
-
-              <p className="text-xs uppercase text-gray-500">
-                {user?.role}
-              </p>
-            </div>
-          </div>
-        </div>
-      </header>
-
-      <main className="mx-auto max-w-7xl px-6 py-8">
+    <div className="min-h-screen bg-[#f5f6fa]">
+      <main className="mx-auto w-full max-w-[1500px] px-4 py-6 sm:px-6 lg:px-8">
         <div className="mb-6 flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
           <div>
-            <h2 className="text-2xl font-semibold text-gray-900">
+            <Link
+              to="/finance/settings"
+              className="text-sm font-medium text-gray-600 hover:text-slate-800"
+            >
+              ← Back to Finance Settings
+            </Link>
+            <div className="mt-4 mb-2 flex items-center gap-2">
+              <span className="h-1.5 w-1.5 rounded-full bg-amber-500" />
+
+              <span className="text-[10px] font-mono uppercase tracking-[0.14em] text-amber-600">
+                Managements
+              </span>
+            </div>
+            <h2 className="text-2xl font-bold tracking-tight text-slate-900">
               Expense Presets
             </h2>
 
-            <p className="mt-1 text-sm text-gray-500">
-              Manage finance expense rules
-              used by future EMI
-              calculations.
+            <p className="mt-1 text-sm text-slate-500">
+              Manage finance expense rules used by future EMI calculations.
             </p>
           </div>
 
           {isMaster && (
             <button
               type="button"
-              onClick={
-                openCreateModal
-              }
-              className="rounded-md bg-gray-900 px-4 py-2 text-sm font-medium text-white transition hover:bg-gray-800"
+              onClick={openCreateModal}
+              className="rounded-xl bg-amber-500 px-5 py-2.5 text-sm font-bold text-slate-950 shadow-sm transition hover:bg-amber-400 disabled:cursor-not-allowed disabled:opacity-50"
             >
               + Add Expense Preset
             </button>
           )}
         </div>
 
-        <div className="overflow-hidden rounded-lg border border-gray-200 bg-white shadow-sm">
+        <div className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-[0_2px_8px_rgba(15,23,42,0.04)]">
           {loading ? (
             <div className="p-8 text-center text-sm text-gray-500">
               Loading expense presets...
             </div>
-          ) : sortedPresets.length ===
-            0 ? (
+          ) : sortedPresets.length === 0 ? (
             <div className="p-8 text-center">
-              <p className="text-sm font-medium text-gray-700">
-                No expense presets
-                found.
+              <p className="text-sm font-medium text-slate-600">
+                No expense presets found.
               </p>
 
-              <p className="mt-1 text-sm text-gray-500">
-                Add an expense preset to
-                begin configuring
-                Finance.
+              <p className="mt-1 text-sm text-slate-500">
+                Add an expense preset to begin configuring Finance.
               </p>
             </div>
           ) : (
             <div className="overflow-x-auto">
-              <table className="min-w-full divide-y divide-gray-200">
-                <thead className="bg-gray-50">
+              <table className="min-w-full divide-y divide-slate-200">
+                <thead className="bg-slate-50">
                   <tr>
-                    <th className="px-6 py-3 text-left text-xs font-semibold uppercase tracking-wide text-gray-500">
+                    <th className="px-6 py-3.5 text-left text-[10px] font-bold uppercase tracking-[0.08em] text-slate-400">
                       Name
                     </th>
 
-                    <th className="px-6 py-3 text-left text-xs font-semibold uppercase tracking-wide text-gray-500">
+                    <th className="px-6 py-3.5 text-left text-[10px] font-bold uppercase tracking-[0.08em] text-slate-400">
                       Expense Type
                     </th>
 
-                    <th className="px-6 py-3 text-left text-xs font-semibold uppercase tracking-wide text-gray-500">
+                    <th className="px-6 py-3.5 text-left text-[10px] font-bold uppercase tracking-[0.08em] text-slate-400">
                       Calculation
                     </th>
 
-                    <th className="px-6 py-3 text-left text-xs font-semibold uppercase tracking-wide text-gray-500">
+                    <th className="px-6 py-3.5 text-left text-[10px] font-bold uppercase tracking-[0.08em] text-slate-400">
                       Amount
                     </th>
 
-                    <th className="px-6 py-3 text-left text-xs font-semibold uppercase tracking-wide text-gray-500">
+                    <th className="px-6 py-3.5 text-left text-[10px] font-bold uppercase tracking-[0.08em] text-slate-400">
                       Rule
                     </th>
 
-                    <th className="px-6 py-3 text-left text-xs font-semibold uppercase tracking-wide text-gray-500">
+                    <th className="px-6 py-3.5 text-left text-[10px] font-bold uppercase tracking-[0.08em] text-slate-400">
                       Status
                     </th>
 
@@ -708,128 +524,83 @@ function ExpensePresetManagement() {
                   </tr>
                 </thead>
 
-                <tbody className="divide-y divide-gray-100">
-                  {sortedPresets.map(
-                    (preset) => (
-                      <tr
-                        key={preset.id}
-                      >
-                        <td className="px-6 py-4 text-sm font-medium text-gray-900">
-                          {preset.name}
-                        </td>
+                <tbody className="divide-y divide-slate-100">
+                  {sortedPresets.map((preset) => (
+                    <tr key={preset.id}>
+                      <td className="px-6 py-4 text-sm font-medium text-slate-800">
+                        {preset.name}
+                      </td>
 
-                        <td className="px-6 py-4 text-sm text-gray-700">
-                          {
-                            preset.expense_type
-                          }
-                        </td>
+                      <td className="px-6 py-4 text-sm text-slate-600">
+                        {preset.expense_type}
+                      </td>
 
-                        <td className="px-6 py-4 text-sm text-gray-700">
-                          {getCalculationLabel(
-                            preset.calculation_type,
-                          )}
-                        </td>
+                      <td className="px-6 py-4 text-sm text-slate-600">
+                        {getCalculationLabel(preset.calculation_type)}
+                      </td>
 
-                        <td className="whitespace-nowrap px-6 py-4 text-sm text-gray-700">
-                          AED{" "}
-                          {Number(
-                            preset.amount ||
-                            0,
-                          ).toFixed(
-                            2,
-                          )}
-                        </td>
+                      <td className="whitespace-nowrap px-6 py-4 text-sm text-slate-600">
+                        AED {Number(preset.amount || 0).toFixed(2)}
+                      </td>
 
-                        <td className="px-6 py-4 text-sm text-gray-600">
-                          {preset.calculation_type ===
-                            "percentage_minimum" ? (
-                            <span>
-                              {
-                                preset.percentage
-                              }
-                              % with
-                              minimum AED{" "}
-                              {Number(
-                                preset.minimum_amount ||
-                                0,
-                              ).toFixed(
-                                2,
-                              )}
-                            </span>
-                          ) : preset.calculation_type ===
-                            "conditional" ? (
-                            <span>
-                              {
-                                preset.condition_key
-                              }{" "}
-                              ={" "}
-                              {
-                                preset.condition_value
-                              }
-                            </span>
-                          ) : (
-                            "Fixed value"
-                          )}
-                        </td>
-
-                        <td className="whitespace-nowrap px-6 py-4 text-sm">
-                          {preset.is_active ? (
-                            <span className="inline-flex rounded-full bg-green-100 px-2.5 py-1 text-xs font-medium text-green-700">
-                              Active
-                            </span>
-                          ) : (
-                            <span className="inline-flex rounded-full bg-red-100 px-2.5 py-1 text-xs font-medium text-red-700">
-                              Inactive
-                            </span>
-                          )}
-                        </td>
-
-                        {isMaster && (
-                          <td className="whitespace-nowrap px-6 py-4 text-right text-sm">
-                            <div className="flex justify-end gap-2">
-                              <button
-                                type="button"
-                                onClick={() =>
-                                  openEditModal(
-                                    preset,
-                                  )
-                                }
-                                className="rounded-md border border-gray-300 px-3 py-1.5 font-medium text-gray-700 transition hover:bg-gray-100"
-                              >
-                                Edit
-                              </button>
-
-                              <button
-                                type="button"
-                                onClick={() =>
-                                  handleToggleActive(
-                                    preset,
-                                  )
-                                }
-                                className="rounded-md border border-gray-300 px-3 py-1.5 font-medium text-gray-700 transition hover:bg-gray-100"
-                              >
-                                {preset.is_active
-                                  ? "Deactivate"
-                                  : "Activate"}
-                              </button>
-
-                              <button
-                                type="button"
-                                onClick={() =>
-                                  handleDelete(
-                                    preset,
-                                  )
-                                }
-                                className="rounded-md border border-red-200 px-3 py-1.5 font-medium text-red-700 transition hover:bg-red-50"
-                              >
-                                Delete
-                              </button>
-                            </div>
-                          </td>
+                      <td className="px-6 py-4 text-sm text-gray-600">
+                        {preset.calculation_type === "percentage_minimum" ? (
+                          <span>
+                            {preset.percentage}% with minimum AED{" "}
+                            {Number(preset.minimum_amount || 0).toFixed(2)}
+                          </span>
+                        ) : preset.calculation_type === "conditional" ? (
+                          <span>
+                            {preset.condition_key} = {preset.condition_value}
+                          </span>
+                        ) : (
+                          "Fixed value"
                         )}
-                      </tr>
-                    ),
-                  )}
+                      </td>
+
+                      <td className="whitespace-nowrap px-6 py-4 text-sm">
+                        {preset.is_active ? (
+                          <span className="inline-flex rounded-full border border-emerald-200 bg-emerald-50 px-2.5 py-1 text-[10px] font-bold uppercase tracking-wide text-emerald-700">
+                            Active
+                          </span>
+                        ) : (
+                          <span className="inline-flex rounded-full bg-red-100 px-2.5 py-1 text-xs font-medium text-red-700">
+                            Inactive
+                          </span>
+                        )}
+                      </td>
+
+                      {isMaster && (
+                        <td className="whitespace-nowrap px-6 py-4 text-right text-sm">
+                          <div className="flex justify-end gap-2">
+                            <button
+                              type="button"
+                              onClick={() => openEditModal(preset)}
+                              className="rounded-md border border-gray-300 px-3 py-1.5 font-medium text-slate-600 transition hover:bg-gray-100"
+                            >
+                              Edit
+                            </button>
+
+                            <button
+                              type="button"
+                              onClick={() => handleToggleActive(preset)}
+                              className="rounded-md border border-gray-300 px-3 py-1.5 font-medium text-slate-600 transition hover:bg-gray-100"
+                            >
+                              {preset.is_active ? "Deactivate" : "Activate"}
+                            </button>
+
+                            <button
+                              type="button"
+                              onClick={() => handleDelete(preset)}
+                              className="rounded-lg border border-rose-200 bg-white px-3 py-1.5 text-xs font-semibold text-rose-700 transition hover:bg-rose-50"
+                            >
+                              Delete
+                            </button>
+                          </div>
+                        </td>
+                      )}
+                    </tr>
+                  ))}
                 </tbody>
               </table>
             </div>
@@ -838,32 +609,25 @@ function ExpensePresetManagement() {
       </main>
 
       {isModalOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 px-4 py-6">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/50 px-4 py-6 backdrop-blur-[2px]">
           <div className="max-h-[90vh] w-full max-w-2xl overflow-y-auto rounded-lg bg-white shadow-xl">
-            <div className="border-b border-gray-200 px-6 py-4">
-              <h3 className="text-lg font-semibold text-gray-900">
-                {editingPreset
-                  ? "Edit Expense Preset"
-                  : "Add Expense Preset"}
+            <div className="border-b border-slate-200 px-6 py-5">
+              <h3 className="text-lg font-semibold text-slate-800">
+                {editingPreset ? "Edit Expense Preset" : "Add Expense Preset"}
               </h3>
 
-              <p className="mt-1 text-sm text-gray-500">
-                Configure how this expense
-                is represented in Finance
-                Master settings.
+              <p className="mt-1 text-sm text-slate-500">
+                Configure how this expense is represented in Finance Master
+                settings.
               </p>
             </div>
 
-            <form
-              onSubmit={
-                handleSubmit
-              }
-            >
+            <form onSubmit={handleSubmit}>
               <div className="space-y-5 px-6 py-6">
                 <div>
                   <label
                     htmlFor="expense-name"
-                    className="mb-1.5 block text-sm font-medium text-gray-700"
+                    className="mb-1.5 block text-sm font-medium text-slate-600"
                   >
                     Name
                   </label>
@@ -874,21 +638,16 @@ function ExpensePresetManagement() {
                     type="text"
                     maxLength={150}
                     value={form.name}
-                    onChange={
-                      handleChange
-                    }
+                    onChange={handleChange}
                     placeholder="e.g. RTA Passing"
-                    className={`w-full rounded-md border px-3 py-2.5 text-sm outline-none transition focus:ring-2 focus:ring-gray-300 ${fieldErrors.name
-                        ? "border-red-400"
-                        : "border-gray-300"
-                      }`}
+                    className={`w-full h-10 rounded-xl border px-3 text-sm text-slate-800 outline-none transition placeholder:text-slate-400 focus:border-amber-400 focus:ring-2 focus:ring-amber-400/15 ${
+                      fieldErrors.name ? "border-red-400" : "border-gray-300"
+                    }`}
                   />
 
                   {fieldErrors.name && (
-                    <p className="mt-1.5 text-xs text-red-600">
-                      {getFieldError(
-                        fieldErrors.name,
-                      )}
+                    <p className="mt-1.5 text-xs font-medium text-rose-600">
+                      {getFieldError(fieldErrors.name)}
                     </p>
                   )}
                 </div>
@@ -896,7 +655,7 @@ function ExpensePresetManagement() {
                 <div>
                   <label
                     htmlFor="expense-type"
-                    className="mb-1.5 block text-sm font-medium text-gray-700"
+                    className="mb-1.5 block text-sm font-medium text-slate-600"
                   >
                     Expense Type
                   </label>
@@ -906,34 +665,27 @@ function ExpensePresetManagement() {
                     name="expense_type"
                     type="text"
                     maxLength={80}
-                    value={
-                      form.expense_type
-                    }
-                    onChange={
-                      handleChange
-                    }
+                    value={form.expense_type}
+                    onChange={handleChange}
                     placeholder="e.g. rta, evaluation, roadside_assistance"
-                    className={`w-full rounded-md border px-3 py-2.5 text-sm outline-none transition focus:ring-2 focus:ring-gray-300 ${fieldErrors.expense_type
+                    className={`w-full h-10 rounded-xl border px-3 text-sm text-slate-800 outline-none transition placeholder:text-slate-400 focus:border-amber-400 focus:ring-2 focus:ring-amber-400/15 ${
+                      fieldErrors.expense_type
                         ? "border-red-400"
                         : "border-gray-300"
-                      }`}
+                    }`}
                   />
 
                   {fieldErrors.expense_type && (
-                    <p className="mt-1.5 text-xs text-red-600">
-                      {getFieldError(
-                        fieldErrors.expense_type,
-                      )}
+                    <p className="mt-1.5 text-xs font-medium text-rose-600">
+                      {getFieldError(fieldErrors.expense_type)}
                     </p>
                   )}
                 </div>
 
                 {fieldErrors.non_field_errors && (
-                  <div className="rounded-md border border-red-200 bg-red-50 px-4 py-3">
+                  <div className="rounded-xl border border-rose-200 bg-rose-50 px-4 py-3">
                     <p className="text-sm font-medium text-red-700">
-                      {getFieldError(
-                        fieldErrors.non_field_errors,
-                      )}
+                      {getFieldError(fieldErrors.non_field_errors)}
                     </p>
                   </div>
                 )}
@@ -941,7 +693,7 @@ function ExpensePresetManagement() {
                 <div>
                   <label
                     htmlFor="calculation-type"
-                    className="mb-1.5 block text-sm font-medium text-gray-700"
+                    className="mb-1.5 block text-sm font-medium text-slate-600"
                   >
                     Calculation Type
                   </label>
@@ -949,35 +701,22 @@ function ExpensePresetManagement() {
                   <select
                     id="calculation-type"
                     name="calculation_type"
-                    value={
-                      form.calculation_type
-                    }
-                    onChange={
-                      handleChange
-                    }
+                    value={form.calculation_type}
+                    onChange={handleChange}
                     className="w-full rounded-md border border-gray-300 px-3 py-2.5 text-sm outline-none transition focus:ring-2 focus:ring-gray-300"
                   >
-                    {CALCULATION_TYPES.map(
-                      (type) => (
-                        <option
-                          key={
-                            type.value
-                          }
-                          value={
-                            type.value
-                          }
-                        >
-                          {type.label}
-                        </option>
-                      ),
-                    )}
+                    {CALCULATION_TYPES.map((type) => (
+                      <option key={type.value} value={type.value}>
+                        {type.label}
+                      </option>
+                    ))}
                   </select>
                 </div>
 
                 <div>
                   <label
                     htmlFor="expense-amount"
-                    className="mb-1.5 block text-sm font-medium text-gray-700"
+                    className="mb-1.5 block text-sm font-medium text-slate-600"
                   >
                     Amount (AED)
                   </label>
@@ -990,214 +729,185 @@ function ExpensePresetManagement() {
                     step="0.01"
                     inputMode="decimal"
                     value={form.amount}
-                    onChange={
-                      handleChange
-                    }
+                    onChange={handleChange}
                     placeholder="0.00"
-                    className={`w-full rounded-md border px-3 py-2.5 text-sm outline-none transition focus:ring-2 focus:ring-gray-300 ${fieldErrors.amount
-                        ? "border-red-400"
-                        : "border-gray-300"
-                      }`}
+                    className={`w-full h-10 rounded-xl border px-3 text-sm text-slate-800 outline-none transition placeholder:text-slate-400 focus:border-amber-400 focus:ring-2 focus:ring-amber-400/15 ${
+                      fieldErrors.amount ? "border-red-400" : "border-gray-300"
+                    }`}
                   />
 
                   {fieldErrors.amount && (
-                    <p className="mt-1.5 text-xs text-red-600">
-                      {getFieldError(
-                        fieldErrors.amount,
-                      )}
+                    <p className="mt-1.5 text-xs font-medium text-rose-600">
+                      {getFieldError(fieldErrors.amount)}
                     </p>
                   )}
                 </div>
 
-                {form.calculation_type ===
-                  "percentage_minimum" && (
-                    <div className="grid grid-cols-1 gap-5 md:grid-cols-2">
-                      <div>
-                        <label
-                          htmlFor="expense-percentage"
-                          className="mb-1.5 block text-sm font-medium text-gray-700"
-                        >
-                          Percentage (%)
-                        </label>
+                {form.calculation_type === "percentage_minimum" && (
+                  <div className="grid grid-cols-1 gap-5 md:grid-cols-2">
+                    <div>
+                      <label
+                        htmlFor="expense-percentage"
+                        className="mb-1.5 block text-sm font-medium text-slate-600"
+                      >
+                        Percentage (%)
+                      </label>
 
-                        <input
-                          id="expense-percentage"
-                          name="percentage"
-                          type="number"
-                          min="0"
-                          step="0.0001"
-                          inputMode="decimal"
-                          value={
-                            form.percentage
-                          }
-                          onChange={
-                            handleChange
-                          }
-                          placeholder="1.2500"
-                          className={`w-full rounded-md border px-3 py-2.5 text-sm outline-none transition focus:ring-2 focus:ring-gray-300 ${fieldErrors.percentage
-                              ? "border-red-400"
-                              : "border-gray-300"
-                            }`}
-                        />
+                      <input
+                        id="expense-percentage"
+                        name="percentage"
+                        type="number"
+                        min="0"
+                        step="0.0001"
+                        inputMode="decimal"
+                        value={form.percentage}
+                        onChange={handleChange}
+                        placeholder="1.2500"
+                        className={`w-full h-10 rounded-xl border px-3 text-sm text-slate-800 outline-none transition placeholder:text-slate-400 focus:border-amber-400 focus:ring-2 focus:ring-amber-400/15 ${
+                          fieldErrors.percentage
+                            ? "border-red-400"
+                            : "border-gray-300"
+                        }`}
+                      />
 
-                        {fieldErrors.percentage && (
-                          <p className="mt-1.5 text-xs text-red-600">
-                            {getFieldError(
-                              fieldErrors.percentage,
-                            )}
-                          </p>
-                        )}
-                      </div>
-
-                      <div>
-                        <label
-                          htmlFor="expense-minimum"
-                          className="mb-1.5 block text-sm font-medium text-gray-700"
-                        >
-                          Minimum Amount
-                          (AED)
-                        </label>
-
-                        <input
-                          id="expense-minimum"
-                          name="minimum_amount"
-                          type="number"
-                          min="0"
-                          step="0.01"
-                          inputMode="decimal"
-                          value={
-                            form.minimum_amount
-                          }
-                          onChange={
-                            handleChange
-                          }
-                          placeholder="540.00"
-                          className={`w-full rounded-md border px-3 py-2.5 text-sm outline-none transition focus:ring-2 focus:ring-gray-300 ${fieldErrors.minimum_amount
-                              ? "border-red-400"
-                              : "border-gray-300"
-                            }`}
-                        />
-
-                        {fieldErrors.minimum_amount && (
-                          <p className="mt-1.5 text-xs text-red-600">
-                            {getFieldError(
-                              fieldErrors.minimum_amount,
-                            )}
-                          </p>
-                        )}
-                      </div>
+                      {fieldErrors.percentage && (
+                        <p className="mt-1.5 text-xs font-medium text-rose-600">
+                          {getFieldError(fieldErrors.percentage)}
+                        </p>
+                      )}
                     </div>
-                  )}
 
-                {form.calculation_type ===
-                  "conditional" && (
-                    <div className="grid grid-cols-1 gap-5 md:grid-cols-2">
-                      <div>
-                        <label
-                          htmlFor="condition-key"
-                          className="mb-1.5 block text-sm font-medium text-gray-700"
-                        >
-                          Condition Key
-                        </label>
+                    <div>
+                      <label
+                        htmlFor="expense-minimum"
+                        className="mb-1.5 block text-sm font-medium text-slate-600"
+                      >
+                        Minimum Amount (AED)
+                      </label>
 
-                        <select
-                          id="condition-key"
-                          name="condition_key"
-                          value={form.condition_key}
-                          onChange={handleChange}
-                          className={`w-full rounded-md border px-3 py-2.5 text-sm outline-none transition focus:ring-2 focus:ring-gray-300 ${fieldErrors.condition_key
-                              ? "border-red-400"
-                              : "border-gray-300"
-                            }`}
-                        >
-                          <option value="">Select Expense Type</option>
+                      <input
+                        id="expense-minimum"
+                        name="minimum_amount"
+                        type="number"
+                        min="0"
+                        step="0.01"
+                        inputMode="decimal"
+                        value={form.minimum_amount}
+                        onChange={handleChange}
+                        placeholder="540.00"
+                        className={`w-full h-10 rounded-xl border px-3 text-sm text-slate-800 outline-none transition placeholder:text-slate-400 focus:border-amber-400 focus:ring-2 focus:ring-amber-400/15 ${
+                          fieldErrors.minimum_amount
+                            ? "border-red-400"
+                            : "border-gray-300"
+                        }`}
+                      />
 
-                          {conditionOptions.map((option) => (
-                            <option key={option.value} value={option.value}>
-                              {option.label}
-                            </option>
-                          ))}
-                        </select>
-
-                        {fieldErrors.condition_key && (
-                          <p className="mt-1.5 text-xs text-red-600">
-                            {getFieldError(
-                              fieldErrors.condition_key,
-                            )}
-                          </p>
-                        )}
-                      </div>
-
-                      <div>
-                        <label
-                          htmlFor="condition-value"
-                          className="mb-1.5 block text-sm font-medium text-gray-700"
-                        >
-                          Condition Value
-                        </label>
-
-                        <select
-                          id="condition-value"
-                          name="condition_value"
-                          value={form.condition_value}
-                          onChange={handleChange}
-                          className={`w-full rounded-md border px-3 py-2.5 text-sm outline-none transition focus:ring-2 focus:ring-gray-300 ${fieldErrors.condition_value
-                              ? "border-red-400"
-                              : "border-gray-300"
-                            }`}
-                        >
-                          <option value="">Select value</option>
-                          <option value="true">Yes</option>
-                          <option value="false">No</option>
-                        </select>
-
-                        {fieldErrors.condition_value && (
-                          <p className="mt-1.5 text-xs text-red-600">
-                            {getFieldError(
-                              fieldErrors.condition_value,
-                            )}
-                          </p>
-                        )}
-                      </div>
+                      {fieldErrors.minimum_amount && (
+                        <p className="mt-1.5 text-xs font-medium text-rose-600">
+                          {getFieldError(fieldErrors.minimum_amount)}
+                        </p>
+                      )}
                     </div>
-                  )}
+                  </div>
+                )}
 
-                <label className="flex items-start gap-3 rounded-md border border-gray-200 p-4">
+                {form.calculation_type === "conditional" && (
+                  <div className="grid grid-cols-1 gap-5 md:grid-cols-2">
+                    <div>
+                      <label
+                        htmlFor="condition-key"
+                        className="mb-1.5 block text-sm font-medium text-slate-600"
+                      >
+                        Condition Key
+                      </label>
+
+                      <select
+                        id="condition-key"
+                        name="condition_key"
+                        value={form.condition_key}
+                        onChange={handleChange}
+                        className={`w-full h-10 rounded-xl border px-3 text-sm text-slate-800 outline-none transition placeholder:text-slate-400 focus:border-amber-400 focus:ring-2 focus:ring-amber-400/15 ${
+                          fieldErrors.condition_key
+                            ? "border-red-400"
+                            : "border-gray-300"
+                        }`}
+                      >
+                        <option value="">Select Expense Type</option>
+
+                        {conditionOptions.map((option) => (
+                          <option key={option.value} value={option.value}>
+                            {option.label}
+                          </option>
+                        ))}
+                      </select>
+
+                      {fieldErrors.condition_key && (
+                        <p className="mt-1.5 text-xs font-medium text-rose-600">
+                          {getFieldError(fieldErrors.condition_key)}
+                        </p>
+                      )}
+                    </div>
+
+                    <div>
+                      <label
+                        htmlFor="condition-value"
+                        className="mb-1.5 block text-sm font-medium text-slate-600"
+                      >
+                        Condition Value
+                      </label>
+
+                      <select
+                        id="condition-value"
+                        name="condition_value"
+                        value={form.condition_value}
+                        onChange={handleChange}
+                        className={`w-full h-10 rounded-xl border px-3 text-sm text-slate-800 outline-none transition placeholder:text-slate-400 focus:border-amber-400 focus:ring-2 focus:ring-amber-400/15 ${
+                          fieldErrors.condition_value
+                            ? "border-red-400"
+                            : "border-gray-300"
+                        }`}
+                      >
+                        <option value="">Select value</option>
+                        <option value="true">Yes</option>
+                        <option value="false">No</option>
+                      </select>
+
+                      {fieldErrors.condition_value && (
+                        <p className="mt-1.5 text-xs font-medium text-rose-600">
+                          {getFieldError(fieldErrors.condition_value)}
+                        </p>
+                      )}
+                    </div>
+                  </div>
+                )}
+
+                <label className="flex items-start gap-3 rounded-xl border border-slate-200 bg-slate-50/40 p-4 transition hover:bg-slate-50">
                   <input
                     name="is_active"
                     type="checkbox"
-                    checked={
-                      form.is_active
-                    }
-                    onChange={
-                      handleChange
-                    }
-                    className="mt-0.5 h-4 w-4 rounded border-gray-300"
+                    checked={form.is_active}
+                    onChange={handleChange}
+                    className="mt-0.5 h-4 w-4 rounded border-slate-300 accent-amber-500"
                   />
 
                   <span>
-                    <span className="block text-sm font-medium text-gray-800">
+                    <span className="block text-sm font-semibold text-slate-800">
                       Active
                     </span>
 
-                    <span className="mt-1 block text-xs text-gray-500">
-                      Active presets can
-                      be used by future
-                      Finance
-                      calculations.
+                    <span className="mt-1 block text-xs text-slate-400">
+                      Active presets can be used by future Finance calculations.
                     </span>
                   </span>
                 </label>
               </div>
 
-              <div className="flex justify-end gap-3 border-t border-gray-200 px-6 py-4">
+              <div className="flex justify-end gap-3 border-t border-slate-200 px-6 py-4">
                 <button
                   type="button"
-                  onClick={
-                    closeModal
-                  }
+                  onClick={closeModal}
                   disabled={saving}
-                  className="rounded-md border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 transition hover:bg-gray-100 disabled:cursor-not-allowed disabled:opacity-50"
+                  className="rounded-md border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-slate-600 transition hover:bg-gray-100 disabled:cursor-not-allowed disabled:opacity-50"
                 >
                   Cancel
                 </button>
@@ -1205,7 +915,7 @@ function ExpensePresetManagement() {
                 <button
                   type="submit"
                   disabled={saving}
-                  className="rounded-md bg-gray-900 px-4 py-2 text-sm font-medium text-white transition hover:bg-gray-800 disabled:cursor-not-allowed disabled:opacity-50"
+                  className="rounded-xl bg-amber-500 px-5 py-2.5 text-sm font-bold text-slate-950 shadow-sm transition hover:bg-amber-400 disabled:cursor-not-allowed disabled:opacity-50"
                 >
                   {saving
                     ? "Saving..."

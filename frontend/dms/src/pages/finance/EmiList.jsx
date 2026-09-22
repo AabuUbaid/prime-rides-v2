@@ -3,22 +3,7 @@ import { Link } from "react-router-dom";
 import { getBanks, getEmiEstimates } from "../../api/finance";
 import { useAuth } from "../../context/AuthContext";
 
-function formatCurrency(value) {
-  if (value === null || value === undefined || value === "") {
-    return "AED 0.00";
-  }
-
-  const amount = Number(value);
-
-  if (!Number.isFinite(amount)) {
-    return "AED 0.00";
-  }
-
-  return `AED ${amount.toLocaleString("en-AE", {
-    minimumFractionDigits: 2,
-    maximumFractionDigits: 2,
-  })}`;
-}
+import { formatAED } from "../../utils/formatters";
 
 function formatDate(value) {
   if (!value) {
@@ -168,50 +153,45 @@ function EmiList() {
     Boolean(pagination?.count) || hasPreviousPage || hasNextPage;
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      <header className="border-b bg-white">
-        <div className="mx-auto flex max-w-7xl items-center justify-between px-6 py-4">
-          <div>
-            <h1 className="text-2xl font-bold text-gray-900">Prime Rides</h1>
+    <div className="min-h-screen bg-[#f5f6fa]">
+      <header className="border-b border-slate-200 bg-white">
+        <div className="mx-auto flex w-full max-w-[1500px] items-center justify-between gap-4 px-4 py-4 sm:px-6 lg:px-8">
+          <div className="mb-2 flex items-center gap-2">
+            <span className="h-1.5 w-1.5 rounded-full bg-amber-500" />
 
-            <p className="text-sm text-gray-500">Dealer Management System</p>
+            <span className="text-[10px] font-bold uppercase tracking-[0.14em] text-amber-600">
+              Sales & Customers
+            </span>
+          </div>
+
+          <div>
+            <h1 className="text-2xl font-bold tracking-tight text-slate-900">
+              EMI Estimates
+            </h1>
+
+            <p className="mt-1 text-sm text-slate-400">
+              View saved finance estimates.
+            </p>
           </div>
 
           <div className="flex items-center gap-3">
             <Link
               to="/finance/emi"
-              className="rounded-md bg-gray-900 px-4 py-2 text-sm font-medium text-white transition hover:bg-gray-800"
+              className="rounded-xl bg-amber-500 px-4 py-2 text-sm font-bold text-slate-950 shadow-sm transition hover:bg-amber-400"
             >
               + New EMI
-            </Link>
-
-            <Link
-              to="/dashboard"
-              className="rounded-md border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 transition hover:bg-gray-100"
-            >
-              Dashboard
             </Link>
           </div>
         </div>
       </header>
 
-      <main className="mx-auto max-w-7xl px-6 py-8">
-        <div className="mb-6">
-          <h2 className="text-2xl font-semibold text-gray-900">
-            EMI Estimates
-          </h2>
-
-          <p className="mt-1 text-sm text-gray-500">
-            View saved finance estimates.
-          </p>
-        </div>
-
-        <div className="mb-6 rounded-lg border border-gray-200 bg-white p-4 shadow-sm">
+      <main className="mx-auto w-full max-w-[1500px] px-4 py-6 sm:px-6 lg:px-8">
+        <div className="mb-6 rounded-2xl border border-slate-200 bg-white p-5 shadow-[0_2px_8px_rgba(15,23,42,0.04)]">
           <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
             <div>
               <label
                 htmlFor="emi-search"
-                className="mb-1 block text-sm font-medium text-gray-700"
+                className="mb-1.5 block text-[11px] font-bold uppercase tracking-[0.08em] text-slate-500"
               >
                 Search
               </label>
@@ -222,14 +202,14 @@ function EmiList() {
                 value={search}
                 onChange={(event) => setSearch(event.target.value)}
                 placeholder="EMI no, customer, vehicle..."
-                className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm outline-none transition focus:border-gray-500 focus:ring-1 focus:ring-gray-500"
+                className="h-10 w-full rounded-xl border border-slate-200 bg-white px-3 text-sm text-slate-800 outline-none transition placeholder:text-slate-400 focus:border-amber-400 focus:ring-2 focus:ring-amber-400/15"
               />
             </div>
 
             <div>
               <label
                 htmlFor="emi-status"
-                className="mb-1 block text-sm font-medium text-gray-700"
+                className="mb-1.5 block text-[11px] font-bold uppercase tracking-[0.08em] text-slate-500"
               >
                 Status
               </label>
@@ -238,7 +218,7 @@ function EmiList() {
                 id="emi-status"
                 value={status}
                 onChange={(event) => setStatus(event.target.value)}
-                className="w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-sm outline-none transition focus:border-gray-500 focus:ring-1 focus:ring-gray-500"
+                className="h-10 w-full rounded-xl border border-slate-200 bg-white px-3 text-sm text-slate-800 outline-none transition focus:border-amber-400 focus:ring-2 focus:ring-amber-400/15"
               >
                 <option value="">All Statuses</option>
                 <option value="active">Active</option>
@@ -249,7 +229,7 @@ function EmiList() {
             <div>
               <label
                 htmlFor="emi-bank"
-                className="mb-1 block text-sm font-medium text-gray-700"
+                className="mb-1.5 block text-[11px] font-bold uppercase tracking-[0.08em] text-slate-500"
               >
                 Bank
               </label>
@@ -259,7 +239,7 @@ function EmiList() {
                 value={bank}
                 onChange={(event) => setBank(event.target.value)}
                 disabled={banksLoading}
-                className="w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-sm outline-none transition focus:border-gray-500 focus:ring-1 focus:ring-gray-500 disabled:bg-gray-100"
+                className="h-10 w-full rounded-xl border border-slate-200 bg-white px-3 text-sm text-slate-800 outline-none transition focus:border-amber-400 focus:ring-2 focus:ring-amber-400/15"
               >
                 <option value="">
                   {banksLoading ? "Loading banks..." : "All Banks"}
@@ -284,7 +264,7 @@ function EmiList() {
                 setBank("");
                 setPage(1);
               }}
-              className="mt-4 text-sm font-medium text-gray-700 hover:underline"
+              className="mt-4 text-sm font-semibold text-slate-500 transition hover:text-amber-600"
             >
               Clear filters
             </button>
@@ -292,24 +272,24 @@ function EmiList() {
         </div>
 
         {loading && (
-          <div className="rounded-lg border border-gray-200 bg-white p-6 shadow-sm">
-            <p className="text-sm text-gray-500">Loading EMI estimates...</p>
+          <div className="rounded-2xl border border-slate-200 bg-white p-6 shadow-[0_2px_8px_rgba(15,23,42,0.04)]">
+            <p className="text-sm text-slate-500">Loading EMI estimates...</p>
           </div>
         )}
 
         {!loading && error && (
-          <div className="rounded-lg border border-red-200 bg-red-50 p-6">
-            <p className="text-sm text-red-700">{error}</p>
+          <div className="rounded-2xl border border-rose-200 bg-rose-50 p-6">
+            <p className="text-sm font-medium text-rose-700">{error}</p>
           </div>
         )}
 
         {!loading && !error && emis.length === 0 && (
           <div className="rounded-lg border border-gray-200 bg-white p-10 text-center shadow-sm">
-            <p className="text-sm text-gray-500">No EMI estimates found.</p>
+            <p className="text-sm text-slate-500">No EMI estimates found.</p>
 
             <Link
               to="/finance/emi"
-              className="mt-4 inline-block rounded-md bg-gray-900 px-4 py-2 text-sm font-medium text-white hover:bg-gray-800"
+              className="mt-4 inline-block rounded-xl bg-amber-500 px-4 py-2 text-sm font-bold text-slate-950 shadow-sm transition hover:bg-amber-400"
             >
               Create EMI
             </Link>
@@ -318,54 +298,54 @@ function EmiList() {
 
         {!loading && !error && emis.length > 0 && (
           <>
-            <div className="overflow-hidden rounded-lg border border-gray-200 bg-white shadow-sm">
+            <div className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-[0_2px_8px_rgba(15,23,42,0.04)]">
               <div className="overflow-x-auto">
-                <table className="min-w-full divide-y divide-gray-200">
-                  <thead className="bg-gray-50">
+                <table className="min-w-[1100px] divide-y divide-slate-100">
+                  <thead className="bg-slate-50">
                     <tr>
-                      <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-gray-500">
+                      <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-slate-500">
                         EMI Number
                       </th>
 
-                      <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-gray-500">
+                      <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-slate-500">
                         Customer
                       </th>
 
-                      <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-gray-500">
+                      <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-slate-500">
                         Vehicle
                       </th>
 
-                      <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-gray-500">
+                      <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-slate-500">
                         Bank
                       </th>
 
-                      <th className="px-4 py-3 text-right text-xs font-semibold uppercase tracking-wide text-gray-500">
+                      <th className="px-4 py-3 text-right text-xs font-semibold uppercase tracking-wide text-slate-500">
                         Interest
                       </th>
 
-                      <th className="px-4 py-3 text-right text-xs font-semibold uppercase tracking-wide text-gray-500">
+                      <th className="px-4 py-3 text-right text-xs font-semibold uppercase tracking-wide text-slate-500">
                         Finance Amount
                       </th>
 
-                      <th className="px-4 py-3 text-right text-xs font-semibold uppercase tracking-wide text-gray-500">
+                      <th className="px-4 py-3 text-right text-xs font-semibold uppercase tracking-wide text-slate-500">
                         Monthly EMI
                       </th>
 
-                      <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-gray-500">
+                      <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-slate-500">
                         Status
                       </th>
 
-                      <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-gray-500">
+                      <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-slate-500">
                         Created
                       </th>
 
-                      <th className="px-4 py-3 text-right text-xs font-semibold uppercase tracking-wide text-gray-500">
+                      <th className="px-4 py-3 text-right text-xs font-semibold uppercase tracking-wide text-slate-500">
                         Action
                       </th>
                     </tr>
                   </thead>
 
-                  <tbody className="divide-y divide-gray-200 bg-white">
+                  <tbody className="divide-y divide-slate-100 bg-white">
                     {emis.map((emi) => (
                       <tr key={emi.id}>
                         <td className="whitespace-nowrap px-4 py-4 text-sm font-medium text-gray-900">
@@ -378,7 +358,7 @@ function EmiList() {
                               {emi.customer_name || "—"}
                             </p>
 
-                            <p className="text-xs text-gray-500">
+                            <p className="text-xs text-slate-500">
                               {emi.customer_mobile || "—"}
                             </p>
                           </div>
@@ -396,7 +376,7 @@ function EmiList() {
                                 .join(" ") || "—"}
                             </p>
 
-                            <p className="text-xs text-gray-500">
+                            <p className="text-xs text-slate-500">
                               {emi.vehicle_stock_id || "Manual Vehicle"}
                             </p>
                           </div>
@@ -412,21 +392,21 @@ function EmiList() {
                             : "—"}
                         </td>
 
-                        <td className="whitespace-nowrap px-4 py-4 text-right text-sm font-medium text-gray-900">
-                          {formatCurrency(emi.finance_amount)}
+                        <td className="whitespace-nowrap px-4 py-4 text-right font-mono text-sm font-semibold text-slate-900">
+                          {formatAED(emi.finance_amount)}
                         </td>
 
-                        <td className="whitespace-nowrap px-4 py-4 text-right text-sm font-bold text-gray-900">
-                          {formatCurrency(emi.monthly_emi)}
+                        <td className="whitespace-nowrap px-4 py-4 text-right font-mono text-sm font-bold text-slate-900">
+                          {formatAED(emi.monthly_emi)}
                         </td>
 
                         <td className="whitespace-nowrap px-4 py-4 text-sm">
                           <span
-                            className={`inline-flex rounded-full px-2.5 py-1 text-xs font-medium ${
+                            className={`inline-flex rounded-full border px-2.5 py-1 text-[10px] font-bold uppercase tracking-wide ${
                               emi.status === "active"
-                                ? "bg-green-100 text-green-700"
+                                ? "border-emerald-200 bg-emerald-50 text-emerald-700"
                                 : emi.status === "cancelled"
-                                  ? "bg-gray-100 text-gray-600"
+                                  ? "border-slate-200 bg-slate-100 text-slate-600"
                                   : "bg-gray-100 text-gray-700"
                             }`}
                           >
@@ -441,7 +421,7 @@ function EmiList() {
                         <td className="whitespace-nowrap px-4 py-4 text-right">
                           <Link
                             to={`/finance/emi/${emi.id}`}
-                            className="text-sm font-medium text-gray-900 hover:underline"
+                            className="text-sm font-bold text-amber-600 transition hover:text-amber-700"
                           >
                             View
                           </Link>
@@ -454,8 +434,8 @@ function EmiList() {
             </div>
 
             {showingPageControls && (
-              <div className="mt-4 flex items-center justify-between rounded-lg border border-gray-200 bg-white px-4 py-3">
-                <div className="text-sm text-gray-500">
+              <div className="mt-4 flex items-center justify-between rounded-2xl border border-slate-200 bg-white px-4 py-3">
+                <div className="text-sm text-slate-500">
                   {pagination?.count != null
                     ? `${pagination.count} EMI record${
                         pagination.count === 1 ? "" : "s"
@@ -470,7 +450,7 @@ function EmiList() {
                     onClick={() =>
                       setPage((current) => Math.max(1, current - 1))
                     }
-                    className="rounded-md border border-gray-300 bg-white px-3 py-2 text-sm font-medium text-gray-700 disabled:cursor-not-allowed disabled:opacity-40"
+                    className="rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm font-semibold text-slate-700 transition hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-40"
                   >
                     Previous
                   </button>
@@ -483,7 +463,7 @@ function EmiList() {
                     type="button"
                     disabled={!hasNextPage}
                     onClick={() => setPage((current) => current + 1)}
-                    className="rounded-md border border-gray-300 bg-white px-3 py-2 text-sm font-medium text-gray-700 disabled:cursor-not-allowed disabled:opacity-40"
+                    className="rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm font-semibold text-slate-700 transition hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-40"
                   >
                     Next
                   </button>

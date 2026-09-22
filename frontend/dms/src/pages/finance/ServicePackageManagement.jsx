@@ -19,13 +19,7 @@ const INITIAL_FORM = {
 };
 
 function getResponseData(response) {
-  if (
-    response &&
-    Object.prototype.hasOwnProperty.call(
-      response,
-      "data",
-    )
-  ) {
+  if (response && Object.prototype.hasOwnProperty.call(response, "data")) {
     return response.data;
   }
 
@@ -51,11 +45,7 @@ function getFieldError(value) {
 function getApiErrors(error) {
   const errors = error?.cause?.errors;
 
-  if (
-    errors &&
-    typeof errors === "object" &&
-    !Array.isArray(errors)
-  ) {
+  if (errors && typeof errors === "object" && !Array.isArray(errors)) {
     return errors;
   }
 
@@ -69,11 +59,7 @@ function getApiMessage(error) {
     return getFieldError(errors.non_field_errors);
   }
 
-  return (
-    error?.cause?.message ||
-    error?.message ||
-    "Something went wrong."
-  );
+  return error?.cause?.message || error?.message || "Something went wrong.";
 }
 
 function formatCurrency(value) {
@@ -112,14 +98,9 @@ function ServicePackageManagement() {
 
       const data = getResponseData(response);
 
-      setPackages(
-        Array.isArray(data) ? data : [],
-      );
+      setPackages(Array.isArray(data) ? data : []);
     } catch (error) {
-      console.error(
-        "Failed to load service packages:",
-        error,
-      );
+      console.error("Failed to load service packages:", error);
 
       setPackages([]);
       toast.error(getApiMessage(error));
@@ -129,31 +110,21 @@ function ServicePackageManagement() {
   }
 
   useEffect(() => {
-   
-  loadPackages();
-}, []);
+    loadPackages();
+  }, []);
 
   const sortedPackages = useMemo(() => {
     return [...packages]
-      .filter(
-        (item) =>
-          item &&
-          typeof item === "object",
-      )
+      .filter((item) => item && typeof item === "object")
       .sort((a, b) => {
         const defaultCompare =
-          Number(Boolean(b.is_default)) -
-          Number(Boolean(a.is_default));
+          Number(Boolean(b.is_default)) - Number(Boolean(a.is_default));
 
         if (defaultCompare !== 0) {
           return defaultCompare;
         }
 
-        return String(
-          a.name || "",
-        ).localeCompare(
-          String(b.name || ""),
-        );
+        return String(a.name || "").localeCompare(String(b.name || ""));
       });
   }, [packages]);
 
@@ -173,17 +144,10 @@ function ServicePackageManagement() {
 
     setForm({
       name: servicePackage.name ?? "",
-      description:
-        servicePackage.description ?? "",
-      amount: toNumberString(
-        servicePackage.amount,
-      ),
-      is_default: Boolean(
-        servicePackage.is_default,
-      ),
-      is_active: Boolean(
-        servicePackage.is_active,
-      ),
+      description: servicePackage.description ?? "",
+      amount: toNumberString(servicePackage.amount),
+      is_default: Boolean(servicePackage.is_default),
+      is_active: Boolean(servicePackage.is_active),
     });
 
     setFieldErrors({});
@@ -200,19 +164,11 @@ function ServicePackageManagement() {
   }
 
   function handleChange(event) {
-    const {
-      name,
-      value,
-      type,
-      checked,
-    } = event.target;
+    const { name, value, type, checked } = event.target;
 
     setForm((current) => ({
       ...current,
-      [name]:
-        type === "checkbox"
-          ? checked
-          : value,
+      [name]: type === "checkbox" ? checked : value,
     }));
 
     setFieldErrors((current) => {
@@ -234,55 +190,42 @@ function ServicePackageManagement() {
     const errors = {};
 
     if (!form.name.trim()) {
-      errors.name =
-        "Service package name is required.";
+      errors.name = "Service package name is required.";
     }
 
     if (form.name.trim().length > 150) {
-      errors.name =
-        "Service package name cannot exceed 150 characters.";
+      errors.name = "Service package name cannot exceed 150 characters.";
     }
 
     if (form.description.length > 255) {
-      errors.description =
-        "Description cannot exceed 255 characters.";
+      errors.description = "Description cannot exceed 255 characters.";
     }
 
     if (form.amount === "") {
-      errors.amount =
-        "Service package amount is required.";
+      errors.amount = "Service package amount is required.";
     } else {
       const amount = Number(form.amount);
 
       if (!Number.isFinite(amount)) {
-        errors.amount =
-          "Amount must be a valid number.";
+        errors.amount = "Amount must be a valid number.";
       } else if (amount < 0) {
-        errors.amount =
-          "Service package amount cannot be negative.";
+        errors.amount = "Service package amount cannot be negative.";
       }
     }
 
-    if (
-      form.is_default &&
-      !form.is_active
-    ) {
-      errors.is_default =
-        "A default service package must be active.";
+    if (form.is_default && !form.is_active) {
+      errors.is_default = "A default service package must be active.";
     }
 
     setFieldErrors(errors);
 
-    return (
-      Object.keys(errors).length === 0
-    );
+    return Object.keys(errors).length === 0;
   }
 
   function buildPayload() {
     return {
       name: form.name.trim(),
-      description:
-        form.description.trim(),
+      description: form.description.trim(),
       amount: form.amount,
       is_default: form.is_default,
       is_active: form.is_active,
@@ -293,9 +236,7 @@ function ServicePackageManagement() {
     event.preventDefault();
 
     if (!isMaster) {
-      toast.error(
-        "You do not have permission to modify service packages.",
-      );
+      toast.error("You do not have permission to modify service packages.");
 
       return;
     }
@@ -313,26 +254,14 @@ function ServicePackageManagement() {
       let response;
 
       if (editingPackage) {
-        response =
-          await updateServicePackage(
-            editingPackage.id,
-            payload,
-          );
+        response = await updateServicePackage(editingPackage.id, payload);
       } else {
-        response =
-          await createServicePackage(
-            payload,
-          );
+        response = await createServicePackage(payload);
       }
 
-      const savedPackage =
-        getResponseData(response);
+      const savedPackage = getResponseData(response);
 
-      if (
-        !savedPackage ||
-        typeof savedPackage !==
-          "object"
-      ) {
+      if (!savedPackage || typeof savedPackage !== "object") {
         throw new Error(
           "The server returned an invalid service package response.",
         );
@@ -356,38 +285,26 @@ function ServicePackageManagement() {
         error,
       );
 
-      const errors =
-        getApiErrors(error);
+      const errors = getApiErrors(error);
 
-      if (
-        Object.keys(errors).length > 0
-      ) {
+      if (Object.keys(errors).length > 0) {
         setFieldErrors(errors);
       }
 
-      toast.error(
-        getApiMessage(error),
-      );
+      toast.error(getApiMessage(error));
     } finally {
       setSaving(false);
     }
   }
 
-  async function handleToggleActive(
-    servicePackage,
-  ) {
+  async function handleToggleActive(servicePackage) {
     if (!isMaster) {
-      toast.error(
-        "You do not have permission to modify service packages.",
-      );
+      toast.error("You do not have permission to modify service packages.");
 
       return;
     }
 
-    if (
-      servicePackage.is_default &&
-      servicePackage.is_active
-    ) {
+    if (servicePackage.is_default && servicePackage.is_active) {
       toast.error(
         "The default service package cannot be deactivated. Set another package as default first.",
       );
@@ -396,129 +313,77 @@ function ServicePackageManagement() {
     }
 
     try {
-      await updateServicePackage(
-        servicePackage.id,
-        {
-          is_active:
-            !servicePackage.is_active,
-        },
-      );
+      await updateServicePackage(servicePackage.id, {
+        is_active: !servicePackage.is_active,
+      });
 
       await loadPackages();
 
       toast.success(
         `Service package ${
-          servicePackage.is_active
-            ? "deactivated"
-            : "activated"
+          servicePackage.is_active ? "deactivated" : "activated"
         } successfully.`,
       );
     } catch (error) {
-      console.error(
-        "Failed to update service package status:",
-        error,
-      );
+      console.error("Failed to update service package status:", error);
 
-      toast.error(
-        getApiMessage(error),
-      );
+      toast.error(getApiMessage(error));
     }
   }
 
-  async function handleDelete(
-    servicePackage,
-  ) {
+  async function handleDelete(servicePackage) {
     if (!isMaster) {
-      toast.error(
-        "You do not have permission to delete service packages.",
-      );
+      toast.error("You do not have permission to delete service packages.");
 
       return;
     }
 
-    const confirmed =
-      window.confirm(
-        `Delete "${servicePackage.name}"? This action cannot be undone.`,
-      );
+    const confirmed = window.confirm(
+      `Delete "${servicePackage.name}"? This action cannot be undone.`,
+    );
 
     if (!confirmed) {
       return;
     }
 
     try {
-      await deleteServicePackage(
-        servicePackage.id,
-      );
+      await deleteServicePackage(servicePackage.id);
 
       await loadPackages();
 
-      toast.success(
-        "Service package deleted successfully.",
-      );
+      toast.success("Service package deleted successfully.");
     } catch (error) {
-      console.error(
-        "Failed to delete service package:",
-        error,
-      );
+      console.error("Failed to delete service package:", error);
 
-      toast.error(
-        getApiMessage(error),
-      );
+      toast.error(getApiMessage(error));
     }
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      <header className="border-b bg-white">
-        <div className="mx-auto flex max-w-7xl items-center justify-between px-6 py-4">
-          <div>
-            <h1 className="text-2xl font-bold text-gray-900">
-              Prime Rides
-            </h1>
-
-            <p className="text-sm text-gray-500">
-              Dealer Management System
-            </p>
-          </div>
-
-          <div className="flex items-center gap-3">
-            <Link
-              to="/finance/settings"
-              className="rounded-md border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 transition hover:bg-gray-100"
-            >
-              Finance Master
-            </Link>
-
-            <Link
-              to="/dashboard"
-              className="rounded-md border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 transition hover:bg-gray-100"
-            >
-              Dashboard
-            </Link>
-
-            <div className="text-right">
-              <p className="text-sm font-medium text-gray-900">
-                {user?.first_name}
-              </p>
-
-              <p className="text-xs uppercase text-gray-500">
-                {user?.role}
-              </p>
-            </div>
-          </div>
-        </div>
-      </header>
-
-      <main className="mx-auto max-w-7xl px-6 py-8">
+    <div className="min-h-screen bg-[#f5f6fa]">
+      <main className="mx-auto w-full max-w-[1500px] px-4 py-6 sm:px-6 lg:px-8">
         <div className="mb-6 flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
           <div>
-            <h2 className="text-2xl font-semibold text-gray-900">
+            <Link
+              to="/finance/settings"
+              className="text-sm font-medium text-gray-600 hover:text-slate-800"
+            >
+              ← Back to Finance Settings
+            </Link>
+            <div className="mt-4 mb-2 flex items-center gap-2">
+              <span className="h-1.5 w-1.5 rounded-full bg-amber-500" />
+
+              <span className="text-[10px] font-mono uppercase tracking-[0.14em] text-amber-600">
+                Managements
+              </span>
+            </div>
+            <h2 className="text-2xl font-bold tracking-tight text-slate-900">
               Service Packages
             </h2>
 
-            <p className="mt-1 text-sm text-gray-500">
-              Manage service package pricing and the
-              default package used by Finance.
+            <p className="mt-1 text-sm text-slate-500">
+              Manage service package pricing and the default package used by
+              Finance.
             </p>
           </div>
 
@@ -526,52 +391,50 @@ function ServicePackageManagement() {
             <button
               type="button"
               onClick={openCreateModal}
-              className="rounded-md bg-gray-900 px-4 py-2 text-sm font-medium text-white transition hover:bg-gray-800"
+              className="rounded-xl bg-amber-500 px-5 py-2.5 text-sm font-bold text-slate-950 shadow-sm transition hover:bg-amber-400 disabled:cursor-not-allowed disabled:opacity-50"
             >
               + Add Service Package
             </button>
           )}
         </div>
 
-        <div className="overflow-hidden rounded-lg border border-gray-200 bg-white shadow-sm">
+        <div className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-[0_2px_8px_rgba(15,23,42,0.04)]">
           {loading ? (
             <div className="p-8 text-center text-sm text-gray-500">
               Loading service packages...
             </div>
-          ) : sortedPackages.length ===
-            0 ? (
+          ) : sortedPackages.length === 0 ? (
             <div className="p-8 text-center">
-              <p className="text-sm font-medium text-gray-700">
+              <p className="text-sm font-medium text-slate-600">
                 No service packages found.
               </p>
 
-              <p className="mt-1 text-sm text-gray-500">
-                Add a service package to begin
-                configuring Finance.
+              <p className="mt-1 text-sm text-slate-500">
+                Add a service package to begin configuring Finance.
               </p>
             </div>
           ) : (
             <div className="overflow-x-auto">
-              <table className="min-w-full divide-y divide-gray-200">
-                <thead className="bg-gray-50">
+              <table className="min-w-full divide-y divide-slate-200">
+                <thead className="bg-slate-50">
                   <tr>
-                    <th className="px-6 py-3 text-left text-xs font-semibold uppercase tracking-wide text-gray-500">
+                    <th className="px-6 py-3.5 text-left text-[10px] font-bold uppercase tracking-[0.08em] text-slate-400">
                       Name
                     </th>
 
-                    <th className="px-6 py-3 text-left text-xs font-semibold uppercase tracking-wide text-gray-500">
+                    <th className="px-6 py-3.5 text-left text-[10px] font-bold uppercase tracking-[0.08em] text-slate-400">
                       Description
                     </th>
 
-                    <th className="px-6 py-3 text-left text-xs font-semibold uppercase tracking-wide text-gray-500">
+                    <th className="px-6 py-3.5 text-left text-[10px] font-bold uppercase tracking-[0.08em] text-slate-400">
                       Amount
                     </th>
 
-                    <th className="px-6 py-3 text-left text-xs font-semibold uppercase tracking-wide text-gray-500">
+                    <th className="px-6 py-3.5 text-left text-[10px] font-bold uppercase tracking-[0.08em] text-slate-400">
                       Default
                     </th>
 
-                    <th className="px-6 py-3 text-left text-xs font-semibold uppercase tracking-wide text-gray-500">
+                    <th className="px-6 py-3.5 text-left text-[10px] font-bold uppercase tracking-[0.08em] text-slate-400">
                       Status
                     </th>
 
@@ -583,121 +446,93 @@ function ServicePackageManagement() {
                   </tr>
                 </thead>
 
-                <tbody className="divide-y divide-gray-100">
-                  {sortedPackages.map(
-                    (servicePackage) => (
-                      <tr
-                        key={
-                          servicePackage.id
-                        }
-                      >
-                        <td className="px-6 py-4 text-sm font-medium text-gray-900">
-                          {
-                            servicePackage.name
-                          }
-                        </td>
+                <tbody className="divide-y divide-slate-100">
+                  {sortedPackages.map((servicePackage) => (
+                    <tr key={servicePackage.id}>
+                      <td className="px-6 py-4 text-sm font-medium text-slate-800">
+                        {servicePackage.name}
+                      </td>
 
-                        <td className="max-w-xs px-6 py-4 text-sm text-gray-600">
-                          <span
-                            className="block truncate"
-                            title={
-                              servicePackage.description ||
-                              ""
-                            }
-                          >
-                            {
-                              servicePackage.description ||
-                              "-"
-                            }
+                      <td className="max-w-xs px-6 py-4 text-sm text-gray-600">
+                        <span
+                          className="block truncate"
+                          title={servicePackage.description || ""}
+                        >
+                          {servicePackage.description || "-"}
+                        </span>
+                      </td>
+
+                      <td className="whitespace-nowrap px-6 py-4 text-sm font-medium text-slate-800">
+                        {formatCurrency(servicePackage.amount)}
+                      </td>
+
+                      <td className="whitespace-nowrap px-6 py-4 text-sm">
+                        {servicePackage.is_default ? (
+                          <span className="inline-flex rounded-full border border-amber-200 bg-amber-50 px-2.5 py-1 text-[10px] font-bold uppercase tracking-wide text-amber-700">
+                            Default
                           </span>
-                        </td>
-
-                        <td className="whitespace-nowrap px-6 py-4 text-sm font-medium text-gray-900">
-                          {formatCurrency(
-                            servicePackage.amount,
-                          )}
-                        </td>
-
-                        <td className="whitespace-nowrap px-6 py-4 text-sm">
-                          {servicePackage.is_default ? (
-                            <span className="inline-flex rounded-full bg-gray-900 px-2.5 py-1 text-xs font-medium text-white">
-                              Default
-                            </span>
-                          ) : (
-                            <span className="inline-flex rounded-full bg-gray-100 px-2.5 py-1 text-xs font-medium text-gray-600">
-                              No
-                            </span>
-                          )}
-                        </td>
-
-                        <td className="whitespace-nowrap px-6 py-4 text-sm">
-                          {servicePackage.is_active ? (
-                            <span className="inline-flex rounded-full bg-green-100 px-2.5 py-1 text-xs font-medium text-green-700">
-                              Active
-                            </span>
-                          ) : (
-                            <span className="inline-flex rounded-full bg-red-100 px-2.5 py-1 text-xs font-medium text-red-700">
-                              Inactive
-                            </span>
-                          )}
-                        </td>
-
-                        {isMaster && (
-                          <td className="whitespace-nowrap px-6 py-4 text-right text-sm">
-                            <div className="flex justify-end gap-2">
-                              <button
-                                type="button"
-                                onClick={() =>
-                                  openEditModal(
-                                    servicePackage,
-                                  )
-                                }
-                                className="rounded-md border border-gray-300 px-3 py-1.5 font-medium text-gray-700 transition hover:bg-gray-100"
-                              >
-                                Edit
-                              </button>
-
-                              <button
-                                type="button"
-                                onClick={() =>
-                                  handleToggleActive(
-                                    servicePackage,
-                                  )
-                                }
-                                disabled={
-                                  servicePackage.is_default &&
-                                  servicePackage.is_active
-                                }
-                                title={
-                                  servicePackage.is_default &&
-                                  servicePackage.is_active
-                                    ? "Set another package as default before deactivating this package."
-                                    : ""
-                                }
-                                className="rounded-md border border-gray-300 px-3 py-1.5 font-medium text-gray-700 transition hover:bg-gray-100 disabled:cursor-not-allowed disabled:opacity-50"
-                              >
-                                {servicePackage.is_active
-                                  ? "Deactivate"
-                                  : "Activate"}
-                              </button>
-
-                              <button
-                                type="button"
-                                onClick={() =>
-                                  handleDelete(
-                                    servicePackage,
-                                  )
-                                }
-                                className="rounded-md border border-red-200 px-3 py-1.5 font-medium text-red-700 transition hover:bg-red-50"
-                              >
-                                Delete
-                              </button>
-                            </div>
-                          </td>
+                        ) : (
+                          <span className="inline-flex rounded-full border border-slate-200 bg-slate-50 px-2.5 py-1 text-[10px] font-bold uppercase tracking-wide text-slate-500">
+                            No
+                          </span>
                         )}
-                      </tr>
-                    ),
-                  )}
+                      </td>
+
+                      <td className="whitespace-nowrap px-6 py-4 text-sm">
+                        {servicePackage.is_active ? (
+                          <span className="inline-flex rounded-full border border-emerald-200 bg-emerald-50 px-2.5 py-1 text-[10px] font-bold uppercase tracking-wide text-emerald-700">
+                            Active
+                          </span>
+                        ) : (
+                          <span className="inline-flex rounded-full bg-red-100 px-2.5 py-1 text-xs font-medium text-red-700">
+                            Inactive
+                          </span>
+                        )}
+                      </td>
+
+                      {isMaster && (
+                        <td className="whitespace-nowrap px-6 py-4 text-right text-sm">
+                          <div className="flex justify-end gap-2">
+                            <button
+                              type="button"
+                              onClick={() => openEditModal(servicePackage)}
+                              className="rounded-md border border-gray-300 px-3 py-1.5 font-medium text-slate-600 transition hover:bg-gray-100"
+                            >
+                              Edit
+                            </button>
+
+                            <button
+                              type="button"
+                              onClick={() => handleToggleActive(servicePackage)}
+                              disabled={
+                                servicePackage.is_default &&
+                                servicePackage.is_active
+                              }
+                              title={
+                                servicePackage.is_default &&
+                                servicePackage.is_active
+                                  ? "Set another package as default before deactivating this package."
+                                  : ""
+                              }
+                              className="rounded-md border border-gray-300 px-3 py-1.5 font-medium text-slate-600 transition hover:bg-gray-100 disabled:cursor-not-allowed disabled:opacity-50"
+                            >
+                              {servicePackage.is_active
+                                ? "Deactivate"
+                                : "Activate"}
+                            </button>
+
+                            <button
+                              type="button"
+                              onClick={() => handleDelete(servicePackage)}
+                              className="rounded-lg border border-rose-200 bg-white px-3 py-1.5 text-xs font-semibold text-rose-700 transition hover:bg-rose-50"
+                            >
+                              Delete
+                            </button>
+                          </div>
+                        </td>
+                      )}
+                    </tr>
+                  ))}
                 </tbody>
               </table>
             </div>
@@ -706,31 +541,26 @@ function ServicePackageManagement() {
       </main>
 
       {isModalOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 px-4 py-6">
-          <div className="max-h-[90vh] w-full max-w-xl overflow-y-auto rounded-lg bg-white shadow-xl">
-            <div className="border-b border-gray-200 px-6 py-4">
-              <h3 className="text-lg font-semibold text-gray-900">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/50 px-4 py-6 backdrop-blur-[2px]">
+          <div className="max-h-[90vh] w-full max-w-xl overflow-y-auto rounded-2xl border border-slate-200 bg-white shadow-2xl">
+            <div className="border-b border-slate-200 px-6 py-5">
+              <h3 className="text-lg font-semibold text-slate-800">
                 {editingPackage
                   ? "Edit Service Package"
                   : "Add Service Package"}
               </h3>
 
-              <p className="mt-1 text-sm text-gray-500">
-                Configure the package available to
-                Finance operations.
+              <p className="mt-1 text-sm text-slate-500">
+                Configure the package available to Finance operations.
               </p>
             </div>
 
-            <form
-              onSubmit={handleSubmit}
-            >
+            <form onSubmit={handleSubmit}>
               <div className="space-y-5 px-6 py-6">
                 {fieldErrors.non_field_errors && (
-                  <div className="rounded-md border border-red-200 bg-red-50 px-4 py-3">
+                  <div className="rounded-xl border border-rose-200 bg-rose-50 px-4 py-3">
                     <p className="text-sm font-medium text-red-700">
-                      {getFieldError(
-                        fieldErrors.non_field_errors,
-                      )}
+                      {getFieldError(fieldErrors.non_field_errors)}
                     </p>
                   </div>
                 )}
@@ -738,7 +568,7 @@ function ServicePackageManagement() {
                 <div>
                   <label
                     htmlFor="service-package-name"
-                    className="mb-1.5 block text-sm font-medium text-gray-700"
+                    className="mb-1.5 block text-sm font-medium text-slate-600"
                   >
                     Name
                   </label>
@@ -749,22 +579,16 @@ function ServicePackageManagement() {
                     type="text"
                     maxLength={150}
                     value={form.name}
-                    onChange={
-                      handleChange
-                    }
+                    onChange={handleChange}
                     placeholder="e.g. Premium Service Package"
-                    className={`w-full rounded-md border px-3 py-2.5 text-sm outline-none transition focus:ring-2 focus:ring-gray-300 ${
-                      fieldErrors.name
-                        ? "border-red-400"
-                        : "border-gray-300"
+                    className={`w-full h-10 rounded-xl border px-3 text-sm text-slate-800 outline-none transition placeholder:text-slate-400 focus:border-amber-400 focus:ring-2 focus:ring-amber-400/15 ${
+                      fieldErrors.name ? "border-red-400" : "border-gray-300"
                     }`}
                   />
 
                   {fieldErrors.name && (
-                    <p className="mt-1.5 text-xs text-red-600">
-                      {getFieldError(
-                        fieldErrors.name,
-                      )}
+                    <p className="mt-1.5 text-xs font-medium text-rose-600">
+                      {getFieldError(fieldErrors.name)}
                     </p>
                   )}
                 </div>
@@ -772,7 +596,7 @@ function ServicePackageManagement() {
                 <div>
                   <label
                     htmlFor="service-package-description"
-                    className="mb-1.5 block text-sm font-medium text-gray-700"
+                    className="mb-1.5 block text-sm font-medium text-slate-600"
                   >
                     Description
                   </label>
@@ -782,12 +606,8 @@ function ServicePackageManagement() {
                     name="description"
                     rows={3}
                     maxLength={255}
-                    value={
-                      form.description
-                    }
-                    onChange={
-                      handleChange
-                    }
+                    value={form.description}
+                    onChange={handleChange}
                     placeholder="Optional description"
                     className={`w-full resize-none rounded-md border px-3 py-2.5 text-sm outline-none transition focus:ring-2 focus:ring-gray-300 ${
                       fieldErrors.description
@@ -796,16 +616,13 @@ function ServicePackageManagement() {
                     }`}
                   />
 
-                  <p className="mt-1.5 text-xs text-gray-500">
-                    {form.description.length}/255
-                    characters
+                  <p className="mt-1.5 text-xs text-slate-400">
+                    {form.description.length}/255 characters
                   </p>
 
                   {fieldErrors.description && (
-                    <p className="mt-1.5 text-xs text-red-600">
-                      {getFieldError(
-                        fieldErrors.description,
-                      )}
+                    <p className="mt-1.5 text-xs font-medium text-rose-600">
+                      {getFieldError(fieldErrors.description)}
                     </p>
                   )}
                 </div>
@@ -813,7 +630,7 @@ function ServicePackageManagement() {
                 <div>
                   <label
                     htmlFor="service-package-amount"
-                    className="mb-1.5 block text-sm font-medium text-gray-700"
+                    className="mb-1.5 block text-sm font-medium text-slate-600"
                   >
                     Amount (AED)
                   </label>
@@ -825,98 +642,76 @@ function ServicePackageManagement() {
                     min="0"
                     step="0.01"
                     inputMode="decimal"
-                    value={
-                      form.amount
-                    }
-                    onChange={
-                      handleChange
-                    }
+                    value={form.amount}
+                    onChange={handleChange}
                     placeholder="2800.00"
-                    className={`w-full rounded-md border px-3 py-2.5 text-sm outline-none transition focus:ring-2 focus:ring-gray-300 ${
-                      fieldErrors.amount
-                        ? "border-red-400"
-                        : "border-gray-300"
+                    className={`w-full h-10 rounded-xl border px-3 text-sm text-slate-800 outline-none transition placeholder:text-slate-400 focus:border-amber-400 focus:ring-2 focus:ring-amber-400/15 ${
+                      fieldErrors.amount ? "border-red-400" : "border-gray-300"
                     }`}
                   />
 
                   {fieldErrors.amount && (
-                    <p className="mt-1.5 text-xs text-red-600">
-                      {getFieldError(
-                        fieldErrors.amount,
-                      )}
+                    <p className="mt-1.5 text-xs font-medium text-rose-600">
+                      {getFieldError(fieldErrors.amount)}
                     </p>
                   )}
                 </div>
 
-                <label className="flex items-start gap-3 rounded-md border border-gray-200 p-4">
+                <label className="flex items-start gap-3 rounded-xl border border-slate-200 bg-slate-50/40 p-4 transition hover:bg-slate-50">
                   <input
                     name="is_default"
                     type="checkbox"
-                    checked={
-                      form.is_default
-                    }
-                    onChange={
-                      handleChange
-                    }
-                    className="mt-0.5 h-4 w-4 rounded border-gray-300"
+                    checked={form.is_default}
+                    onChange={handleChange}
+                    className="mt-0.5 h-4 w-4 rounded border-slate-300 accent-amber-500"
                   />
 
                   <span>
-                    <span className="block text-sm font-medium text-gray-800">
+                    <span className="block text-sm font-semibold text-slate-800">
                       Default package
                     </span>
 
-                    <span className="mt-1 block text-xs text-gray-500">
-                      This is the package the Finance
-                      backend can resolve when the
-                      Service Package option is selected.
+                    <span className="mt-1 block text-xs text-slate-400">
+                      This is the package the Finance backend can resolve when
+                      the Service Package option is selected.
                     </span>
                   </span>
                 </label>
 
                 {fieldErrors.is_default && (
                   <p className="-mt-3 text-xs text-red-600">
-                    {getFieldError(
-                      fieldErrors.is_default,
-                    )}
+                    {getFieldError(fieldErrors.is_default)}
                   </p>
                 )}
 
-                <label className="flex items-start gap-3 rounded-md border border-gray-200 p-4">
+                <label className="flex items-start gap-3 rounded-xl border border-slate-200 bg-slate-50/40 p-4 transition hover:bg-slate-50">
                   <input
                     name="is_active"
                     type="checkbox"
-                    checked={
-                      form.is_active
-                    }
-                    onChange={
-                      handleChange
-                    }
-                    className="mt-0.5 h-4 w-4 rounded border-gray-300"
+                    checked={form.is_active}
+                    onChange={handleChange}
+                    className="mt-0.5 h-4 w-4 rounded border-slate-300 accent-amber-500"
                   />
 
                   <span>
-                    <span className="block text-sm font-medium text-gray-800">
+                    <span className="block text-sm font-semibold text-slate-800">
                       Active
                     </span>
 
-                    <span className="mt-1 block text-xs text-gray-500">
-                      Active packages are available
-                      for Finance configuration and
-                      future calculations.
+                    <span className="mt-1 block text-xs text-slate-400">
+                      Active packages are available for Finance configuration
+                      and future calculations.
                     </span>
                   </span>
                 </label>
               </div>
 
-              <div className="flex justify-end gap-3 border-t border-gray-200 px-6 py-4">
+              <div className="flex justify-end gap-3 border-t border-slate-200 px-6 py-4">
                 <button
                   type="button"
-                  onClick={
-                    closeModal
-                  }
+                  onClick={closeModal}
                   disabled={saving}
-                  className="rounded-md border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 transition hover:bg-gray-100 disabled:cursor-not-allowed disabled:opacity-50"
+                  className="rounded-md border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-slate-600 transition hover:bg-gray-100 disabled:cursor-not-allowed disabled:opacity-50"
                 >
                   Cancel
                 </button>
@@ -924,7 +719,7 @@ function ServicePackageManagement() {
                 <button
                   type="submit"
                   disabled={saving}
-                  className="rounded-md bg-gray-900 px-4 py-2 text-sm font-medium text-white transition hover:bg-gray-800 disabled:cursor-not-allowed disabled:opacity-50"
+                  className="rounded-xl bg-amber-500 px-5 py-2.5 text-sm font-bold text-slate-950 shadow-sm transition hover:bg-amber-400 disabled:cursor-not-allowed disabled:opacity-50"
                 >
                   {saving
                     ? "Saving..."

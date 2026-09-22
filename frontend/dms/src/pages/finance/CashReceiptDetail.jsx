@@ -168,9 +168,12 @@ function CashReceiptDetail() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gray-50 p-6">
-        <div className="mx-auto max-w-6xl rounded-lg border border-gray-200 bg-white p-6">
-          Loading cash receipt...
+      <div className="rounded-2xl border border-[#e5e7eb] bg-white p-6 shadow-[0_2px_8px_rgba(15,23,42,0.04)]">
+        <div className="flex items-center gap-3">
+          <div className="h-4 w-4 animate-pulse rounded-full bg-amber-400" />
+          <p className="text-sm font-medium text-slate-500">
+            Loading cash receipts...
+          </p>
         </div>
       </div>
     );
@@ -178,11 +181,11 @@ function CashReceiptDetail() {
 
   if (error || !receipt) {
     return (
-      <div className="min-h-screen bg-gray-50 p-6">
+      <div className="min-h-screen bg-[#f5f6fa] px-4 py-5 sm:px-6 lg:px-8">
         <div className="mx-auto max-w-6xl">
           <Link
             to="/finance/cash-receipts"
-            className="text-sm font-medium text-gray-700 hover:underline"
+            className="inline-flex items-center text-sm font-medium text-slate-500 transition hover:text-amber-600"
           >
             ← Back to Cash Receipts
           </Link>
@@ -196,32 +199,32 @@ function CashReceiptDetail() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 p-6">
+    <div className="min-h-screen bg-[#f5f6fa] px-4 py-5 sm:px-6 lg:px-8">
       <div className="mx-auto max-w-6xl">
-        <div className="mb-6 flex items-center justify-between">
+        <div className="mb-6 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
           <div>
             <Link
               to="/finance/cash-receipts"
-              className="text-sm font-medium text-gray-700 hover:underline"
+              className="inline-flex items-center text-sm font-medium text-slate-500 transition hover:text-amber-600"
             >
               ← Back to Cash Receipts
             </Link>
 
-            <h1 className="mt-2 text-2xl font-semibold text-gray-900">
+            <h1 className="mt-2 text-2xl font-extrabold tracking-tight text-[#172033]">
               {receipt.receipt_number || `Cash Receipt #${receipt.id}`}
             </h1>
 
-            <p className="mt-1 text-sm text-gray-500">
+            <p className="mt-1 text-sm text-slate-500">
               {receipt.customer_name || "-"}
             </p>
           </div>
 
-          <div className="flex items-center gap-3">
+          <div className="flex flex-wrap items-center gap-3">
             {!receipt.is_reversal && !receipt.reversed_receipt_id && (
               <button
                 type="button"
                 onClick={handleReverse}
-                className="rounded-md border border-red-300 bg-white px-4 py-2 text-sm font-medium text-red-700 hover:bg-red-50"
+                className="inline-flex h-10 items-center justify-center rounded-xl border border-rose-200 bg-white px-4 text-sm font-bold text-rose-600 transition hover:bg-rose-50"
               >
                 Reverse
               </button>
@@ -230,7 +233,7 @@ function CashReceiptDetail() {
             <button
               type="button"
               onClick={() => navigate("/finance/cash-receipts")}
-              className="rounded-md border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50"
+              className="inline-flex h-10 items-center justify-center rounded-xl border border-slate-200 bg-white px-4 text-sm font-semibold text-slate-600 transition hover:bg-slate-50"
             >
               Close
             </button>
@@ -238,141 +241,149 @@ function CashReceiptDetail() {
         </div>
 
         {receipt.is_reversal && (
-          <div className="mb-6 rounded-lg border border-red-200 bg-red-50 p-4">
-            <p className="text-sm font-medium text-red-800">
+          <div className="mb-6 rounded-2xl border border-rose-200 bg-rose-50 p-4">
+            <p className="text-sm font-bold text-rose-800">
               This receipt is a reversal transaction.
             </p>
           </div>
         )}
 
         <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
-          <section className="rounded-lg border border-gray-200 bg-white p-6">
-            <h2 className="mb-4 text-lg font-semibold text-gray-900">
+          <section className="rounded-2xl border border-[#e5e7eb] bg-white p-5 shadow-[0_2px_8px_rgba(15,23,42,0.04)] sm:p-6">
+            <h2 className="mb-5 text-[15px] font-bold text-[#172033]">
               Transaction
             </h2>
 
             <dl className="grid grid-cols-1 gap-4 sm:grid-cols-2">
               <div>
-                <dt className="text-xs font-medium uppercase text-gray-500">
+                <dt className="text-[10px] font-bold uppercase tracking-[0.08em] text-slate-400">
                   Receipt Number
                 </dt>
-                <dd className="mt-1 text-sm font-medium text-gray-900">
+                <dd className="mt-1 text-sm font-bold text-slate-900">
                   {receipt.receipt_number || "-"}
                 </dd>
               </div>
 
               <div>
-                <dt className="text-xs font-medium uppercase text-gray-500">
+                <dt className="text-[10px] font-bold uppercase tracking-[0.08em] text-slate-400">
                   Amount
                 </dt>
-                <dd className="mt-1 text-sm font-semibold text-gray-900">
+                <dd className="mt-1 text-lg font-extrabold text-emerald-600">
                   {formatAED(receipt.amount)}
                 </dd>
               </div>
 
               <div>
-                <dt className="text-xs font-medium uppercase text-gray-500">
+                <dt className="text-[10px] font-bold uppercase tracking-[0.08em] text-slate-400">
                   Direction
                 </dt>
-                <dd className="mt-1 text-sm text-gray-900">
-                  {formatDirection(receipt.direction)}
+                <dd className="mt-1">
+                  <span
+                    className={
+                      receipt.direction === "customer_payment"
+                        ? "inline-flex rounded-full bg-emerald-50 px-2.5 py-1 text-xs font-bold text-emerald-700"
+                        : "inline-flex rounded-full bg-sky-50 px-2.5 py-1 text-xs font-bold text-sky-700"
+                    }
+                  >
+                    {formatDirection(receipt.direction)}
+                  </span>
                 </dd>
               </div>
 
               <div>
-                <dt className="text-xs font-medium uppercase text-gray-500">
+                <dt className="text-[10px] font-bold uppercase tracking-[0.08em] text-slate-400">
                   Category
                 </dt>
-                <dd className="mt-1 text-sm text-gray-900">
+                <dd className="mt-1 text-sm font-medium text-slate-800">
                   {receipt.category || "-"}
                 </dd>
               </div>
 
               <div>
-                <dt className="text-xs font-medium uppercase text-gray-500">
+                <dt className="text-[10px] font-bold uppercase tracking-[0.08em] text-slate-400">
                   Payment Method
                 </dt>
-                <dd className="mt-1 text-sm text-gray-900">
+                <dd className="mt-1 text-sm font-medium text-slate-800">
                   {receipt.payment_method || "-"}
                 </dd>
               </div>
 
               <div>
-                <dt className="text-xs font-medium uppercase text-gray-500">
+                <dt className="text-[10px] font-bold uppercase tracking-[0.08em] text-slate-400">
                   Transaction Date
                 </dt>
-                <dd className="mt-1 text-sm text-gray-900">
+                <dd className="mt-1 text-sm font-medium text-slate-800">
                   {formatDate(receipt.transaction_date)}
                 </dd>
               </div>
 
               <div>
-                <dt className="text-xs font-medium uppercase text-gray-500">
+                <dt className="text-[10px] font-bold uppercase tracking-[0.08em] text-slate-400">
                   Source
                 </dt>
-                <dd className="mt-1 text-sm text-gray-900">
+                <dd className="mt-1 text-sm font-medium text-slate-800">
                   {receipt.source || "-"}
                 </dd>
               </div>
 
               <div>
-                <dt className="text-xs font-medium uppercase text-gray-500">
+                <dt className="text-[10px] font-bold uppercase tracking-[0.08em] text-slate-400">
                   Created By
                 </dt>
-                <dd className="mt-1 text-sm text-gray-900">
+                <dd className="mt-1 text-sm font-medium text-slate-800">
                   {receipt.created_by_name || "-"}
                 </dd>
               </div>
             </dl>
           </section>
 
-          <section className="rounded-lg border border-gray-200 bg-white p-6">
-            <h2 className="mb-4 text-lg font-semibold text-gray-900">
+          <section className="rounded-2xl border border-[#e5e7eb] bg-white p-5 shadow-[0_2px_8px_rgba(15,23,42,0.04)] sm:p-6">
+            <h2 className="mb-5 text-[15px] font-bold text-[#172033]">
               Customer / Deal
             </h2>
 
             <dl className="grid grid-cols-1 gap-4 sm:grid-cols-2">
               <div>
-                <dt className="text-xs font-medium uppercase text-gray-500">
+                <dt className="text-[10px] font-bold uppercase tracking-[0.08em] text-slate-400">
                   Customer
                 </dt>
-                <dd className="mt-1 text-sm text-gray-900">
+                <dd className="mt-1 text-sm font-medium text-slate-800">
                   {receipt.customer_name || "-"}
                 </dd>
               </div>
 
               <div>
-                <dt className="text-xs font-medium uppercase text-gray-500">
+                <dt className="text-[10px] font-bold uppercase tracking-[0.08em] text-slate-400">
                   Customer Mobile
                 </dt>
-                <dd className="mt-1 text-sm text-gray-900">
+                <dd className="mt-1 text-sm font-medium text-slate-800">
                   {receipt.customer_mobile || "-"}
                 </dd>
               </div>
 
               <div>
-                <dt className="text-xs font-medium uppercase text-gray-500">
+                <dt className="text-[10px] font-bold uppercase tracking-[0.08em] text-slate-400">
                   Quote
                 </dt>
-                <dd className="mt-1 text-sm text-gray-900">
+                <dd className="mt-1 text-sm font-medium text-slate-800">
                   {receipt.quote_number || receipt.quote || "-"}
                 </dd>
               </div>
 
               <div>
-                <dt className="text-xs font-medium uppercase text-gray-500">
+                <dt className="text-[10px] font-bold uppercase tracking-[0.08em] text-slate-400">
                   Vehicle Stock
                 </dt>
-                <dd className="mt-1 text-sm text-gray-900">
+                <dd className="mt-1 text-sm font-medium text-slate-800">
                   {receipt.vehicle_stock_id || "-"}
                 </dd>
               </div>
 
               <div>
-                <dt className="text-xs font-medium uppercase text-gray-500">
+                <dt className="text-[10px] font-bold uppercase tracking-[0.08em] text-slate-400">
                   Vehicle
                 </dt>
-                <dd className="mt-1 text-sm text-gray-900">
+                <dd className="mt-1 text-sm font-medium text-slate-800">
                   {[receipt.vehicle_make, receipt.vehicle_model]
                     .filter(Boolean)
                     .join(" ") || "-"}
@@ -380,10 +391,10 @@ function CashReceiptDetail() {
               </div>
 
               <div>
-                <dt className="text-xs font-medium uppercase text-gray-500">
+                <dt className="text-[10px] font-bold uppercase tracking-[0.08em] text-slate-400">
                   Chassis
                 </dt>
-                <dd className="mt-1 text-sm text-gray-900">
+                <dd className="mt-1 text-sm font-medium text-slate-800">
                   {receipt.vehicle_chassis_number || "-"}
                 </dd>
               </div>
@@ -391,54 +402,53 @@ function CashReceiptDetail() {
           </section>
         </div>
 
-        <section className="mt-6 rounded-lg border border-gray-200 bg-white p-6">
-          <h2 className="mb-4 text-lg font-semibold text-gray-900">
+        <section className="mt-6 rounded-2xl border border-[#e5e7eb] bg-white p-5 shadow-[0_2px_8px_rgba(15,23,42,0.04)] sm:p-6">
+          <h2 className="mb-5 text-[15px] font-bold text-[#172033]">
             Expense Context
           </h2>
 
           <dl className="grid grid-cols-1 gap-4 sm:grid-cols-3">
             <div>
-              <dt className="text-xs font-medium uppercase text-gray-500">
+              <dt className="text-[10px] font-bold uppercase tracking-[0.08em] text-slate-400">
                 Quote Expense
               </dt>
-              <dd className="mt-1 text-sm text-gray-900">
+              <dd className="mt-1 text-sm font-medium text-slate-800">
                 {receipt.quote_expense ?? "-"}
               </dd>
             </div>
 
             <div>
-              <dt className="text-xs font-medium uppercase text-gray-500">
+              <dt className="text-[10px] font-bold uppercase tracking-[0.08em] text-slate-400">
                 EMI Expense
               </dt>
-              <dd className="mt-1 text-sm text-gray-900">
+              <dd className="mt-1 text-sm font-medium text-slate-800">
                 {receipt.emi_expense ?? "-"}
               </dd>
             </div>
 
             <div>
-              <dt className="text-xs font-medium uppercase text-gray-500">
+              <dt className="text-[10px] font-bold uppercase tracking-[0.08em] text-slate-400">
                 Reversed Receipt
               </dt>
-              <dd className="mt-1 text-sm text-gray-900">
+              <dd className="mt-1 text-sm font-medium text-slate-800">
                 {receipt.reversed_receipt_id ?? "-"}
               </dd>
             </div>
           </dl>
         </section>
 
-        <section className="mt-6 rounded-lg border border-gray-200 bg-white p-6">
-          <h2 className="mb-4 text-lg font-semibold text-gray-900">
+        <section className="mt-6 rounded-2xl border border-[#e5e7eb] bg-white p-5 shadow-[0_2px_8px_rgba(15,23,42,0.04)] sm:p-6">
+          <h2 className="mb-5 text-[15px] font-bold text-[#172033]">
             Update Description / Reference
           </h2>
-
           <form
             onSubmit={handleSave}
-            className="grid grid-cols-1 gap-4 md:grid-cols-2"
+            className="grid grid-cols-1 gap-5 md:grid-cols-2"
           >
             <div>
               <label
                 htmlFor="cash-receipt-description"
-                className="mb-1 block text-sm font-medium text-gray-700"
+                className="mb-1.5 block text-[11px] font-bold uppercase tracking-[0.08em] text-slate-500"
               >
                 Description
               </label>
@@ -448,14 +458,14 @@ function CashReceiptDetail() {
                 rows={4}
                 value={description}
                 onChange={(event) => setDescription(event.target.value)}
-                className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm outline-none focus:border-gray-500 focus:ring-1 focus:ring-gray-500"
+                className="h-10 w-full rounded-xl border border-slate-200 bg-white px-3 text-sm text-slate-800 outline-none transition focus:border-amber-400 focus:ring-2 focus:ring-amber-100"
               />
             </div>
 
             <div>
               <label
                 htmlFor="cash-receipt-reference"
-                className="mb-1 block text-sm font-medium text-gray-700"
+                className="mb-1.5 block text-[11px] font-bold uppercase tracking-[0.08em] text-slate-500"
               >
                 Reference
               </label>
@@ -465,7 +475,7 @@ function CashReceiptDetail() {
                 type="text"
                 value={reference}
                 onChange={(event) => setReference(event.target.value)}
-                className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm outline-none focus:border-gray-500 focus:ring-1 focus:ring-gray-500"
+                className="w-full rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-sm text-slate-800 outline-none transition focus:border-amber-400 focus:ring-2 focus:ring-amber-100"
               />
             </div>
 
@@ -473,7 +483,7 @@ function CashReceiptDetail() {
               <button
                 type="submit"
                 disabled={saving}
-                className="rounded-md bg-gray-900 px-4 py-2 text-sm font-medium text-white disabled:opacity-50"
+                className="inline-flex h-10 items-center justify-center rounded-xl bg-amber-500 px-5 text-sm font-bold text-white shadow-sm transition hover:bg-amber-600 disabled:cursor-not-allowed disabled:opacity-50"
               >
                 {saving ? "Saving..." : "Save Changes"}
               </button>
@@ -481,26 +491,25 @@ function CashReceiptDetail() {
           </form>
         </section>
 
-        <section className="mt-6 rounded-lg border border-gray-200 bg-white p-6">
-          <h2 className="mb-4 text-lg font-semibold text-gray-900">
+        <section className="mt-6 rounded-2xl border border-[#e5e7eb] bg-white p-5 shadow-[0_2px_8px_rgba(15,23,42,0.04)] sm:p-6">
+          <h2 className="mb-5 text-[15px] font-bold text-[#172033]">
             Audit Information
           </h2>
-
           <dl className="grid grid-cols-1 gap-4 sm:grid-cols-2">
             <div>
-              <dt className="text-xs font-medium uppercase text-gray-500">
+              <dt className="text-[10px] font-bold uppercase tracking-[0.08em] text-slate-400">
                 Created
               </dt>
-              <dd className="mt-1 text-sm text-gray-900">
+              <dd className="mt-1 text-sm font-medium text-slate-800">
                 {formatDateTime(receipt.created_at)}
               </dd>
             </div>
 
             <div>
-              <dt className="text-xs font-medium uppercase text-gray-500">
+              <dt className="text-[10px] font-bold uppercase tracking-[0.08em] text-slate-400">
                 Updated
               </dt>
-              <dd className="mt-1 text-sm text-gray-900">
+              <dd className="mt-1 text-sm font-medium text-slate-800">
                 {formatDateTime(receipt.updated_at)}
               </dd>
             </div>

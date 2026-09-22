@@ -10,7 +10,7 @@ function Card({
     <section
       className={[
         "overflow-hidden rounded-2xl",
-        "border border-slate-200",
+        "border border-[#e5e7eb]",
         "bg-white",
         "shadow-[0_2px_8px_rgba(15,23,42,0.04)]",
         className,
