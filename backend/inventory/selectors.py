@@ -15,6 +15,8 @@ from django.db.models import (
     Count,
 )
 from django.db.models import Sum
+from datetime import timedelta
+from django.utils import timezone
 
 
 class InventorySelector:
@@ -28,6 +30,8 @@ class InventorySelector:
         make=None,
         supplier=None,
         year=None,
+        age=None,
+        aged_90_plus=None,
         highlight_public=None,
         min_price=None,
         max_price=None,
@@ -55,6 +59,23 @@ class InventorySelector:
                 Q(supplier__icontains=search) |
                 Q(chassis_number__icontains=search) |
                 Q(engine_number__icontains=search)
+            )
+            
+        age = age
+        aged_90_plus = aged_90_plus
+
+        if age is not None:
+            cutoff_date = timezone.localdate() - timedelta(days=age)
+
+            queryset = queryset.filter(
+                created_at__date__lte=cutoff_date
+            )
+
+        if aged_90_plus is True:
+            cutoff_date = timezone.localdate() - timedelta(days=90)
+
+            queryset = queryset.filter(
+                created_at__date__lte=cutoff_date
             )
 
         if status:

@@ -1,0 +1,3751 @@
+openapi: 3.0.3
+info:
+  title: Prime Rides DMS API
+  version: 1.0.0
+  description: Production REST API for Prime Rides Dealer Management System.
+paths:
+  /api/accounts/login/:
+    post:
+      operationId: accounts_login_create
+      tags:
+      - accounts
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/LoginRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/LoginRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/LoginRequest'
+        required: true
+      security:
+      - ActiveUserJWT: []
+      - {}
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/LoginResponse'
+          description: Successful login response.
+  /api/accounts/me/:
+    get:
+      operationId: accounts_me_retrieve
+      tags:
+      - accounts
+      security:
+      - ActiveUserJWT: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CurrentUserResponse'
+          description: Current authenticated user response.
+  /api/accounts/refresh/:
+    post:
+      operationId: accounts_refresh_create
+      tags:
+      - accounts
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/TokenRefreshRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/TokenRefreshRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/TokenRefreshRequest'
+        required: true
+      security:
+      - ActiveUserJWT: []
+      - {}
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RefreshTokenResponse'
+          description: Successful token refresh response.
+  /api/company/:
+    get:
+      operationId: company_list
+      tags:
+      - company
+      security:
+      - ActiveUserJWT: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Company'
+          description: ''
+    post:
+      operationId: company_create
+      tags:
+      - company
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CompanyRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/CompanyRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/CompanyRequest'
+        required: true
+      security:
+      - ActiveUserJWT: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Company'
+          description: Company created successfully.
+  /api/company/{id}/:
+    get:
+      operationId: company_retrieve
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - company
+      security:
+      - ActiveUserJWT: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Company'
+          description: ''
+    patch:
+      operationId: company_partial_update
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - company
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PatchedCompanyRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/PatchedCompanyRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/PatchedCompanyRequest'
+      security:
+      - ActiveUserJWT: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Company'
+          description: ''
+  /api/company/branches/:
+    get:
+      operationId: company_branches_list
+      tags:
+      - company
+      security:
+      - ActiveUserJWT: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/CompanyBranch'
+          description: ''
+    post:
+      operationId: company_branches_create
+      tags:
+      - company
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CompanyBranchRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/CompanyBranchRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/CompanyBranchRequest'
+        required: true
+      security:
+      - ActiveUserJWT: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CompanyBranch'
+          description: Branch created successfully.
+  /api/company/branches/{id}/:
+    get:
+      operationId: company_branches_retrieve
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - company
+      security:
+      - ActiveUserJWT: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CompanyBranch'
+          description: ''
+    patch:
+      operationId: company_branches_partial_update
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - company
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PatchedCompanyBranchRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/PatchedCompanyBranchRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/PatchedCompanyBranchRequest'
+      security:
+      - ActiveUserJWT: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CompanyBranch'
+          description: ''
+  /api/customers/:
+    get:
+      operationId: customers_retrieve
+      tags:
+      - customers
+      security:
+      - ActiveUserJWT: []
+      responses:
+        '200':
+          description: No response body
+    post:
+      operationId: customers_create
+      tags:
+      - customers
+      security:
+      - ActiveUserJWT: []
+      responses:
+        '200':
+          description: No response body
+  /api/customers/{customer_pk}/documents/{id}/:
+    delete:
+      operationId: customers_documents_destroy
+      parameters:
+      - in: path
+        name: customer_pk
+        schema:
+          type: integer
+        required: true
+      - in: path
+        name: id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - customers
+      security:
+      - ActiveUserJWT: []
+      responses:
+        '204':
+          description: No response body
+  /api/customers/{id}/:
+    get:
+      operationId: customers_retrieve_2
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - customers
+      security:
+      - ActiveUserJWT: []
+      responses:
+        '200':
+          description: No response body
+    patch:
+      operationId: customers_partial_update
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - customers
+      security:
+      - ActiveUserJWT: []
+      responses:
+        '200':
+          description: No response body
+    delete:
+      operationId: customers_destroy
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - customers
+      security:
+      - ActiveUserJWT: []
+      responses:
+        '204':
+          description: No response body
+  /api/customers/{id}/documents/:
+    get:
+      operationId: customers_documents_retrieve
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - customers
+      security:
+      - ActiveUserJWT: []
+      responses:
+        '200':
+          description: No response body
+    post:
+      operationId: customers_documents_create
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - customers
+      security:
+      - ActiveUserJWT: []
+      responses:
+        '200':
+          description: No response body
+  /api/delivery-notes/:
+    get:
+      operationId: delivery_notes_retrieve
+      tags:
+      - delivery-notes
+      security:
+      - ActiveUserJWT: []
+      responses:
+        '200':
+          description: No response body
+    post:
+      operationId: delivery_notes_create
+      tags:
+      - delivery-notes
+      security:
+      - ActiveUserJWT: []
+      responses:
+        '200':
+          description: No response body
+  /api/delivery-notes/{id}/:
+    get:
+      operationId: delivery_notes_retrieve_2
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - delivery-notes
+      security:
+      - ActiveUserJWT: []
+      responses:
+        '200':
+          description: No response body
+    patch:
+      operationId: delivery_notes_partial_update
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - delivery-notes
+      security:
+      - ActiveUserJWT: []
+      responses:
+        '200':
+          description: No response body
+    delete:
+      operationId: delivery_notes_destroy
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - delivery-notes
+      security:
+      - ActiveUserJWT: []
+      responses:
+        '204':
+          description: No response body
+  /api/finance/balance-sheets/:
+    get:
+      operationId: finance_balance_sheets_retrieve
+      tags:
+      - finance
+      security:
+      - ActiveUserJWT: []
+      responses:
+        '200':
+          description: No response body
+    post:
+      operationId: finance_balance_sheets_create
+      tags:
+      - finance
+      security:
+      - ActiveUserJWT: []
+      responses:
+        '200':
+          description: No response body
+  /api/finance/balance-sheets/{id}/:
+    get:
+      operationId: finance_balance_sheets_retrieve_2
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - finance
+      security:
+      - ActiveUserJWT: []
+      responses:
+        '200':
+          description: No response body
+    patch:
+      operationId: finance_balance_sheets_partial_update
+      description: |-
+        Update Balance Sheet configuration.
+
+        Master users only.
+        Financial movement fields remain backend-calculated.
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - finance
+      security:
+      - ActiveUserJWT: []
+      responses:
+        '200':
+          description: No response body
+    delete:
+      operationId: finance_balance_sheets_destroy
+      description: |-
+        Delete a Balance Sheet.
+        Master users only.
+
+        This removes only the BalanceSheet record.
+        CashReceipt financial transactions are not deleted.
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - finance
+      security:
+      - ActiveUserJWT: []
+      responses:
+        '204':
+          description: No response body
+  /api/finance/balance-sheets/customers/{customer_id}/deals/:
+    get:
+      operationId: finance_balance_sheets_customers_deals_retrieve
+      parameters:
+      - in: path
+        name: customer_id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - finance
+      security:
+      - ActiveUserJWT: []
+      responses:
+        '200':
+          description: No response body
+  /api/finance/bank-loans/:
+    get:
+      operationId: finance_bank_loans_retrieve
+      tags:
+      - finance
+      security:
+      - ActiveUserJWT: []
+      responses:
+        '200':
+          description: No response body
+    post:
+      operationId: finance_bank_loans_create
+      tags:
+      - finance
+      security:
+      - ActiveUserJWT: []
+      responses:
+        '200':
+          description: No response body
+  /api/finance/bank-loans/{id}/:
+    get:
+      operationId: finance_bank_loans_retrieve_2
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - finance
+      security:
+      - ActiveUserJWT: []
+      responses:
+        '200':
+          description: No response body
+  /api/finance/bank-loans/{id}/application-info/:
+    patch:
+      operationId: finance_bank_loans_application_info_partial_update
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - finance
+      security:
+      - ActiveUserJWT: []
+      responses:
+        '200':
+          description: No response body
+  /api/finance/bank-loans/{id}/application-status/:
+    patch:
+      operationId: finance_bank_loans_application_status_partial_update
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - finance
+      security:
+      - ActiveUserJWT: []
+      responses:
+        '200':
+          description: No response body
+  /api/finance/bank-loans/{id}/finance/:
+    patch:
+      operationId: finance_bank_loans_finance_partial_update
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - finance
+      security:
+      - ActiveUserJWT: []
+      responses:
+        '200':
+          description: No response body
+  /api/finance/bank-loans/{id}/follow-ups/:
+    get:
+      operationId: finance_bank_loans_follow_ups_retrieve
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - finance
+      security:
+      - ActiveUserJWT: []
+      responses:
+        '200':
+          description: No response body
+    post:
+      operationId: finance_bank_loans_follow_ups_create
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - finance
+      security:
+      - ActiveUserJWT: []
+      responses:
+        '200':
+          description: No response body
+  /api/finance/bank-loans/{id}/new-bank/:
+    post:
+      operationId: finance_bank_loans_new_bank_create
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - finance
+      security:
+      - ActiveUserJWT: []
+      responses:
+        '200':
+          description: No response body
+  /api/finance/bank-loans/{id}/priority/:
+    patch:
+      operationId: finance_bank_loans_priority_partial_update
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - finance
+      security:
+      - ActiveUserJWT: []
+      responses:
+        '200':
+          description: No response body
+  /api/finance/bank-loans/{id}/status/:
+    patch:
+      operationId: finance_bank_loans_status_partial_update
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - finance
+      security:
+      - ActiveUserJWT: []
+      responses:
+        '200':
+          description: No response body
+  /api/finance/bank-processing-configurations/:
+    get:
+      operationId: finance_bank_processing_configurations_list
+      description: List and create bank processing configurations.
+      tags:
+      - finance
+      security:
+      - ActiveUserJWT: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/BankProcessingConfiguration'
+          description: ''
+    post:
+      operationId: finance_bank_processing_configurations_create
+      description: List and create bank processing configurations.
+      tags:
+      - finance
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/BankProcessingConfigurationRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/BankProcessingConfigurationRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/BankProcessingConfigurationRequest'
+        required: true
+      security:
+      - ActiveUserJWT: []
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BankProcessingConfiguration'
+          description: ''
+  /api/finance/bank-processing-configurations/{id}/:
+    get:
+      operationId: finance_bank_processing_configurations_retrieve
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - finance
+      security:
+      - ActiveUserJWT: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BankProcessingConfiguration'
+          description: ''
+    put:
+      operationId: finance_bank_processing_configurations_update
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - finance
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/BankProcessingConfigurationRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/BankProcessingConfigurationRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/BankProcessingConfigurationRequest'
+        required: true
+      security:
+      - ActiveUserJWT: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BankProcessingConfiguration'
+          description: ''
+    patch:
+      operationId: finance_bank_processing_configurations_partial_update
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - finance
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PatchedBankProcessingConfigurationRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/PatchedBankProcessingConfigurationRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/PatchedBankProcessingConfigurationRequest'
+      security:
+      - ActiveUserJWT: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BankProcessingConfiguration'
+          description: ''
+    delete:
+      operationId: finance_bank_processing_configurations_destroy
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - finance
+      security:
+      - ActiveUserJWT: []
+      responses:
+        '204':
+          description: No response body
+  /api/finance/banks/:
+    get:
+      operationId: finance_banks_retrieve
+      description: |-
+        Return banks.
+
+        Master users can see all banks so that
+        inactive banks can be reactivated.
+
+        Other authenticated users only receive
+        active banks for frontend financing use.
+      tags:
+      - finance
+      security:
+      - ActiveUserJWT: []
+      responses:
+        '200':
+          description: No response body
+    post:
+      operationId: finance_banks_create
+      description: |-
+        Create a bank.
+
+        Master users only.
+      tags:
+      - finance
+      security:
+      - ActiveUserJWT: []
+      responses:
+        '200':
+          description: No response body
+  /api/finance/banks/{id}/:
+    patch:
+      operationId: finance_banks_partial_update
+      description: Update a bank.
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - finance
+      security:
+      - ActiveUserJWT: []
+      responses:
+        '200':
+          description: No response body
+  /api/finance/cash-deals/:
+    get:
+      operationId: finance_cash_deals_retrieve
+      tags:
+      - finance
+      security:
+      - ActiveUserJWT: []
+      responses:
+        '200':
+          description: No response body
+    post:
+      operationId: finance_cash_deals_create
+      tags:
+      - finance
+      security:
+      - ActiveUserJWT: []
+      responses:
+        '200':
+          description: No response body
+  /api/finance/cash-deals/{id}/:
+    get:
+      operationId: finance_cash_deals_retrieve_2
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - finance
+      security:
+      - ActiveUserJWT: []
+      responses:
+        '200':
+          description: No response body
+    patch:
+      operationId: finance_cash_deals_partial_update
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - finance
+      security:
+      - ActiveUserJWT: []
+      responses:
+        '200':
+          description: No response body
+  /api/finance/cash-receipts/:
+    get:
+      operationId: finance_cash_receipts_retrieve
+      tags:
+      - finance
+      security:
+      - ActiveUserJWT: []
+      responses:
+        '200':
+          description: No response body
+    post:
+      operationId: finance_cash_receipts_create
+      tags:
+      - finance
+      security:
+      - ActiveUserJWT: []
+      responses:
+        '200':
+          description: No response body
+  /api/finance/cash-receipts/{id}/:
+    get:
+      operationId: finance_cash_receipts_retrieve_2
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - finance
+      security:
+      - ActiveUserJWT: []
+      responses:
+        '200':
+          description: No response body
+    patch:
+      operationId: finance_cash_receipts_partial_update
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - finance
+      security:
+      - ActiveUserJWT: []
+      responses:
+        '200':
+          description: No response body
+  /api/finance/cash-receipts/{id}/reverse/:
+    post:
+      operationId: finance_cash_receipts_reverse_create
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - finance
+      security:
+      - ActiveUserJWT: []
+      responses:
+        '200':
+          description: No response body
+  /api/finance/cash-receipts/categories/:
+    get:
+      operationId: finance_cash_receipts_categories_retrieve
+      tags:
+      - finance
+      security:
+      - ActiveUserJWT: []
+      responses:
+        '200':
+          description: No response body
+  /api/finance/cash-receipts/customers/{customer_id}/deals/:
+    get:
+      operationId: finance_cash_receipts_customers_deals_retrieve
+      parameters:
+      - in: path
+        name: customer_id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - finance
+      security:
+      - ActiveUserJWT: []
+      responses:
+        '200':
+          description: No response body
+  /api/finance/emi/:
+    get:
+      operationId: finance_emi_retrieve
+      description: Return saved EMI sheets.
+      tags:
+      - finance
+      security:
+      - ActiveUserJWT: []
+      responses:
+        '200':
+          description: No response body
+    post:
+      operationId: finance_emi_create
+      description: Create and persist an EMI sheet.
+      tags:
+      - finance
+      security:
+      - ActiveUserJWT: []
+      responses:
+        '200':
+          description: No response body
+  /api/finance/emi/{id}/:
+    get:
+      operationId: finance_emi_retrieve_2
+      description: Return one EMI sheet.
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - finance
+      security:
+      - ActiveUserJWT: []
+      responses:
+        '200':
+          description: No response body
+    patch:
+      operationId: finance_emi_partial_update
+      description: |-
+        Update editable EMI sheet information.
+        Financial snapshot fields remain immutable.
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - finance
+      security:
+      - ActiveUserJWT: []
+      responses:
+        '200':
+          description: No response body
+    delete:
+      operationId: finance_emi_destroy
+      description: |-
+        Delete an EMI sheet.
+        Master-only.
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - finance
+      security:
+      - ActiveUserJWT: []
+      responses:
+        '204':
+          description: No response body
+  /api/finance/emi/calculate/:
+    post:
+      operationId: finance_emi_calculate_create
+      description: Calculate an EMI without saving it.
+      tags:
+      - finance
+      security:
+      - ActiveUserJWT: []
+      responses:
+        '200':
+          description: No response body
+  /api/finance/expense-presets/:
+    get:
+      operationId: finance_expense_presets_list
+      tags:
+      - finance
+      security:
+      - ActiveUserJWT: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/ExpensePreset'
+          description: ''
+    post:
+      operationId: finance_expense_presets_create
+      tags:
+      - finance
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ExpensePresetRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/ExpensePresetRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/ExpensePresetRequest'
+        required: true
+      security:
+      - ActiveUserJWT: []
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ExpensePreset'
+          description: ''
+  /api/finance/expense-presets/{id}/:
+    get:
+      operationId: finance_expense_presets_retrieve
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - finance
+      security:
+      - ActiveUserJWT: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ExpensePreset'
+          description: ''
+    put:
+      operationId: finance_expense_presets_update
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - finance
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ExpensePresetRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/ExpensePresetRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/ExpensePresetRequest'
+        required: true
+      security:
+      - ActiveUserJWT: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ExpensePreset'
+          description: ''
+    patch:
+      operationId: finance_expense_presets_partial_update
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - finance
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PatchedExpensePresetRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/PatchedExpensePresetRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/PatchedExpensePresetRequest'
+      security:
+      - ActiveUserJWT: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ExpensePreset'
+          description: ''
+    delete:
+      operationId: finance_expense_presets_destroy
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - finance
+      security:
+      - ActiveUserJWT: []
+      responses:
+        '204':
+          description: No response body
+  /api/finance/insurance-bands/:
+    get:
+      operationId: finance_insurance_bands_list
+      tags:
+      - finance
+      security:
+      - ActiveUserJWT: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/InsuranceBand'
+          description: ''
+    post:
+      operationId: finance_insurance_bands_create
+      tags:
+      - finance
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/InsuranceBandRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/InsuranceBandRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/InsuranceBandRequest'
+        required: true
+      security:
+      - ActiveUserJWT: []
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/InsuranceBand'
+          description: ''
+  /api/finance/insurance-bands/{id}/:
+    get:
+      operationId: finance_insurance_bands_retrieve
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - finance
+      security:
+      - ActiveUserJWT: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/InsuranceBand'
+          description: ''
+    put:
+      operationId: finance_insurance_bands_update
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - finance
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/InsuranceBandRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/InsuranceBandRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/InsuranceBandRequest'
+        required: true
+      security:
+      - ActiveUserJWT: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/InsuranceBand'
+          description: ''
+    patch:
+      operationId: finance_insurance_bands_partial_update
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - finance
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PatchedInsuranceBandRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/PatchedInsuranceBandRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/PatchedInsuranceBandRequest'
+      security:
+      - ActiveUserJWT: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/InsuranceBand'
+          description: ''
+    delete:
+      operationId: finance_insurance_bands_destroy
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - finance
+      security:
+      - ActiveUserJWT: []
+      responses:
+        '204':
+          description: No response body
+  /api/finance/service-packages/:
+    get:
+      operationId: finance_service_packages_list
+      description: List and create Master service packages.
+      tags:
+      - finance
+      security:
+      - ActiveUserJWT: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/ServicePackage'
+          description: ''
+    post:
+      operationId: finance_service_packages_create
+      description: List and create Master service packages.
+      tags:
+      - finance
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ServicePackageRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/ServicePackageRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/ServicePackageRequest'
+        required: true
+      security:
+      - ActiveUserJWT: []
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ServicePackage'
+          description: ''
+  /api/finance/service-packages/{id}/:
+    get:
+      operationId: finance_service_packages_retrieve
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - finance
+      security:
+      - ActiveUserJWT: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ServicePackage'
+          description: ''
+    put:
+      operationId: finance_service_packages_update
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - finance
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ServicePackageRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/ServicePackageRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/ServicePackageRequest'
+        required: true
+      security:
+      - ActiveUserJWT: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ServicePackage'
+          description: ''
+    patch:
+      operationId: finance_service_packages_partial_update
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - finance
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PatchedServicePackageRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/PatchedServicePackageRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/PatchedServicePackageRequest'
+      security:
+      - ActiveUserJWT: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ServicePackage'
+          description: ''
+    delete:
+      operationId: finance_service_packages_destroy
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - finance
+      security:
+      - ActiveUserJWT: []
+      responses:
+        '204':
+          description: No response body
+  /api/insurance/:
+    get:
+      operationId: insurance_retrieve
+      tags:
+      - insurance
+      security:
+      - ActiveUserJWT: []
+      responses:
+        '200':
+          description: No response body
+  /api/insurance/{id}/:
+    get:
+      operationId: insurance_retrieve_2
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - insurance
+      security:
+      - ActiveUserJWT: []
+      responses:
+        '200':
+          description: No response body
+  /api/insurance/{id}/renewal/approve/:
+    post:
+      operationId: insurance_renewal_approve_create
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - insurance
+      security:
+      - ActiveUserJWT: []
+      responses:
+        '200':
+          description: No response body
+  /api/insurance/{id}/renewal/start/:
+    post:
+      operationId: insurance_renewal_start_create
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - insurance
+      security:
+      - ActiveUserJWT: []
+      responses:
+        '200':
+          description: No response body
+  /api/insurance/{id}/renewal/status/:
+    patch:
+      operationId: insurance_renewal_status_partial_update
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - insurance
+      security:
+      - ActiveUserJWT: []
+      responses:
+        '200':
+          description: No response body
+  /api/insurance/{id}/status/:
+    patch:
+      operationId: insurance_status_partial_update
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - insurance
+      security:
+      - ActiveUserJWT: []
+      responses:
+        '200':
+          description: No response body
+  /api/insurance/quotes/{quote_id}/create/:
+    post:
+      operationId: insurance_quotes_create_create
+      parameters:
+      - in: path
+        name: quote_id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - insurance
+      security:
+      - ActiveUserJWT: []
+      responses:
+        '200':
+          description: No response body
+  /api/inventory/car-demands/:
+    get:
+      operationId: inventory_car_demands_retrieve
+      tags:
+      - inventory
+      security:
+      - ActiveUserJWT: []
+      responses:
+        '200':
+          description: No response body
+    post:
+      operationId: inventory_car_demands_create
+      tags:
+      - inventory
+      security:
+      - ActiveUserJWT: []
+      responses:
+        '200':
+          description: No response body
+  /api/inventory/car-demands/{demand_id}/:
+    get:
+      operationId: inventory_car_demands_retrieve_2
+      parameters:
+      - in: path
+        name: demand_id
+        schema:
+          type: string
+          format: uuid
+        required: true
+      tags:
+      - inventory
+      security:
+      - ActiveUserJWT: []
+      responses:
+        '200':
+          description: No response body
+    patch:
+      operationId: inventory_car_demands_partial_update
+      parameters:
+      - in: path
+        name: demand_id
+        schema:
+          type: string
+          format: uuid
+        required: true
+      tags:
+      - inventory
+      security:
+      - ActiveUserJWT: []
+      responses:
+        '200':
+          description: No response body
+    delete:
+      operationId: inventory_car_demands_destroy
+      parameters:
+      - in: path
+        name: demand_id
+        schema:
+          type: string
+          format: uuid
+        required: true
+      tags:
+      - inventory
+      security:
+      - ActiveUserJWT: []
+      responses:
+        '204':
+          description: No response body
+  /api/inventory/car-demands/{demand_id}/link/:
+    post:
+      operationId: inventory_car_demands_link_create
+      parameters:
+      - in: path
+        name: demand_id
+        schema:
+          type: string
+          format: uuid
+        required: true
+      tags:
+      - inventory
+      security:
+      - ActiveUserJWT: []
+      responses:
+        '200':
+          description: No response body
+  /api/inventory/car-demands/{demand_id}/matches/:
+    get:
+      operationId: inventory_car_demands_matches_retrieve
+      parameters:
+      - in: path
+        name: demand_id
+        schema:
+          type: string
+          format: uuid
+        required: true
+      tags:
+      - inventory
+      security:
+      - ActiveUserJWT: []
+      responses:
+        '200':
+          description: No response body
+  /api/inventory/car-demands/{demand_id}/unlink/:
+    post:
+      operationId: inventory_car_demands_unlink_create
+      parameters:
+      - in: path
+        name: demand_id
+        schema:
+          type: string
+          format: uuid
+        required: true
+      tags:
+      - inventory
+      security:
+      - ActiveUserJWT: []
+      responses:
+        '200':
+          description: No response body
+  /api/inventory/cars/:
+    get:
+      operationId: inventory_cars_retrieve
+      tags:
+      - inventory
+      security:
+      - ActiveUserJWT: []
+      responses:
+        '200':
+          description: No response body
+    post:
+      operationId: inventory_cars_create
+      tags:
+      - inventory
+      security:
+      - ActiveUserJWT: []
+      responses:
+        '200':
+          description: No response body
+  /api/inventory/cars/{car_id}/:
+    get:
+      operationId: inventory_cars_retrieve_2
+      parameters:
+      - in: path
+        name: car_id
+        schema:
+          type: string
+          format: uuid
+        required: true
+      tags:
+      - inventory
+      security:
+      - ActiveUserJWT: []
+      responses:
+        '200':
+          description: No response body
+    put:
+      operationId: inventory_cars_update
+      parameters:
+      - in: path
+        name: car_id
+        schema:
+          type: string
+          format: uuid
+        required: true
+      tags:
+      - inventory
+      security:
+      - ActiveUserJWT: []
+      responses:
+        '200':
+          description: No response body
+    patch:
+      operationId: inventory_cars_partial_update
+      parameters:
+      - in: path
+        name: car_id
+        schema:
+          type: string
+          format: uuid
+        required: true
+      tags:
+      - inventory
+      security:
+      - ActiveUserJWT: []
+      responses:
+        '200':
+          description: No response body
+    delete:
+      operationId: inventory_cars_destroy
+      parameters:
+      - in: path
+        name: car_id
+        schema:
+          type: string
+          format: uuid
+        required: true
+      tags:
+      - inventory
+      security:
+      - ActiveUserJWT: []
+      responses:
+        '204':
+          description: No response body
+  /api/inventory/cars/{car_id}/documents/:
+    get:
+      operationId: inventory_cars_documents_retrieve
+      parameters:
+      - in: path
+        name: car_id
+        schema:
+          type: string
+          format: uuid
+        required: true
+      tags:
+      - inventory
+      security:
+      - ActiveUserJWT: []
+      responses:
+        '200':
+          description: No response body
+    post:
+      operationId: inventory_cars_documents_create
+      parameters:
+      - in: path
+        name: car_id
+        schema:
+          type: string
+          format: uuid
+        required: true
+      tags:
+      - inventory
+      security:
+      - ActiveUserJWT: []
+      responses:
+        '200':
+          description: No response body
+  /api/inventory/cars/{car_id}/expenses/:
+    get:
+      operationId: inventory_cars_expenses_retrieve
+      parameters:
+      - in: path
+        name: car_id
+        schema:
+          type: string
+          format: uuid
+        required: true
+      tags:
+      - inventory
+      security:
+      - ActiveUserJWT: []
+      responses:
+        '200':
+          description: No response body
+    post:
+      operationId: inventory_cars_expenses_create
+      parameters:
+      - in: path
+        name: car_id
+        schema:
+          type: string
+          format: uuid
+        required: true
+      tags:
+      - inventory
+      security:
+      - ActiveUserJWT: []
+      responses:
+        '200':
+          description: No response body
+  /api/inventory/cars/{car_id}/images/reorder/:
+    patch:
+      operationId: inventory_cars_images_reorder_partial_update
+      parameters:
+      - in: path
+        name: car_id
+        schema:
+          type: string
+          format: uuid
+        required: true
+      tags:
+      - inventory
+      security:
+      - ActiveUserJWT: []
+      responses:
+        '200':
+          description: No response body
+  /api/inventory/cars/brands/:
+    get:
+      operationId: inventory_cars_brands_retrieve
+      tags:
+      - inventory
+      security:
+      - ActiveUserJWT: []
+      responses:
+        '200':
+          description: No response body
+  /api/inventory/cars/bulk/:
+    delete:
+      operationId: inventory_cars_bulk_destroy
+      tags:
+      - inventory
+      security:
+      - ActiveUserJWT: []
+      responses:
+        '204':
+          description: No response body
+  /api/inventory/cars/import/:
+    post:
+      operationId: inventory_cars_import_create
+      tags:
+      - inventory
+      security:
+      - ActiveUserJWT: []
+      responses:
+        '200':
+          description: No response body
+  /api/inventory/cars/print/:
+    get:
+      operationId: inventory_cars_print_retrieve
+      tags:
+      - inventory
+      security:
+      - ActiveUserJWT: []
+      responses:
+        '200':
+          description: No response body
+  /api/inventory/dashboard/:
+    get:
+      operationId: inventory_dashboard_retrieve
+      tags:
+      - inventory
+      security:
+      - ActiveUserJWT: []
+      responses:
+        '200':
+          description: No response body
+  /api/inventory/documents/{document_id}/archive/:
+    post:
+      operationId: inventory_documents_archive_create
+      parameters:
+      - in: path
+        name: document_id
+        schema:
+          type: string
+          format: uuid
+        required: true
+      tags:
+      - inventory
+      security:
+      - ActiveUserJWT: []
+      responses:
+        '200':
+          description: No response body
+  /api/inventory/documents/{document_id}/delete/:
+    delete:
+      operationId: inventory_documents_delete_destroy
+      parameters:
+      - in: path
+        name: document_id
+        schema:
+          type: string
+          format: uuid
+        required: true
+      tags:
+      - inventory
+      security:
+      - ActiveUserJWT: []
+      responses:
+        '204':
+          description: No response body
+  /api/inventory/expenses/{expense_id}/:
+    patch:
+      operationId: inventory_expenses_partial_update
+      parameters:
+      - in: path
+        name: expense_id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - inventory
+      security:
+      - ActiveUserJWT: []
+      responses:
+        '200':
+          description: No response body
+    delete:
+      operationId: inventory_expenses_destroy
+      parameters:
+      - in: path
+        name: expense_id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - inventory
+      security:
+      - ActiveUserJWT: []
+      responses:
+        '204':
+          description: No response body
+  /api/inventory/images/{image_id}/:
+    delete:
+      operationId: inventory_images_destroy
+      parameters:
+      - in: path
+        name: image_id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - inventory
+      security:
+      - ActiveUserJWT: []
+      responses:
+        '204':
+          description: No response body
+  /api/inventory/images/{image_id}/cover/:
+    patch:
+      operationId: inventory_images_cover_partial_update
+      parameters:
+      - in: path
+        name: image_id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - inventory
+      security:
+      - ActiveUserJWT: []
+      responses:
+        '200':
+          description: No response body
+  /api/inventory/images/bulk-delete/:
+    post:
+      operationId: inventory_images_bulk_delete_create
+      tags:
+      - inventory
+      security:
+      - ActiveUserJWT: []
+      responses:
+        '200':
+          description: No response body
+  /api/inventory/procurement-checks/:
+    get:
+      operationId: inventory_procurement_checks_retrieve
+      tags:
+      - inventory
+      security:
+      - ActiveUserJWT: []
+      responses:
+        '200':
+          description: No response body
+    post:
+      operationId: inventory_procurement_checks_create
+      tags:
+      - inventory
+      security:
+      - ActiveUserJWT: []
+      responses:
+        '200':
+          description: No response body
+  /api/inventory/procurement-checks/{id}/:
+    get:
+      operationId: inventory_procurement_checks_retrieve_2
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - inventory
+      security:
+      - ActiveUserJWT: []
+      responses:
+        '200':
+          description: No response body
+    patch:
+      operationId: inventory_procurement_checks_partial_update
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - inventory
+      security:
+      - ActiveUserJWT: []
+      responses:
+        '200':
+          description: No response body
+    delete:
+      operationId: inventory_procurement_checks_destroy
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - inventory
+      security:
+      - ActiveUserJWT: []
+      responses:
+        '204':
+          description: No response body
+  /api/inventory/special-price/:
+    get:
+      operationId: inventory_special_price_retrieve
+      tags:
+      - inventory
+      security:
+      - ActiveUserJWT: []
+      responses:
+        '200':
+          description: No response body
+  /api/inventory/special-price/{id}/decision/:
+    post:
+      operationId: inventory_special_price_decision_create
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - inventory
+      security:
+      - ActiveUserJWT: []
+      responses:
+        '200':
+          description: No response body
+  /api/inventory/special-price/request/:
+    post:
+      operationId: inventory_special_price_request_create
+      tags:
+      - inventory
+      security:
+      - ActiveUserJWT: []
+      responses:
+        '200':
+          description: No response body
+  /api/leads/:
+    get:
+      operationId: leads_retrieve
+      tags:
+      - leads
+      security:
+      - ActiveUserJWT: []
+      responses:
+        '200':
+          description: No response body
+    post:
+      operationId: leads_create
+      tags:
+      - leads
+      security:
+      - ActiveUserJWT: []
+      responses:
+        '200':
+          description: No response body
+  /api/leads/{id}/:
+    get:
+      operationId: leads_retrieve_2
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - leads
+      security:
+      - ActiveUserJWT: []
+      responses:
+        '200':
+          description: No response body
+    patch:
+      operationId: leads_partial_update
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - leads
+      security:
+      - ActiveUserJWT: []
+      responses:
+        '200':
+          description: No response body
+    delete:
+      operationId: leads_destroy
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - leads
+      security:
+      - ActiveUserJWT: []
+      responses:
+        '204':
+          description: No response body
+  /api/leads/{id}/activities/:
+    post:
+      operationId: leads_activities_create
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - leads
+      security:
+      - ActiveUserJWT: []
+      responses:
+        '200':
+          description: No response body
+  /api/ledger-accounts/summary/:
+    get:
+      operationId: ledger_accounts_summary_retrieve
+      description: |-
+        Read-only Ledger Accounts summary.
+
+        No financial records are created or modified here.
+      tags:
+      - ledger-accounts
+      security:
+      - ActiveUserJWT: []
+      responses:
+        '200':
+          description: No response body
+  /api/proforma/:
+    get:
+      operationId: proforma_retrieve
+      tags:
+      - proforma
+      security:
+      - ActiveUserJWT: []
+      responses:
+        '200':
+          description: No response body
+    post:
+      operationId: proforma_create
+      tags:
+      - proforma
+      security:
+      - ActiveUserJWT: []
+      responses:
+        '200':
+          description: No response body
+  /api/proforma/{id}/:
+    get:
+      operationId: proforma_retrieve_2
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - proforma
+      security:
+      - ActiveUserJWT: []
+      responses:
+        '200':
+          description: No response body
+    patch:
+      operationId: proforma_partial_update
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - proforma
+      security:
+      - ActiveUserJWT: []
+      responses:
+        '200':
+          description: No response body
+    delete:
+      operationId: proforma_destroy
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - proforma
+      security:
+      - ActiveUserJWT: []
+      responses:
+        '204':
+          description: No response body
+  /api/progression/:
+    get:
+      operationId: progression_retrieve
+      tags:
+      - progression
+      security:
+      - ActiveUserJWT: []
+      responses:
+        '200':
+          description: No response body
+  /api/progression/{id}/:
+    get:
+      operationId: progression_retrieve_2
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - progression
+      security:
+      - ActiveUserJWT: []
+      responses:
+        '200':
+          description: No response body
+    patch:
+      operationId: progression_partial_update
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - progression
+      security:
+      - ActiveUserJWT: []
+      responses:
+        '200':
+          description: No response body
+  /api/progression/{id}/advance/:
+    post:
+      operationId: progression_advance_create
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - progression
+      security:
+      - ActiveUserJWT: []
+      responses:
+        '200':
+          description: No response body
+  /api/progression/{id}/registration-documents/:
+    get:
+      operationId: progression_registration_documents_retrieve
+      description: |-
+        Returns all stored customer and vehicle documents
+        linked to a progression's quote.
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - progression
+      security:
+      - ActiveUserJWT: []
+      responses:
+        '200':
+          description: No response body
+  /api/progression/{id}/registration-documents/{source}/{document_id}/download/:
+    get:
+      operationId: progression_registration_documents_download_retrieve
+      parameters:
+      - in: path
+        name: document_id
+        schema:
+          type: string
+        required: true
+      - in: path
+        name: id
+        schema:
+          type: integer
+        required: true
+      - in: path
+        name: source
+        schema:
+          type: string
+        required: true
+      tags:
+      - progression
+      security:
+      - ActiveUserJWT: []
+      responses:
+        '200':
+          description: No response body
+  /api/quotes/:
+    get:
+      operationId: quotes_retrieve
+      tags:
+      - quotes
+      security:
+      - ActiveUserJWT: []
+      responses:
+        '200':
+          description: No response body
+    post:
+      operationId: quotes_create
+      tags:
+      - quotes
+      security:
+      - ActiveUserJWT: []
+      responses:
+        '200':
+          description: No response body
+  /api/quotes/{id}/:
+    get:
+      operationId: quotes_retrieve_2
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - quotes
+      security:
+      - ActiveUserJWT: []
+      responses:
+        '200':
+          description: No response body
+    patch:
+      operationId: quotes_partial_update
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - quotes
+      security:
+      - ActiveUserJWT: []
+      responses:
+        '200':
+          description: No response body
+    delete:
+      operationId: quotes_destroy
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - quotes
+      security:
+      - ActiveUserJWT: []
+      responses:
+        '204':
+          description: No response body
+  /api/quotes/{id}/print/:
+    get:
+      operationId: quotes_print_retrieve
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - quotes
+      security:
+      - ActiveUserJWT: []
+      responses:
+        '200':
+          description: No response body
+  /api/quotes/{id}/proceed-to-bank-loan/:
+    post:
+      operationId: quotes_proceed_to_bank_loan_create
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - quotes
+      security:
+      - ActiveUserJWT: []
+      responses:
+        '200':
+          description: No response body
+  /api/quotes/{id}/proceed-to-cash-deal/:
+    post:
+      operationId: quotes_proceed_to_cash_deal_create
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - quotes
+      security:
+      - ActiveUserJWT: []
+      responses:
+        '200':
+          description: No response body
+  /api/rta/:
+    get:
+      operationId: rta_list
+      tags:
+      - rta
+      security:
+      - ActiveUserJWT: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/RTARecord'
+          description: ''
+    post:
+      operationId: rta_create
+      tags:
+      - rta
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RTARecordRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/RTARecordRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/RTARecordRequest'
+        required: true
+      security:
+      - ActiveUserJWT: []
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RTARecord'
+          description: ''
+  /api/rta/{id}/:
+    get:
+      operationId: rta_retrieve
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - rta
+      security:
+      - ActiveUserJWT: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RTARecord'
+          description: ''
+    put:
+      operationId: rta_update
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - rta
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RTARecordRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/RTARecordRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/RTARecordRequest'
+        required: true
+      security:
+      - ActiveUserJWT: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RTARecord'
+          description: ''
+    patch:
+      operationId: rta_partial_update
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - rta
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PatchedRTARecordRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/PatchedRTARecordRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/PatchedRTARecordRequest'
+      security:
+      - ActiveUserJWT: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RTARecord'
+          description: ''
+  /api/staff/:
+    get:
+      operationId: staff_retrieve
+      tags:
+      - staff
+      security:
+      - ActiveUserJWT: []
+      responses:
+        '200':
+          description: No response body
+    post:
+      operationId: staff_create
+      tags:
+      - staff
+      security:
+      - ActiveUserJWT: []
+      responses:
+        '200':
+          description: No response body
+  /api/staff/{id}/:
+    get:
+      operationId: staff_retrieve_2
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - staff
+      security:
+      - ActiveUserJWT: []
+      responses:
+        '200':
+          description: No response body
+    patch:
+      operationId: staff_partial_update
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - staff
+      security:
+      - ActiveUserJWT: []
+      responses:
+        '200':
+          description: No response body
+    delete:
+      operationId: staff_destroy
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - staff
+      security:
+      - ActiveUserJWT: []
+      responses:
+        '204':
+          description: No response body
+  /api/staff/{id}/activate/:
+    post:
+      operationId: staff_activate_create
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - staff
+      security:
+      - ActiveUserJWT: []
+      responses:
+        '200':
+          description: No response body
+  /api/staff/{id}/performance/:
+    get:
+      operationId: staff_performance_retrieve
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - staff
+      security:
+      - ActiveUserJWT: []
+      responses:
+        '200':
+          description: No response body
+  /api/staff/user-access/:
+    get:
+      operationId: staff_user_access_retrieve
+      tags:
+      - staff
+      security:
+      - ActiveUserJWT: []
+      responses:
+        '200':
+          description: No response body
+    post:
+      operationId: staff_user_access_create
+      tags:
+      - staff
+      security:
+      - ActiveUserJWT: []
+      responses:
+        '200':
+          description: No response body
+  /api/staff/user-access/{id}/:
+    get:
+      operationId: staff_user_access_retrieve_2
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+          format: uuid
+        required: true
+      tags:
+      - staff
+      security:
+      - ActiveUserJWT: []
+      responses:
+        '200':
+          description: No response body
+    patch:
+      operationId: staff_user_access_partial_update
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+          format: uuid
+        required: true
+      tags:
+      - staff
+      security:
+      - ActiveUserJWT: []
+      responses:
+        '200':
+          description: No response body
+    delete:
+      operationId: staff_user_access_destroy
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+          format: uuid
+        required: true
+      tags:
+      - staff
+      security:
+      - ActiveUserJWT: []
+      responses:
+        '204':
+          description: No response body
+  /api/staff/user-access/{id}/activate/:
+    post:
+      operationId: staff_user_access_activate_create
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+          format: uuid
+        required: true
+      tags:
+      - staff
+      security:
+      - ActiveUserJWT: []
+      responses:
+        '200':
+          description: No response body
+  /api/staff/user-access/{id}/password/:
+    post:
+      operationId: staff_user_access_password_create
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+          format: uuid
+        required: true
+      tags:
+      - staff
+      security:
+      - ActiveUserJWT: []
+      responses:
+        '200':
+          description: No response body
+components:
+  schemas:
+    BankProcessingConfiguration:
+      type: object
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        bank:
+          type: integer
+        bank_name:
+          type: string
+          readOnly: true
+        percentage:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,3}(?:\.\d{0,4})?$
+        minimum_amount:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,10}(?:\.\d{0,2})?$
+        application_charge:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,10}(?:\.\d{0,2})?$
+        is_active:
+          type: boolean
+        created_at:
+          type: string
+          format: date-time
+          readOnly: true
+        updated_at:
+          type: string
+          format: date-time
+          readOnly: true
+      required:
+      - bank
+      - bank_name
+      - created_at
+      - id
+      - updated_at
+    BankProcessingConfigurationRequest:
+      type: object
+      properties:
+        bank:
+          type: integer
+        percentage:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,3}(?:\.\d{0,4})?$
+        minimum_amount:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,10}(?:\.\d{0,2})?$
+        application_charge:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,10}(?:\.\d{0,2})?$
+        is_active:
+          type: boolean
+      required:
+      - bank
+    CalculationTypeEnum:
+      enum:
+      - fixed
+      - percentage_minimum
+      - conditional
+      type: string
+      description: |-
+        * `fixed` - Fixed amount
+        * `percentage_minimum` - Percentage with minimum
+        * `conditional` - Conditional value
+    Company:
+      type: object
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        legal_entity_name:
+          type: string
+          maxLength: 255
+        tax_registration_number:
+          type: string
+          maxLength: 100
+        showroom_address:
+          type: string
+        main_contact_mobile:
+          type: string
+          maxLength: 30
+        default_currency:
+          type: string
+          maxLength: 10
+        default_regional_spec:
+          type: string
+          maxLength: 100
+        is_active:
+          type: boolean
+        branches:
+          type: array
+          items:
+            $ref: '#/components/schemas/CompanyBranch'
+          readOnly: true
+        created_at:
+          type: string
+          format: date-time
+          readOnly: true
+        updated_at:
+          type: string
+          format: date-time
+          readOnly: true
+      required:
+      - branches
+      - created_at
+      - id
+      - legal_entity_name
+      - updated_at
+    CompanyBranch:
+      type: object
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        company:
+          type: integer
+        name:
+          type: string
+          maxLength: 255
+        address:
+          type: string
+        contact_mobile:
+          type: string
+          maxLength: 30
+        is_active:
+          type: boolean
+        created_at:
+          type: string
+          format: date-time
+          readOnly: true
+        updated_at:
+          type: string
+          format: date-time
+          readOnly: true
+      required:
+      - company
+      - created_at
+      - id
+      - name
+      - updated_at
+    CompanyBranchRequest:
+      type: object
+      properties:
+        company:
+          type: integer
+        name:
+          type: string
+          minLength: 1
+          maxLength: 255
+        address:
+          type: string
+        contact_mobile:
+          type: string
+          maxLength: 30
+        is_active:
+          type: boolean
+      required:
+      - company
+      - name
+    CompanyRequest:
+      type: object
+      properties:
+        legal_entity_name:
+          type: string
+          minLength: 1
+          maxLength: 255
+        tax_registration_number:
+          type: string
+          maxLength: 100
+        showroom_address:
+          type: string
+        main_contact_mobile:
+          type: string
+          maxLength: 30
+        default_currency:
+          type: string
+          minLength: 1
+          maxLength: 10
+        default_regional_spec:
+          type: string
+          minLength: 1
+          maxLength: 100
+        is_active:
+          type: boolean
+      required:
+      - legal_entity_name
+    CurrentUser:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+          readOnly: true
+        email:
+          type: string
+          format: email
+          maxLength: 254
+        first_name:
+          type: string
+          maxLength: 100
+        last_name:
+          type: string
+          maxLength: 100
+        phone:
+          type: string
+          maxLength: 20
+        role:
+          $ref: '#/components/schemas/RoleEnum'
+        profile_image:
+          type: string
+          readOnly: true
+        is_active:
+          type: boolean
+      required:
+      - email
+      - first_name
+      - id
+      - profile_image
+    CurrentUserResponse:
+      type: object
+      properties:
+        success:
+          type: boolean
+        data:
+          $ref: '#/components/schemas/CurrentUser'
+      required:
+      - data
+      - success
+    ExpensePreset:
+      type: object
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        name:
+          type: string
+          maxLength: 150
+        expense_type:
+          type: string
+          maxLength: 80
+        calculation_type:
+          $ref: '#/components/schemas/CalculationTypeEnum'
+        amount:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,10}(?:\.\d{0,2})?$
+        percentage:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,3}(?:\.\d{0,4})?$
+          nullable: true
+        minimum_amount:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,10}(?:\.\d{0,2})?$
+          nullable: true
+        condition_key:
+          type: string
+          maxLength: 80
+        condition_value:
+          type: string
+          maxLength: 80
+        is_active:
+          type: boolean
+        created_at:
+          type: string
+          format: date-time
+          readOnly: true
+        updated_at:
+          type: string
+          format: date-time
+          readOnly: true
+      required:
+      - created_at
+      - expense_type
+      - id
+      - name
+      - updated_at
+    ExpensePresetRequest:
+      type: object
+      properties:
+        name:
+          type: string
+          minLength: 1
+          maxLength: 150
+        expense_type:
+          type: string
+          minLength: 1
+          maxLength: 80
+        calculation_type:
+          $ref: '#/components/schemas/CalculationTypeEnum'
+        amount:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,10}(?:\.\d{0,2})?$
+        percentage:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,3}(?:\.\d{0,4})?$
+          nullable: true
+        minimum_amount:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,10}(?:\.\d{0,2})?$
+          nullable: true
+        condition_key:
+          type: string
+          maxLength: 80
+        condition_value:
+          type: string
+          maxLength: 80
+        is_active:
+          type: boolean
+      required:
+      - expense_type
+      - name
+    FirstPartyRoleEnum:
+      enum:
+      - COMPANY
+      - CUSTOMER
+      - SUPPLIER
+      - OTHER
+      type: string
+      description: |-
+        * `COMPANY` - Company
+        * `CUSTOMER` - Customer
+        * `SUPPLIER` - Supplier
+        * `OTHER` - Other
+    InsuranceBand:
+      type: object
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        name:
+          type: string
+          maxLength: 150
+        minimum_vehicle_price:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,10}(?:\.\d{0,2})?$
+        maximum_vehicle_price:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,10}(?:\.\d{0,2})?$
+        amount:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,10}(?:\.\d{0,2})?$
+        no_license_surcharge:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,10}(?:\.\d{0,2})?$
+        is_active:
+          type: boolean
+        created_at:
+          type: string
+          format: date-time
+          readOnly: true
+        updated_at:
+          type: string
+          format: date-time
+          readOnly: true
+      required:
+      - amount
+      - created_at
+      - id
+      - maximum_vehicle_price
+      - minimum_vehicle_price
+      - name
+      - updated_at
+    InsuranceBandRequest:
+      type: object
+      properties:
+        name:
+          type: string
+          minLength: 1
+          maxLength: 150
+        minimum_vehicle_price:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,10}(?:\.\d{0,2})?$
+        maximum_vehicle_price:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,10}(?:\.\d{0,2})?$
+        amount:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,10}(?:\.\d{0,2})?$
+        no_license_surcharge:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,10}(?:\.\d{0,2})?$
+        is_active:
+          type: boolean
+      required:
+      - amount
+      - maximum_vehicle_price
+      - minimum_vehicle_price
+      - name
+    LoginData:
+      type: object
+      properties:
+        access:
+          type: string
+        refresh:
+          type: string
+        user:
+          $ref: '#/components/schemas/CurrentUser'
+      required:
+      - access
+      - refresh
+      - user
+    LoginRequest:
+      type: object
+      properties:
+        email:
+          type: string
+          format: email
+          minLength: 1
+        password:
+          type: string
+          writeOnly: true
+          minLength: 1
+      required:
+      - email
+      - password
+    LoginResponse:
+      type: object
+      properties:
+        success:
+          type: boolean
+        message:
+          type: string
+        data:
+          $ref: '#/components/schemas/LoginData'
+      required:
+      - data
+      - message
+      - success
+    PatchedBankProcessingConfigurationRequest:
+      type: object
+      properties:
+        bank:
+          type: integer
+        percentage:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,3}(?:\.\d{0,4})?$
+        minimum_amount:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,10}(?:\.\d{0,2})?$
+        application_charge:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,10}(?:\.\d{0,2})?$
+        is_active:
+          type: boolean
+    PatchedCompanyBranchRequest:
+      type: object
+      properties:
+        company:
+          type: integer
+        name:
+          type: string
+          minLength: 1
+          maxLength: 255
+        address:
+          type: string
+        contact_mobile:
+          type: string
+          maxLength: 30
+        is_active:
+          type: boolean
+    PatchedCompanyRequest:
+      type: object
+      properties:
+        legal_entity_name:
+          type: string
+          minLength: 1
+          maxLength: 255
+        tax_registration_number:
+          type: string
+          maxLength: 100
+        showroom_address:
+          type: string
+        main_contact_mobile:
+          type: string
+          maxLength: 30
+        default_currency:
+          type: string
+          minLength: 1
+          maxLength: 10
+        default_regional_spec:
+          type: string
+          minLength: 1
+          maxLength: 100
+        is_active:
+          type: boolean
+    PatchedExpensePresetRequest:
+      type: object
+      properties:
+        name:
+          type: string
+          minLength: 1
+          maxLength: 150
+        expense_type:
+          type: string
+          minLength: 1
+          maxLength: 80
+        calculation_type:
+          $ref: '#/components/schemas/CalculationTypeEnum'
+        amount:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,10}(?:\.\d{0,2})?$
+        percentage:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,3}(?:\.\d{0,4})?$
+          nullable: true
+        minimum_amount:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,10}(?:\.\d{0,2})?$
+          nullable: true
+        condition_key:
+          type: string
+          maxLength: 80
+        condition_value:
+          type: string
+          maxLength: 80
+        is_active:
+          type: boolean
+    PatchedInsuranceBandRequest:
+      type: object
+      properties:
+        name:
+          type: string
+          minLength: 1
+          maxLength: 150
+        minimum_vehicle_price:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,10}(?:\.\d{0,2})?$
+        maximum_vehicle_price:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,10}(?:\.\d{0,2})?$
+        amount:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,10}(?:\.\d{0,2})?$
+        no_license_surcharge:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,10}(?:\.\d{0,2})?$
+        is_active:
+          type: boolean
+    PatchedRTARecordRequest:
+      type: object
+      properties:
+        record_type:
+          $ref: '#/components/schemas/RecordTypeEnum'
+        status:
+          $ref: '#/components/schemas/StatusEnum'
+        rta_date:
+          type: string
+          format: date
+        quote:
+          type: integer
+        car:
+          type: string
+          format: uuid
+        customer:
+          type: integer
+          nullable: true
+        company:
+          type: integer
+        branch:
+          type: integer
+          nullable: true
+    PatchedServicePackageRequest:
+      type: object
+      properties:
+        name:
+          type: string
+          minLength: 1
+          maxLength: 150
+        description:
+          type: string
+          maxLength: 255
+        amount:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,10}(?:\.\d{0,2})?$
+        is_default:
+          type: boolean
+        is_active:
+          type: boolean
+    RTARecord:
+      type: object
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        record_type:
+          $ref: '#/components/schemas/RecordTypeEnum'
+        status:
+          $ref: '#/components/schemas/StatusEnum'
+        rta_date:
+          type: string
+          format: date
+        quote:
+          type: integer
+        car:
+          type: string
+          format: uuid
+        customer:
+          type: integer
+          nullable: true
+        company:
+          type: integer
+        branch:
+          type: integer
+          nullable: true
+        first_party_name:
+          type: string
+          readOnly: true
+        first_party_role:
+          allOf:
+          - $ref: '#/components/schemas/FirstPartyRoleEnum'
+          readOnly: true
+        second_party_name:
+          type: string
+          readOnly: true
+        second_party_role:
+          allOf:
+          - $ref: '#/components/schemas/SecondPartyRoleEnum'
+          readOnly: true
+        second_party_mobile:
+          type: string
+          readOnly: true
+        company_legal_name:
+          type: string
+          readOnly: true
+        trade_license_number:
+          type: string
+          readOnly: true
+        company_address:
+          type: string
+          readOnly: true
+        vehicle_stock_id:
+          type: string
+          readOnly: true
+        vehicle_make:
+          type: string
+          readOnly: true
+        vehicle_model:
+          type: string
+          readOnly: true
+        vehicle_variant:
+          type: string
+          readOnly: true
+        vehicle_type:
+          type: string
+          readOnly: true
+        vehicle_year:
+          type: integer
+          readOnly: true
+          nullable: true
+        vehicle_colour:
+          type: string
+          readOnly: true
+        vehicle_country_of_manufacture:
+          type: string
+          readOnly: true
+        vehicle_chassis_number:
+          type: string
+          readOnly: true
+        vehicle_engine_number:
+          type: string
+          readOnly: true
+        snapshot_data:
+          readOnly: true
+        created_at:
+          type: string
+          format: date-time
+          readOnly: true
+        updated_at:
+          type: string
+          format: date-time
+          readOnly: true
+      required:
+      - car
+      - company
+      - company_address
+      - company_legal_name
+      - created_at
+      - first_party_name
+      - first_party_role
+      - id
+      - quote
+      - record_type
+      - second_party_mobile
+      - second_party_name
+      - second_party_role
+      - snapshot_data
+      - trade_license_number
+      - updated_at
+      - vehicle_chassis_number
+      - vehicle_colour
+      - vehicle_country_of_manufacture
+      - vehicle_engine_number
+      - vehicle_make
+      - vehicle_model
+      - vehicle_stock_id
+      - vehicle_type
+      - vehicle_variant
+      - vehicle_year
+    RTARecordRequest:
+      type: object
+      properties:
+        record_type:
+          $ref: '#/components/schemas/RecordTypeEnum'
+        status:
+          $ref: '#/components/schemas/StatusEnum'
+        rta_date:
+          type: string
+          format: date
+        quote:
+          type: integer
+        car:
+          type: string
+          format: uuid
+        customer:
+          type: integer
+          nullable: true
+        company:
+          type: integer
+        branch:
+          type: integer
+          nullable: true
+      required:
+      - car
+      - company
+      - quote
+      - record_type
+    RecordTypeEnum:
+      enum:
+      - PURCHASE
+      - SALE
+      type: string
+      description: |-
+        * `PURCHASE` - Purchase
+        * `SALE` - Sale
+    RefreshTokenResponse:
+      type: object
+      properties:
+        success:
+          type: boolean
+        message:
+          type: string
+        data:
+          type: object
+          additionalProperties: {}
+      required:
+      - data
+      - message
+      - success
+    RoleEnum:
+      enum:
+      - MASTER
+      - ADMIN
+      - SALES_STAFF
+      type: string
+      description: |-
+        * `MASTER` - Master
+        * `ADMIN` - Admin
+        * `SALES_STAFF` - Sales Staff
+    SecondPartyRoleEnum:
+      enum:
+      - COMPANY
+      - CUSTOMER
+      - SUPPLIER
+      - OTHER
+      type: string
+      description: |-
+        * `COMPANY` - Company
+        * `CUSTOMER` - Customer
+        * `SUPPLIER` - Supplier
+        * `OTHER` - Other
+    ServicePackage:
+      type: object
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        name:
+          type: string
+          maxLength: 150
+        description:
+          type: string
+          maxLength: 255
+        amount:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,10}(?:\.\d{0,2})?$
+        is_default:
+          type: boolean
+        is_active:
+          type: boolean
+        created_at:
+          type: string
+          format: date-time
+          readOnly: true
+        updated_at:
+          type: string
+          format: date-time
+          readOnly: true
+      required:
+      - amount
+      - created_at
+      - id
+      - name
+      - updated_at
+    ServicePackageRequest:
+      type: object
+      properties:
+        name:
+          type: string
+          minLength: 1
+          maxLength: 150
+        description:
+          type: string
+          maxLength: 255
+        amount:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,10}(?:\.\d{0,2})?$
+        is_default:
+          type: boolean
+        is_active:
+          type: boolean
+      required:
+      - amount
+      - name
+    StatusEnum:
+      enum:
+      - DRAFT
+      - GENERATED
+      - SIGNED
+      - SUBMITTED
+      - COMPLETED
+      - CANCELLED
+      type: string
+      description: |-
+        * `DRAFT` - Draft
+        * `GENERATED` - Generated
+        * `SIGNED` - Signed
+        * `SUBMITTED` - Submitted
+        * `COMPLETED` - Completed
+        * `CANCELLED` - Cancelled
+    TokenRefreshRequest:
+      type: object
+      properties:
+        refresh:
+          type: string
+          minLength: 1
+      required:
+      - refresh
+  securitySchemes:
+    ActiveUserJWT:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT

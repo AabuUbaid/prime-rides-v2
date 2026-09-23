@@ -6,8 +6,39 @@ from .models import (
     CarExpense,
     CarImage,
     SpecialPriceRequest,
+    VehicleDocument,
 )
 
+
+SENSITIVE_INVENTORY_FIELDS = {
+    "purchase_cost",
+    "expenses",
+    "expense_summary",
+    "supplier",
+    "actual_mileage",
+    "total_cost",
+    "estimated_margin",
+    "expenses_total",
+}
+from datetime import date
+from django.utils import timezone
+
+
+def is_master_request(request):
+    return bool(
+        request
+        and request.user
+        and request.user.is_authenticated
+        and getattr(request.user, "role", None) == "MASTER"
+    )
+
+
+def remove_sensitive_fields(fields, request):
+    if not is_master_request(request):
+        for field_name in SENSITIVE_INVENTORY_FIELDS:
+            fields.pop(field_name, None)
+
+    return fields
 
 class CarCreateSerializer(serializers.ModelSerializer):
     stock_id = serializers.ReadOnlyField()
@@ -137,6 +168,27 @@ class CarCreateSerializer(serializers.ModelSerializer):
         }
 
     def validate(self, attrs):
+        
+        request = self.context.get("request")
+
+        if not is_master_request(request):
+            forbidden_fields = (
+                "purchase_cost",
+                "supplier",
+                "actual_mileage",
+            )
+
+            submitted_forbidden_fields = [
+                field_name
+                for field_name in forbidden_fields
+                if field_name in self.initial_data
+            ]
+
+            if submitted_forbidden_fields:
+                raise serializers.ValidationError({
+                    field_name: "Only Master users can set this field."
+                    for field_name in submitted_forbidden_fields
+                })
         purchase = attrs.get("purchase_cost")
         asking = attrs.get("asking_price")
         least = attrs.get("least_selling_price")
@@ -271,13 +323,72 @@ class ExpenseSummarySerializer(serializers.Serializer):
         max_digits=12,
         decimal_places=2,
     )
+    
+class InventoryFinancialFieldsMixin:
+    expenses_total = serializers.SerializerMethodField()
+    total_cost = serializers.SerializerMethodField()
+    estimated_margin = serializers.SerializerMethodField()
 
-class CarListSerializer(serializers.ModelSerializer):
+    def get_expenses_total(self, obj):
+        from .selectors import InventorySelector
 
+        summary = InventorySelector.get_expense_summary(obj)
+        return summary["total_expenses"]
+
+    def get_total_cost(self, obj):
+        purchase_cost = obj.purchase_cost or Decimal("0.00")
+        expenses_total = self.get_expenses_total(obj)
+
+        return purchase_cost + expenses_total
+
+    def get_estimated_margin(self, obj):
+        asking_price = obj.asking_price or Decimal("0.00")
+        total_cost = self.get_total_cost(obj)
+
+        return asking_price - total_cost
+
+class CarListSerializer(
+    InventoryFinancialFieldsMixin,
+    serializers.ModelSerializer,
+):
+    expenses_total = serializers.SerializerMethodField()
+    total_cost = serializers.SerializerMethodField()
+    estimated_margin = serializers.SerializerMethodField()
     images = CarImageSerializer(
         many=True,
         read_only=True,
     )
+    
+    stock_age_days = serializers.SerializerMethodField()
+    is_aged_90_plus = serializers.SerializerMethodField()
+
+    def get_fields(self):
+        fields = super().get_fields()
+
+        request = self.context.get("request")
+
+        return remove_sensitive_fields(
+            fields,
+            request,
+        )
+        
+    def get_stock_age_days(self, obj):
+        if not obj.created_at:
+            return None
+
+        created_date = timezone.localtime(obj.created_at).date()
+        current_date = timezone.localdate()
+
+        return max((current_date - created_date).days, 0)
+
+
+    def get_is_aged_90_plus(self, obj):
+        stock_age_days = self.get_stock_age_days(obj)
+
+        if stock_age_days is None:
+            return False
+
+        return stock_age_days >= 90
 
     class Meta:
         model = Car
@@ -293,14 +404,33 @@ class CarListSerializer(serializers.ModelSerializer):
             "status",
             "asking_price",
             "mileage",
+            "vehicle_type",
+            "actual_mileage",
+            "service_location",
+            "purchase_cost",
+            "supplier",
+            "expenses_total",
+            "total_cost",
+            "estimated_margin",
             "created_at",
+            "stock_age_days",
+            "is_aged_90_plus",
+            
             "images",
             "vehicle_type",
             "actual_mileage",
             "service_location",
+            "purchase_cost",
+            "supplier",
+            "expenses_total",
+            "total_cost",
+            "estimated_margin",
         )
 
-class CarDetailSerializer(serializers.ModelSerializer):
+class CarDetailSerializer(
+    InventoryFinancialFieldsMixin,
+    serializers.ModelSerializer,
+):
 
     images = CarImageSerializer(
         many=True,
@@ -313,6 +443,8 @@ class CarDetailSerializer(serializers.ModelSerializer):
     )
 
     expense_summary = serializers.SerializerMethodField()
+    stock_age_days = serializers.SerializerMethodField()
+    is_aged_90_plus = serializers.SerializerMethodField()
 
     def get_expense_summary(self, obj):
 
@@ -322,21 +454,33 @@ class CarDetailSerializer(serializers.ModelSerializer):
 
         return ExpenseSummarySerializer(summary).data
     
+    def get_stock_age_days(self, obj):
+        if not obj.created_at:
+            return None
+
+        created_date = timezone.localtime(obj.created_at).date()
+        current_date = timezone.localdate()
+
+        return max((current_date - created_date).days, 0)
+
+
+    def get_is_aged_90_plus(self, obj):
+        stock_age_days = self.get_stock_age_days(obj)
+
+        if stock_age_days is None:
+            return False
+
+        return stock_age_days >= 90
+    
     def get_fields(self):
         fields = super().get_fields()
 
         request = self.context.get("request")
 
-        is_master = (
-            request
-            and getattr(request.user, "role", None) == "MASTER"
+        return remove_sensitive_fields(
+            fields,
+            request,
         )
-
-        if not is_master:
-            fields.pop("purchase_cost", None)
-            fields.pop("actual_mileage", None)
-
-        return fields
 
     class Meta:
         model = Car
@@ -362,14 +506,123 @@ class CarDetailSerializer(serializers.ModelSerializer):
             "engine_number",
             "possession_certificate",
             "created_at",
+            "stock_age_days",
+            "is_aged_90_plus",
             "updated_at",
             "images",
             "expenses",
             "expense_summary",
+            "expenses_total",
+            "total_cost",
+            "estimated_margin",
             "vehicle_type",
             "actual_mileage",
             "service_location",
         )
+        
+class CarPrintSerializer(serializers.ModelSerializer):
+    stock_age_days = serializers.SerializerMethodField()
+    is_aged_90_plus = serializers.SerializerMethodField()
+    date_added = serializers.DateTimeField(
+        source="created_at",
+        read_only=True,
+    )
+
+    def get_stock_age_days(self, obj):
+        if not obj.created_at:
+            return None
+
+        created_date = timezone.localtime(
+            obj.created_at
+        ).date()
+
+        current_date = timezone.localdate()
+
+        return max(
+            (current_date - created_date).days,
+            0,
+        )
+
+    def get_is_aged_90_plus(self, obj):
+        stock_age_days = self.get_stock_age_days(obj)
+
+        if stock_age_days is None:
+            return False
+
+        return stock_age_days >= 90
+
+    def get_fields(self):
+        fields = super().get_fields()
+
+        request = self.context.get("request")
+        user = getattr(request, "user", None)
+
+        role = getattr(user, "role", None)
+
+        # Public/customer stock format
+        if self.context.get("public_stock") is True:
+            allowed_fields = {
+                "stock_id",
+                "make",
+                "model",
+                "year",
+                "colour",
+                "mileage",
+                "asking_price",
+                "status",
+            }
+
+            return {
+                field_name: field
+                for field_name, field in fields.items()
+                if field_name in allowed_fields
+            }
+
+        # Master receives the complete permitted print format
+        if role == "MASTER":
+            return fields
+
+        # Admin and Sales Staff must not receive sensitive fields
+        restricted_fields = {
+            "purchase_cost",
+            "expenses_total",
+            "total_cost",
+            "estimated_margin",
+            "supplier",
+            "actual_mileage",
+        }
+
+        for field_name in restricted_fields:
+            fields.pop(field_name, None)
+
+        return fields
+
+    class Meta:
+        model = Car
+
+        fields = (
+            "id",
+            "stock_id",
+            "make",
+            "model",
+            "variant",
+            "year",
+            "colour",
+            "mileage",
+            "asking_price",
+            "least_selling_price",
+            "status",
+            "source",
+            "chassis_number",
+            "date_added",
+            "created_at",
+            "stock_age_days",
+            "is_aged_90_plus",
+            "purchase_cost",
+            "supplier",
+        )
+
+        read_only_fields = fields
 
 class CarUpdateSerializer(serializers.ModelSerializer):
 
@@ -1049,3 +1302,111 @@ class SpecialPriceDecisionSerializer(
         max_length=5000,
     )
 
+class VehicleDocumentSerializer(serializers.ModelSerializer):
+    car_id = serializers.UUIDField(
+        source="car.id",
+        read_only=True,
+    )
+
+    document_type_display = serializers.CharField(
+        source="get_document_type_display",
+        read_only=True,
+    )
+
+    uploaded_by_name = serializers.SerializerMethodField()
+
+    file_url = serializers.SerializerMethodField()
+
+    class Meta:
+        model = VehicleDocument
+
+        fields = (
+            "id",
+            "car_id",
+            "document_type",
+            "document_type_display",
+            "file",
+            "file_url",
+            "original_filename",
+            "mime_type",
+            "file_size",
+            "uploaded_by",
+            "uploaded_by_name",
+            "uploaded_at",
+            "is_archived",
+            "archived_by",
+            "archived_at",
+        )
+
+        read_only_fields = (
+            "id",
+            "car_id",
+            "file_url",
+            "original_filename",
+            "mime_type",
+            "file_size",
+            "uploaded_by",
+            "uploaded_by_name",
+            "uploaded_at",
+            "is_archived",
+            "archived_by",
+            "archived_at",
+        )
+
+    def get_uploaded_by_name(self, obj):
+        if not obj.uploaded_by:
+            return None
+
+        return (
+            getattr(obj.uploaded_by, "full_name", None)
+            or getattr(obj.uploaded_by, "name", None)
+            or getattr(obj.uploaded_by, "email", None)
+        )
+
+    def get_file_url(self, obj):
+        request = self.context.get("request")
+
+        if not obj.file:
+            return None
+
+        url = obj.file.url
+
+        if request:
+            return request.build_absolute_uri(url)
+
+        return url
+
+    def validate_file(self, file):
+        allowed_types = (
+            "application/pdf",
+            "image/jpeg",
+            "image/png",
+        )
+
+        max_size = 10 * 1024 * 1024
+
+        if file.content_type not in allowed_types:
+            raise serializers.ValidationError(
+                "Document must be PDF, JPG or PNG."
+            )
+
+        if file.size > max_size:
+            raise serializers.ValidationError(
+                "Maximum document size is 10 MB."
+            )
+
+        return file
+
+    def validate_document_type(self, value):
+        allowed_types = {
+            VehicleDocument.DocumentType.POSSESSION,
+            VehicleDocument.DocumentType.RTA_PASSING,
+            VehicleDocument.DocumentType.INVOICE,
+        }
+
+        if value not in allowed_types:
+            raise serializers.ValidationError(
+                "Only POSSESSION and RTA_PASSING documents are allowed."
+            )
+
+        return value

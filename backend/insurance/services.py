@@ -6,6 +6,29 @@ from .models import Insurance
 from django.db import transaction, models
 
 
+def validate_policy_dates(*, expiry_date, start_date=None):
+    if isinstance(expiry_date, str):
+        try:
+            expiry_date = datetime.strptime(
+                expiry_date,
+                "%Y-%m-%d",
+            ).date()
+        except ValueError:
+            raise DjangoValidationError(
+                "Expiry date must be in YYYY-MM-DD format."
+            )
+
+    if not expiry_date:
+        raise DjangoValidationError(
+            "Expiry date is required."
+        )
+
+    if start_date and expiry_date <= start_date:
+        raise DjangoValidationError(
+            "Expiry date must be after the start date."
+        )
+
+    return expiry_date
 def resolve_eligible_deal(
     *,
     quote,

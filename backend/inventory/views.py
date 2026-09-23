@@ -9,13 +9,16 @@ from rest_framework.parsers import (
 from rest_framework.exceptions import ValidationError
 from accounts.permissions import IsMaster
 from django.http import QueryDict
+from datetime import timedelta
 
+from django.utils import timezone
 from .pagination import InventoryPagination
 from django.shortcuts import get_object_or_404
 from .models import (
     Car,
     CarExpense,
     SpecialPriceRequest,
+    VehicleDocument,
 )
 from .special_price_services import SpecialPriceService
 from .query_serializers import CarListQuerySerializer
@@ -25,6 +28,7 @@ from .serializers import (
     CarCreateSerializer,
     CarListSerializer,
     CarDetailSerializer,
+    CarPrintSerializer,
     CarUpdateSerializer,
     CarImageSerializer,
     CarExpenseSerializer,
@@ -35,6 +39,7 @@ from .serializers import (
     SpecialPriceRequestCreateSerializer,
     SpecialPriceRequestSerializer,
     SpecialPriceDecisionSerializer,
+    VehicleDocumentSerializer,
 )
 
 from .selectors import InventorySelector
@@ -74,6 +79,9 @@ class CarAPIView(APIView):
         serializer = CarListSerializer(
             page,
             many=True,
+            context={
+                "request": request,
+            },
         )
 
         return paginator.get_paginated_response(
@@ -104,6 +112,9 @@ class CarAPIView(APIView):
 
         serializer = CarCreateSerializer(
             data=data,
+            context={
+                "request": request,
+            },
         )
 
         serializer.is_valid(
@@ -124,6 +135,47 @@ class CarAPIView(APIView):
             },
             status=status.HTTP_201_CREATED,
         )
+        
+class CarPrintAPIView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request):
+        query_serializer = CarListQuerySerializer(
+            data=request.query_params,
+        )
+
+        query_serializer.is_valid(
+            raise_exception=True,
+        )
+
+        cars = InventorySelector.list_cars(
+            **query_serializer.validated_data,
+        )
+
+        public_stock = (
+            request.query_params.get("public_stock", "")
+            .lower()
+            == "true"
+        )
+
+        serializer = CarPrintSerializer(
+            cars,
+            many=True,
+            context={
+                "request": request,
+                "public_stock": public_stock,
+            },
+        )
+
+        return Response(
+            {
+                "success": True,
+                "count": len(serializer.data),
+                "data": serializer.data,
+            },
+            status=status.HTTP_200_OK,
+        )
+
 class CarBrandListAPIView(APIView):
     permission_classes = [IsAuthenticated]
 
@@ -207,6 +259,9 @@ class CarDetailAPIView(APIView):
         serializer = CarUpdateSerializer(
             car,
             data=data,
+            context={
+                "request": request,
+            },
         )
 
         serializer.is_valid(
@@ -262,6 +317,9 @@ class CarDetailAPIView(APIView):
             car,
             data=data,
             partial=True,
+            context={
+                "request": request,
+            },
         )
 
         serializer.is_valid(
@@ -455,7 +513,216 @@ class CarExpenseDetailAPIView(APIView):
                 "message": "Expense deleted successfully.",
             }
         )
+class VehicleDocumentAPIView(APIView):
+    permission_classes = [IsAuthenticated]
 
+    parser_classes = (
+        MultiPartParser,
+        FormParser,
+    )
+
+    def get(self, request, car_id):
+        car = InventorySelector.get_car_by_id(car_id)
+
+        queryset = (
+            VehicleDocument.objects
+            .filter(car=car)
+            .select_related(
+                "uploaded_by",
+                "archived_by",
+            )
+            .order_by("-uploaded_at")
+        )
+
+        # Archived documents are visible only to MASTER.
+        if request.user.role != "MASTER":
+            queryset = queryset.filter(is_archived=False)
+
+        serializer = VehicleDocumentSerializer(
+            queryset,
+            many=True,
+            context={
+                "request": request,
+            },
+        )
+
+        return Response(
+            {
+                "success": True,
+                "data": serializer.data,
+            },
+            status=status.HTTP_200_OK,
+        )
+
+    def post(self, request, car_id):
+        car = InventorySelector.get_car_by_id(car_id)
+
+        serializer = VehicleDocumentSerializer(
+            data=request.data,
+            context={
+                "request": request,
+            },
+        )
+
+        serializer.is_valid(
+            raise_exception=True,
+        )
+
+        uploaded_file = serializer.validated_data["file"]
+
+        document = VehicleDocument.objects.create(
+            car=car,
+            document_type=serializer.validated_data[
+                "document_type"
+            ],
+            file=uploaded_file,
+            original_filename=uploaded_file.name,
+            mime_type=uploaded_file.content_type,
+            file_size=uploaded_file.size,
+            uploaded_by=request.user,
+        )
+
+        return Response(
+            {
+                "success": True,
+                "message": "Vehicle document uploaded successfully.",
+                "data": VehicleDocumentSerializer(
+                    document,
+                    context={
+                        "request": request,
+                    },
+                ).data,
+            },
+            status=status.HTTP_201_CREATED,
+        )
+
+class VehicleDocumentDeleteAPIView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def delete(self, request, document_id):
+        document = get_object_or_404(
+            VehicleDocument,
+            id=document_id,
+        )
+
+        # MASTER can delete any non-archived document.
+        if request.user.role == "MASTER":
+            document.file.delete(save=False)
+            document.delete()
+
+            return Response(
+                {
+                    "success": True,
+                    "message": "Vehicle document deleted successfully.",
+                },
+                status=status.HTTP_200_OK,
+            )
+
+        # Non-master users can manage only their own uploads.
+        if document.uploaded_by_id != request.user.id:
+            return Response(
+                {
+                    "success": False,
+                    "message": (
+                        "You can delete only documents uploaded by you."
+                    ),
+                },
+                status=status.HTTP_403_FORBIDDEN,
+            )
+
+        # Archived documents cannot be deleted by non-master users.
+        if document.is_archived:
+            return Response(
+                {
+                    "success": False,
+                    "message": (
+                        "Archived documents can only be managed by MASTER."
+                    ),
+                },
+                status=status.HTTP_403_FORBIDDEN,
+            )
+
+        # Non-master users can manage documents only within 24 hours.
+        expiry_time = document.uploaded_at + timedelta(hours=24)
+
+        if timezone.now() > expiry_time:
+            return Response(
+                {
+                    "success": False,
+                    "message": (
+                        "Documents can only be deleted within 24 hours "
+                        "of uploading."
+                    ),
+                },
+                status=status.HTTP_403_FORBIDDEN,
+            )
+
+        document.file.delete(save=False)
+        document.delete()
+
+        return Response(
+            {
+                "success": True,
+                "message": "Vehicle document deleted successfully.",
+            },
+            status=status.HTTP_200_OK,
+        )
+        
+class VehicleDocumentArchiveAPIView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def post(self, request, document_id):
+        document = get_object_or_404(
+            VehicleDocument,
+            id=document_id,
+        )
+
+        # Only MASTER can archive documents.
+        if request.user.role != "MASTER":
+            return Response(
+                {
+                    "success": False,
+                    "message": (
+                        "Only MASTER users can archive documents."
+                    ),
+                },
+                status=status.HTTP_403_FORBIDDEN,
+            )
+
+        if document.is_archived:
+            return Response(
+                {
+                    "success": False,
+                    "message": "Document is already archived.",
+                },
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        document.is_archived = True
+        document.archived_by = request.user
+        document.archived_at = timezone.now()
+
+        document.save(
+            update_fields=[
+                "is_archived",
+                "archived_by",
+                "archived_at",
+            ]
+        )
+
+        return Response(
+            {
+                "success": True,
+                "message": "Vehicle document archived successfully.",
+                "data": VehicleDocumentSerializer(
+                    document,
+                    context={
+                        "request": request,
+                    },
+                ).data,
+            },
+            status=status.HTTP_200_OK,
+        )
 
 class CarImageAPIView(APIView):
 

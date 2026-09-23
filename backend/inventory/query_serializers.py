@@ -54,6 +54,14 @@ class CarListQuerySerializer(serializers.Serializer):
     max_mileage = serializers.IntegerField(
         required=False,
     )
+    age = serializers.IntegerField(
+        required=False,
+        min_value=0,
+    )
+
+    aged_90_plus = serializers.BooleanField(
+        required=False,
+    )
 
     ordering = serializers.ChoiceField(
         choices=[

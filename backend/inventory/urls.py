@@ -6,6 +6,7 @@ from .views import (
     BulkVehicleImportAPIView,
     CarAPIView,
     CarDetailAPIView,
+    CarPrintAPIView,
     CarBrandListAPIView,
     CarImageCoverAPIView,
     CarExpenseAPIView,
@@ -16,6 +17,22 @@ from .views import (
     SpecialPriceRequestAPIView,
     SpecialPriceRequestListAPIView,
     SpecialPriceDecisionAPIView,
+    VehicleDocumentAPIView,
+    VehicleDocumentDeleteAPIView,
+    VehicleDocumentArchiveAPIView,
+)
+
+from .car_demand_views import (
+    CarDemandListCreateAPIView,
+    CarDemandDetailAPIView,
+    CarDemandMatchesAPIView,
+    CarDemandLinkVehicleAPIView,
+    CarDemandUnlinkVehicleAPIView,
+)
+
+from .procurement_views import (
+    ProcurementCheckListCreateView,
+    ProcurementCheckDetailView,
 )
 
 app_name = "inventory"
@@ -37,6 +54,12 @@ urlpatterns = [
         "cars/brands/",
         CarBrandListAPIView.as_view(),
         name="car-brands",
+    ),
+    
+    path(
+        "cars/print/",
+        CarPrintAPIView.as_view(),
+        name="car-print",
     ),
 
     path(
@@ -139,5 +162,68 @@ urlpatterns = [
         "special-price/<int:pk>/decision/",
         SpecialPriceDecisionAPIView.as_view(),
         name="special-price-decision",
+    ),
+    
+    path(
+        "cars/<uuid:car_id>/documents/",
+        VehicleDocumentAPIView.as_view(),
+        name="vehicle-documents",
+    ),
+
+    path(
+        "documents/<uuid:document_id>/delete/",
+        VehicleDocumentDeleteAPIView.as_view(),
+        name="vehicle-document-delete",
+    ),
+
+    path(
+        "documents/<uuid:document_id>/archive/",
+        VehicleDocumentArchiveAPIView.as_view(),
+        name="vehicle-document-archive",
+    ),
+    
+    # ---------------------------------------------------------
+    # Cars in Demand
+    # ---------------------------------------------------------
+
+    path(
+        "car-demands/",
+        CarDemandListCreateAPIView.as_view(),
+        name="car-demand-list-create",
+    ),
+
+    path(
+        "car-demands/<uuid:demand_id>/",
+        CarDemandDetailAPIView.as_view(),
+        name="car-demand-detail",
+    ),
+
+    path(
+        "car-demands/<uuid:demand_id>/matches/",
+        CarDemandMatchesAPIView.as_view(),
+        name="car-demand-matches",
+    ),
+
+    path(
+        "car-demands/<uuid:demand_id>/link/",
+        CarDemandLinkVehicleAPIView.as_view(),
+        name="car-demand-link-vehicle",
+    ),
+
+    path(
+        "car-demands/<uuid:demand_id>/unlink/",
+        CarDemandUnlinkVehicleAPIView.as_view(),
+        name="car-demand-unlink-vehicle",
+    ),
+    path(
+        "procurement-checks/",
+        ProcurementCheckListCreateView.as_view(),
+        name="procurement-check-list-create",
+    ),
+
+    path(
+        "procurement-checks/<int:pk>/",
+        ProcurementCheckDetailView.as_view(),
+        name="procurement-check-detail",
     ),
 ]

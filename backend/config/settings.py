@@ -27,7 +27,7 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 SECRET_KEY = config("SECRET_KEY")
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = config("DEBUG", default=False, cast=bool)
+DEBUG = config("DEBUG", default=True, cast=bool)
 
 ALLOWED_HOSTS = [
     "127.0.0.1",
@@ -66,6 +66,8 @@ INSTALLED_APPS = [
     "leads",
     "progression",
     "ledger_accounts",
+    "company",
+    "rta"
     
 ]
 
@@ -194,6 +196,7 @@ MEDIA_URL = "/media/"
 MEDIA_ROOT = BASE_DIR / "media"
 
 STATIC_URL = 'static/'
+STATIC_ROOT=BASE_DIR/'staticfiles'
 
 CORS_ALLOWED_ORIGINS = [
     "http://localhost:5173",

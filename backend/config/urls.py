@@ -82,6 +82,11 @@ urlpatterns = [
         "api/ledger-accounts/",
         include("ledger_accounts.urls"),
     ),
+    path(
+        "api/company/",
+        include("company.urls"),
+    ),
+    path("api/rta/", include("rta.urls")),
 ]
 
 if settings.DEBUG:

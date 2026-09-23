@@ -1,8 +1,9 @@
 import uuid
 
 from django.conf import settings
-from django.core.validators import MinValueValidator
+from django.core.validators import MinValueValidator, FileExtensionValidator
 from django.db import models
+
 class Car(models.Model):
     class Status(models.TextChoices):
         AVAILABLE = "available", "Available"
@@ -173,6 +174,103 @@ class Car(models.Model):
     def __str__(self):
         return f"{self.stock_id} - {self.year} {self.make} {self.model}"
 
+class CarDemand(models.Model):
+    class Status(models.TextChoices):
+        OPEN = "open", "Open"
+        MATCHED = "matched", "Matched"
+        CLOSED = "closed", "Closed"
+
+    id = models.UUIDField(
+        primary_key=True,
+        default=uuid.uuid4,
+        editable=False,
+    )
+
+    customer_name = models.CharField(max_length=255)
+
+    phone = models.CharField(max_length=30)
+
+    agent = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.PROTECT,
+        related_name="assigned_car_demands",
+    )
+
+    created_by = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.PROTECT,
+        related_name="created_car_demands",
+    )
+
+    make = models.CharField(
+        max_length=100,
+        blank=True,
+        default="",
+    )
+
+    model = models.CharField(
+        max_length=100,
+        blank=True,
+        default="",
+    )
+
+    year_from = models.PositiveIntegerField(
+        null=True,
+        blank=True,
+    )
+
+    year_to = models.PositiveIntegerField(
+        null=True,
+        blank=True,
+    )
+
+    budget = models.DecimalField(
+        max_digits=12,
+        decimal_places=2,
+        null=True,
+        blank=True,
+    )
+
+    colour = models.CharField(
+        max_length=100,
+        blank=True,
+        default="",
+    )
+
+    notes = models.TextField(
+        blank=True,
+        default="",
+    )
+
+    status = models.CharField(
+        max_length=20,
+        choices=Status.choices,
+        default=Status.OPEN,
+    )
+
+    matched_vehicles = models.ManyToManyField(
+        "Car",
+        blank=True,
+        related_name="car_demands",
+    )
+
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        db_table = "car_demands"
+        ordering = ["-created_at"]
+        indexes = [
+            models.Index(fields=["status"]),
+            models.Index(fields=["phone"]),
+            models.Index(fields=["make", "model"]),
+            models.Index(fields=["agent"]),
+            models.Index(fields=["created_by"]),
+        ]
+
+    def __str__(self):
+        return f"{self.customer_name} - {self.make} {self.model}"
 
 class CarExpense(models.Model):
     car = models.ForeignKey(
@@ -224,7 +322,100 @@ class CarImage(models.Model):
     def __str__(self):
         return f"Image - {self.car.stock_id}"
     
-    
+class VehicleDocument(models.Model):
+    class DocumentType(models.TextChoices):
+        POSSESSION = "POSSESSION", "Possession"
+        RTA_PASSING = "RTA_PASSING", "RTA Passing"
+        INVOICE = "INVOICE", "Invoice"
+        OTHER = "OTHER", "Other"
+
+    id = models.UUIDField(
+        primary_key=True,
+        default=uuid.uuid4,
+        editable=False,
+    )
+
+    car = models.ForeignKey(
+        "Car",
+        on_delete=models.CASCADE,
+        related_name="vehicle_documents",
+    )
+
+    document_type = models.CharField(
+        max_length=30,
+        choices=DocumentType.choices,
+    )
+
+    file = models.FileField(
+        upload_to="vehicle_documents/",
+        validators=[
+            FileExtensionValidator(
+                allowed_extensions=[
+                    "pdf",
+                    "jpg",
+                    "jpeg",
+                    "png",
+                ],
+            ),
+        ],
+    )
+
+    original_filename = models.CharField(
+        max_length=255,
+    )
+
+    mime_type = models.CharField(
+        max_length=100,
+    )
+
+    file_size = models.PositiveBigIntegerField()
+
+    uploaded_by = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.PROTECT,
+        related_name="uploaded_vehicle_documents",
+        null=True,
+        blank=True,
+    )
+
+    uploaded_at = models.DateTimeField(
+        auto_now_add=True,
+    )
+
+    is_archived = models.BooleanField(
+        default=False,
+    )
+
+    archived_by = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.PROTECT,
+        related_name="archived_vehicle_documents",
+        null=True,
+        blank=True,
+    )
+
+    archived_at = models.DateTimeField(
+        null=True,
+        blank=True,
+    )
+
+    class Meta:
+        ordering = ["-uploaded_at"]
+        indexes = [
+            models.Index(
+                fields=["car", "document_type"],
+            ),
+            models.Index(
+                fields=["car", "is_archived"],
+            ),
+        ]
+
+    def __str__(self):
+        return (
+            f"{self.car} - "
+            f"{self.get_document_type_display()} - "
+            f"{self.original_filename}"
+        ) 
     
 class SpecialPriceRequest(models.Model):
     class Status(models.TextChoices):
@@ -410,3 +601,116 @@ class SpecialPriceRequest(models.Model):
             f"{self.requested_price} - "
             f"{self.status}"
         )
+        
+        
+        
+
+class ProcurementCheck(models.Model):
+    class BodyType(models.TextChoices):
+        SEDAN = "sedan", "Sedan"
+        SUV = "suv", "SUV"
+        COUPE = "coupe", "Coupe"
+        HATCHBACK = "hatchback", "Hatchback"
+        PICKUP = "pickup", "Pickup"
+        VAN = "van", "Van"
+        OTHER = "other", "Other"
+
+    car = models.OneToOneField(
+        "Car",
+        on_delete=models.PROTECT,
+        related_name="procurement_check",
+        null=True,
+        blank=True,
+    )
+
+    chassis_number = models.CharField(
+        max_length=255,
+        blank=True,
+    )
+
+    make = models.CharField(
+        max_length=100,
+        blank=True,
+    )
+
+    model = models.CharField(
+        max_length=100,
+        blank=True,
+    )
+
+    range_trim_code = models.CharField(
+        max_length=100,
+        blank=True,
+    )
+
+    model_year = models.PositiveIntegerField(
+        null=True,
+        blank=True,
+    )
+
+    engine = models.CharField(
+        max_length=255,
+        blank=True,
+    )
+
+    body_type = models.CharField(
+        max_length=30,
+        choices=BodyType.choices,
+        blank=True,
+    )
+
+    mileage = models.PositiveIntegerField(
+        null=True,
+        blank=True,
+    )
+
+    colour = models.CharField(
+        max_length=100,
+        blank=True,
+    )
+
+    recorded_accidents = models.PositiveIntegerField(
+        null=True,
+        blank=True,
+    )
+
+    no_accidents = models.BooleanField(
+        default=False,
+    )
+
+    condition_notes = models.TextField(
+        blank=True,
+    )
+
+    checked_by = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.PROTECT,
+        related_name="procurement_checks",
+    )
+
+    created_at = models.DateTimeField(
+        auto_now_add=True,
+    )
+
+    updated_at = models.DateTimeField(
+        auto_now=True,
+    )
+
+    class Meta:
+        db_table = "procurement_checks"
+        ordering = ["-created_at"]
+        indexes = [
+            models.Index(fields=["chassis_number"]),
+            models.Index(fields=["make", "model"]),
+            models.Index(fields=["model_year"]),
+            models.Index(fields=["checked_by"]),
+        ]
+
+    def __str__(self):
+        vehicle_reference = (
+            self.car.stock_id
+            if self.car_id
+            else self.chassis_number or str(self.pk)
+        )
+
+        return f"Procurement Check - {vehicle_reference}"    

@@ -1,3 +1,9 @@
+from drf_spectacular.utils import (
+    OpenApiResponse,
+    extend_schema,
+    inline_serializer,
+)
+from rest_framework import serializers
 from rest_framework import status
 from rest_framework.permissions import AllowAny
 from rest_framework.permissions import IsAuthenticated
@@ -16,6 +22,27 @@ class LoginAPIView(APIView):
 
     permission_classes = [AllowAny]
 
+    @extend_schema(
+        request=LoginSerializer,
+        responses=OpenApiResponse(
+            response=inline_serializer(
+                name="LoginResponse",
+                fields={
+                    "success": serializers.BooleanField(),
+                    "message": serializers.CharField(),
+                    "data": inline_serializer(
+                        name="LoginData",
+                        fields={
+                            "access": serializers.CharField(),
+                            "refresh": serializers.CharField(),
+                            "user": CurrentUserSerializer(),
+                        },
+                    ),
+                },
+            ),
+            description="Successful login response.",
+        ),
+    )
     def post(self, request):
 
         serializer = LoginSerializer(data=request.data)
@@ -44,6 +71,20 @@ class RefreshTokenAPIView(APIView):
 
     permission_classes = [AllowAny]
 
+    @extend_schema(
+        request=TokenRefreshSerializer,
+        responses=OpenApiResponse(
+            response=inline_serializer(
+                name="RefreshTokenResponse",
+                fields={
+                    "success": serializers.BooleanField(),
+                    "message": serializers.CharField(),
+                    "data": serializers.DictField(),
+                },
+            ),
+            description="Successful token refresh response.",
+        ),
+    )
     def post(self, request):
 
         serializer = TokenRefreshSerializer(
@@ -68,6 +109,18 @@ class CurrentUserAPIView(APIView):
 
     permission_classes = [IsAuthenticated]
 
+    @extend_schema(
+        responses=OpenApiResponse(
+            response=inline_serializer(
+                name="CurrentUserResponse",
+                fields={
+                    "success": serializers.BooleanField(),
+                    "data": CurrentUserSerializer(),
+                },
+            ),
+            description="Current authenticated user response.",
+        ),
+    )
     def get(self, request):
         return Response(
             {
