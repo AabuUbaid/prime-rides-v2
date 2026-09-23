@@ -5,6 +5,8 @@ import { toast } from "react-toastify";
 import { deleteEmi, getEmi } from "../../api/finance";
 import { useAuth } from "../../context/AuthContext";
 
+import { formatAED } from "../../utils/formatters";
+
 import PrintDocument from "../../components/printing/PrintDocument";
 import PrintButton from "../../components/printing/PrintButton";
 import EmiPrintTemplate from "../../components/printing/templates/EmiPrintTemplate";
@@ -41,23 +43,6 @@ function getApiMessage(error) {
   return (
     error?.cause?.message || error?.message || "Failed to load EMI details."
   );
-}
-
-function formatCurrency(value) {
-  if (value === null || value === undefined || value === "") {
-    return "-";
-  }
-
-  const numericValue = Number(value);
-
-  if (!Number.isFinite(numericValue)) {
-    return "-";
-  }
-
-  return `AED ${numericValue.toLocaleString("en-AE", {
-    minimumFractionDigits: 2,
-    maximumFractionDigits: 2,
-  })}`;
 }
 
 function formatPercentage(value) {
@@ -101,13 +86,13 @@ function displayValue(value) {
 
 function DetailItem({ label, value, valueClassName = "" }) {
   return (
-    <div className="rounded-lg border border-gray-200 bg-gray-50 px-4 py-3">
-      <p className="text-xs font-medium uppercase tracking-wide text-gray-500">
+    <div className="rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3">
+      <p className="text-[10px] font-bold uppercase tracking-[0.08em] text-slate-400">
         {label}
       </p>
 
       <p
-        className={`mt-1 break-words text-sm font-medium text-gray-900 ${valueClassName}`}
+        className={`mt-1 break-words text-sm font-semibold text-slate-800 ${valueClassName}`}
       >
         {value}
       </p>
@@ -117,12 +102,13 @@ function DetailItem({ label, value, valueClassName = "" }) {
 
 function SectionCard({ title, children }) {
   return (
-    <section className="rounded-xl border border-gray-200 bg-white shadow-sm">
-      <div className="border-b border-gray-200 px-5 py-4">
-        <h2 className="text-base font-semibold text-gray-900">{title}</h2>
+    <section className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-[0_2px_8px_rgba(15,23,42,0.04)]">
+      <div className="border-b border-slate-100 px-5 py-4">
+        <h2 className="text-sm font-bold tracking-tight text-slate-900">
+          {title}
+        </h2>
       </div>
-
-      <div className="p-5">{children}</div>
+      <div className="p-5"> {children}</div>
     </section>
   );
 }
@@ -226,47 +212,39 @@ function EmiDetail() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gray-50">
-        <header className="border-b bg-white">
-          <div className="mx-auto max-w-7xl px-6 py-4">
-            <h1 className="text-2xl font-bold text-gray-900">Prime Rides</h1>
+      <div className="flex min-h-[50vh] items-center justify-center px-4">
+        <div className="w-full max-w-md rounded-2xl border border-slate-200 bg-white p-10 text-center shadow-sm">
+          <div className="mx-auto mb-3 h-8 w-8 animate-spin rounded-full border-2 border-slate-200 border-t-amber-500" />
 
-            <p className="text-sm text-gray-500">Dealer Management System</p>
-          </div>
-        </header>
-
-        <main className="mx-auto max-w-7xl px-6 py-8">
-          <div className="rounded-xl border border-gray-200 bg-white p-8 text-center shadow-sm">
-            <div className="mx-auto h-8 w-8 animate-spin rounded-full border-4 border-gray-200 border-t-gray-900" />
-
-            <p className="mt-4 text-sm text-gray-600">Loading EMI details...</p>
-          </div>
-        </main>
+          <p className="text-sm font-medium text-slate-600">
+            Loading EMI Details...
+          </p>
+        </div>
       </div>
     );
   }
 
   if (error || !emi) {
     return (
-      <div className="min-h-screen bg-gray-50">
+      <div className="min-h-screen bg-[#f5f6fa]">
         <header className="border-b bg-white">
           <div className="mx-auto flex max-w-7xl items-center justify-between px-6 py-4">
             <div>
               <h1 className="text-2xl font-bold text-gray-900">Prime Rides</h1>
 
-              <p className="text-sm text-gray-500">Dealer Management System</p>
+              <p className="text-sm text-slate-500">Dealer Management System</p>
             </div>
 
             <Link
               to="/finance/emi/list"
-              className="rounded-lg border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50"
+              className="rounded-xl border border-slate-200 bg-white px-4 py-2 text-sm font-semibold text-slate-700 transition hover:bg-slate-50"
             >
               Back to EMI Estimates
             </Link>
           </div>
         </header>
 
-        <main className="mx-auto max-w-7xl px-6 py-8">
+        <main className="mx-auto w-full max-w-[1500px] px-4 py-6 sm:px-6 lg:px-8">
           <div className="rounded-xl border border-red-200 bg-red-50 p-6">
             <h2 className="text-base font-semibold text-red-800">
               Unable to load EMI
@@ -296,38 +274,34 @@ function EmiDetail() {
     .replace(/\b\w/g, (character) => character.toUpperCase());
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-[#f5f6fa]">
       {/* =====================================================
                 NORMAL SCREEN UI
                 Hidden completely when printing.
                ===================================================== */}
       <div className="no-print-screen">
-        <header className="border-b bg-white">
-          <div className="mx-auto flex max-w-7xl items-center justify-between gap-4 px-6 py-4">
-            <div>
-              <h1 className="text-2xl font-bold text-gray-900">Prime Rides</h1>
-
-              <p className="text-sm text-gray-500">Dealer Management System</p>
-            </div>
-          </div>
-        </header>
-
-        <main className="mx-auto max-w-7xl space-y-6 px-6 py-8">
+        <main className="mx-auto w-full max-w-[1500px] space-y-6 px-4 py-6 sm:px-6 lg:px-8">
           {/* Page heading */}
           <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
             <div>
+              <Link
+                to="/finance/emi/list"
+                className="text-sm font-medium text-gray-600 hover:text-gray-900"
+              >
+                ← Back to EMI List
+              </Link>
               <div className="mt-1 flex flex-wrap items-center gap-3">
-                <h2 className="text-2xl font-bold text-gray-900">
+                <h2 className="text-2xl font-bold tracking-tight text-slate-900">
                   {displayValue(emi.emi_number)}
                 </h2>
 
                 <span
-                  className={`inline-flex rounded-full px-3 py-1 text-xs font-semibold ${
+                  className={`inline-flex rounded-full border px-2.5 py-1 text-[10px] font-bold uppercase tracking-wide ${
                     emi.status === "active"
-                      ? "bg-green-100 text-green-700"
+                      ? "border-emerald-200 bg-emerald-50 text-emerald-700"
                       : emi.status === "cancelled"
-                        ? "bg-red-100 text-red-700"
-                        : "bg-gray-100 text-gray-700"
+                        ? "border-rose-200 bg-rose-50 text-rose-700"
+                        : "border-slate-200 bg-slate-100 text-slate-600"
                   }`}
                 >
                   {statusLabel}
@@ -336,13 +310,6 @@ function EmiDetail() {
             </div>
 
             <div className="no-print flex flex-wrap items-center gap-3">
-              <Link
-                to="/finance/emi/list"
-                className="rounded-lg border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50"
-              >
-                Back to EMI Estimates
-              </Link>
-
               <PrintButton
                 customerName={emi?.customer_name}
                 documentNumber={emi?.emi_number}
@@ -355,7 +322,7 @@ function EmiDetail() {
                   type="button"
                   onClick={handleDelete}
                   disabled={deleting}
-                  className="rounded-lg bg-red-600 px-4 py-2 text-sm font-medium text-white hover:bg-red-700 disabled:cursor-not-allowed disabled:opacity-60"
+                  className="rounded-xl bg-rose-600 px-4 py-2 text-sm font-bold text-white shadow-sm transition hover:bg-rose-700 disabled:cursor-not-allowed disabled:opacity-60"
                 >
                   {deleting ? "Deleting..." : "Delete EMI"}
                 </button>
@@ -430,12 +397,12 @@ function EmiDetail() {
             </div>
 
             {vehicleDescription && (
-              <div className="mt-4 rounded-lg border border-gray-200 bg-white px-4 py-3">
-                <p className="text-xs font-medium uppercase tracking-wide text-gray-500">
+              <div className="mt-4 rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3">
+                <p className="text-[10px] font-bold uppercase tracking-[0.08em] text-slate-400">
                   Vehicle
                 </p>
 
-                <p className="mt-1 text-base font-semibold text-gray-900">
+                <p className="mt-1 text-base font-bold text-slate-900">
                   {vehicleDescription}
                 </p>
               </div>
@@ -459,31 +426,29 @@ function EmiDetail() {
 
               <DetailItem
                 label="Vehicle Price"
-                value={formatCurrency(emi.vehicle_price)}
+                value={formatAED(emi.vehicle_price)}
               />
 
               <DetailItem
                 label="VAT"
                 value={
-                  emi.vat_enabled
-                    ? formatCurrency(emi.vat_amount)
-                    : "Not Applied"
+                  emi.vat_enabled ? formatAED(emi.vat_amount) : "Not Applied"
                 }
               />
 
               <DetailItem
                 label="Price After VAT"
-                value={formatCurrency(emi.price_after_vat)}
+                value={formatAED(emi.price_after_vat)}
               />
 
               <DetailItem
                 label="Down Payment"
-                value={formatCurrency(emi.down_payment)}
+                value={formatAED(emi.down_payment)}
               />
 
               <DetailItem
                 label="Finance Amount"
-                value={formatCurrency(emi.finance_amount)}
+                value={formatAED(emi.finance_amount)}
                 valueClassName="text-base"
               />
 
@@ -501,41 +466,40 @@ function EmiDetail() {
           </SectionCard>
 
           {/* EMI Result */}
-          <section className="rounded-xl border border-gray-200 bg-white shadow-sm">
-            <div className="border-b border-gray-200 px-5 py-4">
+          <section className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-[0_2px_8px_rgba(15,23,42,0.04)]">
+            <div className="border-b border-slate-100 px-5 py-4">
               <h2 className="text-base font-semibold text-gray-900">
                 EMI Summary
               </h2>
             </div>
-
             <div className="grid gap-4 p-5 md:grid-cols-3">
-              <div className="rounded-lg border border-gray-200 bg-gray-50 p-5">
-                <p className="text-xs font-medium uppercase tracking-wide text-gray-500">
+              <div className="rounded-2xl border border-slate-200 bg-slate-50 p-5">
+                <p className="text-[10px] font-bold uppercase tracking-[0.08em] text-slate-400">
                   Total Interest
                 </p>
 
-                <p className="mt-2 text-xl font-bold text-gray-900">
-                  {formatCurrency(emi.total_interest)}
+                <p className="mt-2 font-mono text-xl font-bold text-slate-900">
+                  {formatAED(emi.total_interest)}
                 </p>
               </div>
 
-              <div className="rounded-lg border border-gray-200 bg-gray-50 p-5">
-                <p className="text-xs font-medium uppercase tracking-wide text-gray-500">
+              <div className="rounded-2xl border border-slate-200 bg-slate-50 p-5">
+                <p className="text-[10px] font-bold uppercase tracking-[0.08em] text-slate-400">
                   Total Payable
                 </p>
 
-                <p className="mt-2 text-xl font-bold text-gray-900">
-                  {formatCurrency(emi.total_payable)}
+                <p className="mt-2 font-mono text-xl font-bold text-slate-900">
+                  {formatAED(emi.total_payable)}
                 </p>
               </div>
 
-              <div className="rounded-lg border border-gray-200 bg-gray-50 p-5">
-                <p className="text-xs font-medium uppercase tracking-wide text-gray-500">
+              <div className="rounded-2xl border border-slate-200 bg-slate-50 p-5">
+                <p className="text-[10px] font-bold uppercase tracking-[0.08em] text-slate-400">
                   Monthly EMI
                 </p>
 
-                <p className="mt-2 text-2xl font-bold text-gray-900">
-                  {formatCurrency(emi.monthly_emi)}
+                <p className="mt-2 font-mono text-2xl font-bold text-slate-900">
+                  {formatAED(emi.monthly_emi)}
                 </p>
               </div>
             </div>
@@ -544,35 +508,35 @@ function EmiDetail() {
           {/* Expenses */}
           <SectionCard title="Expenses">
             {expenses.length === 0 ? (
-              <div className="rounded-lg border border-dashed border-gray-300 bg-gray-50 p-6 text-center">
-                <p className="text-sm text-gray-500">
+              <div className="rounded-2xl border border-dashed border-slate-300 bg-slate-50 p-6 text-center">
+                <p className="text-sm text-slate-500">
                   No individual expenses were saved for this EMI.
                 </p>
               </div>
             ) : (
               <div className="overflow-x-auto">
-                <table className="min-w-full divide-y divide-gray-200">
+                <table className="min-w-[900px] divide-y divide-slate-100">
                   <thead>
                     <tr>
-                      <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-gray-500">
+                      <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-slate-500">
                         Type
                       </th>
 
-                      <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-gray-500">
+                      <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-slate-500">
                         Name
                       </th>
 
-                      <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-gray-500">
+                      <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-slate-500">
                         Description
                       </th>
 
-                      <th className="px-4 py-3 text-right text-xs font-semibold uppercase tracking-wide text-gray-500">
+                      <th className="px-4 py-3 text-right text-xs font-semibold uppercase tracking-wide text-slate-500">
                         Amount
                       </th>
                     </tr>
                   </thead>
 
-                  <tbody className="divide-y divide-gray-200 bg-white">
+                  <tbody className="divide-y divide-slate-100 bg-white">
                     {expenses.map((expense, index) => (
                       <tr
                         key={expense.id ?? `${expense.expense_type}-${index}`}
@@ -589,8 +553,8 @@ function EmiDetail() {
                           {displayValue(expense.description)}
                         </td>
 
-                        <td className="whitespace-nowrap px-4 py-4 text-right text-sm font-semibold text-gray-900">
-                          {formatCurrency(expense.amount)}
+                        <td className="whitespace-nowrap px-4 py-4 text-right font-mono text-sm font-bold text-slate-900">
+                          {formatAED(expense.amount)}
                         </td>
                       </tr>
                     ))}
@@ -599,26 +563,16 @@ function EmiDetail() {
               </div>
             )}
 
-            <div className="mt-5 flex items-center justify-end border-t border-gray-200 pt-4">
+            <div className="mt-5 flex items-center justify-end border-t border-slate-100 pt-4">
               <div className="text-right">
-                <p className="text-sm text-gray-500">Other Expenses Total</p>
+                <p className="text-sm text-slate-500">Other Expenses Total</p>
 
-                <p className="mt-1 text-lg font-bold text-gray-900">
-                  {formatCurrency(emi.expense_total)}
+                <p className="mt-1 font-mono text-lg font-bold text-slate-900">
+                  {formatAED(emi.expense_total)}
                 </p>
               </div>
             </div>
           </SectionCard>
-
-          {/* Bottom navigation */}
-          <div className="flex justify-end">
-            <Link
-              to="/finance/emi/list"
-              className="rounded-lg border border-gray-300 bg-white px-5 py-2.5 text-sm font-medium text-gray-700 hover:bg-gray-50"
-            >
-              Back to EMI Estimates
-            </Link>
-          </div>
         </main>
       </div>
       <PrintDocument

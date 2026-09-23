@@ -3,6 +3,7 @@ import {
   BarChart3,
   BriefcaseBusiness,
   Car,
+  Calculator,
   ChevronLeft,
   ChevronRight,
   ClipboardList,
@@ -61,6 +62,11 @@ function Sidebar({ user, onLogout, mobileOpen, onCloseMobile }) {
       title: "Sales & Customers",
       items: [
         {
+          label: "Emi Calculator",
+          path: "/finance/emi/list",
+          icon: Calculator,
+        },
+        {
           label: "Quotes",
           path: "/deals",
           icon: FileText,
@@ -81,11 +87,6 @@ function Sidebar({ user, onLogout, mobileOpen, onCloseMobile }) {
     {
       title: "Finance",
       items: [
-        {
-          label: "Finance",
-          path: "/finance/master",
-          icon: WalletCards,
-        },
         {
           label: "Bank Loans",
           path: "/finance/bank-loans",
@@ -110,6 +111,11 @@ function Sidebar({ user, onLogout, mobileOpen, onCloseMobile }) {
           label: "Insurance",
           path: "/finance/insurance",
           icon: ShieldCheck,
+        },
+        {
+          label: "Finance",
+          path: "/finance/master",
+          icon: WalletCards,
         },
       ],
     },

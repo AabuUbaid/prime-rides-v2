@@ -15,6 +15,7 @@ import {
   saveEmiSheet,
 } from "../../api/finance";
 import ExpenseList from "./components/ExpenseList";
+import { formatAED } from "../../utils/formatters";
 
 function EmiCalculator() {
   const { user } = useAuth();
@@ -572,69 +573,51 @@ function EmiCalculator() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-[#f5f6fa]">
       {/* Header */}
-      <header className="border-b bg-white">
-        <div className="mx-auto flex max-w-7xl items-center justify-between px-6 py-4">
+      <header className="border-b border-slate-200 bg-white">
+        <div className="mx-auto flex w-full max-w-[1500px] items-center justify-between gap-4 px-4 py-4 sm:px-6 lg:px-8">
           <div>
-            <h1 className="text-2xl font-bold text-gray-900">Prime Rides</h1>
-
-            <p className="text-sm text-gray-500">Dealer Management System</p>
-          </div>
-
-          <div className="flex items-center gap-3">
-            <Link
-              to="/dashboard"
-              className="rounded-md border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 transition hover:bg-gray-100"
-            >
-              Dashboard
-            </Link>
-
-            <Link
-              to="/finance/settings"
-              className="rounded-md border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 transition hover:bg-gray-100"
-            >
-              Finance Master
-            </Link>
-
             <Link
               to="/finance/emi/list"
-              className="rounded-md border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 transition hover:bg-gray-100"
+              className="text-sm font-semibold text-slate-500 transition hover:text-amber-600"
             >
-              EMI Estimates
+              ← Back to EMI List
             </Link>
 
-            <div className="text-right">
-              <p className="text-sm font-medium text-gray-900">
-                {user?.first_name}
-              </p>
+            <div className="mt-4 mb-2 flex items-center gap-2">
+              <span className="h-1.5 w-1.5 rounded-full bg-amber-500" />
 
-              <p className="text-xs uppercase text-gray-500">{user?.role}</p>
+              <span className="text-[10px] font-mono uppercase tracking-[0.14em] text-amber-600">
+                Sales & Customers
+              </span>
             </div>
           </div>
         </div>
       </header>
 
       {/* Main */}
-      <main className="mx-auto max-w-7xl px-6 py-8">
+      <main className="mx-auto w-full max-w-[1500px] px-4 py-6 sm:px-6 lg:px-8">
         {/* Page heading */}
         <div className="mb-8">
-          <h2 className="text-2xl font-semibold text-gray-900">
+          <h2 className="text-2xl font-bold tracking-tight text-slate-900">
             EMI Calculator
           </h2>
 
-          <p className="mt-1 text-sm text-gray-500">
+          <p cclassName="mt-1 text-sm text-slate-500">
             Prepare a finance estimate for a customer and vehicle.
           </p>
         </div>
 
         <div className="space-y-6">
           {/* Customer */}
-          <section className="rounded-lg border border-gray-200 bg-white p-6 shadow-sm">
+          <section className="rounded-2xl border border-slate-200 bg-white p-6 shadow-[0_2px_8px_rgba(15,23,42,0.04)]">
             <div className="mb-5">
-              <h3 className="text-lg font-semibold text-gray-900">Customer</h3>
+              <h3 className="text-sm font-bold tracking-tight text-slate-900">
+                Customer
+              </h3>
 
-              <p className="mt-1 text-sm text-gray-500">
+              <p cclassName="mt-1 text-sm text-slate-500">
                 Enter the customer details for this finance estimate.
               </p>
             </div>
@@ -643,7 +626,7 @@ function EmiCalculator() {
               <div>
                 <label
                   htmlFor="customer_name"
-                  className="mb-1 block text-sm font-medium text-gray-700"
+                  className="mb-1.5 block text-[11px] font-bold uppercase tracking-[0.08em] text-slate-500"
                 >
                   Customer Name
                 </label>
@@ -652,14 +635,14 @@ function EmiCalculator() {
                   id="customer_name"
                   type="text"
                   placeholder="Enter customer name"
-                  className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm outline-none transition focus:border-gray-500 focus:ring-1 focus:ring-gray-500"
+                  className="h-10 w-full rounded-xl border border-slate-200 bg-white px-3 text-sm text-slate-800 outline-none transition placeholder:text-slate-400 focus:border-amber-400 focus:ring-2 focus:ring-amber-400/15"
                 />
               </div>
 
               <div>
                 <label
                   htmlFor="customer_mobile"
-                  className="mb-1 block text-sm font-medium text-gray-700"
+                  className="mb-1.5 block text-[11px] font-bold uppercase tracking-[0.08em] text-slate-500"
                 >
                   Customer Mobile
                 </label>
@@ -668,18 +651,20 @@ function EmiCalculator() {
                   id="customer_mobile"
                   type="tel"
                   placeholder="Enter mobile number"
-                  className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm outline-none transition focus:border-gray-500 focus:ring-1 focus:ring-gray-500"
+                  className="h-10 w-full rounded-xl border border-slate-200 bg-white px-3 text-sm text-slate-800 outline-none transition placeholder:text-slate-400 focus:border-amber-400 focus:ring-2 focus:ring-amber-400/15"
                 />
               </div>
             </div>
           </section>
 
           {/* Vehicle */}
-          <section className="rounded-lg border border-gray-200 bg-white p-6 shadow-sm">
+          <section className="rounded-2xl border border-slate-200 bg-white p-6 shadow-[0_2px_8px_rgba(15,23,42,0.04)]">
             <div className="mb-5">
-              <h3 className="text-lg font-semibold text-gray-900">Vehicle</h3>
+              <h3 className="text-sm font-bold tracking-tight text-slate-900">
+                Vehicle
+              </h3>
 
-              <p className="mt-1 text-sm text-gray-500">
+              <p cclassName="mt-1 text-sm text-slate-500">
                 Select an existing inventory vehicle or enter a manual vehicle.
               </p>
 
@@ -733,7 +718,7 @@ function EmiCalculator() {
             {vehicleSource === "inventory" && (
               <>
                 <div className="mb-5">
-                  <label className="mb-1 block text-sm font-medium text-gray-700">
+                  <label className="mb-1.5 block text-[11px] font-bold uppercase tracking-[0.08em] text-slate-500">
                     Vehicle Search
                   </label>
 
@@ -742,7 +727,7 @@ function EmiCalculator() {
                     value={vehicleSearch}
                     onChange={(event) => setVehicleSearch(event.target.value)}
                     placeholder="Search by stock ID, make, model, chassis, engine..."
-                    className="w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-sm text-gray-900 outline-none transition focus:border-gray-500 focus:ring-1 focus:ring-gray-500"
+                    className="h-10 w-full rounded-xl border border-slate-200 bg-white px-3 text-sm text-slate-800 outline-none transition placeholder:text-slate-400 focus:border-amber-400 focus:ring-2 focus:ring-amber-400/15"
                   />
 
                   {vehicleSearchLoading && (
@@ -752,17 +737,17 @@ function EmiCalculator() {
                   )}
 
                   {vehicleResults.length > 0 && (
-                    <div className="mt-2 overflow-hidden rounded-md border border-gray-200 bg-white shadow-sm">
+                    <div className="mt-2 overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-lg">
                       {vehicleResults.map((vehicle) => (
                         <button
                           key={vehicle.id}
                           type="button"
                           onClick={() => handleVehicleSelect(vehicle.id)}
-                          className="block w-full border-b border-gray-100 px-4 py-3 text-left transition last:border-b-0 hover:bg-gray-50"
+                          className="block w-full border-b border-slate-100 px-4 py-3 text-left transition last:border-b-0 hover:bg-slate-50"
                         >
                           <div className="flex flex-col gap-1 sm:flex-row sm:items-center sm:justify-between">
                             <div>
-                              <p className="text-sm font-medium text-gray-900">
+                              <p className="font-mono text-sm font-bold text-amber-600">
                                 {vehicle.stock_id || "No Stock ID"}
                               </p>
 
@@ -779,11 +764,11 @@ function EmiCalculator() {
                             </div>
 
                             <div className="text-left sm:text-right">
-                              <p className="text-sm font-medium text-gray-900">
+                              <p className="font-mono text-sm font-bold text-slate-900">
                                 AED {vehicle.asking_price ?? "—"}
                               </p>
 
-                              <p className="text-xs text-gray-500">
+                              <p className="text-[10px] font-bold uppercase tracking-[0.08em] text-slate-400">
                                 {vehicle.mileage ?? "—"} km
                               </p>
                             </div>
@@ -802,7 +787,7 @@ function EmiCalculator() {
                   <div>
                     <label
                       htmlFor="manual_make"
-                      className="mb-1 block text-sm font-medium text-gray-700"
+                      className="mb-1.5 block text-[11px] font-bold uppercase tracking-[0.08em] text-slate-500"
                     >
                       Make
                     </label>
@@ -818,14 +803,14 @@ function EmiCalculator() {
                         }))
                       }
                       placeholder="e.g. BMW"
-                      className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm outline-none transition focus:border-gray-500 focus:ring-1 focus:ring-gray-500"
+                      className="h-10 w-full rounded-xl border border-slate-200 bg-white px-3 text-sm text-slate-800 outline-none transition placeholder:text-slate-400 focus:border-amber-400 focus:ring-2 focus:ring-amber-400/15"
                     />
                   </div>
 
                   <div>
                     <label
                       htmlFor="manual_model"
-                      className="mb-1 block text-sm font-medium text-gray-700"
+                      className="mb-1.5 block text-[11px] font-bold uppercase tracking-[0.08em] text-slate-500"
                     >
                       Model
                     </label>
@@ -841,14 +826,14 @@ function EmiCalculator() {
                         }))
                       }
                       placeholder="e.g. X5"
-                      className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm outline-none transition focus:border-gray-500 focus:ring-1 focus:ring-gray-500"
+                      className="h-10 w-full rounded-xl border border-slate-200 bg-white px-3 text-sm text-slate-800 outline-none transition placeholder:text-slate-400 focus:border-amber-400 focus:ring-2 focus:ring-amber-400/15"
                     />
                   </div>
 
                   <div>
                     <label
                       htmlFor="manual_variant"
-                      className="mb-1 block text-sm font-medium text-gray-700"
+                      className="mb-1.5 block text-[11px] font-bold uppercase tracking-[0.08em] text-slate-500"
                     >
                       Variant
                     </label>
@@ -864,14 +849,14 @@ function EmiCalculator() {
                         }))
                       }
                       placeholder="e.g. xDrive40i"
-                      className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm outline-none transition focus:border-gray-500 focus:ring-1 focus:ring-gray-500"
+                      className="h-10 w-full rounded-xl border border-slate-200 bg-white px-3 text-sm text-slate-800 outline-none transition placeholder:text-slate-400 focus:border-amber-400 focus:ring-2 focus:ring-amber-400/15"
                     />
                   </div>
 
                   <div>
                     <label
                       htmlFor="manual_year"
-                      className="mb-1 block text-sm font-medium text-gray-700"
+                      className="mb-1.5 block text-[11px] font-bold uppercase tracking-[0.08em] text-slate-500"
                     >
                       Year
                     </label>
@@ -888,14 +873,14 @@ function EmiCalculator() {
                         }))
                       }
                       placeholder="e.g. 2024"
-                      className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm outline-none transition focus:border-gray-500 focus:ring-1 focus:ring-gray-500"
+                      className="h-10 w-full rounded-xl border border-slate-200 bg-white px-3 text-sm text-slate-800 outline-none transition placeholder:text-slate-400 focus:border-amber-400 focus:ring-2 focus:ring-amber-400/15"
                     />
                   </div>
 
                   <div>
                     <label
                       htmlFor="manual_colour"
-                      className="mb-1 block text-sm font-medium text-gray-700"
+                      className="mb-1.5 block text-[11px] font-bold uppercase tracking-[0.08em] text-slate-500"
                     >
                       Colour
                     </label>
@@ -911,14 +896,14 @@ function EmiCalculator() {
                         }))
                       }
                       placeholder="e.g. Black"
-                      className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm outline-none transition focus:border-gray-500 focus:ring-1 focus:ring-gray-500"
+                      className="h-10 w-full rounded-xl border border-slate-200 bg-white px-3 text-sm text-slate-800 outline-none transition placeholder:text-slate-400 focus:border-amber-400 focus:ring-2 focus:ring-amber-400/15"
                     />
                   </div>
 
                   <div>
                     <label
                       htmlFor="manual_mileage"
-                      className="mb-1 block text-sm font-medium text-gray-700"
+                      className="mb-1.5 block text-[11px] font-bold uppercase tracking-[0.08em] text-slate-500"
                     >
                       Mileage
                     </label>
@@ -935,14 +920,14 @@ function EmiCalculator() {
                         }))
                       }
                       placeholder="e.g. 25000"
-                      className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm outline-none transition focus:border-gray-500 focus:ring-1 focus:ring-gray-500"
+                      className="h-10 w-full rounded-xl border border-slate-200 bg-white px-3 text-sm text-slate-800 outline-none transition placeholder:text-slate-400 focus:border-amber-400 focus:ring-2 focus:ring-amber-400/15"
                     />
                   </div>
 
                   <div>
                     <label
                       htmlFor="manual_chassis_number"
-                      className="mb-1 block text-sm font-medium text-gray-700"
+                      className="mb-1.5 block text-[11px] font-bold uppercase tracking-[0.08em] text-slate-500"
                     >
                       Chassis Number
                     </label>
@@ -958,14 +943,14 @@ function EmiCalculator() {
                         }))
                       }
                       placeholder="Enter chassis number"
-                      className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm outline-none transition focus:border-gray-500 focus:ring-1 focus:ring-gray-500"
+                      className="h-10 w-full rounded-xl border border-slate-200 bg-white px-3 text-sm text-slate-800 outline-none transition placeholder:text-slate-400 focus:border-amber-400 focus:ring-2 focus:ring-amber-400/15"
                     />
                   </div>
 
                   <div>
                     <label
                       htmlFor="manual_engine_number"
-                      className="mb-1 block text-sm font-medium text-gray-700"
+                      className="mb-1.5 block text-[11px] font-bold uppercase tracking-[0.08em] text-slate-500"
                     >
                       Engine Number
                     </label>
@@ -981,7 +966,7 @@ function EmiCalculator() {
                         }))
                       }
                       placeholder="Enter engine number"
-                      className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm outline-none transition focus:border-gray-500 focus:ring-1 focus:ring-gray-500"
+                      className="h-10 w-full rounded-xl border border-slate-200 bg-white px-3 text-sm text-slate-800 outline-none transition placeholder:text-slate-400 focus:border-amber-400 focus:ring-2 focus:ring-amber-400/15"
                     />
                   </div>
                 </div>
@@ -989,7 +974,7 @@ function EmiCalculator() {
                 <div className="mt-5 max-w-md">
                   <label
                     htmlFor="manual_vehicle_price"
-                    className="mb-1 block text-sm font-medium text-gray-700"
+                    className="mb-1.5 block text-[11px] font-bold uppercase tracking-[0.08em] text-slate-500"
                   >
                     Vehicle Price
                   </label>
@@ -1013,7 +998,7 @@ function EmiCalculator() {
             )}
 
             {selectedVehicleLoading && (
-              <div className="rounded-md border border-gray-200 bg-gray-50 p-4">
+              <div className="rounded-2xl border border-slate-200 bg-slate-50 p-4">
                 <p className="text-sm text-gray-500">
                   Loading vehicle details...
                 </p>
@@ -1022,14 +1007,14 @@ function EmiCalculator() {
 
             {selectedVehicle && (
               <>
-                <div className="rounded-md border border-gray-200 bg-gray-50 p-4">
+                <div className="rounded-2xl border border-slate-200 bg-slate-50 p-4">
                   <div className="mb-4 flex items-start justify-between gap-4">
                     <div>
-                      <p className="text-xs font-medium uppercase text-gray-500">
+                      <p className="text-[10px] font-bold uppercase tracking-[0.08em] text-slate-400">
                         Selected Vehicle
                       </p>
 
-                      <p className="mt-1 text-base font-semibold text-gray-900">
+                      <p className="mt-1 font-mono text-base font-bold text-amber-600">
                         {selectedVehicle.stock_id || "—"}
                       </p>
                     </div>
@@ -1050,56 +1035,72 @@ function EmiCalculator() {
 
                   <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
                     <div>
-                      <p className="text-xs text-gray-500">Make</p>
-                      <p className="mt-1 text-sm font-medium text-gray-900">
+                      <p className="text-[10px] font-bold uppercase tracking-[0.08em] text-slate-400">
+                        Make
+                      </p>
+                      <p className="mt-1 text-sm font-semibold text-slate-800">
                         {selectedVehicle.make || "—"}
                       </p>
                     </div>
 
                     <div>
-                      <p className="text-xs text-gray-500">Model</p>
-                      <p className="mt-1 text-sm font-medium text-gray-900">
+                      <p className="text-[10px] font-bold uppercase tracking-[0.08em] text-slate-400">
+                        Model
+                      </p>
+                      <p className="mt-1 text-sm font-semibold text-slate-800">
                         {selectedVehicle.model || "—"}
                       </p>
                     </div>
 
                     <div>
-                      <p className="text-xs text-gray-500">Variant</p>
-                      <p className="mt-1 text-sm font-medium text-gray-900">
+                      <p className="text-[10px] font-bold uppercase tracking-[0.08em] text-slate-400">
+                        Variant
+                      </p>
+                      <p className="mt-1 text-sm font-semibold text-slate-800">
                         {selectedVehicle.variant || "—"}
                       </p>
                     </div>
 
                     <div>
-                      <p className="text-xs text-gray-500">Year</p>
-                      <p className="mt-1 text-sm font-medium text-gray-900">
+                      <p className="text-[10px] font-bold uppercase tracking-[0.08em] text-slate-400">
+                        Year
+                      </p>
+                      <p className="mt-1 text-sm font-semibold text-slate-800">
                         {selectedVehicle.year || "—"}
                       </p>
                     </div>
 
                     <div>
-                      <p className="text-xs text-gray-500">Colour</p>
-                      <p className="mt-1 text-sm font-medium text-gray-900">
+                      <p className="text-[10px] font-bold uppercase tracking-[0.08em] text-slate-400">
+                        Colour
+                      </p>
+                      <p className="mt-1 text-sm font-semibold text-slate-800">
                         {selectedVehicle.colour || "—"}
                       </p>
                     </div>
 
                     <div>
-                      <p className="text-xs text-gray-500">Mileage</p>
-                      <p className="mt-1 text-sm font-medium text-gray-900">
+                      <p className="text-[10px] font-bold uppercase tracking-[0.08em] text-slate-400">
+                        Mileage
+                      </p>
+                      <p className="mt-1 text-sm font-semibold text-slate-800">
                         {selectedVehicle.mileage ?? "—"} km
                       </p>
                     </div>
 
                     <div>
-                      <p className="text-xs text-gray-500">Chassis Number</p>
+                      <p className="text-[10px] font-bold uppercase tracking-[0.08em] text-slate-400">
+                        Chassis Number
+                      </p>
                       <p className="mt-1 break-all text-sm font-medium text-gray-900">
                         {selectedVehicle.chassis_number || "—"}
                       </p>
                     </div>
 
                     <div>
-                      <p className="text-xs text-gray-500">Engine Number</p>
+                      <p className="text-[10px] font-bold uppercase tracking-[0.08em] text-slate-400">
+                        Engine Number
+                      </p>
                       <p className="mt-1 break-all text-sm font-medium text-gray-900">
                         {selectedVehicle.engine_number || "—"}
                       </p>
@@ -1111,7 +1112,7 @@ function EmiCalculator() {
                   <div>
                     <label
                       htmlFor="vehicle_price"
-                      className="mb-1 block text-sm font-medium text-gray-700"
+                      className="mb-1.5 block text-[11px] font-bold uppercase tracking-[0.08em] text-slate-500"
                     >
                       Vehicle Price
                     </label>
@@ -1256,11 +1257,13 @@ function EmiCalculator() {
           </section>
 
           {/* Financing */}
-          <section className="rounded-lg border border-gray-200 bg-white p-6 shadow-sm">
+          <section className="rounded-2xl border border-slate-200 bg-white p-6 shadow-[0_2px_8px_rgba(15,23,42,0.04)]">
             <div className="mb-5">
-              <h3 className="text-lg font-semibold text-gray-900">Financing</h3>
+              <h3 className="text-sm font-bold tracking-tight text-slate-900">
+                Financing
+              </h3>
 
-              <p className="mt-1 text-sm text-gray-500">
+              <p cclassName="mt-1 text-sm text-slate-500">
                 Configure the finance terms for the estimate.
               </p>
             </div>
@@ -1269,7 +1272,7 @@ function EmiCalculator() {
               <div>
                 <label
                   htmlFor="down_payment"
-                  className="mb-1 block text-sm font-medium text-gray-700"
+                  className="mb-1.5 block text-[11px] font-bold uppercase tracking-[0.08em] text-slate-500"
                 >
                   Down Payment
                 </label>
@@ -1281,14 +1284,14 @@ function EmiCalculator() {
                   value={downPayment}
                   onChange={(event) => setDownPayment(event.target.value)}
                   placeholder="AED"
-                  className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm outline-none transition focus:border-gray-500 focus:ring-1 focus:ring-gray-500"
+                  className="h-10 w-full rounded-xl border border-slate-200 bg-white px-3 text-sm text-slate-800 outline-none transition placeholder:text-slate-400 focus:border-amber-400 focus:ring-2 focus:ring-amber-400/15"
                 />
               </div>
 
               <div>
                 <label
                   htmlFor="tenure"
-                  className="mb-1 block text-sm font-medium text-gray-700"
+                  className="mb-1.5 block text-[11px] font-bold uppercase tracking-[0.08em] text-slate-500"
                 >
                   Tenure
                 </label>
@@ -1297,7 +1300,7 @@ function EmiCalculator() {
                   id="tenure"
                   value={tenureYears}
                   onChange={(event) => setTenureYears(event.target.value)}
-                  className="w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-sm outline-none transition focus:border-gray-500 focus:ring-1 focus:ring-gray-500"
+                  className="h-10 w-full rounded-xl border border-slate-200 bg-white px-3 text-sm text-slate-800 outline-none transition focus:border-amber-400 focus:ring-2 focus:ring-amber-400/15"
                 >
                   <option value="" disabled>
                     Select tenure
@@ -1313,7 +1316,7 @@ function EmiCalculator() {
               <div>
                 <label
                   htmlFor="bank"
-                  className="mb-1 block text-sm font-medium text-gray-700"
+                  className="mb-1.5 block text-[11px] font-bold uppercase tracking-[0.08em] text-slate-500"
                 >
                   Bank
                 </label>
@@ -1327,7 +1330,7 @@ function EmiCalculator() {
                     setCustomInterestRate("");
                   }}
                   disabled={banksLoading}
-                  className="w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-sm text-gray-900 outline-none transition focus:border-gray-500 focus:ring-1 focus:ring-gray-500 disabled:bg-gray-100 disabled:text-gray-500"
+                  className="h-10 w-full rounded-xl border border-slate-200 bg-white px-3 text-sm text-slate-800 outline-none transition focus:border-amber-400 focus:ring-2 focus:ring-amber-400/15 disabled:bg-slate-50 disabled:text-slate-400"
                 >
                   <option value="">
                     {banksLoading ? "Loading banks..." : "Select bank"}
@@ -1367,7 +1370,7 @@ function EmiCalculator() {
                   <div className="mt-3">
                     <label
                       htmlFor="manual_interest_rate"
-                      className="mb-1 block text-sm font-medium text-gray-700"
+                      className="mb-1.5 block text-[11px] font-bold uppercase tracking-[0.08em] text-slate-500"
                     >
                       Custom Interest Rate
                     </label>
@@ -1382,7 +1385,7 @@ function EmiCalculator() {
                         setCustomInterestRate(event.target.value)
                       }
                       placeholder="Enter custom rate"
-                      className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm outline-none transition focus:border-gray-500 focus:ring-1 focus:ring-gray-500 md:max-w-md"
+                      className="h-10 w-full rounded-xl border border-slate-200 bg-white px-3 text-sm text-slate-800 outline-none transition focus:border-amber-400 focus:ring-2 focus:ring-amber-400/15 md:max-w-md"
                     />
 
                     <p className="mt-1 text-xs text-gray-500">
@@ -1396,20 +1399,20 @@ function EmiCalculator() {
           </section>
 
           {/* Expenses */}
-          <section className="rounded-lg border border-gray-200 bg-white p-6 shadow-sm">
+          <section className="rounded-2xl border border-slate-200 bg-white p-6 shadow-[0_2px_8px_rgba(15,23,42,0.04)]">
             <div className="mb-5">
-              <h3 className="text-lg font-semibold text-gray-900">
+              <h3 className="text-sm font-bold tracking-tight text-slate-900">
                 Expenses & Additional Charges
               </h3>
 
-              <p className="mt-1 text-sm text-gray-500">
+              <p cclassName="mt-1 text-sm text-slate-500">
                 Select the charges to include in this finance estimate.
               </p>
             </div>
 
             {/* Dynamic Expense Presets */}
             <div>
-              <label className="flex items-center gap-3 rounded-md border border-gray-200 p-4">
+              <label className="flex items-center gap-3 rounded-2xl border border-slate-200 bg-white p-4 transition hover:border-slate-300 hover:bg-slate-50">
                 <input
                   type="checkbox"
                   checked={includeOtherExpenses}
@@ -1429,7 +1432,7 @@ function EmiCalculator() {
                     Include Other Expenses
                   </p>
 
-                  <p className="text-xs text-gray-500">
+                  <p className="text-[10px] font-bold uppercase tracking-[0.08em] text-slate-400">
                     Select from the active Expense Presets configured in Finance
                     Master.
                   </p>
@@ -1477,7 +1480,7 @@ function EmiCalculator() {
 
               <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
                 {/* Insurance */}
-                <label className="flex cursor-pointer items-start gap-3 rounded-md border border-gray-200 p-4 hover:bg-gray-50">
+                <label className="flex cursor-pointer items-start gap-3 rounded-2xl border border-slate-200 bg-white p-4 transition hover:border-slate-300 hover:bg-slate-50">
                   <input
                     type="checkbox"
                     checked={selectedExpenseTypes.includes("insurance")}
@@ -1509,7 +1512,7 @@ function EmiCalculator() {
                 </label>
 
                 {/* Bank Processing */}
-                <label className="flex cursor-pointer items-start gap-3 rounded-md border border-gray-200 p-4 hover:bg-gray-50">
+                <label className="flex cursor-pointer items-start gap-3 rounded-2xl border border-slate-200 bg-white p-4 transition hover:border-slate-300 hover:bg-slate-50">
                   <input
                     type="checkbox"
                     checked={selectedExpenseTypes.includes("bank_process")}
@@ -1524,7 +1527,7 @@ function EmiCalculator() {
                 </label>
 
                 {/* Service Package */}
-                <div className="rounded-lg border border-gray-200 p-4">
+                <div className="rounded-2xl border border-slate-200 bg-white p-4">
                   <label
                     htmlFor="service_package"
                     className="mb-2 block text-sm font-medium text-gray-900"
@@ -1538,7 +1541,7 @@ function EmiCalculator() {
                     onChange={(event) =>
                       setSelectedServicePackageId(event.target.value)
                     }
-                    className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm"
+                    className="h-10 w-full rounded-xl border border-slate-200 bg-white px-3 text-sm text-slate-800 outline-none transition focus:border-amber-400 focus:ring-2 focus:ring-amber-400/15"
                   >
                     <option value="">No Service Package</option>
 
@@ -1561,111 +1564,111 @@ function EmiCalculator() {
           </section>
           {/* Results */}
           <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
-            <div className="rounded-md border border-gray-200 bg-gray-50 p-4">
-              <p className="text-xs font-medium uppercase text-gray-500">
+            <div className="rounded-2xl border border-slate-200 bg-slate-50 p-4">
+              <p className="text-[10px] font-bold uppercase tracking-[0.08em] text-slate-400">
                 Vehicle Price
               </p>
 
-              <p className="mt-2 text-xl font-semibold text-gray-900">
+              <p className="mt-2 font-mono text-xl font-bold text-slate-900">
                 {calculationResult?.vehicle_price
-                  ? `AED ${calculationResult.vehicle_price}`
+                  ? `${formatAED(calculationResult.vehicle_price)}`
                   : "—"}
               </p>
             </div>
 
-            <div className="rounded-md border border-gray-200 bg-gray-50 p-4">
-              <p className="text-xs font-medium uppercase text-gray-500">
+            <div className="rounded-2xl border border-slate-200 bg-slate-50 p-4">
+              <p className="text-[10px] font-bold uppercase tracking-[0.08em] text-slate-400">
                 VAT Amount
               </p>
 
-              <p className="mt-2 text-xl font-semibold text-gray-900">
+              <p className="mt-2 font-mono text-xl font-bold text-slate-900">
                 {calculationResult?.vat_amount
-                  ? `AED ${calculationResult.vat_amount}`
+                  ? `${formatAED(calculationResult.vat_amount)}`
                   : "—"}
               </p>
             </div>
 
-            <div className="rounded-md border border-gray-200 bg-gray-50 p-4">
-              <p className="text-xs font-medium uppercase text-gray-500">
+            <div className="rounded-2xl border border-slate-200 bg-slate-50 p-4">
+              <p className="text-[10px] font-bold uppercase tracking-[0.08em] text-slate-400">
                 Price After VAT
               </p>
 
-              <p className="mt-2 text-xl font-semibold text-gray-900">
+              <p className="mt-2 font-mono text-xl font-bold text-slate-900">
                 {calculationResult?.price_after_vat
-                  ? `AED ${calculationResult.price_after_vat}`
+                  ? `${formatAED(calculationResult.price_after_vat)}`
                   : "—"}
               </p>
             </div>
 
-            <div className="rounded-md border border-gray-200 bg-gray-50 p-4">
-              <p className="text-xs font-medium uppercase text-gray-500">
+            <div className="rounded-2xl border border-slate-200 bg-slate-50 p-4">
+              <p className="text-[10px] font-bold uppercase tracking-[0.08em] text-slate-400">
                 Finance Amount
               </p>
 
-              <p className="mt-2 text-xl font-semibold text-gray-900">
+              <p className="mt-2 font-mono text-xl font-bold text-slate-900">
                 {calculationResult?.finance_amount
-                  ? `AED ${calculationResult.finance_amount}`
+                  ? `${formatAED(calculationResult.finance_amount)}`
                   : "—"}
               </p>
             </div>
 
-            <div className="rounded-md border border-gray-200 bg-gray-50 p-4">
-              <p className="text-xs font-medium uppercase text-gray-500">
+            <div className="rounded-2xl border border-slate-200 bg-slate-50 p-4">
+              <p className="text-[10px] font-bold uppercase tracking-[0.08em] text-slate-400">
                 Interest Rate
               </p>
 
-              <p className="mt-2 text-xl font-semibold text-gray-900">
+              <p className="mt-2 font-mono text-xl font-bold text-slate-900">
                 {calculationResult?.interest_rate
                   ? `${calculationResult.interest_rate}%`
                   : "—"}
               </p>
             </div>
 
-            <div className="rounded-md border border-gray-200 bg-gray-50 p-4">
-              <p className="text-xs font-medium uppercase text-gray-500">
+            <div className="rounded-2xl border border-slate-200 bg-slate-50 p-4">
+              <p className="text-[10px] font-bold uppercase tracking-[0.08em] text-slate-400">
                 Total Interest
               </p>
 
-              <p className="mt-2 text-xl font-semibold text-gray-900">
+              <p className="mt-2 font-mono text-xl font-bold text-slate-900">
                 {calculationResult?.total_interest
-                  ? `AED ${calculationResult.total_interest}`
+                  ? `${formatAED(calculationResult.total_interest)}`
                   : "—"}
               </p>
             </div>
 
-            <div className="rounded-md border border-gray-200 bg-gray-50 p-4">
-              <p className="text-xs font-medium uppercase text-gray-500">
+            <div className="rounded-2xl border border-slate-200 bg-slate-50 p-4">
+              <p className="text-[10px] font-bold uppercase tracking-[0.08em] text-slate-400">
                 Total Payable
               </p>
 
-              <p className="mt-2 text-xl font-semibold text-gray-900">
+              <p className="mt-2 font-mono text-xl font-bold text-slate-900">
                 {calculationResult?.total_payable
-                  ? `AED ${calculationResult.total_payable}`
+                  ? `${formatAED(calculationResult.total_payable)}`
                   : "—"}
               </p>
             </div>
 
-            <div className="rounded-md border border-gray-200 bg-gray-50 p-4">
-              <p className="text-xs font-medium uppercase text-gray-500">
+            <div className="rounded-2xl border border-slate-200 bg-slate-50 p-4">
+              <p className="text-[10px] font-bold uppercase tracking-[0.08em] text-slate-400">
                 Monthly EMI
               </p>
 
-              <p className="mt-2 text-2xl font-bold text-gray-900">
+              <p className="mt-2 font-mono text-2xl font-bold text-slate-900">
                 {calculationResult?.monthly_emi
-                  ? `AED ${calculationResult.monthly_emi}`
+                  ? `${formatAED(calculationResult.monthly_emi)}`
                   : "—"}
               </p>
             </div>
           </div>
 
           {calculationResult && (
-            <section className="rounded-lg border border-gray-200 bg-white p-6 shadow-sm">
+            <section className="rounded-2xl border border-slate-200 bg-white p-6 shadow-[0_2px_8px_rgba(15,23,42,0.04)]">
               <div className="mb-5">
-                <h3 className="text-lg font-semibold text-gray-900">
+                <h3 className="text-sm font-bold tracking-tight text-slate-900">
                   Applied Expenses
                 </h3>
 
-                <p className="mt-1 text-sm text-gray-500">
+                <p cclassName="mt-1 text-sm text-slate-500">
                   Expenses resolved from the current Finance Master
                   configuration.
                 </p>
@@ -1676,7 +1679,7 @@ function EmiCalculator() {
                   {calculationResult.expenses.map((expense, index) => (
                     <div
                       key={`${expense.expense_type}-${index}`}
-                      className="flex flex-col gap-2 rounded-md border border-gray-200 bg-gray-50 p-4 sm:flex-row sm:items-center sm:justify-between"
+                      className="flex flex-col gap-2 rounded-2xl border border-slate-200 bg-slate-50 p-4 sm:flex-row sm:items-center sm:justify-between"
                     >
                       <div>
                         <p className="text-sm font-medium text-gray-900">
@@ -1717,7 +1720,7 @@ function EmiCalculator() {
           )}
 
           {calculationError && (
-            <div className="rounded-md border border-red-200 bg-red-50 p-4">
+            <div className="rounded-2xl border border-rose-200 bg-rose-50 p-4">
               <p className="text-sm text-red-700">{calculationError}</p>
             </div>
           )}
@@ -1725,7 +1728,7 @@ function EmiCalculator() {
           <section className="flex flex-wrap justify-end gap-3">
             <Link
               to="/dashboard"
-              className="rounded-md border border-gray-300 bg-white px-5 py-2 text-sm font-medium text-gray-700 transition hover:bg-gray-100"
+              className="rounded-xl border border-slate-200 bg-white px-5 py-2.5 text-sm font-semibold text-slate-700 transition hover:bg-slate-50"
             >
               Cancel
             </Link>
@@ -1734,7 +1737,7 @@ function EmiCalculator() {
               type="button"
               onClick={handleCalculateEmi}
               disabled={calculationLoading}
-              className="rounded-md bg-gray-900 px-5 py-2 text-sm font-medium text-white transition hover:bg-gray-800 disabled:cursor-not-allowed disabled:opacity-50"
+              className="rounded-xl bg-slate-900 px-5 py-2.5 text-sm font-bold text-white shadow-sm transition hover:bg-slate-800 disabled:cursor-not-allowed disabled:opacity-50"
             >
               {calculationLoading ? "Calculating..." : "Calculate EMI"}
             </button>
@@ -1743,7 +1746,7 @@ function EmiCalculator() {
               type="button"
               onClick={handleSaveEmi}
               disabled={calculationLoading || !calculationResult}
-              className="rounded-md bg-gray-900 px-5 py-2 text-sm font-medium text-white transition hover:bg-gray-800 disabled:cursor-not-allowed disabled:opacity-50"
+              className="rounded-xl bg-amber-500 px-5 py-2.5 text-sm font-bold text-slate-950 shadow-sm transition hover:bg-amber-400 disabled:cursor-not-allowed disabled:opacity-50"
             >
               {calculationLoading ? "Saving..." : "Save EMI"}
             </button>

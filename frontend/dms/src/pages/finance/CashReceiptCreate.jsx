@@ -583,34 +583,34 @@ function CashReceiptCreate() {
       : categories;
 
   return (
-    <div className="min-h-screen bg-gray-50 p-6">
+    <div className="min-h-screen bg-[#f5f6fa] px-4 py-5 sm:px-6 lg:px-8">
       <div className="mx-auto max-w-5xl">
         <div className="mb-6">
           <Link
             to="/finance/cash-receipts"
-            className="text-sm font-medium text-gray-700 hover:underline"
+            className="inline-flex items-center text-sm font-medium text-slate-500 transition hover:text-amber-600"
           >
             ← Back to Cash Receipts
           </Link>
 
-          <h1 className="mt-2 text-2xl font-semibold text-gray-900">
+          <h1 className="mt-2 text-2xl font-extrabold tracking-tight text-[#172033]">
             Create Cash Receipt
           </h1>
 
-          <p className="mt-1 text-sm text-gray-500">
+          <p className="mt-1 text-sm text-slate-500">
             Record an actual financial transaction.
           </p>
         </div>
 
         <form
           onSubmit={handleSubmit}
-          className="rounded-lg border border-gray-200 bg-white p-6 shadow-sm"
+          className="rounded-2xl border border-[#e5e7eb] bg-white p-4 shadow-[0_2px_8px_rgba(15,23,42,0.04)] sm:p-6"
         >
-          <div className="grid grid-cols-1 gap-5 md:grid-cols-2">
+          <div className="grid grid-cols-1 gap-5 md:grid-cols-2 lg:gap-6">
             <div>
               <label
                 htmlFor="cash-receipt-customer"
-                className="mb-1 block text-sm font-medium text-gray-700"
+                className="mb-1.5 block text-[11px] font-bold uppercase tracking-[0.08em] text-slate-500"
               >
                 Customer
               </label>
@@ -621,7 +621,7 @@ function CashReceiptCreate() {
                 onChange={(event) => {
                   setCustomerId(event.target.value);
                 }}
-                className="w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-sm outline-none focus:border-gray-500 focus:ring-1 focus:ring-gray-500 disabled:bg-gray-100 disabled:text-gray-500"
+                className="h-10 w-full rounded-xl border border-slate-200 bg-white px-3 text-sm text-slate-800 outline-none transition focus:border-amber-400 focus:ring-2 focus:ring-amber-100 disabled:bg-slate-50 disabled:text-slate-400"
               >
                 <option value="">
                   {customersLoading
@@ -646,7 +646,7 @@ function CashReceiptCreate() {
             <div>
               <label
                 htmlFor="cash-receipt-quote"
-                className="mb-1 block text-sm font-medium text-gray-700"
+                className="mb-1.5 block text-[11px] font-bold uppercase tracking-[0.08em] text-slate-500"
               >
                 Quote / Deal
               </label>
@@ -656,7 +656,7 @@ function CashReceiptCreate() {
                 value={quoteId}
                 disabled={!customerId || dealsLoading || deals.length === 0}
                 onChange={(event) => setQuoteId(event.target.value)}
-                className="w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-sm outline-none focus:border-gray-500 focus:ring-1 focus:ring-gray-500 disabled:bg-gray-100 disabled:text-gray-500"
+                className="h-10 w-full rounded-xl border border-slate-200 bg-white px-3 text-sm text-slate-800 outline-none transition focus:border-amber-400 focus:ring-2 focus:ring-amber-100 disabled:bg-slate-50 disabled:text-slate-400"
               >
                 <option value="">
                   {!customerId
@@ -686,13 +686,13 @@ function CashReceiptCreate() {
             </div>
 
             {selectedQuote && (
-              <div className="md:col-span-2 rounded-md border border-gray-200 bg-gray-50 p-4">
+              <div className="md:col-span-2 rounded-2xl border border-[#e5e7eb] bg-slate-50/70 p-4 sm:p-5">
                 <div className="mb-3">
-                  <p className="text-sm font-medium text-gray-900">
+                  <p className="text-sm font-bold text-[#172033]">
                     Expense Context
                   </p>
 
-                  <p className="mt-1 text-xs text-gray-500">
+                  <p className="mt-1 text-xs leading-5 text-slate-500">
                     Optional. Select the specific Quote or EMI expense that this
                     actual transaction relates to.
                   </p>
@@ -712,7 +712,7 @@ function CashReceiptCreate() {
                     <select
                       value={quoteExpenseId}
                       onChange={handleQuoteExpenseChange}
-                      className="w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-sm outline-none focus:border-gray-500 focus:ring-1 focus:ring-gray-500"
+                      className="h-10 w-full rounded-xl border border-slate-200 bg-white px-3 text-sm text-slate-800 outline-none transition focus:border-amber-400 focus:ring-2 focus:ring-amber-100"
                     >
                       <option value="">No Quote Expense</option>
 
@@ -736,7 +736,7 @@ function CashReceiptCreate() {
                     <select
                       value={emiExpenseId}
                       onChange={handleEmiExpenseChange}
-                      className="w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-sm outline-none focus:border-gray-500 focus:ring-1 focus:ring-gray-500"
+                      className="h-10 w-full rounded-xl border border-slate-200 bg-white px-3 text-sm text-slate-800 outline-none transition focus:border-amber-400 focus:ring-2 focus:ring-amber-100"
                     >
                       <option value="">No EMI Expense</option>
 
@@ -772,13 +772,13 @@ function CashReceiptCreate() {
             )}
 
             {quoteId && (
-              <div className="mt-4 rounded-lg border border-gray-200 bg-gray-50 p-4">
-                <div className="text-xs font-medium uppercase tracking-wide text-gray-500">
+              <div className="mt-4 rounded-2xl border border-amber-100 bg-[#fffaf0] p-4 sm:p-5">
+                <div className="text-[10px] font-bold uppercase tracking-[0.08em] text-slate-500">
                   Current Customer Balance
                 </div>
 
                 {balanceLoading ? (
-                  <div className="mt-1 text-sm text-gray-500">
+                  <div className="mt-1 text-sm text-slate-500">
                     Loading balance...
                   </div>
                 ) : balanceError ? (
@@ -787,11 +787,11 @@ function CashReceiptCreate() {
                   </div>
                 ) : balance ? (
                   <>
-                    <div className="mt-1 text-xl font-semibold text-gray-900">
+                    <div className="mt-1 text-xl font-extrabold text-[#172033]">
                       AED {formatAED(balance.net_difference)}
                     </div>
 
-                    <div className="mt-2 flex flex-wrap gap-4 text-xs text-gray-500">
+                    <div className="mt-2 flex flex-wrap gap-x-5 gap-y-2 text-xs text-slate-500">
                       <span>
                         Received: AED {formatAED(balance.total_received)}
                       </span>
@@ -802,7 +802,7 @@ function CashReceiptCreate() {
                     </div>
                   </>
                 ) : (
-                  <div className="mt-1 text-sm text-gray-500">
+                  <div className="mt-1 text-sm text-slate-500">
                     No balance information available.
                   </div>
                 )}
@@ -812,7 +812,7 @@ function CashReceiptCreate() {
             <div>
               <label
                 htmlFor="cash-receipt-direction"
-                className="mb-1 block text-sm font-medium text-gray-700"
+                className="mb-1.5 block text-[11px] font-bold uppercase tracking-[0.08em] text-slate-500"
               >
                 Direction
               </label>
@@ -821,7 +821,7 @@ function CashReceiptCreate() {
                 id="cash-receipt-direction"
                 value={direction}
                 onChange={(event) => setDirection(event.target.value)}
-                className="w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-sm outline-none focus:border-gray-500 focus:ring-1 focus:ring-gray-500"
+                className="h-10 w-full rounded-xl border border-slate-200 bg-white px-3 text-sm text-slate-800 outline-none transition focus:border-amber-400 focus:ring-2 focus:ring-amber-100"
               >
                 {DIRECTIONS.map((option) => (
                   <option key={option.value} value={option.value}>
@@ -834,7 +834,7 @@ function CashReceiptCreate() {
             <div>
               <label
                 htmlFor="cash-receipt-category"
-                className="mb-1 block text-sm font-medium text-gray-700"
+                className="mb-1.5 block text-[11px] font-bold uppercase tracking-[0.08em] text-slate-500"
               >
                 Category
               </label>
@@ -848,7 +848,7 @@ function CashReceiptCreate() {
                   Boolean(selectedContextExpense)
                 }
                 onChange={(event) => setCategory(event.target.value)}
-                className="w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-sm outline-none focus:border-gray-500 focus:ring-1 focus:ring-gray-500 disabled:bg-gray-100 disabled:text-gray-500"
+                className="h-10 w-full rounded-xl border border-slate-200 bg-white px-3 text-sm text-slate-800 outline-none transition focus:border-amber-400 focus:ring-2 focus:ring-amber-100 disabled:bg-slate-50 disabled:text-slate-400"
               >
                 {categoriesLoading ? (
                   <option value="">Loading categories...</option>
@@ -869,7 +869,7 @@ function CashReceiptCreate() {
               </select>
 
               {selectedContextExpense && (
-                <p className="mt-1 text-xs text-gray-500">
+                <p className="mt-1 text-xs leading-5 text-slate-500">
                   Category is locked to the selected expense context.
                 </p>
               )}
@@ -882,7 +882,7 @@ function CashReceiptCreate() {
             <div>
               <label
                 htmlFor="cash-receipt-amount"
-                className="mb-1 block text-sm font-medium text-gray-700"
+                className="mb-1.5 block text-[11px] font-bold uppercase tracking-[0.08em] text-slate-500"
               >
                 Actual Amount
               </label>
@@ -895,10 +895,10 @@ function CashReceiptCreate() {
                 value={amount}
                 onChange={(event) => setAmount(event.target.value)}
                 placeholder="0.00"
-                className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm outline-none focus:border-gray-500 focus:ring-1 focus:ring-gray-500"
+                className="h-10 w-full rounded-xl border border-slate-200 bg-white px-3 text-sm text-slate-800 outline-none transition focus:border-amber-400 focus:ring-2 focus:ring-amber-100"
               />
 
-              <p className="mt-1 text-xs text-gray-500">
+              <p className="mt-1 text-xs leading-5 text-slate-500">
                 Enter the actual transaction amount. Do not copy a configured
                 expense amount automatically.
               </p>
@@ -907,7 +907,7 @@ function CashReceiptCreate() {
             <div>
               <label
                 htmlFor="cash-receipt-payment-method"
-                className="mb-1 block text-sm font-medium text-gray-700"
+                className="mb-1.5 block text-[11px] font-bold uppercase tracking-[0.08em] text-slate-500"
               >
                 Payment Method
               </label>
@@ -916,7 +916,7 @@ function CashReceiptCreate() {
                 id="cash-receipt-payment-method"
                 value={paymentMethod}
                 onChange={(event) => setPaymentMethod(event.target.value)}
-                className="w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-sm outline-none focus:border-gray-500 focus:ring-1 focus:ring-gray-500"
+                className="h-10 w-full rounded-xl border border-slate-200 bg-white px-3 text-sm text-slate-800 outline-none transition focus:border-amber-400 focus:ring-2 focus:ring-amber-100"
               >
                 {PAYMENT_METHODS.map((option) => (
                   <option key={option.value} value={option.value}>
@@ -929,7 +929,7 @@ function CashReceiptCreate() {
             <div>
               <label
                 htmlFor="cash-receipt-date"
-                className="mb-1 block text-sm font-medium text-gray-700"
+                className="mb-1.5 block text-[11px] font-bold uppercase tracking-[0.08em] text-slate-500"
               >
                 Transaction Date
               </label>
@@ -939,14 +939,14 @@ function CashReceiptCreate() {
                 type="date"
                 value={transactionDate}
                 onChange={(event) => setTransactionDate(event.target.value)}
-                className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm outline-none focus:border-gray-500 focus:ring-1 focus:ring-gray-500"
+                className="h-10 w-full rounded-xl border border-slate-200 bg-white px-3 text-sm text-slate-800 outline-none transition focus:border-amber-400 focus:ring-2 focus:ring-amber-100"
               />
             </div>
 
             <div>
               <label
                 htmlFor="cash-receipt-reference"
-                className="mb-1 block text-sm font-medium text-gray-700"
+                className="mb-1.5 block text-[11px] font-bold uppercase tracking-[0.08em] text-slate-500"
               >
                 Reference
               </label>
@@ -958,14 +958,14 @@ function CashReceiptCreate() {
                 onChange={(event) => setReference(event.target.value)}
                 maxLength={255}
                 placeholder="Optional reference"
-                className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm outline-none focus:border-gray-500 focus:ring-1 focus:ring-gray-500"
+                className="h-10 w-full rounded-xl border border-slate-200 bg-white px-3 text-sm text-slate-800 outline-none transition focus:border-amber-400 focus:ring-2 focus:ring-amber-100"
               />
             </div>
 
             <div className="md:col-span-2">
               <label
                 htmlFor="cash-receipt-description"
-                className="mb-1 block text-sm font-medium text-gray-700"
+                className="mb-1.5 block text-[11px] font-bold uppercase tracking-[0.08em] text-slate-500"
               >
                 Description
               </label>
@@ -977,16 +977,16 @@ function CashReceiptCreate() {
                 onChange={(event) => setDescription(event.target.value)}
                 maxLength={5000}
                 placeholder="Optional description"
-                className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm outline-none focus:border-gray-500 focus:ring-1 focus:ring-gray-500"
+                className="w-full rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-sm text-slate-800 outline-none transition focus:border-amber-400 focus:ring-2 focus:ring-amber-100"
               />
             </div>
           </div>
 
-          <div className="mt-6 flex items-center justify-end gap-3">
+          <div className="mt-6 flex flex-col-reverse gap-3 border-t border-slate-100 pt-5 sm:flex-row sm:items-center sm:justify-end">
             <button
               type="button"
               onClick={() => navigate("/finance/cash-receipts")}
-              className="rounded-md border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50"
+              className="inline-flex h-10 items-center justify-center rounded-xl border border-slate-200 bg-white px-4 text-sm font-semibold text-slate-600 transition hover:bg-slate-50"
             >
               Cancel
             </button>
@@ -994,7 +994,7 @@ function CashReceiptCreate() {
             <button
               type="submit"
               disabled={saving || categoriesLoading || categories.length === 0}
-              className="rounded-md bg-gray-900 px-4 py-2 text-sm font-medium text-white disabled:opacity-50"
+              className="inline-flex h-10 items-center justify-center rounded-xl bg-amber-500 px-5 text-sm font-bold text-white shadow-sm transition hover:bg-amber-600 disabled:cursor-not-allowed disabled:opacity-50"
             >
               {saving ? "Saving..." : "Create Cash Receipt"}
             </button>

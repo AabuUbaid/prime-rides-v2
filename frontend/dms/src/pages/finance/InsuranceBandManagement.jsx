@@ -38,11 +38,7 @@ function getFieldError(value) {
 function getApiErrors(error) {
   const errors = error?.cause?.errors;
 
-  if (
-    errors &&
-    typeof errors === "object" &&
-    !Array.isArray(errors)
-  ) {
+  if (errors && typeof errors === "object" && !Array.isArray(errors)) {
     return errors;
   }
 
@@ -56,21 +52,11 @@ function getApiMessage(error) {
     return getFieldError(errors.non_field_errors);
   }
 
-  return (
-    error?.cause?.message ||
-    error?.message ||
-    "Something went wrong."
-  );
+  return error?.cause?.message || error?.message || "Something went wrong.";
 }
 
 function getResponseData(response) {
-  if (
-    response &&
-    Object.prototype.hasOwnProperty.call(
-      response,
-      "data",
-    )
-  ) {
+  if (response && Object.prototype.hasOwnProperty.call(response, "data")) {
     return response.data;
   }
 
@@ -113,14 +99,9 @@ function InsuranceBandManagement() {
 
       const data = getResponseData(response);
 
-setBands(
-  Array.isArray(data) ? data : [],
-);
+      setBands(Array.isArray(data) ? data : []);
     } catch (error) {
-      console.error(
-        "Failed to load insurance bands:",
-        error,
-      );
+      console.error("Failed to load insurance bands:", error);
 
       setBands([]);
       toast.error(getApiMessage(error));
@@ -130,25 +111,16 @@ setBands(
   }
 
   useEffect(() => {
-   
-  loadBands();
-}, []);
+    loadBands();
+  }, []);
 
   const sortedBands = useMemo(() => {
     return [...bands]
-      .filter(
-        (band) =>
-          band &&
-          typeof band === "object",
-      )
+      .filter((band) => band && typeof band === "object")
       .sort(
         (a, b) =>
-          Number(
-            a.minimum_vehicle_price || 0,
-          ) -
-          Number(
-            b.minimum_vehicle_price || 0,
-          ),
+          Number(a.minimum_vehicle_price || 0) -
+          Number(b.minimum_vehicle_price || 0),
       );
   }, [bands]);
 
@@ -168,23 +140,11 @@ setBands(
 
     setForm({
       name: band.name ?? "",
-      minimum_vehicle_price:
-        toNumberString(
-          band.minimum_vehicle_price,
-        ),
-      maximum_vehicle_price:
-        toNumberString(
-          band.maximum_vehicle_price,
-        ),
-      amount: toNumberString(
-        band.amount,
-      ),
-      no_license_surcharge: toNumberString(
-        band.no_license_surcharge,
-      ),
-      is_active: Boolean(
-        band.is_active,
-      ),
+      minimum_vehicle_price: toNumberString(band.minimum_vehicle_price),
+      maximum_vehicle_price: toNumberString(band.maximum_vehicle_price),
+      amount: toNumberString(band.amount),
+      no_license_surcharge: toNumberString(band.no_license_surcharge),
+      is_active: Boolean(band.is_active),
     });
 
     setFieldErrors({});
@@ -201,19 +161,11 @@ setBands(
   }
 
   function handleChange(event) {
-    const {
-      name,
-      value,
-      type,
-      checked,
-    } = event.target;
+    const { name, value, type, checked } = event.target;
 
     setForm((current) => ({
       ...current,
-      [name]:
-        type === "checkbox"
-          ? checked
-          : value,
+      [name]: type === "checkbox" ? checked : value,
     }));
 
     setFieldErrors((current) => {
@@ -235,94 +187,57 @@ setBands(
     const errors = {};
 
     if (!form.name.trim()) {
-      errors.name =
-        "Band name is required.";
+      errors.name = "Band name is required.";
     }
 
-    const minimum = Number(
-      form.minimum_vehicle_price,
-    );
+    const minimum = Number(form.minimum_vehicle_price);
 
-    const maximum = Number(
-      form.maximum_vehicle_price,
-    );
+    const maximum = Number(form.maximum_vehicle_price);
 
-    const amount = Number(
-      form.amount,
-    );
+    const amount = Number(form.amount);
 
-    const noLicenseSurcharge = Number(
-      form.no_license_surcharge,
-    );
+    const noLicenseSurcharge = Number(form.no_license_surcharge);
 
-    if (
-      form.minimum_vehicle_price === ""
-    ) {
-      errors.minimum_vehicle_price =
-        "Minimum vehicle price is required.";
-    } else if (
-      !Number.isFinite(minimum) ||
-      minimum < 0
-    ) {
+    if (form.minimum_vehicle_price === "") {
+      errors.minimum_vehicle_price = "Minimum vehicle price is required.";
+    } else if (!Number.isFinite(minimum) || minimum < 0) {
       errors.minimum_vehicle_price =
         "Minimum vehicle price must be 0 or greater.";
     }
 
-    if (
-      form.maximum_vehicle_price === ""
-    ) {
-      errors.maximum_vehicle_price =
-        "Maximum vehicle price is required.";
-    } else if (
-      !Number.isFinite(maximum) ||
-      maximum < 0
-    ) {
+    if (form.maximum_vehicle_price === "") {
+      errors.maximum_vehicle_price = "Maximum vehicle price is required.";
+    } else if (!Number.isFinite(maximum) || maximum < 0) {
       errors.maximum_vehicle_price =
         "Maximum vehicle price must be 0 or greater.";
-    } else if (
-      Number.isFinite(minimum) &&
-      maximum <= minimum
-    ) {
+    } else if (Number.isFinite(minimum) && maximum <= minimum) {
       errors.maximum_vehicle_price =
         "Maximum vehicle price must be greater than minimum vehicle price.";
     }
 
     if (form.amount === "") {
-      errors.amount =
-        "Insurance amount is required.";
-    } else if (
-      !Number.isFinite(amount) ||
-      amount < 0
-    ) {
-      errors.amount =
-        "Insurance amount must be 0 or greater.";
+      errors.amount = "Insurance amount is required.";
+    } else if (!Number.isFinite(amount) || amount < 0) {
+      errors.amount = "Insurance amount must be 0 or greater.";
     }
 
     if (form.no_license_surcharge === "") {
-      errors.no_license_surcharge =
-        "No driving licence surcharge is required.";
-    } else if (
-      !Number.isFinite(noLicenseSurcharge) ||
-      noLicenseSurcharge < 0
-    ) {
+      errors.no_license_surcharge = "No driving licence surcharge is required.";
+    } else if (!Number.isFinite(noLicenseSurcharge) || noLicenseSurcharge < 0) {
       errors.no_license_surcharge =
         "No driving licence surcharge must be 0 or greater.";
     }
 
     setFieldErrors(errors);
 
-    return (
-      Object.keys(errors).length === 0
-    );
+    return Object.keys(errors).length === 0;
   }
 
   function buildPayload() {
     return {
       name: form.name.trim(),
-      minimum_vehicle_price:
-        form.minimum_vehicle_price,
-      maximum_vehicle_price:
-        form.maximum_vehicle_price,
+      minimum_vehicle_price: form.minimum_vehicle_price,
+      maximum_vehicle_price: form.maximum_vehicle_price,
       amount: form.amount,
       no_license_surcharge: form.no_license_surcharge,
       is_active: form.is_active,
@@ -333,9 +248,7 @@ setBands(
     event.preventDefault();
 
     if (!isMaster) {
-      toast.error(
-        "You do not have permission to modify insurance bands.",
-      );
+      toast.error("You do not have permission to modify insurance bands.");
 
       return;
     }
@@ -353,16 +266,9 @@ setBands(
       let response;
 
       if (editingBand) {
-        response =
-          await updateInsuranceBand(
-            editingBand.id,
-            payload,
-          );
+        response = await updateInsuranceBand(editingBand.id, payload);
       } else {
-        response =
-          await createInsuranceBand(
-            payload,
-          );
+        response = await createInsuranceBand(payload);
       }
 
       /*
@@ -388,169 +294,104 @@ setBands(
         error,
       );
 
-      const errors =
-        getApiErrors(error);
+      const errors = getApiErrors(error);
 
-      if (
-        Object.keys(errors).length > 0
-      ) {
+      if (Object.keys(errors).length > 0) {
         setFieldErrors(errors);
       }
 
-      toast.error(
-        getApiMessage(error),
-      );
+      toast.error(getApiMessage(error));
     } finally {
       setSaving(false);
     }
   }
 
-  async function handleToggleActive(
-    band,
-  ) {
+  async function handleToggleActive(band) {
     if (!isMaster) {
-      toast.error(
-        "You do not have permission to modify insurance bands.",
-      );
+      toast.error("You do not have permission to modify insurance bands.");
 
       return;
     }
 
     try {
-      await updateInsuranceBand(
-        band.id,
-        {
-          is_active:
-            !band.is_active,
-        },
-      );
+      await updateInsuranceBand(band.id, {
+        is_active: !band.is_active,
+      });
 
       await loadBands();
 
       toast.success(
         `Insurance band ${
-          band.is_active
-            ? "deactivated"
-            : "activated"
+          band.is_active ? "deactivated" : "activated"
         } successfully.`,
       );
     } catch (error) {
-      console.error(
-        "Failed to update insurance band status:",
-        error,
-      );
+      console.error("Failed to update insurance band status:", error);
 
-      const errors =
-        getApiErrors(error);
+      const errors = getApiErrors(error);
 
-      if (
-        Object.keys(errors).length > 0
-      ) {
+      if (Object.keys(errors).length > 0) {
         setFieldErrors(errors);
       }
 
-      toast.error(
-        getApiMessage(error),
-      );
+      toast.error(getApiMessage(error));
     }
   }
 
-  async function handleDelete(
-    band,
-  ) {
+  async function handleDelete(band) {
     if (!isMaster) {
-      toast.error(
-        "You do not have permission to delete insurance bands.",
-      );
+      toast.error("You do not have permission to delete insurance bands.");
 
       return;
     }
 
-    const confirmed =
-      window.confirm(
-        `Delete "${band.name}"? This action cannot be undone.`,
-      );
+    const confirmed = window.confirm(
+      `Delete "${band.name}"? This action cannot be undone.`,
+    );
 
     if (!confirmed) {
       return;
     }
 
     try {
-      await deleteInsuranceBand(
-        band.id,
-      );
+      await deleteInsuranceBand(band.id);
 
       await loadBands();
 
-      toast.success(
-        "Insurance band deleted successfully.",
-      );
+      toast.success("Insurance band deleted successfully.");
     } catch (error) {
-      console.error(
-        "Failed to delete insurance band:",
-        error,
-      );
+      console.error("Failed to delete insurance band:", error);
 
-      toast.error(
-        getApiMessage(error),
-      );
+      toast.error(getApiMessage(error));
     }
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      {/* Header */}
-      <header className="border-b bg-white">
-        <div className="mx-auto flex max-w-7xl items-center justify-between px-6 py-4">
-          <div>
-            <h1 className="text-2xl font-bold text-gray-900">
-              Prime Rides
-            </h1>
-
-            <p className="text-sm text-gray-500">
-              Dealer Management System
-            </p>
-          </div>
-
-          <div className="flex items-center gap-3">
-            <Link
-              to="/finance/settings"
-              className="rounded-md border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 transition hover:bg-gray-100"
-            >
-              Finance Master
-            </Link>
-
-            <Link
-              to="/dashboard"
-              className="rounded-md border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 transition hover:bg-gray-100"
-            >
-              Dashboard
-            </Link>
-
-            <div className="text-right">
-              <p className="text-sm font-medium text-gray-900">
-                {user?.first_name}
-              </p>
-
-              <p className="text-xs uppercase text-gray-500">
-                {user?.role}
-              </p>
-            </div>
-          </div>
-        </div>
-      </header>
-
+    <div className="min-h-screen bg-[#f5f6fa]">
       {/* Main */}
-      <main className="mx-auto max-w-7xl px-6 py-8">
+      <main className="mx-auto w-full max-w-[1500px] px-4 py-6 sm:px-6 lg:px-8">
         <div className="mb-6 flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
           <div>
-            <h2 className="text-2xl font-semibold text-gray-900">
+            <Link
+              to="/finance/settings"
+              className="text-sm font-medium text-gray-600 hover:text-slate-800"
+            >
+              ← Back to Finance Settings
+            </Link>
+            <div className="mt-4 mb-2 flex items-center gap-2">
+              <span className="h-1.5 w-1.5 rounded-full bg-amber-500" />
+
+              <span className="text-[10px] font-mono uppercase tracking-[0.14em] text-amber-600">
+                Managements
+              </span>
+            </div>
+            <h2 className="text-2xl font-bold tracking-tight text-slate-900">
               Insurance Bands
             </h2>
 
-            <p className="mt-1 text-sm text-gray-500">
-              Configure vehicle-price ranges and
-              insurance amounts used by Finance.
+            <p className="mt-1 text-sm text-slate-500">
+              Configure vehicle-price ranges and insurance amounts used by
+              Finance.
             </p>
           </div>
 
@@ -558,7 +399,7 @@ setBands(
             <button
               type="button"
               onClick={openCreateModal}
-              className="rounded-md bg-gray-900 px-4 py-2 text-sm font-medium text-white transition hover:bg-gray-800"
+              className="rounded-xl bg-amber-500 px-5 py-2.5 text-sm font-bold text-slate-950 shadow-sm transition hover:bg-amber-400 disabled:cursor-not-allowed disabled:opacity-50"
             >
               + Add Insurance Band
             </button>
@@ -566,49 +407,47 @@ setBands(
         </div>
 
         {/* Table */}
-        <div className="overflow-hidden rounded-lg border border-gray-200 bg-white shadow-sm">
+        <div className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-[0_2px_8px_rgba(15,23,42,0.04)]">
           {loading ? (
             <div className="p-8 text-center text-sm text-gray-500">
               Loading insurance bands...
             </div>
-          ) : sortedBands.length ===
-            0 ? (
+          ) : sortedBands.length === 0 ? (
             <div className="p-8 text-center">
-              <p className="text-sm font-medium text-gray-700">
+              <p className="text-sm font-medium text-slate-600">
                 No insurance bands found.
               </p>
 
-              <p className="mt-1 text-sm text-gray-500">
-                Add an insurance band to begin
-                configuring Finance.
+              <p className="mt-1 text-sm text-slate-500">
+                Add an insurance band to begin configuring Finance.
               </p>
             </div>
           ) : (
             <div className="overflow-x-auto">
-              <table className="min-w-full divide-y divide-gray-200">
-                <thead className="bg-gray-50">
+              <table className="min-w-full divide-y divide-slate-200">
+                <thead className="bg-slate-50">
                   <tr>
-                    <th className="px-6 py-3 text-left text-xs font-semibold uppercase tracking-wide text-gray-500">
+                    <th className="px-6 py-3.5 text-left text-[10px] font-bold uppercase tracking-[0.08em] text-slate-400">
                       Band Name
                     </th>
 
-                    <th className="px-6 py-3 text-left text-xs font-semibold uppercase tracking-wide text-gray-500">
+                    <th className="px-6 py-3.5 text-left text-[10px] font-bold uppercase tracking-[0.08em] text-slate-400">
                       Minimum Price
                     </th>
 
-                    <th className="px-6 py-3 text-left text-xs font-semibold uppercase tracking-wide text-gray-500">
+                    <th className="px-6 py-3.5 text-left text-[10px] font-bold uppercase tracking-[0.08em] text-slate-400">
                       Maximum Price
                     </th>
 
-                    <th className="px-6 py-3 text-left text-xs font-semibold uppercase tracking-wide text-gray-500">
+                    <th className="px-6 py-3.5 text-left text-[10px] font-bold uppercase tracking-[0.08em] text-slate-400">
                       Insurance Amount
                     </th>
 
-                    <th className="px-6 py-3 text-left text-xs font-semibold uppercase tracking-wide text-gray-500">
+                    <th className="px-6 py-3.5 text-left text-[10px] font-bold uppercase tracking-[0.08em] text-slate-400">
                       No Licence Surcharge
                     </th>
 
-                    <th className="px-6 py-3 text-left text-xs font-semibold uppercase tracking-wide text-gray-500">
+                    <th className="px-6 py-3.5 text-left text-[10px] font-bold uppercase tracking-[0.08em] text-slate-400">
                       Status
                     </th>
 
@@ -620,98 +459,72 @@ setBands(
                   </tr>
                 </thead>
 
-                <tbody className="divide-y divide-gray-100">
-                  {sortedBands.map(
-                    (band) => (
-                      <tr
-                        key={band.id}
-                      >
-                        <td className="px-6 py-4 text-sm font-medium text-gray-900">
-                          {band.name}
-                        </td>
+                <tbody className="divide-y divide-slate-100">
+                  {sortedBands.map((band) => (
+                    <tr key={band.id}>
+                      <td className="px-6 py-4 text-sm font-medium text-slate-800">
+                        {band.name}
+                      </td>
 
-                        <td className="whitespace-nowrap px-6 py-4 text-sm text-gray-700">
-                          {formatCurrency(
-                            band.minimum_vehicle_price,
-                          )}
-                        </td>
+                      <td className="whitespace-nowrap px-6 py-4 text-sm text-slate-600">
+                        {formatCurrency(band.minimum_vehicle_price)}
+                      </td>
 
-                        <td className="whitespace-nowrap px-6 py-4 text-sm text-gray-700">
-                          {formatCurrency(
-                            band.maximum_vehicle_price,
-                          )}
-                        </td>
+                      <td className="whitespace-nowrap px-6 py-4 text-sm text-slate-600">
+                        {formatCurrency(band.maximum_vehicle_price)}
+                      </td>
 
-                        <td className="whitespace-nowrap px-6 py-4 text-sm font-medium text-gray-900">
-                          {formatCurrency(
-                            band.amount,
-                          )}
-                        </td>
+                      <td className="whitespace-nowrap px-6 py-4 text-sm font-medium text-slate-800">
+                        {formatCurrency(band.amount)}
+                      </td>
 
-                        <td className="whitespace-nowrap px-6 py-4 text-sm font-medium text-gray-900">
-                          {formatCurrency(
-                            band.no_license_surcharge,
-                          )}
-                        </td>
+                      <td className="whitespace-nowrap px-6 py-4 text-sm font-medium text-slate-800">
+                        {formatCurrency(band.no_license_surcharge)}
+                      </td>
 
-                        <td className="whitespace-nowrap px-6 py-4 text-sm">
-                          {band.is_active ? (
-                            <span className="inline-flex rounded-full bg-green-100 px-2.5 py-1 text-xs font-medium text-green-700">
-                              Active
-                            </span>
-                          ) : (
-                            <span className="inline-flex rounded-full bg-red-100 px-2.5 py-1 text-xs font-medium text-red-700">
-                              Inactive
-                            </span>
-                          )}
-                        </td>
-
-                        {isMaster && (
-                          <td className="whitespace-nowrap px-6 py-4 text-right text-sm">
-                            <div className="flex justify-end gap-2">
-                              <button
-                                type="button"
-                                onClick={() =>
-                                  openEditModal(
-                                    band,
-                                  )
-                                }
-                                className="rounded-md border border-gray-300 px-3 py-1.5 font-medium text-gray-700 transition hover:bg-gray-100"
-                              >
-                                Edit
-                              </button>
-
-                              <button
-                                type="button"
-                                onClick={() =>
-                                  handleToggleActive(
-                                    band,
-                                  )
-                                }
-                                className="rounded-md border border-gray-300 px-3 py-1.5 font-medium text-gray-700 transition hover:bg-gray-100"
-                              >
-                                {band.is_active
-                                  ? "Deactivate"
-                                  : "Activate"}
-                              </button>
-
-                              <button
-                                type="button"
-                                onClick={() =>
-                                  handleDelete(
-                                    band,
-                                  )
-                                }
-                                className="rounded-md border border-red-200 px-3 py-1.5 font-medium text-red-700 transition hover:bg-red-50"
-                              >
-                                Delete
-                              </button>
-                            </div>
-                          </td>
+                      <td className="whitespace-nowrap px-6 py-4 text-sm">
+                        {band.is_active ? (
+                          <span className="inline-flex rounded-full border border-emerald-200 bg-emerald-50 px-2.5 py-1 text-[10px] font-bold uppercase tracking-wide text-emerald-700">
+                            Active
+                          </span>
+                        ) : (
+                          <span className="inline-flex rounded-full bg-red-100 px-2.5 py-1 text-xs font-medium text-red-700">
+                            Inactive
+                          </span>
                         )}
-                      </tr>
-                    ),
-                  )}
+                      </td>
+
+                      {isMaster && (
+                        <td className="whitespace-nowrap px-6 py-4 text-right text-sm">
+                          <div className="flex justify-end gap-2">
+                            <button
+                              type="button"
+                              onClick={() => openEditModal(band)}
+                              className="rounded-md border border-gray-300 px-3 py-1.5 font-medium text-slate-600 transition hover:bg-gray-100"
+                            >
+                              Edit
+                            </button>
+
+                            <button
+                              type="button"
+                              onClick={() => handleToggleActive(band)}
+                              className="rounded-md border border-gray-300 px-3 py-1.5 font-medium text-slate-600 transition hover:bg-gray-100"
+                            >
+                              {band.is_active ? "Deactivate" : "Activate"}
+                            </button>
+
+                            <button
+                              type="button"
+                              onClick={() => handleDelete(band)}
+                              className="rounded-lg border border-rose-200 bg-white px-3 py-1.5 text-xs font-semibold text-rose-700 transition hover:bg-rose-50"
+                            >
+                              Delete
+                            </button>
+                          </div>
+                        </td>
+                      )}
+                    </tr>
+                  ))}
                 </tbody>
               </table>
             </div>
@@ -721,31 +534,25 @@ setBands(
 
       {/* Modal */}
       {isModalOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 px-4 py-6">
-          <div className="max-h-[90vh] w-full max-w-xl overflow-y-auto rounded-lg bg-white shadow-xl">
-            <div className="border-b border-gray-200 px-6 py-4">
-              <h3 className="text-lg font-semibold text-gray-900">
-                {editingBand
-                  ? "Edit Insurance Band"
-                  : "Add Insurance Band"}
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/50 px-4 py-6 backdrop-blur-[2px]">
+          <div className="max-h-[90vh] w-full max-w-xl overflow-y-auto rounded-2xl border border-slate-200 bg-white shadow-2xl">
+            <div className="border-b border-slate-200 px-6 py-5">
+              <h3 className="text-lg font-semibold text-slate-800">
+                {editingBand ? "Edit Insurance Band" : "Add Insurance Band"}
               </h3>
 
-              <p className="mt-1 text-sm text-gray-500">
-                Define the vehicle price range and
-                insurance amount for this band.
+              <p className="mt-1 text-sm text-slate-500">
+                Define the vehicle price range and insurance amount for this
+                band.
               </p>
             </div>
 
-            <form
-              onSubmit={handleSubmit}
-            >
+            <form onSubmit={handleSubmit}>
               <div className="space-y-5 px-6 py-6">
                 {fieldErrors.non_field_errors && (
-                  <div className="rounded-md border border-red-200 bg-red-50 px-4 py-3">
+                  <div className="rounded-xl border border-rose-200 bg-rose-50 px-4 py-3">
                     <p className="text-sm font-medium text-red-700">
-                      {getFieldError(
-                        fieldErrors.non_field_errors,
-                      )}
+                      {getFieldError(fieldErrors.non_field_errors)}
                     </p>
                   </div>
                 )}
@@ -753,7 +560,7 @@ setBands(
                 <div>
                   <label
                     htmlFor="insurance-band-name"
-                    className="mb-1.5 block text-sm font-medium text-gray-700"
+                    className="mb-1.5 block text-sm font-medium text-slate-600"
                   >
                     Band Name
                   </label>
@@ -764,22 +571,16 @@ setBands(
                     type="text"
                     maxLength={150}
                     value={form.name}
-                    onChange={
-                      handleChange
-                    }
+                    onChange={handleChange}
                     placeholder="e.g. Insurance 0 - 50,000"
-                    className={`w-full rounded-md border px-3 py-2.5 text-sm outline-none transition focus:ring-2 focus:ring-gray-300 ${
-                      fieldErrors.name
-                        ? "border-red-400"
-                        : "border-gray-300"
+                    className={`w-full h-10 rounded-xl border px-3 text-sm text-slate-800 outline-none transition placeholder:text-slate-400 focus:border-amber-400 focus:ring-2 focus:ring-amber-400/15 ${
+                      fieldErrors.name ? "border-red-400" : "border-gray-300"
                     }`}
                   />
 
                   {fieldErrors.name && (
-                    <p className="mt-1.5 text-xs text-red-600">
-                      {getFieldError(
-                        fieldErrors.name,
-                      )}
+                    <p className="mt-1.5 text-xs font-medium text-rose-600">
+                      {getFieldError(fieldErrors.name)}
                     </p>
                   )}
                 </div>
@@ -788,7 +589,7 @@ setBands(
                   <div>
                     <label
                       htmlFor="insurance-minimum"
-                      className="mb-1.5 block text-sm font-medium text-gray-700"
+                      className="mb-1.5 block text-sm font-medium text-slate-600"
                     >
                       Minimum Vehicle Price
                     </label>
@@ -800,14 +601,10 @@ setBands(
                       min="0"
                       step="0.01"
                       inputMode="decimal"
-                      value={
-                        form.minimum_vehicle_price
-                      }
-                      onChange={
-                        handleChange
-                      }
+                      value={form.minimum_vehicle_price}
+                      onChange={handleChange}
                       placeholder="0.00"
-                      className={`w-full rounded-md border px-3 py-2.5 text-sm outline-none transition focus:ring-2 focus:ring-gray-300 ${
+                      className={`w-full h-10 rounded-xl border px-3 text-sm text-slate-800 outline-none transition placeholder:text-slate-400 focus:border-amber-400 focus:ring-2 focus:ring-amber-400/15 ${
                         fieldErrors.minimum_vehicle_price
                           ? "border-red-400"
                           : "border-gray-300"
@@ -815,10 +612,8 @@ setBands(
                     />
 
                     {fieldErrors.minimum_vehicle_price && (
-                      <p className="mt-1.5 text-xs text-red-600">
-                        {getFieldError(
-                          fieldErrors.minimum_vehicle_price,
-                        )}
+                      <p className="mt-1.5 text-xs font-medium text-rose-600">
+                        {getFieldError(fieldErrors.minimum_vehicle_price)}
                       </p>
                     )}
                   </div>
@@ -826,7 +621,7 @@ setBands(
                   <div>
                     <label
                       htmlFor="insurance-maximum"
-                      className="mb-1.5 block text-sm font-medium text-gray-700"
+                      className="mb-1.5 block text-sm font-medium text-slate-600"
                     >
                       Maximum Vehicle Price
                     </label>
@@ -838,14 +633,10 @@ setBands(
                       min="0"
                       step="0.01"
                       inputMode="decimal"
-                      value={
-                        form.maximum_vehicle_price
-                      }
-                      onChange={
-                        handleChange
-                      }
+                      value={form.maximum_vehicle_price}
+                      onChange={handleChange}
                       placeholder="50000.00"
-                      className={`w-full rounded-md border px-3 py-2.5 text-sm outline-none transition focus:ring-2 focus:ring-gray-300 ${
+                      className={`w-full h-10 rounded-xl border px-3 text-sm text-slate-800 outline-none transition placeholder:text-slate-400 focus:border-amber-400 focus:ring-2 focus:ring-amber-400/15 ${
                         fieldErrors.maximum_vehicle_price
                           ? "border-red-400"
                           : "border-gray-300"
@@ -853,10 +644,8 @@ setBands(
                     />
 
                     {fieldErrors.maximum_vehicle_price && (
-                      <p className="mt-1.5 text-xs text-red-600">
-                        {getFieldError(
-                          fieldErrors.maximum_vehicle_price,
-                        )}
+                      <p className="mt-1.5 text-xs font-medium text-rose-600">
+                        {getFieldError(fieldErrors.maximum_vehicle_price)}
                       </p>
                     )}
                   </div>
@@ -865,7 +654,7 @@ setBands(
                 <div>
                   <label
                     htmlFor="insurance-amount"
-                    className="mb-1.5 block text-sm font-medium text-gray-700"
+                    className="mb-1.5 block text-sm font-medium text-slate-600"
                   >
                     Insurance Amount (AED)
                   </label>
@@ -878,22 +667,16 @@ setBands(
                     step="0.01"
                     inputMode="decimal"
                     value={form.amount}
-                    onChange={
-                      handleChange
-                    }
+                    onChange={handleChange}
                     placeholder="1990.00"
-                    className={`w-full rounded-md border px-3 py-2.5 text-sm outline-none transition focus:ring-2 focus:ring-gray-300 ${
-                      fieldErrors.amount
-                        ? "border-red-400"
-                        : "border-gray-300"
+                    className={`w-full h-10 rounded-xl border px-3 text-sm text-slate-800 outline-none transition placeholder:text-slate-400 focus:border-amber-400 focus:ring-2 focus:ring-amber-400/15 ${
+                      fieldErrors.amount ? "border-red-400" : "border-gray-300"
                     }`}
                   />
 
                   {fieldErrors.amount && (
-                    <p className="mt-1.5 text-xs text-red-600">
-                      {getFieldError(
-                        fieldErrors.amount,
-                      )}
+                    <p className="mt-1.5 text-xs font-medium text-rose-600">
+                      {getFieldError(fieldErrors.amount)}
                     </p>
                   )}
                 </div>
@@ -901,7 +684,7 @@ setBands(
                 <div>
                   <label
                     htmlFor="insurance-no-license-surcharge"
-                    className="mb-1.5 block text-sm font-medium text-gray-700"
+                    className="mb-1.5 block text-sm font-medium text-slate-600"
                   >
                     No Driving Licence Surcharge (AED)
                   </label>
@@ -916,60 +699,52 @@ setBands(
                     value={form.no_license_surcharge}
                     onChange={handleChange}
                     placeholder="850.00"
-                    className={`w-full rounded-md border px-3 py-2.5 text-sm outline-none transition focus:ring-2 focus:ring-gray-300 ${
+                    className={`w-full h-10 rounded-xl border px-3 text-sm text-slate-800 outline-none transition placeholder:text-slate-400 focus:border-amber-400 focus:ring-2 focus:ring-amber-400/15 ${
                       fieldErrors.no_license_surcharge
                         ? "border-red-400"
                         : "border-gray-300"
                     }`}
                   />
 
-                  <p className="mt-1.5 text-xs text-gray-500">
-                    Added to this insurance band when the customer does not have a driving licence.
+                  <p className="mt-1.5 text-xs text-slate-400">
+                    Added to this insurance band when the customer does not have
+                    a driving licence.
                   </p>
 
                   {fieldErrors.no_license_surcharge && (
-                    <p className="mt-1.5 text-xs text-red-600">
-                      {getFieldError(
-                        fieldErrors.no_license_surcharge,
-                      )}
+                    <p className="mt-1.5 text-xs font-medium text-rose-600">
+                      {getFieldError(fieldErrors.no_license_surcharge)}
                     </p>
                   )}
                 </div>
 
-                <label className="flex items-start gap-3 rounded-md border border-gray-200 p-4">
+                <label className="flex items-start gap-3 rounded-xl border border-slate-200 bg-slate-50/40 p-4 transition hover:bg-slate-50">
                   <input
                     name="is_active"
                     type="checkbox"
-                    checked={
-                      form.is_active
-                    }
-                    onChange={
-                      handleChange
-                    }
-                    className="mt-0.5 h-4 w-4 rounded border-gray-300"
+                    checked={form.is_active}
+                    onChange={handleChange}
+                    className="mt-0.5 h-4 w-4 rounded border-slate-300 accent-amber-500"
                   />
 
                   <span>
-                    <span className="block text-sm font-medium text-gray-800">
+                    <span className="block text-sm font-semibold text-slate-800">
                       Active
                     </span>
 
-                    <span className="mt-1 block text-xs text-gray-500">
-                      Active bands are eligible for
-                      future Finance calculations.
+                    <span className="mt-1 block text-xs text-slate-400">
+                      Active bands are eligible for future Finance calculations.
                     </span>
                   </span>
                 </label>
               </div>
 
-              <div className="flex justify-end gap-3 border-t border-gray-200 px-6 py-4">
+              <div className="flex justify-end gap-3 border-t border-slate-200 px-6 py-4">
                 <button
                   type="button"
-                  onClick={
-                    closeModal
-                  }
+                  onClick={closeModal}
                   disabled={saving}
-                  className="rounded-md border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 transition hover:bg-gray-100 disabled:cursor-not-allowed disabled:opacity-50"
+                  className="rounded-md border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-slate-600 transition hover:bg-gray-100 disabled:cursor-not-allowed disabled:opacity-50"
                 >
                   Cancel
                 </button>
@@ -977,7 +752,7 @@ setBands(
                 <button
                   type="submit"
                   disabled={saving}
-                  className="rounded-md bg-gray-900 px-4 py-2 text-sm font-medium text-white transition hover:bg-gray-800 disabled:cursor-not-allowed disabled:opacity-50"
+                  className="rounded-xl bg-amber-500 px-5 py-2.5 text-sm font-bold text-slate-950 shadow-sm transition hover:bg-amber-400 disabled:cursor-not-allowed disabled:opacity-50"
                 >
                   {saving
                     ? "Saving..."

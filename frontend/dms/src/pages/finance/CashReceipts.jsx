@@ -272,39 +272,26 @@ function CashReceipts() {
     dateTo;
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      <header className="border-b bg-white">
-        <div className="mx-auto flex max-w-7xl items-center justify-between px-6 py-4">
-          <div>
-            <h1 className="text-2xl font-bold text-gray-900">Prime Rides</h1>
-
-            <p className="text-sm text-gray-500">Dealer Management System</p>
-          </div>
-
-          <Link
-            to="/dashboard"
-            className="rounded-md border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-100"
-          >
-            Dashboard
-          </Link>
-        </div>
-      </header>
-
-      <main className="mx-auto max-w-7xl px-6 py-8">
-        <div className="mb-6 flex items-start justify-between gap-4">
+    <div className="min-h-screen bg-[#f5f6fa]">
+      <main className="mx-auto w-full max-w-[1500px] px-4 py-6 sm:px-6 lg:px-8">
+        <div className="mb-6 flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
           <div>
             <Link
               to="/finance/settings"
-              className="text-sm font-medium text-gray-700 hover:underline"
+              className="text-sm font-semibold text-slate-600 transition-colors hover:text-slate-900"
             >
               ← Finance
             </Link>
 
-            <h2 className="mt-2 text-2xl font-semibold text-gray-900">
+            <p className="mt-3 text-[11px] font-bold uppercase tracking-[0.08em] text-amber-600">
+              Finance
+            </p>
+
+            <h2 className="mt-1 text-2xl font-extrabold tracking-tight text-slate-900">
               Cash Receipts
             </h2>
 
-            <p className="mt-1 text-sm text-gray-500">
+            <p className="mt-1 text-sm text-slate-500">
               Track actual customer payments and company-paid financial
               transactions.
             </p>
@@ -314,14 +301,14 @@ function CashReceipts() {
             <button
               type="button"
               onClick={() => setShowFilters((current) => !current)}
-              className="rounded-md border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-100"
+              className="rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm font-semibold text-slate-700 transition-colors hover:border-slate-300 hover:bg-slate-50"
             >
               {showFilters ? "Hide Filters" : "Show Filters"}
             </button>
 
             <Link
               to="/finance/cash-receipts/new"
-              className="rounded-md bg-gray-900 px-4 py-2 text-sm font-medium text-white hover:bg-gray-800"
+              className="inline-flex items-center justify-center rounded-xl border border-amber-500 bg-amber-500 px-4 py-2.5 text-sm font-bold text-slate-950 transition-colors hover:border-amber-400 hover:bg-amber-400"
             >
               + Create Cash Receipt
             </Link>
@@ -329,24 +316,24 @@ function CashReceipts() {
         </div>
 
         <div className="mb-6 grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3">
-          <section className="rounded-lg border border-gray-200 bg-white p-5 shadow-sm">
-            <p className="text-xs font-medium uppercase tracking-wide text-gray-500">
+          <section className="rounded-2xl border border-[#e5e7eb] bg-white p-5 shadow-[0_2px_8px_rgba(15,23,42,0.04)]">
+            <p className="text-[10px] font-bold uppercase tracking-[0.08em] text-slate-400">
               Total Received
             </p>
 
-            <p className="mt-2 text-2xl font-semibold text-gray-900">
+            <p className="mt-2 text-2xl font-extrabold tracking-tight text-emerald-600">
               {formatAED(summary.total_received)}
             </p>
           </section>
         </div>
 
         {showFilters && (
-          <div className="mb-6 rounded-lg border border-gray-200 bg-white p-4 shadow-sm">
+          <div className="mb-6 rounded-2xl border border-[#e5e7eb] bg-white p-5 shadow-[0_2px_8px_rgba(15,23,42,0.04)]">
             <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3">
               <div>
                 <label
                   htmlFor="cash-receipt-search"
-                  className="mb-1 block text-sm font-medium text-gray-700"
+                  className="mb-1.5 block text-[11px] font-bold uppercase tracking-[0.08em] text-slate-500"
                 >
                   Search
                 </label>
@@ -357,14 +344,14 @@ function CashReceipts() {
                   value={search}
                   onChange={(event) => setSearch(event.target.value)}
                   placeholder="Receipt, customer, vehicle..."
-                  className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm outline-none focus:border-gray-500 focus:ring-1 focus:ring-gray-500"
+                  className="h-10 w-full rounded-xl border border-slate-200 bg-white px-3 text-sm text-slate-800 outline-none transition-colors placeholder:text-slate-400 focus:border-amber-400 focus:ring-2 focus:ring-amber-400/15"
                 />
               </div>
 
               <div>
                 <label
                   htmlFor="cash-receipt-number"
-                  className="mb-1 block text-sm font-medium text-gray-700"
+                  className="mb-1.5 block text-[11px] font-bold uppercase tracking-[0.08em] text-slate-500"
                 >
                   Receipt Number
                 </label>
@@ -375,14 +362,14 @@ function CashReceipts() {
                   value={receiptNumber}
                   onChange={(event) => setReceiptNumber(event.target.value)}
                   placeholder="CR-000014"
-                  className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm outline-none focus:border-gray-500 focus:ring-1 focus:ring-gray-500"
+                  className="h-10 w-full rounded-xl border border-slate-200 bg-white px-3 text-sm text-slate-800 outline-none transition-colors placeholder:text-slate-400 focus:border-amber-400 focus:ring-2 focus:ring-amber-400/15"
                 />
               </div>
 
               <div>
                 <label
                   htmlFor="cash-receipt-customer-id"
-                  className="mb-1 block text-sm font-medium text-gray-700"
+                  className="mb-1.5 block text-[11px] font-bold uppercase tracking-[0.08em] text-slate-500"
                 >
                   Customer ID
                 </label>
@@ -394,14 +381,14 @@ function CashReceipts() {
                   value={customerId}
                   onChange={(event) => setCustomerId(event.target.value)}
                   placeholder="Customer ID"
-                  className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm outline-none focus:border-gray-500 focus:ring-1 focus:ring-gray-500"
+                  className="h-10 w-full rounded-xl border border-slate-200 bg-white px-3 text-sm text-slate-800 outline-none transition-colors placeholder:text-slate-400 focus:border-amber-400 focus:ring-2 focus:ring-amber-400/15"
                 />
               </div>
 
               <div>
                 <label
                   htmlFor="cash-receipt-quote-id"
-                  className="mb-1 block text-sm font-medium text-gray-700"
+                  className="mb-1.5 block text-[11px] font-bold uppercase tracking-[0.08em] text-slate-500"
                 >
                   Quote ID
                 </label>
@@ -413,14 +400,14 @@ function CashReceipts() {
                   value={quoteId}
                   onChange={(event) => setQuoteId(event.target.value)}
                   placeholder="Quote ID"
-                  className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm outline-none focus:border-gray-500 focus:ring-1 focus:ring-gray-500"
+                  className="h-10 w-full rounded-xl border border-slate-200 bg-white px-3 text-sm text-slate-800 outline-none transition-colors placeholder:text-slate-400 focus:border-amber-400 focus:ring-2 focus:ring-amber-400/15"
                 />
               </div>
 
               <div>
                 <label
                   htmlFor="cash-receipt-direction"
-                  className="mb-1 block text-sm font-medium text-gray-700"
+                  className="mb-1.5 block text-[11px] font-bold uppercase tracking-[0.08em] text-slate-500"
                 >
                   Direction
                 </label>
@@ -429,7 +416,7 @@ function CashReceipts() {
                   id="cash-receipt-direction"
                   value={direction}
                   onChange={(event) => setDirection(event.target.value)}
-                  className="w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-sm outline-none focus:border-gray-500 focus:ring-1 focus:ring-gray-500"
+                  className="h-10 w-full rounded-xl border border-slate-200 bg-white px-3 text-sm text-slate-800 outline-none transition-colors focus:border-amber-400 focus:ring-2 focus:ring-amber-400/15"
                 >
                   {DIRECTIONS.map((option) => (
                     <option key={option.value} value={option.value}>
@@ -442,7 +429,7 @@ function CashReceipts() {
               <div>
                 <label
                   htmlFor="cash-receipt-category"
-                  className="mb-1 block text-sm font-medium text-gray-700"
+                  className="mb-1.5 block text-[11px] font-bold uppercase tracking-[0.08em] text-slate-500"
                 >
                   Category
                 </label>
@@ -475,7 +462,7 @@ function CashReceipts() {
               <div>
                 <label
                   htmlFor="cash-receipt-payment-method"
-                  className="mb-1 block text-sm font-medium text-gray-700"
+                  className="mb-1.5 block text-[11px] font-bold uppercase tracking-[0.08em] text-slate-500"
                 >
                   Payment Method
                 </label>
@@ -484,7 +471,7 @@ function CashReceipts() {
                   id="cash-receipt-payment-method"
                   value={paymentMethod}
                   onChange={(event) => setPaymentMethod(event.target.value)}
-                  className="w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-sm outline-none focus:border-gray-500 focus:ring-1 focus:ring-gray-500"
+                  className="h-10 w-full rounded-xl border border-slate-200 bg-white px-3 text-sm text-slate-800 outline-none transition-colors focus:border-amber-400 focus:ring-2 focus:ring-amber-400/15"
                 >
                   {PAYMENT_METHODS.map((option) => (
                     <option key={option.value} value={option.value}>
@@ -497,7 +484,7 @@ function CashReceipts() {
               <div>
                 <label
                   htmlFor="cash-receipt-transaction-date"
-                  className="mb-1 block text-sm font-medium text-gray-700"
+                  className="mb-1.5 block text-[11px] font-bold uppercase tracking-[0.08em] text-slate-500"
                 >
                   Transaction Date
                 </label>
@@ -507,14 +494,14 @@ function CashReceipts() {
                   type="date"
                   value={transactionDate}
                   onChange={(event) => setTransactionDate(event.target.value)}
-                  className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm outline-none focus:border-gray-500 focus:ring-1 focus:ring-gray-500"
+                  className="h-10 w-full rounded-xl border border-slate-200 bg-white px-3 text-sm text-slate-800 outline-none transition-colors placeholder:text-slate-400 focus:border-amber-400 focus:ring-2 focus:ring-amber-400/15"
                 />
               </div>
 
               <div>
                 <label
                   htmlFor="cash-receipt-date-from"
-                  className="mb-1 block text-sm font-medium text-gray-700"
+                  className="mb-1.5 block text-[11px] font-bold uppercase tracking-[0.08em] text-slate-500"
                 >
                   Date From
                 </label>
@@ -524,14 +511,14 @@ function CashReceipts() {
                   type="date"
                   value={dateFrom}
                   onChange={(event) => setDateFrom(event.target.value)}
-                  className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm outline-none focus:border-gray-500 focus:ring-1 focus:ring-gray-500"
+                  className="h-10 w-full rounded-xl border border-slate-200 bg-white px-3 text-sm text-slate-800 outline-none transition-colors placeholder:text-slate-400 focus:border-amber-400 focus:ring-2 focus:ring-amber-400/15"
                 />
               </div>
 
               <div>
                 <label
                   htmlFor="cash-receipt-date-to"
-                  className="mb-1 block text-sm font-medium text-gray-700"
+                  className="mb-1.5 block text-[11px] font-bold uppercase tracking-[0.08em] text-slate-500"
                 >
                   Date To
                 </label>
@@ -541,7 +528,7 @@ function CashReceipts() {
                   type="date"
                   value={dateTo}
                   onChange={(event) => setDateTo(event.target.value)}
-                  className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm outline-none focus:border-gray-500 focus:ring-1 focus:ring-gray-500"
+                  className="h-10 w-full rounded-xl border border-slate-200 bg-white px-3 text-sm text-slate-800 outline-none transition-colors placeholder:text-slate-400 focus:border-amber-400 focus:ring-2 focus:ring-amber-400/15"
                 />
               </div>
             </div>
@@ -550,7 +537,7 @@ function CashReceipts() {
               <button
                 type="button"
                 onClick={clearFilters}
-                className="mt-4 text-sm font-medium text-gray-700 hover:underline"
+                className="mt-4 text-sm font-semibold text-amber-600 transition-colors hover:text-amber-700"
               >
                 Clear filters
               </button>
@@ -559,45 +546,56 @@ function CashReceipts() {
         )}
 
         {loading && (
-          <div className="rounded-lg border border-gray-200 bg-white p-6 shadow-sm">
-            <p className="text-sm text-gray-500">Loading cash receipts...</p>
+          <div className="rounded-2xl border border-[#e5e7eb] bg-white p-6 shadow-[0_2px_8px_rgba(15,23,42,0.04)]">
+            <div className="flex items-center gap-3">
+              <div className="h-4 w-4 animate-pulse rounded-full bg-amber-400" />
+              <p className="text-sm font-medium text-slate-500">
+                Loading cash receipts...
+              </p>
+            </div>
           </div>
         )}
 
         {!loading && error && (
-          <div className="rounded-lg border border-red-200 bg-red-50 p-6">
-            <p className="text-sm text-red-700">{error}</p>
+          <div className="rounded-2xl border border-rose-200 bg-rose-50 p-5">
+            <p className="text-sm font-medium text-rose-700">{error}</p>
           </div>
         )}
 
         {!loading && !error && receipts.length === 0 && (
-          <div className="rounded-lg border border-gray-200 bg-white p-8 text-center shadow-sm">
-            <p className="text-sm text-gray-500">No cash receipts found.</p>
+          <div className="rounded-2xl border border-[#e5e7eb] bg-white p-10 text-center shadow-[0_2px_8px_rgba(15,23,42,0.04)]">
+            <p className="text-sm font-semibold text-slate-700">
+              No cash receipts found.
+            </p>
+
+            <p className="mt-1 text-xs text-slate-400">
+              Try adjusting your filters or search.
+            </p>
           </div>
         )}
 
         {!loading && !error && receipts.length > 0 && (
-          <div className="overflow-x-auto rounded-lg border border-gray-200 bg-white shadow-sm">
-            <table className="min-w-full divide-y divide-gray-200">
-              <thead className="bg-gray-50">
+          <div className="overflow-x-auto rounded-2xl border border-[#e5e7eb] bg-white shadow-[0_2px_8px_rgba(15,23,42,0.04)]">
+            <table className="min-w-full divide-y divide-slate-100">
+              <thead className="bg-slate-50">
                 <tr>
-                  <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-gray-500">
+                  <th className="px-4 py-3 text-left text-[10px] font-bold uppercase tracking-[0.08em] text-slate-500">
                     Receipt
                   </th>
 
-                  <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-gray-500">
+                  <th className="px-4 py-3 text-left text-[10px] font-bold uppercase tracking-[0.08em] text-slate-500">
                     Customer
                   </th>
 
-                  <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-gray-500">
+                  <th className="px-4 py-3 text-left text-[10px] font-bold uppercase tracking-[0.08em] text-slate-500">
                     Quote
                   </th>
 
-                  <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-gray-500">
+                  <th className="px-4 py-3 text-left text-[10px] font-bold uppercase tracking-[0.08em] text-slate-500">
                     Direction
                   </th>
 
-                  <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-gray-500">
+                  <th className="px-4 py-3 text-left text-[10px] font-bold uppercase tracking-[0.08em] text-slate-500">
                     Category
                   </th>
 
@@ -605,7 +603,7 @@ function CashReceipts() {
                     Amount
                   </th>
 
-                  <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-gray-500">
+                  <th className="px-4 py-3 text-left text-[10px] font-bold uppercase tracking-[0.08em] text-slate-500">
                     Date
                   </th>
 
@@ -615,53 +613,70 @@ function CashReceipts() {
                 </tr>
               </thead>
 
-              <tbody className="divide-y divide-gray-200 bg-white">
+              <tbody className="divide-y divide-slate-100 bg-white">
                 {receipts.map((receipt) => (
-                  <tr key={receipt.id} className="hover:bg-gray-50">
+                  <tr
+                    key={receipt.id}
+                    className="transition-colors hover:bg-slate-50/80"
+                  >
                     <td className="px-4 py-3">
-                      <div className="font-medium text-gray-900">
+                      <div className="font-semibold text-slate-900">
                         {receipt.receipt_number || "-"}
                       </div>
 
                       {receipt.is_reversal && (
-                        <div className="text-xs text-red-600">Reversal</div>
+                        <div className="mt-0.5 text-[10px] font-bold uppercase tracking-wide text-rose-600">
+                          Reversal
+                        </div>
                       )}
                     </td>
 
                     <td className="px-4 py-3">
-                      <div className="font-medium text-gray-900">
+                      <div className="font-semibold text-slate-900">
                         {receipt.customer_name || "-"}
                       </div>
 
-                      <div className="text-xs text-gray-500">
+                      <div className="mt-0.5 text-xs text-slate-400">
                         {receipt.vehicle_stock_id || ""}
                       </div>
                     </td>
 
-                    <td className="px-4 py-3 text-sm text-gray-700">
+                    <td className="px-4 py-3 text-sm font-medium text-slate-700">
                       {receipt.quote_number || receipt.quote || "-"}
                     </td>
 
-                    <td className="px-4 py-3 text-sm text-gray-700">
-                      {formatDirection(receipt.direction)}
+                    <td className="px-4 py-3">
+                      <span
+                        className={[
+                          "inline-flex items-center rounded-full border px-2.5 py-1",
+                          "text-[10px] font-bold uppercase tracking-wide",
+                          receipt.direction === "customer_payment"
+                            ? "border-emerald-200 bg-emerald-50 text-emerald-700"
+                            : receipt.direction === "company_on_behalf"
+                              ? "border-blue-200 bg-blue-50 text-blue-700"
+                              : "border-slate-200 bg-slate-100 text-slate-600",
+                        ].join(" ")}
+                      >
+                        {formatDirection(receipt.direction)}
+                      </span>
                     </td>
 
-                    <td className="px-4 py-3 text-sm text-gray-700">
+                    <td className="px-4 py-3 text-sm font-medium text-slate-700">
                       {receipt.category || "-"}
                     </td>
 
-                    <td className="px-4 py-3 text-right text-sm font-medium text-gray-900">
+                    <td className="px-4 py-3 text-right text-sm font-bold text-slate-900">
                       {formatAED(receipt.amount)}
                     </td>
 
-                    <td className="px-4 py-3 text-sm text-gray-700">
+                    <td className="px-4 py-3 text-sm font-medium text-slate-700">
                       {formatDate(receipt.transaction_date)}
                     </td>
 
                     <td className="px-4 py-3 text-right">
                       <Link
                         to={`/finance/cash-receipts/${receipt.id}`}
-                        className="text-sm font-medium text-gray-900 hover:underline"
+                        className="text-sm font-bold text-amber-600 transition-colors hover:text-amber-700"
                       >
                         View
                       </Link>

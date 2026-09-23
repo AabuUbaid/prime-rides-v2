@@ -2,11 +2,7 @@ import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import { toast } from "react-toastify";
 
-import {
-  createBank,
-  getBanks,
-  updateBank,
-} from "../../api/finance";
+import { createBank, getBanks, updateBank } from "../../api/finance";
 import { useAuth } from "../../context/AuthContext";
 
 const INITIAL_FORM = {
@@ -40,18 +36,15 @@ function BankManagement() {
     } catch (error) {
       console.error("Failed to load banks:", error);
 
-      toast.error(
-        error?.message || "Failed to load banks.",
-      );
+      toast.error(error?.message || "Failed to load banks.");
     } finally {
       setLoading(false);
     }
   }
 
- useEffect(() => {
-   
-  loadBanks();
-}, []);;
+  useEffect(() => {
+    loadBanks();
+  }, []);
 
   function openCreateModal() {
     setEditingBank(null);
@@ -66,8 +59,7 @@ function BankManagement() {
     setForm({
       name: bank.name ?? "",
       interest_rate:
-        bank.interest_rate !== null &&
-        bank.interest_rate !== undefined
+        bank.interest_rate !== null && bank.interest_rate !== undefined
           ? String(bank.interest_rate)
           : "",
       is_cash: Boolean(bank.is_cash),
@@ -131,11 +123,9 @@ function BankManagement() {
 
     if (!form.is_cash) {
       if (form.interest_rate === "") {
-        errors.interest_rate =
-          "Interest rate is required.";
+        errors.interest_rate = "Interest rate is required.";
       } else if (Number(form.interest_rate) < 0) {
-        errors.interest_rate =
-          "Interest rate cannot be negative.";
+        errors.interest_rate = "Interest rate cannot be negative.";
       }
     }
 
@@ -144,8 +134,7 @@ function BankManagement() {
       form.interest_rate !== "" &&
       Number(form.interest_rate) !== 0
     ) {
-      errors.interest_rate =
-        "Cash banks must have 0% interest.";
+      errors.interest_rate = "Cash banks must have 0% interest.";
     }
 
     setFieldErrors(errors);
@@ -178,9 +167,7 @@ function BankManagement() {
     event.preventDefault();
 
     if (!isMaster) {
-      toast.error(
-        "You do not have permission to modify banks.",
-      );
+      toast.error("You do not have permission to modify banks.");
       return;
     }
 
@@ -190,9 +177,7 @@ function BankManagement() {
 
     const payload = {
       name: form.name.trim(),
-      interest_rate: form.is_cash
-        ? "0.00"
-        : form.interest_rate,
+      interest_rate: form.is_cash ? "0.00" : form.interest_rate,
       is_cash: form.is_cash,
       is_active: form.is_active,
     };
@@ -204,10 +189,7 @@ function BankManagement() {
       let response;
 
       if (editingBank) {
-        response = await updateBank(
-          editingBank.id,
-          payload,
-        );
+        response = await updateBank(editingBank.id, payload);
       } else {
         response = await createBank(payload);
       }
@@ -217,34 +199,21 @@ function BankManagement() {
       if (editingBank) {
         setBanks((current) =>
           current.map((bank) =>
-            bank.id === editingBank.id
-              ? updatedBank
-              : bank,
+            bank.id === editingBank.id ? updatedBank : bank,
           ),
         );
 
-        toast.success(
-          response?.message ||
-            "Bank updated successfully.",
-        );
+        toast.success(response?.message || "Bank updated successfully.");
       } else {
-        setBanks((current) => [
-          ...current,
-          updatedBank,
-        ]);
+        setBanks((current) => [...current, updatedBank]);
 
-        toast.success(
-          response?.message ||
-            "Bank created successfully.",
-        );
+        toast.success(response?.message || "Bank created successfully.");
       }
 
       closeModal();
     } catch (error) {
       console.error(
-        editingBank
-          ? "Failed to update bank:"
-          : "Failed to create bank:",
+        editingBank ? "Failed to update bank:" : "Failed to create bank:",
         error,
       );
 
@@ -256,9 +225,7 @@ function BankManagement() {
 
       toast.error(
         error?.message ||
-          (editingBank
-            ? "Failed to update bank."
-            : "Failed to create bank."),
+          (editingBank ? "Failed to update bank." : "Failed to create bank."),
       );
     } finally {
       setSaving(false);
@@ -267,9 +234,7 @@ function BankManagement() {
 
   async function handleToggleActive(bank) {
     if (!isMaster) {
-      toast.error(
-        "You do not have permission to modify banks.",
-      );
+      toast.error("You do not have permission to modify banks.");
       return;
     }
 
@@ -282,30 +247,20 @@ function BankManagement() {
 
       setBanks((current) =>
         current.map((currentBank) =>
-          currentBank.id === bank.id
-            ? updatedBank
-            : currentBank,
+          currentBank.id === bank.id ? updatedBank : currentBank,
         ),
       );
 
       toast.success(
         response?.message ||
           `Bank ${
-            updatedBank?.is_active
-              ? "activated"
-              : "deactivated"
+            updatedBank?.is_active ? "activated" : "deactivated"
           } successfully.`,
       );
     } catch (error) {
-      console.error(
-        "Failed to update bank status:",
-        error,
-      );
+      console.error("Failed to update bank status:", error);
 
-      toast.error(
-        error?.message ||
-          "Failed to update bank status.",
-      );
+      toast.error(error?.message || "Failed to update bank status.");
     }
   }
 
@@ -318,60 +273,32 @@ function BankManagement() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      {/* Header */}
-      <header className="border-b bg-white">
-        <div className="mx-auto flex max-w-7xl items-center justify-between px-6 py-4">
-          <div>
-            <h1 className="text-2xl font-bold text-gray-900">
-              Prime Rides
-            </h1>
-
-            <p className="text-sm text-gray-500">
-              Dealer Management System
-            </p>
-          </div>
-
-          <div className="flex items-center gap-3">
-            <Link
-              to="/finance/settings"
-              className="rounded-md border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 transition hover:bg-gray-100"
-            >
-              Finance Master
-            </Link>
-
-            <Link
-              to="/dashboard"
-              className="rounded-md border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 transition hover:bg-gray-100"
-            >
-              Dashboard
-            </Link>
-
-            <div className="text-right">
-              <p className="text-sm font-medium text-gray-900">
-                {user?.first_name}
-              </p>
-
-              <p className="text-xs uppercase text-gray-500">
-                {user?.role}
-              </p>
-            </div>
-          </div>
-        </div>
-      </header>
-
+    <div className="min-h-screen bg-[#f5f6fa]">
       {/* Main */}
-      <main className="mx-auto max-w-7xl px-6 py-8">
+      <main className="mx-auto w-full max-w-[1500px] px-4 py-6 sm:px-6 lg:px-8">
         {/* Heading */}
         <div className="mb-6 flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
           <div>
-            <h2 className="text-2xl font-semibold text-gray-900">
+            <Link
+              to="/finance/settings"
+              className="text-sm font-medium text-gray-600 hover:text-slate-800"
+            >
+              ← Back to Finance Settings
+            </Link>
+            <div className="mt-4 mb-2 flex items-center gap-2">
+              <span className="h-1.5 w-1.5 rounded-full bg-amber-500" />
+
+              <span className="text-[10px] font-mono uppercase tracking-[0.14em] text-amber-600">
+                Managements
+              </span>
+            </div>
+            <h2 className="text-2xl font-bold tracking-tight text-slate-900">
               Banks
             </h2>
 
-            <p className="mt-1 text-sm text-gray-500">
-              Manage finance banks, interest rates,
-              cash banks, and active status.
+            <p className="mt-1 text-sm text-slate-500">
+              Manage finance banks, interest rates, cash banks, and active
+              status.
             </p>
           </div>
 
@@ -379,7 +306,7 @@ function BankManagement() {
             <button
               type="button"
               onClick={openCreateModal}
-              className="rounded-md bg-gray-900 px-4 py-2 text-sm font-medium text-white transition hover:bg-gray-800"
+              className="rounded-xl bg-amber-500 px-5 py-2.5 text-sm font-bold text-slate-950 shadow-sm transition hover:bg-amber-400 disabled:cursor-not-allowed disabled:opacity-50"
             >
               + Add Bank
             </button>
@@ -387,39 +314,39 @@ function BankManagement() {
         </div>
 
         {/* Table */}
-        <div className="overflow-hidden rounded-lg border border-gray-200 bg-white shadow-sm">
+        <div className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-[0_2px_8px_rgba(15,23,42,0.04)]">
           {loading ? (
             <div className="p-8 text-center text-sm text-gray-500">
               Loading banks...
             </div>
           ) : banks.length === 0 ? (
             <div className="p-8 text-center">
-              <p className="text-sm font-medium text-gray-700">
+              <p className="text-sm font-medium text-slate-600">
                 No banks found.
               </p>
 
-              <p className="mt-1 text-sm text-gray-500">
+              <p className="mt-1 text-sm text-slate-500">
                 Add a bank to begin configuring Finance.
               </p>
             </div>
           ) : (
             <div className="overflow-x-auto">
-              <table className="min-w-full divide-y divide-gray-200">
-                <thead className="bg-gray-50">
+              <table className="min-w-full divide-y divide-slate-200">
+                <thead className="bg-slate-50">
                   <tr>
-                    <th className="px-6 py-3 text-left text-xs font-semibold uppercase tracking-wide text-gray-500">
+                    <th className="px-6 py-3.5 text-left text-[10px] font-bold uppercase tracking-[0.08em] text-slate-400">
                       Bank Name
                     </th>
 
-                    <th className="px-6 py-3 text-left text-xs font-semibold uppercase tracking-wide text-gray-500">
+                    <th className="px-6 py-3.5 text-left text-[10px] font-bold uppercase tracking-[0.08em] text-slate-400">
                       Interest Rate
                     </th>
 
-                    <th className="px-6 py-3 text-left text-xs font-semibold uppercase tracking-wide text-gray-500">
+                    <th className="px-6 py-3.5 text-left text-[10px] font-bold uppercase tracking-[0.08em] text-slate-400">
                       Cash
                     </th>
 
-                    <th className="px-6 py-3 text-left text-xs font-semibold uppercase tracking-wide text-gray-500">
+                    <th className="px-6 py-3.5 text-left text-[10px] font-bold uppercase tracking-[0.08em] text-slate-400">
                       Status
                     </th>
 
@@ -431,26 +358,24 @@ function BankManagement() {
                   </tr>
                 </thead>
 
-                <tbody className="divide-y divide-gray-100">
+                <tbody className="divide-y divide-slate-100">
                   {banks.map((bank) => (
                     <tr key={bank.id}>
-                      <td className="whitespace-nowrap px-6 py-4 text-sm font-medium text-gray-900">
+                      <td className="whitespace-nowrap px-6 py-4 text-sm font-medium text-slate-800">
                         {bank.name}
                       </td>
 
-                      <td className="whitespace-nowrap px-6 py-4 text-sm text-gray-700">
-                        {formatInterestRate(
-                          bank.interest_rate,
-                        )}
+                      <td className="whitespace-nowrap px-6 py-4 text-sm text-slate-600">
+                        {formatInterestRate(bank.interest_rate)}
                       </td>
 
                       <td className="whitespace-nowrap px-6 py-4 text-sm">
                         {bank.is_cash ? (
-                          <span className="inline-flex rounded-full bg-gray-900 px-2.5 py-1 text-xs font-medium text-white">
+                          <span className="inline-flex rounded-full border border-amber-200 bg-amber-50 px-2.5 py-1 text-[10px] font-bold uppercase tracking-wide text-amber-700">
                             Yes
                           </span>
                         ) : (
-                          <span className="inline-flex rounded-full bg-gray-100 px-2.5 py-1 text-xs font-medium text-gray-600">
+                          <span className="inline-flex rounded-full border border-slate-200 bg-slate-50 px-2.5 py-1 text-[10px] font-bold uppercase tracking-wide text-slate-500">
                             No
                           </span>
                         )}
@@ -458,7 +383,7 @@ function BankManagement() {
 
                       <td className="whitespace-nowrap px-6 py-4 text-sm">
                         {bank.is_active ? (
-                          <span className="inline-flex rounded-full bg-green-100 px-2.5 py-1 text-xs font-medium text-green-700">
+                          <span className="inline-flex rounded-full border border-emerald-200 bg-emerald-50 px-2.5 py-1 text-[10px] font-bold uppercase tracking-wide text-emerald-700">
                             Active
                           </span>
                         ) : (
@@ -473,24 +398,18 @@ function BankManagement() {
                           <div className="flex justify-end gap-2">
                             <button
                               type="button"
-                              onClick={() =>
-                                openEditModal(bank)
-                              }
-                              className="rounded-md border border-gray-300 px-3 py-1.5 font-medium text-gray-700 transition hover:bg-gray-100"
+                              onClick={() => openEditModal(bank)}
+                              className="rounded-md border border-gray-300 px-3 py-1.5 font-medium text-slate-600 transition hover:bg-gray-100"
                             >
                               Edit
                             </button>
 
                             <button
                               type="button"
-                              onClick={() =>
-                                handleToggleActive(bank)
-                              }
-                              className="rounded-md border border-gray-300 px-3 py-1.5 font-medium text-gray-700 transition hover:bg-gray-100"
+                              onClick={() => handleToggleActive(bank)}
+                              className="rounded-md border border-gray-300 px-3 py-1.5 font-medium text-slate-600 transition hover:bg-gray-100"
                             >
-                              {bank.is_active
-                                ? "Deactivate"
-                                : "Activate"}
+                              {bank.is_active ? "Deactivate" : "Activate"}
                             </button>
                           </div>
                         </td>
@@ -506,18 +425,15 @@ function BankManagement() {
 
       {/* Modal */}
       {isModalOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 px-4 py-6">
-          <div className="w-full max-w-lg rounded-lg bg-white shadow-xl">
-            <div className="border-b border-gray-200 px-6 py-4">
-              <h3 className="text-lg font-semibold text-gray-900">
-                {editingBank
-                  ? "Edit Bank"
-                  : "Add Bank"}
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/50 px-4 py-6 backdrop-blur-[2px]">
+          <div className="w-full max-w-lg rounded-2xl border border-slate-200 bg-white shadow-2xl">
+            <div className="border-b border-slate-200 px-6 py-5">
+              <h3 className="text-lg font-semibold text-slate-800">
+                {editingBank ? "Edit Bank" : "Add Bank"}
               </h3>
 
-              <p className="mt-1 text-sm text-gray-500">
-                Configure the bank information used by
-                Finance.
+              <p className="mt-1 text-sm text-slate-500">
+                Configure the bank information used by Finance.
               </p>
             </div>
 
@@ -527,7 +443,7 @@ function BankManagement() {
                 <div>
                   <label
                     htmlFor="bank-name"
-                    className="mb-1.5 block text-sm font-medium text-gray-700"
+                    className="mb-1.5 block text-sm font-medium text-slate-600"
                   >
                     Bank Name
                   </label>
@@ -540,15 +456,13 @@ function BankManagement() {
                     onChange={handleChange}
                     maxLength={150}
                     placeholder="Enter bank name"
-                    className={`w-full rounded-md border px-3 py-2.5 text-sm outline-none transition focus:ring-2 focus:ring-gray-300 ${
-                      fieldErrors.name
-                        ? "border-red-400"
-                        : "border-gray-300"
+                    className={`w-full h-10 rounded-xl border px-3 text-sm text-slate-800 outline-none transition placeholder:text-slate-400 focus:border-amber-400 focus:ring-2 focus:ring-amber-400/15 ${
+                      fieldErrors.name ? "border-red-400" : "border-gray-300"
                     }`}
                   />
 
                   {fieldErrors.name && (
-                    <p className="mt-1.5 text-xs text-red-600">
+                    <p className="mt-1.5 text-xs font-medium text-rose-600">
                       {Array.isArray(fieldErrors.name)
                         ? fieldErrors.name.join(" ")
                         : fieldErrors.name}
@@ -560,7 +474,7 @@ function BankManagement() {
                 <div>
                   <label
                     htmlFor="bank-interest-rate"
-                    className="mb-1.5 block text-sm font-medium text-gray-700"
+                    className="mb-1.5 block text-sm font-medium text-slate-600"
                   >
                     Interest Rate (%)
                   </label>
@@ -576,7 +490,7 @@ function BankManagement() {
                     onChange={handleChange}
                     disabled={form.is_cash}
                     placeholder="e.g. 3.50"
-                    className={`w-full rounded-md border px-3 py-2.5 text-sm outline-none transition focus:ring-2 focus:ring-gray-300 disabled:bg-gray-100 disabled:text-gray-500 ${
+                    className={`w-full h-10 rounded-xl border px-3 text-sm text-slate-800 outline-none transition placeholder:text-slate-400 focus:border-amber-400 focus:ring-2 focus:ring-amber-400/15 disabled:bg-slate-50 disabled:text-slate-400 disabled:text-gray-500 ${
                       fieldErrors.interest_rate
                         ? "border-red-400"
                         : "border-gray-300"
@@ -584,76 +498,70 @@ function BankManagement() {
                   />
 
                   {form.is_cash && (
-                    <p className="mt-1.5 text-xs text-gray-500">
+                    <p className="mt-1.5 text-xs text-slate-400">
                       Cash banks must use 0% interest.
                     </p>
                   )}
 
                   {fieldErrors.interest_rate && (
-                    <p className="mt-1.5 text-xs text-red-600">
-                      {Array.isArray(
-                        fieldErrors.interest_rate,
-                      )
-                        ? fieldErrors.interest_rate.join(
-                            " ",
-                          )
+                    <p className="mt-1.5 text-xs font-medium text-rose-600">
+                      {Array.isArray(fieldErrors.interest_rate)
+                        ? fieldErrors.interest_rate.join(" ")
                         : fieldErrors.interest_rate}
                     </p>
                   )}
                 </div>
 
                 {/* Cash */}
-                <label className="flex items-start gap-3 rounded-md border border-gray-200 p-4">
+                <label className="flex items-start gap-3 rounded-xl border border-slate-200 bg-slate-50/40 p-4 transition hover:bg-slate-50">
                   <input
                     name="is_cash"
                     type="checkbox"
                     checked={form.is_cash}
                     onChange={handleChange}
-                    className="mt-0.5 h-4 w-4 rounded border-gray-300"
+                    className="mt-0.5 h-4 w-4 rounded border-slate-300 accent-amber-500"
                   />
 
                   <span>
-                    <span className="block text-sm font-medium text-gray-800">
+                    <span className="block text-sm font-semibold text-slate-800">
                       Cash Bank
                     </span>
 
-                    <span className="mt-1 block text-xs text-gray-500">
-                      Mark this bank as a cash financing
-                      option.
+                    <span className="mt-1 block text-xs text-slate-400">
+                      Mark this bank as a cash financing option.
                     </span>
                   </span>
                 </label>
 
                 {/* Active */}
-                <label className="flex items-start gap-3 rounded-md border border-gray-200 p-4">
+                <label className="flex items-start gap-3 rounded-xl border border-slate-200 bg-slate-50/40 p-4 transition hover:bg-slate-50">
                   <input
                     name="is_active"
                     type="checkbox"
                     checked={form.is_active}
                     onChange={handleChange}
-                    className="mt-0.5 h-4 w-4 rounded border-gray-300"
+                    className="mt-0.5 h-4 w-4 rounded border-slate-300 accent-amber-500"
                   />
 
                   <span>
-                    <span className="block text-sm font-medium text-gray-800">
+                    <span className="block text-sm font-semibold text-slate-800">
                       Active
                     </span>
 
-                    <span className="mt-1 block text-xs text-gray-500">
-                      Active banks are available for
-                      Finance operations.
+                    <span className="mt-1 block text-xs text-slate-400">
+                      Active banks are available for Finance operations.
                     </span>
                   </span>
                 </label>
               </div>
 
               {/* Footer */}
-              <div className="flex justify-end gap-3 border-t border-gray-200 px-6 py-4">
+              <div className="flex justify-end gap-3 border-t border-slate-200 px-6 py-4">
                 <button
                   type="button"
                   onClick={closeModal}
                   disabled={saving}
-                  className="rounded-md border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 transition hover:bg-gray-100 disabled:cursor-not-allowed disabled:opacity-50"
+                  className="rounded-xl border border-slate-200 bg-white px-5 py-2.5 text-sm font-semibold text-slate-700 transition hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-50"
                 >
                   Cancel
                 </button>
@@ -661,7 +569,7 @@ function BankManagement() {
                 <button
                   type="submit"
                   disabled={saving}
-                  className="rounded-md bg-gray-900 px-4 py-2 text-sm font-medium text-white transition hover:bg-gray-800 disabled:cursor-not-allowed disabled:opacity-50"
+                  className="rounded-xl bg-amber-500 px-5 py-2.5 text-sm font-bold text-slate-950 shadow-sm transition hover:bg-amber-400 disabled:cursor-not-allowed disabled:opacity-50"
                 >
                   {saving
                     ? "Saving..."

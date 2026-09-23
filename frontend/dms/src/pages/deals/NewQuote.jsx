@@ -1090,54 +1090,68 @@ export default function NewQuote() {
 
   if (loadingOptions) {
     return (
-      <div className="mx-auto w-full max-w-[1600px] px-4 py-6 sm:px-6 lg:px-8">
-        <div className="rounded-xl border border-gray-200 bg-white p-10 text-center text-sm text-gray-500">
-          Loading quote options...
+      <div className="flex min-h-[50vh] items-center justify-center px-4">
+        <div className="w-full max-w-md rounded-2xl border border-slate-200 bg-white p-10 text-center shadow-sm">
+          <div className="mx-auto mb-3 h-8 w-8 animate-spin rounded-full border-2 border-slate-200 border-t-amber-500" />
+
+          <p className="text-sm font-medium text-slate-600">Loading quote...</p>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="p-6">
+    <div className="mx-auto w-full max-w-[1500px] px-4 py-6 sm:px-6 lg:px-8">
       {/* Header */}
       <div className="mb-6">
         <Link
           to="/deals"
-          className="text-sm font-medium text-gray-600 hover:text-gray-900"
+          className="text-sm font-semibold text-slate-500 transition hover:text-amber-600"
         >
           ← Back to Deals
         </Link>
 
-        <h1 className="mt-3 text-2xl font-semibold text-gray-900">New Quote</h1>
+        <div className="mt-4 mb-2 flex items-center gap-2">
+          <span className="h-1.5 w-1.5 rounded-full bg-amber-500" />
 
-        <p className="mt-1 text-sm text-gray-500">
+          <span className="text-[10px] font-mono uppercase tracking-[0.14em] text-amber-600">
+            Sales & Customers
+          </span>
+        </div>
+
+        <h1 className="text-2xl font-mono tracking-tight text-slate-900">
+          New Quote
+        </h1>
+
+        <p className="mt-1 text-sm text-slate-500">
           Create a Cash quotation from stock or a Finance quotation from a saved
           EMI.
         </p>
       </div>
 
       {error && (
-        <div className="mb-5 rounded-xl border border-red-200 bg-red-50 p-4 text-sm text-red-700">
+        <div className="mb-5 rounded-2xl border border-rose-200 bg-rose-50 p-4 text-sm font-medium text-rose-700">
           {error}
         </div>
       )}
 
       <form onSubmit={handleSubmit} className="space-y-6">
         {/* Sale Type */}
-        <section className="rounded-xl border border-gray-200 bg-white shadow-sm">
-          <div className="border-b border-gray-200 px-5 py-4">
-            <h2 className="font-semibold text-gray-900">Sale Type</h2>
+        <section className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-[0_2px_8px_rgba(15,23,42,0.04)]">
+          <div className="border-b border-slate-100 px-5 py-4">
+            <h2 className="text-sm font-mono tracking-tight text-slate-900">
+              Sale Type
+            </h2>
           </div>
 
           <div className="grid gap-3 p-5 sm:grid-cols-2">
             <button
               type="button"
               onClick={() => handleSourceChange(SOURCE_STOCK)}
-              className={`rounded-lg border p-5 text-left transition ${
+              className={`rounded-2xl border p-5 text-left transition-all ${
                 source === SOURCE_STOCK
-                  ? "border-gray-900 bg-gray-50"
-                  : "border-gray-200 hover:bg-gray-50"
+                  ? "border-amber-400 bg-amber-50 shadow-sm"
+                  : "border-slate-200 bg-white hover:border-slate-300 hover:bg-slate-50"
               }`}
             >
               <div className="text-base font-semibold text-gray-900">
@@ -1153,10 +1167,10 @@ export default function NewQuote() {
             <button
               type="button"
               onClick={() => handleSourceChange(SOURCE_SAVED_EMI)}
-              className={`rounded-lg border p-5 text-left transition ${
+              className={`rounded-2xl border p-5 text-left transition-all ${
                 source === SOURCE_SAVED_EMI
-                  ? "border-gray-900 bg-gray-50"
-                  : "border-gray-200 hover:bg-gray-50"
+                  ? "border-amber-400 bg-amber-50 shadow-sm"
+                  : "border-slate-200 bg-white hover:border-slate-300 hover:bg-slate-50"
               }`}
             >
               <div className="text-base font-semibold text-gray-900">
@@ -1176,13 +1190,15 @@ export default function NewQuote() {
         {source === SOURCE_STOCK && (
           <>
             {/* Vehicle */}
-            <section className="rounded-xl border border-gray-200 bg-white shadow-sm">
-              <div className="border-b border-gray-200 px-5 py-4">
-                <h2 className="font-semibold text-gray-900">Vehicle</h2>
+            <section className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-[0_2px_8px_rgba(15,23,42,0.04)]">
+              <div className="border-b border-slate-100 px-5 py-4">
+                <h2 className="text-sm font-mono tracking-tight text-slate-900">
+                  Vehicle
+                </h2>
               </div>
 
               <div className="p-5">
-                <label className="mb-2 block text-sm font-medium text-gray-700">
+                <label className="mb-1.5 block text-[11px] font-mono uppercase tracking-[0.08em] text-slate-500">
                   Stock Vehicle
                 </label>
 
@@ -1206,7 +1222,7 @@ export default function NewQuote() {
                   />
 
                   {vehicleSearchLoading && (
-                    <p className="mt-2 text-xs text-gray-500">
+                    <p className="mt-2 text-[10px] font-bold uppercase tracking-[0.08em] text-slate-400">
                       Searching vehicles...
                     </p>
                   )}
@@ -1220,21 +1236,21 @@ export default function NewQuote() {
                     )}
 
                   {vehicleResults.length > 0 && (
-                    <div className="mt-2 overflow-hidden rounded-lg border border-gray-200 bg-white shadow-sm">
+                    <div className="mt-2 overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-lg">
                       {vehicleResults.map((vehicle) => (
                         <button
                           key={vehicle.id}
                           type="button"
                           onClick={() => handleStockVehicleSelect(vehicle.id)}
-                          className="block w-full border-b border-gray-100 px-4 py-3 text-left transition last:border-b-0 hover:bg-gray-50"
+                          className="block w-full border-b border-slate-100 px-4 py-3 text-left transition last:border-b-0 hover:bg-slate-50"
                         >
                           <div className="flex flex-col gap-1 sm:flex-row sm:items-center sm:justify-between">
                             <div>
-                              <p className="text-sm font-medium text-gray-900">
+                              <p className="font-mono text-sm font-mono text-amber-600">
                                 {vehicle.stock_id || "No Stock ID"}
                               </p>
 
-                              <p className="text-sm text-gray-600">
+                              <p className="text-sm text-slate-600">
                                 {[
                                   vehicle.year,
                                   vehicle.make,
@@ -1245,7 +1261,7 @@ export default function NewQuote() {
                                   .join(" ")}
                               </p>
 
-                              <p className="text-xs text-gray-500">
+                              <p className="text-[10px] font-bold uppercase tracking-[0.08em] text-slate-400">
                                 {vehicle.chassis_number ||
                                   vehicle.vehicle_chassis_number ||
                                   "No chassis number"}
@@ -1253,11 +1269,11 @@ export default function NewQuote() {
                             </div>
 
                             <div className="text-left sm:text-right">
-                              <p className="text-sm font-medium text-gray-900">
+                              <p className="font-mono text-sm font-mono text-slate-900">
                                 AED {vehicle.asking_price ?? "—"}
                               </p>
 
-                              <p className="text-xs text-gray-500">
+                              <p className="text-[10px] font-bold uppercase tracking-[0.08em] text-slate-400">
                                 {vehicle.mileage ?? "—"} km
                               </p>
                             </div>
@@ -1269,16 +1285,18 @@ export default function NewQuote() {
                 </div>
 
                 {selectedCar && (
-                  <div className="mt-4 rounded-lg bg-gray-50 p-4">
+                  <div className="mt-4 rounded-2xl border border-slate-200 bg-slate-50 p-4">
                     <div className="text-sm font-semibold text-gray-900">
                       {getVehicleName(selectedCar) || "Selected Vehicle"}
                     </div>
 
                     <div className="mt-3 grid gap-3 text-sm sm:grid-cols-2 lg:grid-cols-4">
                       <div>
-                        <div className="text-xs text-gray-400">Stock ID</div>
+                        <div className="text-[10px] font-mono uppercase tracking-[0.08em] text-slate-400">
+                          Stock ID
+                        </div>
 
-                        <div className="mt-1 font-medium text-gray-800">
+                        <div className="font-mono text-sm font-semibold text-slate-800">
                           {selectedCar.stock_id ||
                             selectedCar.vehicle_stock_id ||
                             "-"}
@@ -1286,19 +1304,21 @@ export default function NewQuote() {
                       </div>
 
                       <div>
-                        <div className="text-xs text-gray-400">
+                        <div className="text-[10px] font-mono uppercase tracking-[0.08em] text-slate-400">
                           Asking Price
                         </div>
 
-                        <div className="mt-1 font-medium text-gray-800">
+                        <div className="font-mono text-sm font-semibold text-slate-800">
                           {formatCurrency(selectedCar.asking_price)}
                         </div>
                       </div>
 
                       <div>
-                        <div className="text-xs text-gray-400">Chassis</div>
+                        <div className="text-[10px] font-mono uppercase tracking-[0.08em] text-slate-400">
+                          Chassis
+                        </div>
 
-                        <div className="mt-1 font-medium text-gray-800">
+                        <div className="font-mono text-sm font-semibold text-slate-800">
                           {selectedCar.chassis_number ||
                             selectedCar.vehicle_chassis_number ||
                             "-"}
@@ -1306,9 +1326,11 @@ export default function NewQuote() {
                       </div>
 
                       <div>
-                        <div className="text-xs text-gray-400">Engine</div>
+                        <div className="text-[10px] font-mono uppercase tracking-[0.08em] text-slate-400">
+                          Engine
+                        </div>
 
-                        <div className="mt-1 font-medium text-gray-800">
+                        <div className="font-mono text-sm font-semibold text-slate-800">
                           {selectedCar.engine_number ||
                             selectedCar.vehicle_engine_number ||
                             "-"}
@@ -1316,9 +1338,11 @@ export default function NewQuote() {
                       </div>
 
                       <div>
-                        <div className="text-xs text-gray-400">Status</div>
+                        <div className="text-[10px] font-mono uppercase tracking-[0.08em] text-slate-400">
+                          Status
+                        </div>
 
-                        <div className="mt-1 font-medium text-gray-800">
+                        <div className="font-mono text-sm font-semibold text-slate-800">
                           {selectedCar.status || "-"}
                         </div>
                       </div>
@@ -1329,14 +1353,16 @@ export default function NewQuote() {
             </section>
 
             {/* Customer */}
-            <section className="rounded-xl border border-gray-200 bg-white shadow-sm">
-              <div className="border-b border-gray-200 px-5 py-4">
-                <h2 className="font-semibold text-gray-900">Customer</h2>
+            <section className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-[0_2px_8px_rgba(15,23,42,0.04)]">
+              <div className="border-b border-slate-100 px-5 py-4">
+                <h2 className="text-sm font-mono tracking-tight text-slate-900">
+                  Customer
+                </h2>
               </div>
 
               <div className="grid gap-5 p-5 md:grid-cols-2">
                 <div>
-                  <label className="mb-2 block text-sm font-medium text-gray-700">
+                  <label className="mb-1.5 block text-[11px] font-mono uppercase tracking-[0.08em] text-slate-500">
                     Customer Name
                   </label>
 
@@ -1345,12 +1371,12 @@ export default function NewQuote() {
                     value={customerName}
                     onChange={(event) => setCustomerName(event.target.value)}
                     placeholder="Enter customer name"
-                    className="w-full rounded-lg border border-gray-300 px-3 py-2.5 text-sm outline-none focus:border-gray-500"
+                    className="w-full rounded-2xl border border-dashed border-slate-300 bg-slate-50 p-4 text-sm text-slate-500"
                   />
                 </div>
 
                 <div>
-                  <label className="mb-2 block text-sm font-medium text-gray-700">
+                  <label className="mb-1.5 block text-[11px] font-mono uppercase tracking-[0.08em] text-slate-500">
                     Mobile
                   </label>
 
@@ -1359,19 +1385,19 @@ export default function NewQuote() {
                     value={customerMobile}
                     onChange={(event) => setCustomerMobile(event.target.value)}
                     placeholder="Enter mobile number"
-                    className="w-full rounded-lg border border-gray-300 px-3 py-2.5 text-sm outline-none focus:border-gray-500"
+                    className="w-full rounded-2xl border border-dashed border-slate-300 bg-slate-50 p-4 text-sm text-slate-500"
                   />
                 </div>
               </div>
             </section>
 
             {/* Commercial */}
-            <section className="rounded-xl border border-gray-200 bg-white shadow-sm">
-              <div className="border-b border-gray-200 px-5 py-4">
-                <h2 className="font-semibold text-gray-900">
+            <section className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-[0_2px_8px_rgba(15,23,42,0.04)]">
+              <div className="border-b border-slate-100 px-5 py-4">
+                <h2 className="text-sm font-mono tracking-tight text-slate-900">
                   Commercial Details
                 </h2>
-                <p className="mt-1 text-xs text-gray-500">
+                <p className="mt-1 text-[10px] font-bold uppercase tracking-[0.08em] text-slate-400">
                   VAT and expense amounts are calculated from the backend
                   Finance Master.
                 </p>
@@ -1379,7 +1405,7 @@ export default function NewQuote() {
 
               <div className="grid gap-5 p-5 md:grid-cols-2 lg:grid-cols-3">
                 <div>
-                  <label className="mb-2 block text-sm font-medium text-gray-700">
+                  <label className="mb-1.5 block text-[11px] font-mono uppercase tracking-[0.08em] text-slate-500">
                     Vehicle Price
                   </label>
 
@@ -1393,23 +1419,23 @@ export default function NewQuote() {
                       loadingCarDetail ? "Loading vehicle price..." : "0.00"
                     }
                     disabled={loadingCarDetail || !selectedCarId}
-                    className="w-full rounded-lg border border-gray-300 px-3 py-2.5 text-sm outline-none focus:border-gray-500 disabled:bg-gray-100"
+                    className="w-full rounded-2xl border border-dashed border-slate-300 bg-slate-50 p-4 text-sm text-slate-500 disabled:bg-gray-100"
                     required
                   />
                 </div>
 
                 <div>
-                  <label className="mb-2 block text-sm font-medium text-gray-700">
+                  <label className="mb-1.5 block text-[11px] font-mono uppercase tracking-[0.08em] text-slate-500">
                     Payment Method
                   </label>
 
-                  <div className="flex min-h-[42px] items-center rounded-lg border border-gray-300 bg-gray-50 px-3 text-sm font-medium text-gray-800">
+                  <div className="flex rounded-2xl border border-dashed border-slate-300 bg-slate-50 p-4 text-sm text-slate-500">
                     Cash
                   </div>
                 </div>
 
                 <div>
-                  <label className="mb-2 block text-sm font-medium text-gray-700">
+                  <label className="mb-1.5 block text-[11px] font-mono uppercase tracking-[0.08em] text-slate-500">
                     Deposit Date
                   </label>
 
@@ -1417,7 +1443,7 @@ export default function NewQuote() {
                     type="date"
                     value={depositDate}
                     onChange={(event) => setDepositDate(event.target.value)}
-                    className="w-full rounded-lg border border-gray-300 px-3 py-2.5 text-sm outline-none focus:border-gray-500"
+                    className="w-full rounded-2xl border border-dashed border-slate-300 bg-slate-50 p-4 text-sm text-slate-500"
                   />
                 </div>
               </div>
@@ -1425,11 +1451,13 @@ export default function NewQuote() {
 
             {/* Special Price */}
             {/* Special Price */}
-            <section className="rounded-xl border border-gray-200 bg-white shadow-sm">
-              <div className="border-b border-gray-200 px-5 py-4">
-                <h2 className="font-semibold text-gray-900">Special Price</h2>
+            <section className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-[0_2px_8px_rgba(15,23,42,0.04)]">
+              <div className="border-b border-slate-100 px-5 py-4">
+                <h2 className="text-sm font-mono tracking-tight text-slate-900">
+                  Special Price
+                </h2>
 
-                <p className="mt-1 text-xs text-gray-500">
+                <p className="mt-1 text-[10px] font-bold uppercase tracking-[0.08em] text-slate-400">
                   Request Master approval for a transaction-specific price below
                   the vehicle's Least Selling Price.
                 </p>
@@ -1443,7 +1471,7 @@ export default function NewQuote() {
                 ) : usableSpecialPriceRequests.length > 0 ? (
                   <>
                     <div>
-                      <label className="mb-2 block text-sm font-medium text-gray-700">
+                      <label className="mb-1.5 block text-[11px] font-mono uppercase tracking-[0.08em] text-slate-500">
                         Approved Special Price
                       </label>
 
@@ -1452,7 +1480,7 @@ export default function NewQuote() {
                         onChange={(event) =>
                           setSelectedSpecialPriceRequestId(event.target.value)
                         }
-                        className="w-full rounded-lg border border-gray-300 bg-white px-3 py-2.5 text-sm outline-none focus:border-gray-500"
+                        className="h-10 w-full rounded-xl border border-slate-200 bg-white px-3 text-sm text-slate-800 outline-none transition placeholder:text-slate-400 focus:border-amber-400 focus:ring-2 focus:ring-amber-400/15"
                       >
                         <option value="">Use standard vehicle price</option>
 
@@ -1469,10 +1497,10 @@ export default function NewQuote() {
                       <div className="rounded-lg border border-gray-200 bg-gray-50 p-4">
                         <div className="grid gap-3 sm:grid-cols-3">
                           <div>
-                            <div className="text-xs text-gray-500">
+                            <div className="text-[10px] font-bold uppercase tracking-[0.08em] text-slate-400">
                               Requested
                             </div>
-                            <div className="mt-1 text-sm font-semibold text-gray-900">
+                            <div className="font-mono text-sm font-bold text-slate-900">
                               AED{" "}
                               {formatCurrency(
                                 selectedSpecialPriceRequest.requested_price,
@@ -1481,17 +1509,19 @@ export default function NewQuote() {
                           </div>
 
                           <div>
-                            <div className="text-xs text-gray-500">
+                            <div className="text-[10px] font-bold uppercase tracking-[0.08em] text-slate-400">
                               Approved
                             </div>
-                            <div className="mt-1 text-sm font-semibold text-gray-900">
+                            <div className="font-mono text-sm font-bold text-slate-900">
                               AED {formatCurrency(selectedApprovedSpecialPrice)}
                             </div>
                           </div>
 
                           <div>
-                            <div className="text-xs text-gray-500">Expires</div>
-                            <div className="mt-1 text-sm font-semibold text-gray-900">
+                            <div className="text-[10px] font-bold uppercase tracking-[0.08em] text-slate-400">
+                              Expires
+                            </div>
+                            <div className="font-mono text-sm font-bold text-slate-900">
                               {selectedSpecialPriceRequest.expires_at
                                 ? new Date(
                                     selectedSpecialPriceRequest.expires_at,
@@ -1515,14 +1545,14 @@ export default function NewQuote() {
                       Enquire Master for Special Price
                     </h3>
 
-                    <p className="mt-1 text-xs text-gray-500">
+                    <p className="mt-1 text-[10px] font-bold uppercase tracking-[0.08em] text-slate-400">
                       This request is for this vehicle only and does not change
                       its inventory asking price.
                     </p>
 
                     <div className="mt-4 grid gap-4 md:grid-cols-2">
                       <div>
-                        <label className="mb-2 block text-sm font-medium text-gray-700">
+                        <label className="mb-1.5 block text-[11px] font-mono uppercase tracking-[0.08em] text-slate-500">
                           Current Asked Price
                         </label>
 
@@ -1532,7 +1562,7 @@ export default function NewQuote() {
                       </div>
 
                       <div>
-                        <label className="mb-2 block text-sm font-medium text-gray-700">
+                        <label className="mb-1.5 block text-[11px] font-mono uppercase tracking-[0.08em] text-slate-500">
                           Least Selling Price
                         </label>
 
@@ -1543,7 +1573,7 @@ export default function NewQuote() {
                     </div>
 
                     <div className="mt-4">
-                      <label className="mb-2 block text-sm font-medium text-gray-700">
+                      <label className="mb-1.5 block text-[11px] font-mono uppercase tracking-[0.08em] text-slate-500">
                         Requested Price
                       </label>
 
@@ -1556,7 +1586,7 @@ export default function NewQuote() {
                           setSpecialPriceRequested(event.target.value)
                         }
                         placeholder="Enter requested price"
-                        className="w-full rounded-lg border border-gray-300 px-3 py-2.5 text-sm outline-none focus:border-gray-500"
+                        className="w-full rounded-2xl border border-dashed border-slate-300 bg-slate-50 p-4 text-sm text-slate-500"
                       />
                     </div>
 
@@ -1564,7 +1594,7 @@ export default function NewQuote() {
                       type="button"
                       onClick={handleSpecialPriceRequest}
                       disabled={requestingSpecialPrice || !selectedCarId}
-                      className="mt-4 rounded-lg bg-gray-900 px-4 py-2.5 text-sm font-medium text-white hover:bg-gray-800 disabled:cursor-not-allowed disabled:opacity-50"
+                      className="mt-4 rounded-xl bg-amber-500 px-4 py-2.5 text-sm font-bold text-slate-950 transition hover:bg-amber-400 disabled:cursor-not-allowed disabled:opacity-50"
                     >
                       {requestingSpecialPrice ? "Sending..." : "Enquire Master"}
                     </button>
@@ -1574,11 +1604,13 @@ export default function NewQuote() {
             </section>
 
             {/* Quote Expenses */}
-            <section className="rounded-xl border border-gray-200 bg-white shadow-sm">
-              <div className="border-b border-gray-200 px-5 py-4">
-                <h2 className="font-semibold text-gray-900">Other Expenses</h2>
+            <section className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-[0_2px_8px_rgba(15,23,42,0.04)]">
+              <div className="border-b border-slate-100 px-5 py-4">
+                <h2 className="text-sm font-mono tracking-tight text-slate-900">
+                  Other Expenses
+                </h2>
 
-                <p className="mt-1 text-xs text-gray-500">
+                <p className="mt-1 text-[10px] font-bold uppercase tracking-[0.08em] text-slate-400">
                   Select any applicable Master-configured expenses. The backend
                   resolves the actual amount.
                 </p>
@@ -1616,8 +1648,8 @@ export default function NewQuote() {
                             key={preset.id}
                             className={`flex cursor-pointer items-start gap-3 rounded-lg border p-4 transition ${
                               selected
-                                ? "border-gray-900 bg-gray-50"
-                                : "border-gray-200 hover:bg-gray-50"
+                                ? "border-amber-400 bg-amber-50 shadow-sm"
+                                : "border-slate-200 bg-white hover:border-slate-300 hover:bg-slate-50"
                             }${
                               disabled
                                 ? "cursor-not-allowed opacity-50"
@@ -1637,7 +1669,7 @@ export default function NewQuote() {
                                 {getExpenseName(preset)}
                               </div>
 
-                              <div className="mt-1 text-xs text-gray-500">
+                              <div className="mt-1 text-[10px] font-bold uppercase tracking-[0.08em] text-slate-400">
                                 {expenseType || "Configured expense"}
                               </div>
                             </div>
@@ -1647,13 +1679,13 @@ export default function NewQuote() {
                   </div>
                 )}
 
-                <div className="mt-5 rounded-lg border border-gray-200 bg-gray-50 p-4">
+                <div className="mt-5 rounded-2xl border border-slate-200 bg-slate-50 p-4">
                   <div className="flex items-start justify-between gap-4">
                     <div>
                       <div className="text-sm font-medium text-gray-900">
                         VAT
                       </div>
-                      <div className="mt-1 text-xs text-gray-500">
+                      <div className="mt-1 text-[10px] font-bold uppercase tracking-[0.08em] text-slate-400">
                         Apply the backend-configured VAT rate to this stock
                         quotation.
                       </div>
@@ -1676,8 +1708,8 @@ export default function NewQuote() {
                   <label
                     className={`flex cursor-pointer items-start gap-3 rounded-lg border p-4 transition ${
                       isSelectedExpenseType("insurance")
-                        ? "border-gray-900 bg-gray-50"
-                        : "border-gray-200 hover:bg-gray-50"
+                        ? "border-amber-400 bg-amber-50 shadow-sm"
+                        : "border-slate-200 bg-white hover:border-slate-300 hover:bg-slate-50"
                     }`}
                   >
                     <input
@@ -1709,7 +1741,7 @@ export default function NewQuote() {
                       </div>
 
                       {applicableInsuranceBand ? (
-                        <div className="mt-1 text-xs text-gray-500">
+                        <div className="mt-1 text-[10px] font-bold uppercase tracking-[0.08em] text-slate-400">
                           {applicableInsuranceBand.name ||
                             "Applicable insurance band"}
                           {" — "}
@@ -1726,7 +1758,7 @@ export default function NewQuote() {
                   <div>
                     <label
                       htmlFor="service_package"
-                      className="mb-2 block text-sm font-medium text-gray-700"
+                      className="mb-1.5 block text-[11px] font-mono uppercase tracking-[0.08em] text-slate-500"
                     >
                       Service Package
                     </label>
@@ -1738,7 +1770,7 @@ export default function NewQuote() {
                         setSelectedServicePackageId(event.target.value);
                         setStockCalculation(null);
                       }}
-                      className="w-full rounded-lg border border-gray-300 bg-white px-3 py-2.5 text-sm outline-none focus:border-gray-500"
+                      className="h-10 w-full rounded-2xl border border-slate-200 bg-white px-3 text-sm text-slate-800 outline-none transition placeholder:text-slate-400 focus:border-amber-400 focus:ring-2 focus:ring-amber-400/15"
                     >
                       <option value="">No Service Package</option>
 
@@ -1751,7 +1783,7 @@ export default function NewQuote() {
                     </select>
 
                     {selectedServicePackage && (
-                      <p className="mt-1 text-xs text-gray-500">
+                      <p className="mt-1 text-[10px] font-bold uppercase tracking-[0.08em] text-slate-400">
                         {selectedServicePackage.description ||
                           "Selected Service Package"}
                       </p>
@@ -1779,7 +1811,7 @@ export default function NewQuote() {
                     {!drivingLicense &&
                       applicableInsuranceBand?.no_license_surcharge !==
                         undefined && (
-                        <div className="mt-2 text-xs text-gray-500">
+                        <div className="mt-2 text-[10px] font-bold uppercase tracking-[0.08em] text-slate-400">
                           No-licence surcharge:{" "}
                           {formatCurrency(
                             applicableInsuranceBand.no_license_surcharge,
@@ -1792,13 +1824,13 @@ export default function NewQuote() {
             </section>
 
             {/* Cash Quote Calculation */}
-            <section className="rounded-xl border border-gray-200 bg-white shadow-sm">
-              <div className="border-b border-gray-200 px-5 py-4">
-                <h2 className="font-semibold text-gray-900">
+            <section className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-[0_2px_8px_rgba(15,23,42,0.04)]">
+              <div className="border-b border-slate-100 px-5 py-4">
+                <h2 className="text-sm font-mono tracking-tight text-slate-900">
                   Quote Calculation
                 </h2>
 
-                <p className="mt-1 text-xs text-gray-500">
+                <p className="mt-1 text-[10px] font-bold uppercase tracking-[0.08em] text-slate-400">
                   VAT is applied by the backend at the configured VAT rate.
                   Expense amounts are also resolved by the backend.
                 </p>
@@ -1812,42 +1844,44 @@ export default function NewQuote() {
                 ) : stockCalculation ? (
                   <div className="space-y-4">
                     <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-                      <div className="rounded-lg bg-gray-50 p-4">
-                        <div className="text-xs text-gray-500">
+                      <div className="rounded-2xl border border-slate-200 bg-slate-50 p-4">
+                        <div className="text-[10px] font-bold uppercase tracking-[0.08em] text-slate-400">
                           Vehicle Price
                         </div>
-                        <div className="mt-1 text-base font-semibold text-gray-900">
+                        <div className="mt-1 font-mono text-base font-bold text-slate-900">
                           {formatCurrency(stockCalculation.vehicle_price)}
                         </div>
                       </div>
 
-                      <div className="rounded-lg bg-gray-50 p-4">
-                        <div className="text-xs text-gray-500">VAT</div>
-                        <div className="mt-1 text-base font-semibold text-gray-900">
+                      <div className="rounded-2xl border border-slate-200 bg-slate-50 p-4">
+                        <div className="text-[10px] font-bold uppercase tracking-[0.08em] text-slate-400">
+                          VAT
+                        </div>
+                        <div className="mt-1 font-mono text-base font-bold text-slate-900">
                           {formatCurrency(stockVatAmount)}
                         </div>
                       </div>
 
-                      <div className="rounded-lg bg-gray-50 p-4">
-                        <div className="text-xs text-gray-500">
+                      <div className="rounded-2xl border border-slate-200 bg-slate-50 p-4">
+                        <div className="text-[10px] font-bold uppercase tracking-[0.08em] text-slate-400">
                           Price After VAT
                         </div>
-                        <div className="mt-1 text-base font-semibold text-gray-900">
+                        <div className="mt-1 font-mono text-base font-bold text-slate-900">
                           {formatCurrency(stockPriceAfterVat)}
                         </div>
                       </div>
 
-                      <div className="rounded-lg bg-gray-50 p-4">
-                        <div className="text-xs text-gray-500">
+                      <div className="rounded-2xl border border-slate-200 bg-slate-50 p-4">
+                        <div className="text-[10px] font-bold uppercase tracking-[0.08em] text-slate-400">
                           Expense Total
                         </div>
-                        <div className="mt-1 text-base font-semibold text-gray-900">
+                        <div className="mt-1 font-mono text-base font-bold text-slate-900">
                           {formatCurrency(stockExpenseTotal)}
                         </div>
                       </div>
                     </div>
 
-                    <div className="rounded-lg border border-gray-200">
+                    <div className="overflow-hidden rounded-2xl border border-slate-200">
                       <div className="border-b border-gray-200 px-4 py-3 text-sm font-semibold text-gray-900">
                         Selected Expenses
                       </div>
@@ -1878,12 +1912,12 @@ export default function NewQuote() {
                       )}
                     </div>
 
-                    <div className="flex items-center justify-between rounded-lg bg-gray-900 px-4 py-4 text-white">
+                    <div className="flex items-center justify-between rounded-2xl bg-slate-900 px-4 py-4 text-white shadow-sm ">
                       <span className="text-sm font-medium">
                         Final Quotation Amount
                       </span>
 
-                      <span className="text-xl font-semibold">
+                      <span className="font-mono text-xl font-bold text-amber-400">
                         {formatCurrency(stockFinalTotal)}
                       </span>
                     </div>
@@ -1905,18 +1939,20 @@ export default function NewQuote() {
         {source === SOURCE_SAVED_EMI && (
           <>
             {/* Saved EMI selector */}
-            <section className="rounded-xl border border-gray-200 bg-white shadow-sm">
-              <div className="border-b border-gray-200 px-5 py-4">
-                <h2 className="font-semibold text-gray-900">Saved EMI</h2>
+            <section className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-[0_2px_8px_rgba(15,23,42,0.04)]">
+              <div className="border-b border-slate-100 px-5 py-4">
+                <h2 className="text-sm font-mono tracking-tight text-slate-900">
+                  Saved EMI
+                </h2>
 
-                <p className="mt-1 text-xs text-gray-500">
+                <p className="mt-1 text-[10px] font-bold uppercase tracking-[0.08em] text-slate-400">
                   Select the historical EMI record to use for this Finance
                   quotation.
                 </p>
               </div>
 
               <div className="p-5">
-                <label className="mb-2 block text-sm font-medium text-gray-700">
+                <label className="mb-1.5 block text-[11px] font-mono uppercase tracking-[0.08em] text-slate-500">
                   Saved EMI Calculation
                 </label>
 
@@ -1924,7 +1960,7 @@ export default function NewQuote() {
                   value={selectedEmiId}
                   onChange={handleSavedEmiChange}
                   disabled={loadingEmiDetail}
-                  className="w-full rounded-lg border border-gray-300 bg-white px-3 py-2.5 text-sm outline-none focus:border-gray-500 disabled:bg-gray-100"
+                  className="h-10 w-full rounded-xl border border-slate-200 bg-white px-3 text-sm text-slate-800 outline-none transition placeholder:text-slate-400 focus:border-amber-400 focus:ring-2 focus:ring-amber-400/15 disabled:bg-gray-100"
                 >
                   <option value="">Select saved EMI</option>
 
@@ -1950,11 +1986,13 @@ export default function NewQuote() {
             {selectedEmi && (
               <>
                 {/* Historical Customer */}
-                <section className="rounded-xl border border-gray-200 bg-white shadow-sm">
-                  <div className="border-b border-gray-200 px-5 py-4">
-                    <h2 className="font-semibold text-gray-900">Customer</h2>
+                <section className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-[0_2px_8px_rgba(15,23,42,0.04)]">
+                  <div className="border-b border-slate-100 px-5 py-4">
+                    <h2 className="text-sm font-mono tracking-tight text-slate-900">
+                      Customer
+                    </h2>
 
-                    <p className="mt-1 text-xs text-gray-500">
+                    <p className="mt-1 text-[10px] font-bold uppercase tracking-[0.08em] text-slate-400">
                       Historical customer information from the saved EMI.
                     </p>
                   </div>
@@ -1981,18 +2019,22 @@ export default function NewQuote() {
                 </section>
 
                 {/* Historical Vehicle */}
-                <section className="rounded-xl border border-gray-200 bg-white shadow-sm">
-                  <div className="border-b border-gray-200 px-5 py-4">
-                    <h2 className="font-semibold text-gray-900">Vehicle</h2>
+                <section className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-[0_2px_8px_rgba(15,23,42,0.04)]">
+                  <div className="border-b border-slate-100 px-5 py-4">
+                    <h2 className="text-sm font-mono tracking-tight text-slate-900">
+                      Vehicle
+                    </h2>
 
-                    <p className="mt-1 text-xs text-gray-500">
+                    <p className="mt-1 text-[10px] font-bold uppercase tracking-[0.08em] text-slate-400">
                       Historical vehicle information from the saved EMI.
                     </p>
                   </div>
 
                   <div className="grid gap-5 p-5 sm:grid-cols-2 lg:grid-cols-4">
                     <div>
-                      <div className="text-xs text-gray-500">Vehicle</div>
+                      <div className="text-[10px] font-bold uppercase tracking-[0.08em] text-slate-400">
+                        Vehicle
+                      </div>
 
                       <div className="mt-1 text-sm font-medium text-gray-900">
                         {financeVehicleName || "-"}
@@ -2000,7 +2042,9 @@ export default function NewQuote() {
                     </div>
 
                     <div>
-                      <div className="text-xs text-gray-500">Stock ID</div>
+                      <div className="text-[10px] font-bold uppercase tracking-[0.08em] text-slate-400">
+                        Stock ID
+                      </div>
 
                       <div className="mt-1 text-sm font-medium text-gray-900">
                         {selectedEmi.vehicle_stock_id || "-"}
@@ -2008,7 +2052,9 @@ export default function NewQuote() {
                     </div>
 
                     <div>
-                      <div className="text-xs text-gray-500">Chassis</div>
+                      <div className="text-[10px] font-bold uppercase tracking-[0.08em] text-slate-400">
+                        Chassis
+                      </div>
 
                       <div className="mt-1 text-sm font-medium text-gray-900">
                         {selectedEmi.vehicle_chassis_number || "-"}
@@ -2016,7 +2062,9 @@ export default function NewQuote() {
                     </div>
 
                     <div>
-                      <div className="text-xs text-gray-500">Engine</div>
+                      <div className="text-[10px] font-bold uppercase tracking-[0.08em] text-slate-400">
+                        Engine
+                      </div>
 
                       <div className="mt-1 text-sm font-medium text-gray-900">
                         {selectedEmi.vehicle_engine_number || "-"}
@@ -2026,13 +2074,13 @@ export default function NewQuote() {
                 </section>
 
                 {/* Special Price */}
-                <section className="rounded-xl border border-gray-200 bg-white shadow-sm">
-                  <div className="border-b border-gray-200 px-5 py-4">
-                    <h2 className="font-semibold text-gray-900">
+                <section className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-[0_2px_8px_rgba(15,23,42,0.04)]">
+                  <div className="border-b border-slate-100 px-5 py-4">
+                    <h2 className="text-sm font-mono tracking-tight text-slate-900">
                       Special Price
                     </h2>
 
-                    <p className="mt-1 text-xs text-gray-500">
+                    <p className="mt-1 text-[10px] font-bold uppercase tracking-[0.08em] text-slate-400">
                       Use an approved transaction-specific special price for
                       this vehicle.
                     </p>
@@ -2049,7 +2097,7 @@ export default function NewQuote() {
                       </div>
                     ) : (
                       <>
-                        <label className="mb-2 block text-sm font-medium text-gray-700">
+                        <label className="mb-1.5 block text-[11px] font-mono uppercase tracking-[0.08em] text-slate-500">
                           Approved Special Price
                         </label>
 
@@ -2058,7 +2106,7 @@ export default function NewQuote() {
                           onChange={(event) =>
                             setSelectedSpecialPriceRequestId(event.target.value)
                           }
-                          className="w-full rounded-lg border border-gray-300 bg-white px-3 py-2.5 text-sm outline-none focus:border-gray-500"
+                          className="h-10 w-full rounded-xl border border-slate-200 bg-white px-3 text-sm text-slate-800 outline-none transition placeholder:text-slate-400 focus:border-amber-400 focus:ring-2 focus:ring-amber-400/15"
                         >
                           <option value="">Use saved EMI price</option>
 
@@ -2074,10 +2122,10 @@ export default function NewQuote() {
                           <div className="mt-4 rounded-lg border border-gray-200 bg-gray-50 p-4">
                             <div className="grid gap-3 sm:grid-cols-3">
                               <div>
-                                <div className="text-xs text-gray-500">
+                                <div className="text-[10px] font-bold uppercase tracking-[0.08em] text-slate-400">
                                   Requested
                                 </div>
-                                <div className="mt-1 text-sm font-semibold text-gray-900">
+                                <div className="font-mono text-sm font-bold text-slate-900">
                                   AED{" "}
                                   {formatCurrency(
                                     selectedSpecialPriceRequest.requested_price,
@@ -2086,20 +2134,20 @@ export default function NewQuote() {
                               </div>
 
                               <div>
-                                <div className="text-xs text-gray-500">
+                                <div className="text-[10px] font-bold uppercase tracking-[0.08em] text-slate-400">
                                   Approved
                                 </div>
-                                <div className="mt-1 text-sm font-semibold text-gray-900">
+                                <div className="font-mono text-sm font-bold text-slate-900">
                                   AED{" "}
                                   {formatCurrency(selectedApprovedSpecialPrice)}
                                 </div>
                               </div>
 
                               <div>
-                                <div className="text-xs text-gray-500">
+                                <div className="text-[10px] font-bold uppercase tracking-[0.08em] text-slate-400">
                                   Expires
                                 </div>
-                                <div className="mt-1 text-sm font-semibold text-gray-900">
+                                <div className="font-mono text-sm font-bold text-slate-900">
                                   {selectedSpecialPriceRequest.expires_at
                                     ? new Date(
                                         selectedSpecialPriceRequest.expires_at,
@@ -2116,13 +2164,13 @@ export default function NewQuote() {
                 </section>
 
                 {/* Historical Finance */}
-                <section className="rounded-xl border border-gray-200 bg-white shadow-sm">
-                  <div className="border-b border-gray-200 px-5 py-4">
-                    <h2 className="font-semibold text-gray-900">
+                <section className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-[0_2px_8px_rgba(15,23,42,0.04)]">
+                  <div className="border-b border-slate-100 px-5 py-4">
+                    <h2 className="text-sm font-mono tracking-tight text-slate-900">
                       Finance Summary
                     </h2>
 
-                    <p className="mt-1 text-xs text-gray-500">
+                    <p className="mt-1 text-[10px] font-bold uppercase tracking-[0.08em] text-slate-400">
                       Historical values. No new Finance calculation is performed
                       here.
                     </p>
@@ -2130,105 +2178,121 @@ export default function NewQuote() {
 
                   <div className="grid gap-5 p-5 sm:grid-cols-2 lg:grid-cols-4">
                     <div>
-                      <div className="text-xs text-gray-500">Vehicle Price</div>
+                      <div className="text-[10px] font-bold uppercase tracking-[0.08em] text-slate-400">
+                        Vehicle Price
+                      </div>
 
-                      <div className="mt-1 text-sm font-semibold text-gray-900">
+                      <div className="font-mono text-sm font-bold text-slate-900">
                         {formatCurrency(financePrice)}
                       </div>
                     </div>
 
                     <div>
-                      <div className="text-xs text-gray-500">
+                      <div className="text-[10px] font-bold uppercase tracking-[0.08em] text-slate-400">
                         Payment Method
                       </div>
 
-                      <div className="mt-1 text-sm font-semibold text-gray-900">
+                      <div className="font-mono text-sm font-bold text-slate-900">
                         Finance
                       </div>
                     </div>
 
                     <div>
-                      <div className="text-xs text-gray-500">Bank</div>
+                      <div className="text-[10px] font-bold uppercase tracking-[0.08em] text-slate-400">
+                        Bank
+                      </div>
 
-                      <div className="mt-1 text-sm font-semibold text-gray-900">
+                      <div className="font-mono text-sm font-bold text-slate-900">
                         {financeBank || "-"}
                       </div>
                     </div>
 
                     <div>
-                      <div className="text-xs text-gray-500">Interest Rate</div>
+                      <div className="text-[10px] font-bold uppercase tracking-[0.08em] text-slate-400">
+                        Interest Rate
+                      </div>
 
-                      <div className="mt-1 text-sm font-semibold text-gray-900">
+                      <div className="font-mono text-sm font-bold text-slate-900">
                         {financeRate || "-"}
                       </div>
                     </div>
 
                     <div>
-                      <div className="text-xs text-gray-500">VAT Amount</div>
+                      <div className="text-[10px] font-bold uppercase tracking-[0.08em] text-slate-400">
+                        VAT Amount
+                      </div>
 
-                      <div className="mt-1 text-sm font-semibold text-gray-900">
+                      <div className="font-mono text-sm font-bold text-slate-900">
                         {formatCurrency(financeVatAmount)}
                       </div>
                     </div>
 
                     <div>
-                      <div className="text-xs text-gray-500">Down Payment</div>
+                      <div className="text-[10px] font-bold uppercase tracking-[0.08em] text-slate-400">
+                        Down Payment
+                      </div>
 
-                      <div className="mt-1 text-sm font-semibold text-gray-900">
+                      <div className="font-mono text-sm font-bold text-slate-900">
                         {formatCurrency(savedEmiDownPayment)}
                       </div>
                     </div>
 
                     <div>
-                      <div className="text-xs text-gray-500">
+                      <div className="text-[10px] font-bold uppercase tracking-[0.08em] text-slate-400">
                         Finance Amount
                       </div>
 
-                      <div className="mt-1 text-sm font-semibold text-gray-900">
+                      <div className="font-mono text-sm font-bold text-slate-900">
                         {formatCurrency(financeAmount)}
                       </div>
                     </div>
 
                     <div>
-                      <div className="text-xs text-gray-500">Tenure</div>
+                      <div className="text-[10px] font-bold uppercase tracking-[0.08em] text-slate-400">
+                        Tenure
+                      </div>
 
-                      <div className="mt-1 text-sm font-semibold text-gray-900">
+                      <div className="font-mono text-sm font-bold text-slate-900">
                         {financeTenure || "-"}
                       </div>
                     </div>
 
                     <div>
-                      <div className="text-xs text-gray-500">
+                      <div className="text-[10px] font-bold uppercase tracking-[0.08em] text-slate-400">
                         Total Interest
                       </div>
 
-                      <div className="mt-1 text-sm font-semibold text-gray-900">
+                      <div className="font-mono text-sm font-bold text-slate-900">
                         {formatCurrency(financeInterest)}
                       </div>
                     </div>
 
                     <div>
-                      <div className="text-xs text-gray-500">Total Payable</div>
+                      <div className="text-[10px] font-bold uppercase tracking-[0.08em] text-slate-400">
+                        Total Payable
+                      </div>
 
-                      <div className="mt-1 text-sm font-semibold text-gray-900">
+                      <div className="font-mono text-sm font-bold text-slate-900">
                         {formatCurrency(financePayable)}
                       </div>
                     </div>
 
                     <div>
-                      <div className="text-xs text-gray-500">Monthly EMI</div>
+                      <div className="text-[10px] font-bold uppercase tracking-[0.08em] text-slate-400">
+                        Monthly EMI
+                      </div>
 
-                      <div className="mt-1 text-sm font-semibold text-gray-900">
+                      <div className="font-mono text-sm font-bold text-slate-900">
                         {formatCurrency(financeMonthlyEmi)}
                       </div>
                     </div>
 
                     <div>
-                      <div className="text-xs text-gray-500">
+                      <div className="text-[10px] font-bold uppercase tracking-[0.08em] text-slate-400">
                         Finance Expenses
                       </div>
 
-                      <div className="mt-1 text-sm font-semibold text-gray-900">
+                      <div className="font-mono text-sm font-bold text-slate-900">
                         {formatCurrency(financeExpenseTotal)}
                       </div>
                     </div>
@@ -2236,13 +2300,13 @@ export default function NewQuote() {
                 </section>
 
                 {/* Quote-level details */}
-                <section className="rounded-xl border border-gray-200 bg-white shadow-sm">
-                  <div className="border-b border-gray-200 px-5 py-4">
-                    <h2 className="font-semibold text-gray-900">
+                <section className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-[0_2px_8px_rgba(15,23,42,0.04)]">
+                  <div className="border-b border-slate-100 px-5 py-4">
+                    <h2 className="text-sm font-mono tracking-tight text-slate-900">
                       Quote Details
                     </h2>
 
-                    <p className="mt-1 text-xs text-gray-500">
+                    <p className="mt-1 text-[10px] font-bold uppercase tracking-[0.08em] text-slate-400">
                       Finance information above comes from the historical EMI.
                       Only Quote-level values can be entered here.
                     </p>
@@ -2250,27 +2314,27 @@ export default function NewQuote() {
 
                   <div className="grid gap-5 p-5 md:grid-cols-2">
                     <div>
-                      <label className="mb-2 block text-sm font-medium text-gray-700">
+                      <label className="mb-1.5 block text-[11px] font-mono uppercase tracking-[0.08em] text-slate-500">
                         Payment Method
                       </label>
 
-                      <div className="flex min-h-[42px] items-center rounded-lg border border-gray-300 bg-gray-50 px-3 text-sm font-medium text-gray-800">
+                      <div className="flex min-h-[42px] items-center rounded-xl border border-slate-200 bg-slate-50 px-3 text-sm font-semibold text-slate-800">
                         Finance
                       </div>
                     </div>
 
                     <div>
-                      <label className="mb-2 block text-sm font-medium text-gray-700">
+                      <label className="mb-1.5 block text-[11px] font-mono uppercase tracking-[0.08em] text-slate-500">
                         Price
                       </label>
 
-                      <div className="flex min-h-[42px] items-center rounded-lg border border-gray-300 bg-gray-50 px-3 text-sm font-medium text-gray-800">
+                      <div className="flex min-h-[42px] items-center rounded-xl border border-slate-200 bg-slate-50 px-3 text-sm font-semibold text-slate-800">
                         {formatCurrency(financePrice)}
                       </div>
                     </div>
 
                     <div>
-                      <label className="mb-2 block text-sm font-medium text-gray-700">
+                      <label className="mb-1.5 block text-[11px] font-mono uppercase tracking-[0.08em] text-slate-500">
                         Extra Down Payment
                       </label>
 
@@ -2283,12 +2347,12 @@ export default function NewQuote() {
                           setExtraDownPayment(event.target.value)
                         }
                         placeholder="0.00"
-                        className="w-full rounded-lg border border-gray-300 px-3 py-2.5 text-sm outline-none focus:border-gray-500"
+                        className="w-full rounded-2xl border border-dashed border-slate-300 bg-slate-50 p-4 text-sm text-slate-500"
                       />
                     </div>
 
                     <div>
-                      <label className="mb-2 block text-sm font-medium text-gray-700">
+                      <label className="mb-1.5 block text-[11px] font-mono uppercase tracking-[0.08em] text-slate-500">
                         Deposit Date
                       </label>
 
@@ -2296,20 +2360,20 @@ export default function NewQuote() {
                         type="date"
                         value={depositDate}
                         onChange={(event) => setDepositDate(event.target.value)}
-                        className="w-full rounded-lg border border-gray-300 px-3 py-2.5 text-sm outline-none focus:border-gray-500"
+                        className="w-full rounded-2xl border border-dashed border-slate-300 bg-slate-50 p-4 text-sm text-slate-500"
                       />
                     </div>
                   </div>
                 </section>
 
                 {/* Historical finance expenses */}
-                <section className="rounded-xl border border-gray-200 bg-white shadow-sm">
-                  <div className="border-b border-gray-200 px-5 py-4">
-                    <h2 className="font-semibold text-gray-900">
+                <section className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-[0_2px_8px_rgba(15,23,42,0.04)]">
+                  <div className="border-b border-slate-100 px-5 py-4">
+                    <h2 className="text-sm font-mono tracking-tight text-slate-900">
                       Historical Finance Expenses
                     </h2>
 
-                    <p className="mt-1 text-xs text-gray-500">
+                    <p className="mt-1 text-[10px] font-bold uppercase tracking-[0.08em] text-slate-400">
                       These belong to the saved EMI and are displayed for
                       reference only.
                     </p>
@@ -2357,7 +2421,7 @@ export default function NewQuote() {
         <div className="flex flex-col-reverse gap-3 sm:flex-row sm:justify-end">
           <Link
             to="/deals"
-            className="rounded-lg border border-gray-300 bg-white px-5 py-2.5 text-center text-sm font-medium text-gray-700 hover:bg-gray-50"
+            className="rounded-xl border border-slate-200 bg-white px-5 py-2.5 text-center text-sm font-semibold text-slate-700 transition hover:bg-slate-50"
           >
             Cancel
           </Link>
@@ -2371,7 +2435,7 @@ export default function NewQuote() {
               (source === SOURCE_STOCK &&
                 (calculatingStock || !stockCalculation))
             }
-            className="rounded-lg bg-gray-900 px-5 py-2.5 text-sm font-medium text-white hover:bg-gray-800 disabled:cursor-not-allowed disabled:opacity-50"
+            className="rounded-xl bg-amber-500 px-5 py-2.5 text-sm font-bold text-slate-950 shadow-sm transition hover:bg-amber-400 disabled:cursor-not-allowed disabled:opacity-50"
           >
             {submitting ? "Creating Quote..." : "Create Quote"}
           </button>

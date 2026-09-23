@@ -17,7 +17,7 @@ function DataTable({
       <div className="overflow-x-auto">
         <table className="min-w-full border-collapse">
           <thead>
-            <tr className="border-b border-slate-200 bg-slate-50">
+            <tr className="border-b border-[#e5e7eb] bg-slate-50">
               {columns.map((column) => (
                 <th
                   key={column.key}
