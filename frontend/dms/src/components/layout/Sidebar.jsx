@@ -2,6 +2,7 @@ import {
   Banknote,
   BarChart3,
   BriefcaseBusiness,
+  Building2,
   Car,
   Calculator,
   ChevronLeft,
@@ -161,11 +162,25 @@ function Sidebar({ user, onLogout, mobileOpen, onCloseMobile }) {
           path: "/finance/settings",
           icon: Settings,
         },
+        {
+          label: "Company & Branches",
+          path: "/company",
+          icon: Building2,
+          roles: ["MASTER"],
+        },
       ],
     },
   ];
 
-  const visibleSections = sections;
+  const visibleSections = sections
+    .map((section) => ({
+      ...section,
+      items: section.items.filter(
+        (item) => !item.roles || item.roles.includes(user?.role),
+      ),
+    }))
+    .filter((section) => section.items.length > 0);
+
 
   const handleNavigate = (path) => {
     navigate(path);

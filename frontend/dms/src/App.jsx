@@ -66,6 +66,8 @@ import LeadDetail from "./pages/leads/LeadDetail";
 import LedgerAccounts from "./pages/ledger/LedgerAccounts";
 import RoleRoute from "./routes/RoleRoute";
 
+import CompanyManagement from "./pages/company/CompanyManagement";
+
 function App() {
   return (
     <BrowserRouter>
@@ -494,6 +496,16 @@ function App() {
                 </ProtectedRoute>
               }
             />
+
+            <Route
+              path="/company"
+              element={
+                <RoleRoute allowedRoles={["MASTER"]}>
+                  <CompanyManagement />
+                </RoleRoute>
+              }
+            />
+
 
             <Route
               path="/stock/add"

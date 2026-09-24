@@ -148,6 +148,13 @@ function Header({ onOpenMobileMenu }) {
       };
     }
 
+    if (path.startsWith("/company")) {
+      return {
+        section: "Management",
+        title: "Company & Branches",
+      };
+    }
+
     return {
       section: "Prime Rides UAE",
       title: "Dealer Management System",
