@@ -1,16 +1,29 @@
-# React + Vite
+# Prime Rides DMS Frontend
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+This directory contains the React frontend for the Prime Rides Dealer Management System.
 
-Currently, two official plugins are available:
+For the complete project overview, setup instructions, and backend details, see the repository root [README.md](../../README.md).
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Oxc](https://oxc.rs)
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/)
+## Local development
 
-## React Compiler
+```bash
+npm install
+npm run dev
+```
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
+The app runs on:
 
-## Expanding the ESLint configuration
+- http://localhost:5173
 
-If you are developing a production application, we recommend using TypeScript with type-aware lint rules enabled. Check out the [TS template](https://github.com/vitejs/vite/tree/main/packages/create-vite/template-react-ts) for information on how to integrate TypeScript and [`typescript-eslint`](https://typescript-eslint.io) in your project.
+## Production build
+
+```bash
+npm run build
+```
+
+## Notes
+
+- The app is configured as a Vite + React + Tailwind project.
+- The frontend integrates with the Django API in the `backend/` directory.
+- PWA support and branded dealership UI are enabled through the Vite configuration.
+
