@@ -134,3 +134,59 @@ export function bulkImportCars(file) {
 export function getDashboardSummary() {
   return apiClient("/inventory/dashboard/");
 }
+
+export function getVehicleDocuments(carId) {
+  return apiClient(`/inventory/cars/${carId}/documents/`);
+}
+
+export function uploadVehicleDocument(carId, documentType, file) {
+  const formData = new FormData();
+
+  formData.append("document_type", documentType);
+  formData.append("file", file);
+
+  return apiClient(`/inventory/cars/${carId}/documents/`, {
+    method: "POST",
+    body: formData,
+  });
+}
+
+export function deleteVehicleDocument(documentId) {
+  return apiClient(`/inventory/documents/${documentId}/delete/`, {
+    method: "DELETE",
+  });
+}
+
+export async function archiveVehicleDocument(documentId) {
+  return apiClient(`/inventory/documents/${documentId}/archive/`, {
+    method: "POST",
+  });
+}
+
+export function getProcurementChecks() {
+  return apiClient("/inventory/procurement-checks/");
+}
+
+export function createProcurementCheck(data) {
+  return apiClient("/inventory/procurement-checks/", {
+    method: "POST",
+    body: JSON.stringify(data),
+  });
+}
+
+export function getProcurementCheck(id) {
+  return apiClient(`/inventory/procurement-checks/${id}/`);
+}
+
+export function updateProcurementCheck(id, data) {
+  return apiClient(`/inventory/procurement-checks/${id}/`, {
+    method: "PATCH",
+    body: JSON.stringify(data),
+  });
+}
+
+export function deleteProcurementCheck(id) {
+  return apiClient(`/inventory/procurement-checks/${id}/`, {
+    method: "DELETE",
+  });
+}

@@ -11,6 +11,8 @@ import Stock from "./pages/stock/Stock";
 import CarDetails from "./pages/stock/CarDetails";
 import EditCar from "./pages/stock/EditCar";
 import SpecialPrice from "./pages/stock/SpecialPrice";
+import ProcurementChecks from "./pages/stock/ProcurementChecks";
+import CarDemands from "./pages/stock/CarDemands";
 
 import Login from "./pages/Login";
 import Dashboard from "./pages/Dashboard";
@@ -58,15 +60,25 @@ import EditCustomer from "./pages/customers/EditCustomer";
 
 import Progressions from "./pages/progression/Progressions";
 import ProgressionDetail from "./pages/progression/ProgressionDetail";
+
 import Staff from "./pages/staff/Staff";
 import StaffPerformance from "./pages/staff/StaffPerformance";
+
 import UserAccess from "./pages/admin/UserAccess";
+
 import Leads from "./pages/leads/Leads";
 import LeadDetail from "./pages/leads/LeadDetail";
+
 import LedgerAccounts from "./pages/ledger/LedgerAccounts";
+
 import RoleRoute from "./routes/RoleRoute";
 
 import CompanyManagement from "./pages/company/CompanyManagement";
+
+import RtaRecords from "./pages/rta/RtaRecords";
+import RtaRecordDetail from "./pages/rta/RtaRecordDetail";
+import RtaRecordCreate from "./pages/rta/RtaRecordCreate";
+import RtaPrint from "./pages/rta/RtaPrint";
 
 function App() {
   return (
@@ -506,6 +518,59 @@ function App() {
               }
             />
 
+            <Route
+              path="/rta"
+              element={
+                <ProtectedRoute>
+                  <RtaRecords />
+                </ProtectedRoute>
+              }
+            />
+
+            <Route
+              path="/rta/:id"
+              element={
+                <ProtectedRoute>
+                  <RtaRecordDetail />
+                </ProtectedRoute>
+              }
+            />
+
+            <Route
+              path="/rta/new"
+              element={
+                <ProtectedRoute>
+                  <RtaRecordCreate />
+                </ProtectedRoute>
+              }
+            />
+
+            <Route
+              path="/rta/purchase/:carId"
+              element={
+                <ProtectedRoute>
+                  <RtaRecordCreate />
+                </ProtectedRoute>
+              }
+            />
+
+            <Route
+              path="/rta/sale/:quoteId"
+              element={
+                <ProtectedRoute>
+                  <RtaRecordCreate />
+                </ProtectedRoute>
+              }
+            />
+
+            <Route
+              path="/rta/:id/print"
+              element={
+                <ProtectedRoute>
+                  <RtaPrint />
+                </ProtectedRoute>
+              }
+            />
 
             <Route
               path="/stock/add"
@@ -521,6 +586,24 @@ function App() {
               element={
                 <ProtectedRoute>
                   <Stock />
+                </ProtectedRoute>
+              }
+            />
+
+            <Route
+              path="/car-demands"
+              element={
+                <ProtectedRoute>
+                  <CarDemands />
+                </ProtectedRoute>
+              }
+            />
+
+            <Route
+              path="/stock/procurement-checks"
+              element={
+                <ProtectedRoute>
+                  <ProcurementChecks />
                 </ProtectedRoute>
               }
             />
@@ -542,7 +625,27 @@ function App() {
                 </ProtectedRoute>
               }
             />
-            <Route path="/special-price" element={<SpecialPrice />} />
+            <Route
+              path="/special-price"
+              element={
+                <ProtectedRoute>
+                  <SpecialPrice />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="*"
+              element={
+                <div className="flex min-h-[60vh] items-center justify-center px-6">
+                  <div className="text-center">
+                    <h1 className="text-4xl font-bold text-slate-800">404</h1>
+                    <p className="mt-2 text-sm text-slate-500">
+                      The page you are looking for does not exist.
+                    </p>
+                  </div>
+                </div>
+              }
+            />
           </Routes>
         </AppLayout>
       </AuthProvider>

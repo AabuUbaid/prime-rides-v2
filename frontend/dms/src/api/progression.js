@@ -21,3 +21,20 @@ export async function advanceProgression(id, payload = {}) {
     body: JSON.stringify(payload),
   });
 }
+
+export async function getRegistrationDocuments(id) {
+  return apiClient(`/progression/${id}/registration-documents/`);
+}
+
+export async function downloadRegistrationDocument(
+  progressionId,
+  source,
+  documentId,
+) {
+  return apiClient(
+    `/progression/${progressionId}/registration-documents/${source}/${documentId}/download/`,
+    {
+      responseType: "blob",
+    },
+  );
+}

@@ -47,6 +47,11 @@ function Sidebar({ user, onLogout, mobileOpen, onCloseMobile }) {
           icon: Car,
         },
         {
+          label: "Cars in Demand",
+          path: "/car-demands",
+          icon: ClipboardList,
+        },
+        {
           label: "Special Price",
           path: "/special-price",
           icon: Tags,
@@ -55,6 +60,11 @@ function Sidebar({ user, onLogout, mobileOpen, onCloseMobile }) {
           label: "Progression",
           path: "/progression",
           icon: GitBranch,
+        },
+        {
+          label: "Procurement Checks",
+          path: "/stock/procurement-checks",
+          icon: ClipboardList,
         },
       ],
     },
@@ -92,16 +102,19 @@ function Sidebar({ user, onLogout, mobileOpen, onCloseMobile }) {
           label: "Bank Loans",
           path: "/finance/bank-loans",
           icon: Landmark,
+          roles: ["MASTER"],
         },
         {
           label: "Cash Deals",
           path: "/finance/cash-deals",
           icon: Banknote,
+          roles: ["MASTER"],
         },
         {
           label: "Cash Receipts",
           path: "/finance/cash-receipts",
           icon: ReceiptText,
+          roles: ["MASTER", "ADMIN"],
         },
         {
           label: "Balance Sheets",
@@ -180,7 +193,6 @@ function Sidebar({ user, onLogout, mobileOpen, onCloseMobile }) {
       ),
     }))
     .filter((section) => section.items.length > 0);
-
 
   const handleNavigate = (path) => {
     navigate(path);

@@ -8,7 +8,7 @@ import { getCar, updateCar, deleteCar } from "../../api/inventory";
 import VehicleInformation from "./components/VehicleInformation";
 import PricingInformation from "./components/PricingInformation";
 import VehicleDetails from "./components/VehicleDetails";
-import UploadSection from "./components/UploadSection";
+// import UploadSection from "./components/UploadSection";
 import SubmitSection from "./components/SubmitSection";
 
 const initialFormData = {
@@ -215,13 +215,14 @@ function EditCar() {
           />
         </div>
 
-        <div className="overflow-hidden rounded-2xl border border-slate-200 bg-white p-5 shadow-[0_2px_8px_rgba(15,23,42,0.04)] sm:p-6">
+        {/* <div className="overflow-hidden rounded-2xl border border-slate-200 bg-white p-5 shadow-[0_2px_8px_rgba(15,23,42,0.04)] sm:p-6">
           <UploadSection
             car={car}
             formData={formData}
             setFormData={setFormData}
+            showImageUpload={false}
           />
-        </div>
+        </div> */}
 
         <div className="overflow-hidden rounded-2xl border border-slate-200 bg-white p-5 shadow-[0_2px_8px_rgba(15,23,42,0.04)] sm:p-6">
           <SubmitSection

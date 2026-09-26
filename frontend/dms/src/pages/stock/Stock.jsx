@@ -1,14 +1,11 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "../../context/AuthContext";
 import {
-  CalendarDays,
   CarFront,
   ChevronLeft,
   ChevronRight,
   Eye,
-  Gauge,
-  MapPin,
   Pencil,
   Printer,
   Share2Icon,
@@ -17,19 +14,16 @@ import {
 import {
   getCars,
   getCarBrands,
+  getDashboardSummary,
   bulkDeleteCars,
   bulkImportCars,
 } from "../../api/inventory";
 import { resolveBackendUrl } from "../../api/url";
 
-import PrintButton from "../../components/printing/PrintButton";
 import InventoryVehiclePrintTemplate from "../../components/printing/templates/InventoryVehiclePrintTemplate";
 import { printInventoryVehicle } from "../../utils/print";
 import InventoryStockPrintTemplate from "../../components/printing/templates/InventoryStockPrintTemplate";
 import Button from "../../components/ui/Button";
-import Card from "../../components/ui/Card";
-import Input from "../../components/ui/Input";
-import Select from "../../components/ui/Select";
 import StatusBadge from "../../components/ui/StatusBadge";
 
 const INITIAL_FILTERS = {
@@ -116,8 +110,17 @@ function Stock() {
   const [ordering, setOrdering] = useState("-created_at");
 
   const [page, setPage] = useState(1);
-  const [pageSize] = useState(10);
+  const [pageSize] = useState(20);
   const [totalCount, setTotalCount] = useState(0);
+  const [isFetching, setIsFetching] = useState(false);
+
+  const [inventorySummary, setInventorySummary] = useState({
+    total_vehicles: 0,
+    available: 0,
+    reserved: 0,
+    sold: 0,
+    upcoming: 0,
+  });
 
   const [selectedCars, setSelectedCars] = useState([]);
   const [shareCar, setShareCar] = useState(null);
@@ -133,24 +136,28 @@ function Stock() {
   const [importResult, setImportResult] = useState(null);
 
   const navigate = useNavigate();
-  const carouselRef = useRef(null);
 
-  /*
-   * Existing search debounce.
-   *
-   * Do not change this behavior.
-   */
+  useEffect(() => {
+    async function loadInventorySummary() {
+      try {
+        const response = await getDashboardSummary();
 
-  const scrollCarousel = (direction) => {
-    if (!carouselRef.current) return;
+        setInventorySummary(
+          response?.data || {
+            total_vehicles: 0,
+            available: 0,
+            reserved: 0,
+            sold: 0,
+            upcoming: 0,
+          },
+        );
+      } catch (error) {
+        console.error("Failed to load inventory summary:", error);
+      }
+    }
 
-    const scrollAmount = carouselRef.current.clientWidth * 0.85;
-
-    carouselRef.current.scrollBy({
-      left: direction === "left" ? -scrollAmount : scrollAmount,
-      behavior: "smooth",
-    });
-  };
+    loadInventorySummary();
+  }, [refreshKey]);
 
   useEffect(() => {
     async function loadBrands() {
@@ -186,7 +193,11 @@ function Stock() {
    * Filtering remains server-side.
    */
   useEffect(() => {
+    let cancelled = false;
+
     async function loadCars() {
+      setIsFetching(true);
+
       try {
         const response = await getCars({
           search: searchQuery,
@@ -196,16 +207,29 @@ function Stock() {
           page_size: pageSize,
         });
 
-        setCars(response.data);
-        setTotalCount(response.count);
+        if (cancelled) {
+          return;
+        }
+
+        setCars(response.data || []);
+        setTotalCount(response.count || 0);
       } catch (error) {
-        console.error(error);
+        if (!cancelled) {
+          console.error("Failed to load inventory:", error);
+        }
       } finally {
-        setLoading(false);
+        if (!cancelled) {
+          setIsFetching(false);
+          setLoading(false);
+        }
       }
     }
 
     loadCars();
+
+    return () => {
+      cancelled = true;
+    };
   }, [searchQuery, appliedFilters, ordering, page, pageSize, refreshKey]);
 
   function getImageUrl(imagePath) {
@@ -285,34 +309,6 @@ function Stock() {
         setPrintStock(false);
       }, 100);
     }, 0);
-  }
-
-  function handleVehicleSelect(vehicleId) {
-    setSelectedCars((currentSelected) => {
-      if (currentSelected.includes(vehicleId)) {
-        return currentSelected.filter((id) => id !== vehicleId);
-      }
-
-      return [...currentSelected, vehicleId];
-    });
-  }
-
-  function handleSelectAll() {
-    const currentPageIds = cars.map((car) => car.id);
-
-    const allCurrentPageSelected = currentPageIds.every((id) =>
-      selectedCars.includes(id),
-    );
-
-    if (allCurrentPageSelected) {
-      setSelectedCars((currentSelected) =>
-        currentSelected.filter((id) => !currentPageIds.includes(id)),
-      );
-    } else {
-      setSelectedCars((currentSelected) => [
-        ...new Set([...currentSelected, ...currentPageIds]),
-      ]);
-    }
   }
 
   async function handleBulkDelete() {
@@ -462,42 +458,111 @@ function Stock() {
 
   return (
     <div className="mx-auto w-full max-w-[1600px] px-4 py-6 sm:px-6 lg:px-8">
-      <div className="mb-7">
-        <div className="mb-2 flex items-center gap-2">
-          <span className="h-1.5 w-1.5 rounded-full bg-amber-500" />
-
-          <span className="text-[10px] font-bold uppercase tracking-[0.14em] text-amber-600">
-            Core Operations
-          </span>
-        </div>
-
-        <div className="flex flex-wrap items-end justify-between gap-4">
+      <div className="mb-6">
+        <div className="flex flex-col gap-5 xl:flex-row xl:items-end xl:justify-between">
           <div>
-            <h1 className="text-2xl font-bold tracking-tight text-slate-900">
-              Inventory
+            <div className="mb-2 flex items-center gap-2">
+              <span className="h-1.5 w-1.5 rounded-full bg-amber-500" />
+
+              <span className="text-[10px] font-bold uppercase tracking-[0.16em] text-amber-600">
+                Core Operations
+              </span>
+            </div>
+
+            <h1 className="text-3xl font-bold tracking-tight text-slate-950">
+              Vehicle Inventory
             </h1>
 
-            <p className="mt-1 text-sm text-slate-500">
-              Manage vehicle stock, pricing, status, and availability.
+            <p className="mt-1.5 text-sm text-slate-500">
+              Manage the complete Prime Rides vehicle inventory.
             </p>
           </div>
 
-          <div className="rounded-xl border border-slate-200 bg-white px-3 py-2 shadow-sm">
-            <span className="text-xs font-medium text-slate-500">
-              {totalCount} vehicles
-            </span>
+          <div className="flex flex-wrap gap-2">
+            {isMaster && (
+              <Button
+                type="button"
+                variant="primary"
+                onClick={() => setShowImportModal(true)}
+              >
+                Bulk Import
+              </Button>
+            )}
+          </div>
+        </div>
+
+        {/* Inventory summary */}
+        <div className="mt-6 grid grid-cols-2 gap-3 lg:grid-cols-5">
+          <div className="rounded-2xl border border-slate-200 bg-white px-4 py-4 shadow-sm">
+            <p className="text-[10px] font-bold uppercase tracking-[0.12em] text-slate-400">
+              Total Vehicles
+            </p>
+
+            <p className="mt-2 text-2xl font-bold tracking-tight text-slate-950">
+              {inventorySummary.total_vehicles}
+            </p>
+
+            <p className="mt-1 text-xs text-slate-400">Complete inventory</p>
+          </div>
+
+          <div className="rounded-2xl border border-emerald-100 bg-emerald-50/50 px-4 py-4 shadow-sm">
+            <p className="text-[10px] font-bold uppercase tracking-[0.12em] text-emerald-600">
+              Available
+            </p>
+
+            <p className="mt-2 text-2xl font-bold tracking-tight text-emerald-900">
+              {inventorySummary.available}
+            </p>
+
+            <p className="mt-1 text-xs text-emerald-700/60">Ready for sale</p>
+          </div>
+
+          <div className="rounded-2xl border border-amber-100 bg-amber-50/50 px-4 py-4 shadow-sm">
+            <p className="text-[10px] font-bold uppercase tracking-[0.12em] text-amber-600">
+              Reserved
+            </p>
+
+            <p className="mt-2 text-2xl font-bold tracking-tight text-amber-900">
+              {inventorySummary.reserved}
+            </p>
+
+            <p className="mt-1 text-xs text-amber-700/60">Currently reserved</p>
+          </div>
+
+          <div className="rounded-2xl border border-blue-100 bg-blue-50/50 px-4 py-4 shadow-sm">
+            <p className="text-[10px] font-bold uppercase tracking-[0.12em] text-blue-600">
+              Upcoming
+            </p>
+
+            <p className="mt-2 text-2xl font-bold tracking-tight text-blue-900">
+              {inventorySummary.upcoming}
+            </p>
+
+            <p className="mt-1 text-xs text-blue-700/60">Incoming vehicles</p>
+          </div>
+
+          <div className="rounded-2xl border border-violet-100 bg-violet-50/50 px-4 py-4 shadow-sm">
+            <p className="text-[10px] font-bold uppercase tracking-[0.12em] text-violet-600">
+              Sold
+            </p>
+
+            <p className="mt-2 text-2xl font-bold tracking-tight text-violet-900">
+              {inventorySummary.sold}
+            </p>
+
+            <p className="mt-1 text-xs text-violet-700/60">Completed stock</p>
           </div>
         </div>
       </div>
       {/* Search + Sorting */}
-      <div className="mb-5 flex flex-col gap-3 lg:flex-row lg:items-center">
-        <div className="relative min-w-0 flex-1 lg:max-w-md">
+      <div className="mb-4 flex flex-col gap-3 xl:flex-row xl:items-center">
+        <div className="relative min-w-0 flex-1">
           <input
             type="text"
-            placeholder="Search vehicles..."
+            placeholder="Search stock ID, make, model, variant, chassis..."
             value={search}
-            onChange={(e) => setSearch(e.target.value)}
-            className="h-10 w-full rounded-xl border border-slate-200 bg-white px-3 text-sm text-slate-800 outline-none transition placeholder:text-slate-400 focus:border-amber-400 focus:ring-2 focus:ring-amber-400/15"
+            onChange={(event) => setSearch(event.target.value)}
+            className="h-11 w-full rounded-xl border border-slate-200 bg-white px-4 text-sm text-slate-800 outline-none transition placeholder:text-slate-400 focus:border-amber-400 focus:ring-2 focus:ring-amber-400/15"
           />
         </div>
 
@@ -513,42 +578,12 @@ function Stock() {
           <Button
             type="button"
             variant="secondary"
-            icon={Printer}
-            disabled={cars.length === 0}
-            onClick={handlePrintStock}
+            onClick={() => setShowFilters((isVisible) => !isVisible)}
           >
-            Print Stock
+            {showFilters ? "Hide Filters" : "Show Filters"}
           </Button>
-
-          <select
-            id="ordering"
-            value={ordering}
-            onChange={(e) => {
-              setPage(1);
-              setOrdering(e.target.value);
-            }}
-            className="h-9 rounded-xl border border-slate-200 bg-white px-3 text-xs font-medium text-slate-700 outline-none focus:border-amber-400 focus:ring-2 focus:ring-amber-400/15"
-          >
-            {SORT_OPTIONS.map((option) => (
-              <option key={option.value} value={option.value}>
-                {option.label}
-              </option>
-            ))}
-          </select>
         </div>
       </div>
-
-      {isMaster && (
-        <div className="mb-5">
-          <Button
-            type="button"
-            variant="primary"
-            onClick={() => setShowImportModal(true)}
-          >
-            Bulk Import
-          </Button>
-        </div>
-      )}
 
       {importResult && (
         <div
@@ -672,15 +707,6 @@ function Stock() {
 
       {/* Filters */}
       <div className="mb-6">
-        <Button
-          type="button"
-          variant="secondary"
-          className="mb-4"
-          onClick={() => setShowFilters((isVisible) => !isVisible)}
-        >
-          {showFilters ? "Hide Filters" : "Show Filters"}
-        </Button>
-
         {showFilters && (
           <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
             <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
@@ -945,265 +971,477 @@ function Stock() {
         )}
       </div>
 
-      {/* Inventory carousel */}
-      <div className="overflow-hidden rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
-        <div className="relative">
-          {cars.length > 0 ? (
-            <>
-              {/* Carousel controls */}
-              <div className="mb-4 flex items-center justify-between">
-                <div className="flex items-center gap-3">
-                  {isMaster && (
-                    <label className="flex items-center gap-2 text-sm text-gray-600">
-                      <input
-                        type="checkbox"
-                        checked={
-                          cars.length > 0 &&
-                          cars.every((car) => selectedCars.includes(car.id))
-                        }
-                        onChange={(e) => {
-                          if (e.target.checked) {
-                            setSelectedCars((prev) => [
-                              ...new Set([
-                                ...prev,
-                                ...cars.map((car) => car.id),
-                              ]),
-                            ]);
-                          } else {
-                            setSelectedCars((prev) =>
-                              prev.filter(
-                                (id) => !cars.some((car) => car.id === id),
-                              ),
-                            );
-                          }
-                        }}
-                        className="h-4 w-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
-                      />
-                      Select page
-                    </label>
-                  )}
-                  <span className="text-sm text-gray-500">
-                    {cars.length} vehicle{cars.length !== 1 ? "s" : ""}
-                  </span>
-                </div>
+      {/* Inventory list */}
+      <div className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
+        {/* List toolbar */}
+        <div className="border-b border-slate-200 px-4 py-3 sm:px-5">
+          <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
+            <div className="flex flex-wrap items-center gap-3">
+              {isMaster && (
+                <label className="flex items-center gap-2 text-xs font-medium text-slate-500">
+                  <input
+                    type="checkbox"
+                    checked={
+                      cars.length > 0 &&
+                      cars.every((car) => selectedCars.includes(car.id))
+                    }
+                    onChange={(event) => {
+                      if (event.target.checked) {
+                        setSelectedCars((previous) => [
+                          ...new Set([
+                            ...previous,
+                            ...cars.map((car) => car.id),
+                          ]),
+                        ]);
+                      } else {
+                        setSelectedCars((previous) =>
+                          previous.filter(
+                            (id) => !cars.some((car) => car.id === id),
+                          ),
+                        );
+                      }
+                    }}
+                    className="h-4 w-4 rounded border-slate-300 text-amber-500 focus:ring-amber-400"
+                  />
+                  Select all
+                </label>
+              )}
 
-                <div className="flex items-center gap-2">
-                  <button
-                    type="button"
-                    onClick={() => scrollCarousel("left")}
-                    className="flex h-9 w-9 items-center justify-center rounded-full border border-gray-200 bg-white text-gray-600 shadow-sm transition hover:bg-gray-50 hover:text-gray-900"
-                    aria-label="Previous vehicles"
-                  >
-                    <ChevronLeft size={18} />
-                  </button>
+              <span className="text-xs font-semibold text-slate-600">
+                Showing {startItem}-{endItem} of {totalCount}
+              </span>
 
-                  <button
-                    type="button"
-                    onClick={() => scrollCarousel("right")}
-                    className="flex h-9 w-9 items-center justify-center rounded-full border border-gray-200 bg-white text-gray-600 shadow-sm transition hover:bg-gray-50 hover:text-gray-900"
-                    aria-label="Next vehicles"
-                  >
-                    <ChevronRight size={18} />
-                  </button>
-                </div>
-              </div>
+              <span className="hidden h-4 w-px bg-slate-200 sm:block" />
 
-              {/* Horizontal carousel */}
-              <div
-                ref={carouselRef}
-                className="flex gap-5 overflow-x-auto scroll-smooth pb-5 snap-x snap-mandatory [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
+              <span className="rounded-full bg-slate-100 px-2.5 py-1 text-[10px] font-bold uppercase tracking-wide text-slate-500">
+                All Vehicles
+              </span>
+            </div>
+
+            <div className="flex flex-wrap items-center gap-2">
+              <Button
+                type="button"
+                variant="secondary"
+                icon={Printer}
+                disabled={cars.length === 0}
+                onClick={handlePrintStock}
               >
-                {cars.map((car) => {
-                  const imagePath =
-                    car.images?.find((image) => image.is_cover)?.image ||
-                    car.images?.[0]?.image ||
-                    null;
+                Print Stock
+              </Button>
 
-                  const coverImage = resolveBackendUrl(imagePath);
+              <select
+                id="inventory-ordering"
+                value={ordering}
+                onChange={(event) => {
+                  setPage(1);
+                  setOrdering(event.target.value);
+                }}
+                className="h-9 rounded-lg border border-slate-200 bg-white px-3 text-xs font-medium text-slate-700 outline-none focus:border-amber-400 focus:ring-2 focus:ring-amber-400/15"
+              >
+                {SORT_OPTIONS.map((option) => (
+                  <option key={option.value} value={option.value}>
+                    {option.label}
+                  </option>
+                ))}
+              </select>
+            </div>
+          </div>
+        </div>
 
-                  const isSelected = selectedCars.includes(car.id);
+        {/* Desktop table */}
+        <div className="hidden overflow-x-auto lg:block">
+          <div className="min-w-[1050px]">
+            {/* Header */}
+            <div className="grid grid-cols-[36px_minmax(220px,1.7fr)_70px_110px_100px_75px_105px_130px_150px] items-center border-b border-slate-200 bg-slate-50/80 px-4 py-3 text-[10px] font-bold uppercase tracking-[0.12em] text-slate-400">
+              <div />
 
-                  return (
-                    <div
-                      key={car.id}
-                      className="group min-w-[300px] max-w-[300px] flex-shrink-0 snap-start overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-[0_2px_8px_rgba(15,23,42,0.04)] transition-all duration-200 hover:-translate-y-1 hover:border-slate-300 hover:shadow-[0_12px_28px_rgba(15,23,42,0.08)] sm:min-w-[320px] sm:max-w-[320px]"
-                    >
-                      {/* Image */}
-                      <div className="relative h-52 overflow-hidden bg-slate-100">
-                        {coverImage ? (
+              <div>Vehicle</div>
+
+              <div>Year</div>
+
+              <div>Stock ID</div>
+
+              <div>Mileage</div>
+
+              <div>Age</div>
+
+              <div>Status</div>
+
+              <div>Price</div>
+
+              <div className="text-right">Actions</div>
+            </div>
+
+            {/* Rows */}
+            {cars.length > 0 ? (
+              cars.map((car) => {
+                const imagePath =
+                  car.images?.find((image) => image.is_cover)?.image ||
+                  car.images?.[0]?.image ||
+                  null;
+
+                const imageUrl = imagePath
+                  ? resolveBackendUrl(imagePath)
+                  : null;
+
+                const isSelected = selectedCars.includes(car.id);
+
+                return (
+                  <div
+                    key={car.id}
+                    className="group grid grid-cols-[36px_minmax(220px,1.7fr)_70px_110px_100px_75px_105px_130px_150px] items-center border-b border-slate-100 px-4 transition-colors last:border-b-0 hover:bg-slate-50"
+                  >
+                    {/* Selection */}
+                    <div>
+                      {isMaster && (
+                        <input
+                          type="checkbox"
+                          checked={isSelected}
+                          onChange={() => {
+                            setSelectedCars((previous) =>
+                              isSelected
+                                ? previous.filter((id) => id !== car.id)
+                                : [...previous, car.id],
+                            );
+                          }}
+                          className="h-4 w-4 rounded border-slate-300 text-amber-500 focus:ring-amber-400"
+                        />
+                      )}
+                    </div>
+
+                    {/* Vehicle */}
+                    <div className="flex min-w-0 items-center gap-3 py-2.5">
+                      <div className="relative h-14 w-20 shrink-0 overflow-hidden rounded-lg bg-slate-100">
+                        {imageUrl ? (
                           <img
-                            src={coverImage}
-                            alt={`${car.make} ${car.model}`}
-                            className="h-full w-full object-cover transition duration-300 group-hover:scale-105"
+                            src={imageUrl}
+                            alt={`${car.make || ""} ${car.model || ""}`}
+                            className="h-full w-full object-cover transition-transform duration-200 group-hover:scale-105"
                           />
                         ) : (
-                          <div className="flex h-full w-full items-center justify-center bg-gray-100 text-gray-400">
-                            <CarFront size={52} strokeWidth={1.5} />
+                          <div className="flex h-full items-center justify-center text-[9px] font-semibold uppercase text-slate-400">
+                            No image
                           </div>
                         )}
 
-                        {/* Selection */}
-                        {isMaster && (
-                          <div className="absolute left-3 top-3">
-                            <input
-                              type="checkbox"
-                              checked={isSelected}
-                              onChange={() => {
-                                setSelectedCars((prev) =>
-                                  isSelected
-                                    ? prev.filter((id) => id !== car.id)
-                                    : [...prev, car.id],
-                                );
-                              }}
-                              className="h-5 w-5 rounded border-gray-300 bg-white text-blue-600 shadow focus:ring-blue-500"
-                            />
+                        <span
+                          className={[
+                            "absolute inset-y-0 left-0 w-1",
+                            car.is_aged_90_plus
+                              ? "bg-amber-500"
+                              : "bg-slate-300",
+                          ].join(" ")}
+                        />
+                      </div>
+
+                      <div className="min-w-0">
+                        <button
+                          type="button"
+                          onClick={() => navigate(`/stock/${car.id}`)}
+                          className="block max-w-full truncate text-left text-sm font-bold text-slate-900 hover:text-amber-600"
+                        >
+                          {car.make} {car.model}
+                        </button>
+
+                        <p className="mt-0.5 truncate text-xs text-slate-500">
+                          {car.variant || "No variant specified"}
+                        </p>
+                      </div>
+                    </div>
+
+                    {/* Year */}
+                    <div className="text-sm font-medium text-slate-700">
+                      {car.year || "-"}
+                    </div>
+
+                    {/* Stock ID */}
+                    <div>
+                      <span className="font-mono text-xs font-semibold text-amber-600">
+                        {car.stock_id || "-"}
+                      </span>
+
+                      {car.colour && (
+                        <p className="mt-0.5 truncate text-[11px] text-slate-400">
+                          {car.colour}
+                        </p>
+                      )}
+                    </div>
+
+                    {/* Mileage */}
+                    <div className="text-sm text-slate-600">
+                      {car.mileage !== null && car.mileage !== undefined
+                        ? `${Number(car.mileage).toLocaleString("en-AE")} km`
+                        : "-"}
+                    </div>
+
+                    {/* Age */}
+                    <div>
+                      <span
+                        className={[
+                          "inline-flex min-w-[46px] justify-center rounded-full px-2.5 py-1 text-[10px] font-bold",
+                          car.stock_age_days >= 90
+                            ? "bg-amber-50 text-amber-700 ring-1 ring-inset ring-amber-200"
+                            : car.stock_age_days >= 60
+                              ? "bg-orange-50 text-orange-700 ring-1 ring-inset ring-orange-200"
+                              : "bg-slate-100 text-slate-600",
+                        ].join(" ")}
+                      >
+                        {car.stock_age_days ?? "-"}d
+                      </span>
+                    </div>
+
+                    {/* Status */}
+                    <div>
+                      <StatusBadge status={car.status}>
+                        {getStatusLabel(car.status)}
+                      </StatusBadge>
+                    </div>
+
+                    {/* Price */}
+                    <div className="text-sm font-semibold text-slate-900">
+                      {car.status === "booked"
+                        ? "-"
+                        : car.asking_price
+                          ? `AED ${Number(car.asking_price).toLocaleString("en-AE")}`
+                          : "-"}
+                    </div>
+
+                    {/* Actions */}
+                    <div className="flex shrink-0 items-center justify-end gap-1">
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="sm"
+                        icon={Eye}
+                        className="h-8 w-8 !shrink-0 !p-0"
+                        title="View vehicle"
+                        onClick={() => navigate(`/stock/${car.id}`)}
+                      >
+                        <span className="sr-only">View</span>
+                      </Button>
+
+                      {isMaster && (
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          size="sm"
+                          icon={Pencil}
+                          className="h-8 w-8 !shrink-0 !p-0"
+                          title="Edit vehicle"
+                          onClick={() => navigate(`/stock/${car.id}/edit`)}
+                        >
+                          <span className="sr-only">Edit</span>
+                        </Button>
+                      )}
+
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="sm"
+                        icon={Share2Icon}
+                        className="h-8 w-8 !shrink-0 !p-0"
+                        title="Share vehicle"
+                        onClick={() => {
+                          setShareCar(car);
+                          setShareImageIndex(0);
+                        }}
+                      >
+                        <span className="sr-only">Share</span>
+                      </Button>
+
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="sm"
+                        icon={Printer}
+                        className="h-8 w-8 !shrink-0 !p-0"
+                        title="Print vehicle"
+                        onClick={() => handlePrintVehicle(car)}
+                      >
+                        <span className="sr-only">Print</span>
+                      </Button>
+                    </div>
+                  </div>
+                );
+              })
+            ) : (
+              <div className="px-6 py-16 text-center">
+                <CarFront
+                  size={42}
+                  strokeWidth={1.5}
+                  className="mx-auto text-slate-300"
+                />
+
+                <h3 className="mt-4 text-base font-bold text-slate-800">
+                  No vehicles found
+                </h3>
+
+                <p className="mt-1 text-sm text-slate-500">
+                  Try changing your search or inventory filters.
+                </p>
+              </div>
+            )}
+          </div>
+        </div>
+
+        {/* Mobile / tablet list */}
+        <div className="lg:hidden">
+          {cars.length > 0 ? (
+            <div className="divide-y divide-slate-100">
+              {cars.map((car) => {
+                const imagePath =
+                  car.images?.find((image) => image.is_cover)?.image ||
+                  car.images?.[0]?.image ||
+                  null;
+
+                const imageUrl = imagePath
+                  ? resolveBackendUrl(imagePath)
+                  : null;
+
+                const isSelected = selectedCars.includes(car.id);
+
+                return (
+                  <div
+                    key={car.id}
+                    className="p-4 transition hover:bg-slate-50"
+                  >
+                    <div className="flex items-start gap-3">
+                      {isMaster && (
+                        <input
+                          type="checkbox"
+                          checked={isSelected}
+                          onChange={() => {
+                            setSelectedCars((previous) =>
+                              isSelected
+                                ? previous.filter((id) => id !== car.id)
+                                : [...previous, car.id],
+                            );
+                          }}
+                          className="mt-4 h-4 w-4 rounded border-slate-300 text-amber-500 focus:ring-amber-400"
+                        />
+                      )}
+
+                      <div className="relative h-16 w-24 shrink-0 overflow-hidden rounded-xl bg-slate-100">
+                        {imageUrl ? (
+                          <img
+                            src={imageUrl}
+                            alt={`${car.make || ""} ${car.model || ""}`}
+                            className="h-full w-full object-cover"
+                          />
+                        ) : (
+                          <div className="flex h-full items-center justify-center text-[9px] font-semibold uppercase text-slate-400">
+                            No image
                           </div>
                         )}
+                      </div>
 
-                        {/* Status */}
-                        <div className="absolute right-3 top-3">
+                      <div className="min-w-0 flex-1">
+                        <div className="flex items-start justify-between gap-3">
+                          <div className="min-w-0">
+                            <button
+                              type="button"
+                              onClick={() => navigate(`/stock/${car.id}`)}
+                              className="truncate text-left text-sm font-bold text-slate-900 hover:text-amber-600"
+                            >
+                              {car.make} {car.model}
+                            </button>
+
+                            <p className="mt-0.5 truncate text-xs text-slate-500">
+                              {car.variant || "No variant specified"}
+                            </p>
+                          </div>
+
+                          <span className="shrink-0 rounded-full bg-amber-50 px-2 py-1 text-[10px] font-bold text-amber-700">
+                            {car.stock_age_days ?? "-"}d
+                          </span>
+                        </div>
+
+                        <div className="mt-3 flex flex-wrap gap-x-4 gap-y-2 text-[11px] text-slate-500">
+                          <span>{car.year || "-"}</span>
+
+                          <span className="font-mono text-amber-600">
+                            {car.stock_id || "-"}
+                          </span>
+
+                          <span>
+                            {car.mileage !== null && car.mileage !== undefined
+                              ? `${Number(car.mileage).toLocaleString("en-AE")} km`
+                              : "-"}
+                          </span>
+
                           <StatusBadge status={car.status}>
                             {getStatusLabel(car.status)}
                           </StatusBadge>
                         </div>
-                      </div>
 
-                      {/* Card content */}
-                      <div className="p-4">
-                        {/* Stock ID */}
-                        <div className="mb-2 text-xs font-semibold uppercase tracking-wide text-[10px] font-bold uppercase tracking-[0.12em] text-amber-600">
-                          {car.stock_id}
-                        </div>
+                        <div className="mt-3 flex items-center justify-between gap-3">
+                          <span className="text-sm font-bold text-slate-900">
+                            {car.status === "booked"
+                              ? "-"
+                              : car.asking_price
+                                ? `AED ${Number(car.asking_price).toLocaleString("en-AE")}`
+                                : "-"}
+                          </span>
 
-                        {/* Vehicle name */}
-                        <h3 className="truncate text-lg font-bold tracking-tight text-slate-900">
-                          {car.make} {car.model}
-                        </h3>
-
-                        <p className="mt-1 truncate text-sm text-slate-500">
-                          {car.variant || "No variant specified"}
-                        </p>
-
-                        {/* Vehicle details */}
-                        <div className="mt-4 grid grid-cols-2 gap-3 text-sm">
-                          <div className="flex items-center gap-2 text-slate-600">
-                            <CalendarDays
-                              size={15}
-                              className="text-slate-400"
-                            />
-                            <span>{car.year || "-"}</span>
-                          </div>
-
-                          <div className="flex items-center gap-2 text-slate-600">
-                            <CarFront size={15} className="text-slate-400" />
-                            <span className="truncate">
-                              {getVehicleTypeLabel(car.vehicle_type)}
-                            </span>
-                          </div>
-
-                          <div className="flex items-center gap-2 text-slate-600">
-                            <Gauge size={15} className="text-slate-400" />
-                            <span>{car.mileage ?? "-"} km</span>
-                          </div>
-
-                          <div className="flex items-center gap-2 text-slate-600">
-                            <span className="h-[15px] w-[15px] rounded-full border border-gray-300" />
-                            <span className="truncate">
-                              {car.colour || "-"}
-                            </span>
-                          </div>
-                        </div>
-
-                        {/* Service location */}
-                        {car.status === "in_service" && (
-                          <div className="mt-3 flex items-center gap-2 text-sm text-gray-600">
-                            <MapPin size={15} className="text-gray-400" />
-                            <span className="truncate">
-                              {car.service_location || "Location not specified"}
-                            </span>
-                          </div>
-                        )}
-
-                        {/* Price */}
-                        <div className="mt-4 border-t border-slate-100 pt-4">
-                          <p className="text-[10px] font-bold uppercase tracking-[0.08em] text-slate-400">
-                            Asking Price
-                          </p>
-                          <p className="mt-1 font-mono text-xl font-bold tracking-tight text-slate-900">
-                            AED
-                            {Number(car.asking_price || 0).toLocaleString(
-                              "en-AE",
-                            )}
-                          </p>
-                        </div>
-
-                        {/* Actions */}
-                        <div
-                          className={`mt-4 grid gap-2 ${
-                            isMaster ? "grid-cols-3" : "grid-cols-2"
-                          }`}
-                        >
-                          <Button
-                            type="button"
-                            variant="secondary"
-                            size="sm"
-                            icon={Eye}
-                            onClick={() => navigate(`/stock/${car.id}`)}
-                          >
-                            View
-                          </Button>
-
-                          {isMaster && (
+                          <div className="flex items-center gap-1">
                             <Button
                               type="button"
-                              variant="primary"
+                              variant="ghost"
                               size="sm"
-                              icon={Pencil}
-                              onClick={() => navigate(`/stock/${car.id}/edit`)}
+                              icon={Eye}
+                              onClick={() => navigate(`/stock/${car.id}`)}
                             >
-                              Edit
+                              <span className="sr-only">View</span>
                             </Button>
-                          )}
-                          <Button
-                            type="button"
-                            variant="secondary"
-                            size="sm"
-                            icon={Share2Icon}
-                            onClick={() => {
-                              setShareCar(car);
-                              setShareImageIndex(0);
-                            }}
-                          >
-                            Share
-                          </Button>
-                          <Button
-                            type="button"
-                            variant="secondary"
-                            size="sm"
-                            icon={Printer}
-                            onClick={() => handlePrintVehicle(car)}
-                          >
-                            Print
-                          </Button>
+
+                            {isMaster && (
+                              <Button
+                                type="button"
+                                variant="ghost"
+                                size="sm"
+                                icon={Pencil}
+                                onClick={() =>
+                                  navigate(`/stock/${car.id}/edit`)
+                                }
+                              >
+                                <span className="sr-only">Edit</span>
+                              </Button>
+                            )}
+
+                            <Button
+                              type="button"
+                              variant="ghost"
+                              size="sm"
+                              icon={Share2Icon}
+                              onClick={() => {
+                                setShareCar(car);
+                                setShareImageIndex(0);
+                              }}
+                            >
+                              <span className="sr-only">Share</span>
+                            </Button>
+                          </div>
                         </div>
                       </div>
                     </div>
-                  );
-                })}
-              </div>
-            </>
+                  </div>
+                );
+              })}
+            </div>
           ) : (
-            <div className="rounded-2xl border border-dashed border-slate-300 bg-slate-50 px-6 py-16 text-center">
+            <div className="px-6 py-16 text-center">
               <CarFront
-                size={48}
+                size={42}
                 strokeWidth={1.5}
                 className="mx-auto text-slate-300"
               />
+
               <h3 className="mt-4 text-base font-bold text-slate-800">
                 No vehicles found
               </h3>
+
               <p className="mt-1 text-sm text-slate-500">
-                Try changing your search or filters.
+                Try changing your search or other inventory filters.
               </p>
             </div>
           )}

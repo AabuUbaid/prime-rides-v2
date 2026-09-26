@@ -648,9 +648,45 @@ class InventoryService:
             [],
         )
 
-        validated_data = InventoryService.normalize_vehicle_data(
-            validated_data,
-        )
+        text_fields = [
+            "make",
+            "model",
+            "variant",
+            "colour",
+            "chassis_number",
+            "engine_number",
+            "source_specify",
+            "supplier",
+        ]
+
+        for field in text_fields:
+            if field not in validated_data:
+                continue
+
+            value = validated_data[field]
+
+            if value is None:
+                validated_data[field] = ""
+                continue
+
+            value = str(value).strip()
+
+            if field in [
+                "chassis_number",
+                "engine_number",
+            ]:
+                value = value.upper()
+
+            elif field in [
+                "make",
+                "model",
+                "variant",
+                "colour",
+                "supplier",
+            ]:
+                value = value.title()
+
+            validated_data[field] = value
 
         new_status = validated_data.get(
             "status",

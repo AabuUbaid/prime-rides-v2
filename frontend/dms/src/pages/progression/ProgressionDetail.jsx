@@ -8,6 +8,8 @@ import {
   advanceProgression,
   getProgression,
   updateProgression,
+  getRegistrationDocuments,
+  downloadRegistrationDocument,
 } from "../../api/progression";
 import { useAuth } from "../../context/AuthContext";
 
@@ -150,6 +152,15 @@ export default function ProgressionDetail() {
   const [balanceLoading, setBalanceLoading] = useState(false);
   const [balanceSheet, setBalanceSheet] = useState(null);
   const [showBalanceModal, setShowBalanceModal] = useState(false);
+
+  const [registrationDocumentsLoading, setRegistrationDocumentsLoading] =
+    useState(false);
+  const [registrationDocuments, setRegistrationDocuments] = useState(null);
+  const [showRegistrationDocumentsModal, setShowRegistrationDocumentsModal] =
+    useState(false);
+
+  const [downloadingRegistrationDocument, setDownloadingRegistrationDocument] =
+    useState("");
 
   const [showPassingModal, setShowPassingModal] = useState(false);
 
@@ -423,7 +434,24 @@ export default function ProgressionDetail() {
   /*
    * Registration
    */
-  async function openRegistration() {
+  async function openRegistrationDocuments() {
+    try {
+      setRegistrationDocumentsLoading(true);
+
+      const response = await getRegistrationDocuments(id);
+
+      setRegistrationDocuments(response);
+      setShowRegistrationDocumentsModal(true);
+    } catch (e) {
+      toast.error(
+        e?.message || "Unable to load the Registration Preparation checklist.",
+      );
+    } finally {
+      setRegistrationDocumentsLoading(false);
+    }
+  }
+
+  async function openRegistrationBalanceSheet() {
     if (!p?.quote) {
       toast.error("Quote information is missing.");
       return;
@@ -446,6 +474,59 @@ export default function ProgressionDetail() {
       toast.error(e?.message || "Unable to load the Balance Sheet.");
     } finally {
       setBalanceLoading(false);
+    }
+  }
+
+  function continueFromRegistrationDocuments() {
+    if (!registrationDocuments?.registration_documents_ready) {
+      toast.error("Required registration documents are still missing.");
+      return;
+    }
+
+    setShowRegistrationDocumentsModal(false);
+    openRegistrationBalanceSheet();
+  }
+
+  async function handleRegistrationDocumentDownload(document) {
+    if (!document?.id || !document?.source) {
+      toast.error("Document information is incomplete.");
+      return;
+    }
+
+    const loadingKey = `${document.source}:${document.id}`;
+
+    try {
+      setDownloadingRegistrationDocument(loadingKey);
+
+      const blob = await downloadRegistrationDocument(
+        id,
+        document.source,
+        document.id,
+      );
+
+      if (!(blob instanceof Blob)) {
+        throw new Error("Invalid document response.");
+      }
+
+      const url = window.URL.createObjectURL(blob);
+      const anchor = window.document.createElement("a");
+
+      anchor.href = url;
+      anchor.download =
+        `${document.file_name || document.document_label || "document"}`.replace(
+          /\.[^/.]+$/,
+          "",
+        ) + ".pdf";
+
+      window.document.body.appendChild(anchor);
+      anchor.click();
+      anchor.remove();
+
+      window.URL.revokeObjectURL(url);
+    } catch (e) {
+      toast.error(e?.message || "Unable to download the document.");
+    } finally {
+      setDownloadingRegistrationDocument("");
     }
   }
 
@@ -563,7 +644,7 @@ export default function ProgressionDetail() {
     }
 
     if (stage === "registration") {
-      await openRegistration();
+      await openRegistrationDocuments();
       return;
     }
 
@@ -721,7 +802,7 @@ export default function ProgressionDetail() {
                   stage === "insurance"
                     ? insuranceLoading
                     : stage === "registration"
-                      ? balanceLoading
+                      ? registrationDocumentsLoading
                       : advancing;
 
                 const canAct =
@@ -1036,6 +1117,185 @@ export default function ProgressionDetail() {
                     : insuranceRecord
                       ? "Open Insurance"
                       : "Create Insurance"}
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {showRegistrationDocumentsModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4">
+          <div className="flex max-h-[calc(100vh-2rem)] w-full max-w-2xl flex-col overflow-hidden rounded-2xl bg-white shadow-2xl">
+            <div className="border-b border-gray-100 px-6 py-5">
+              <div className="flex items-start justify-between gap-4">
+                <div>
+                  <h2 className="text-lg font-semibold text-gray-900">
+                    Prepare Items for Registration
+                  </h2>
+
+                  <p className="mt-1 text-sm text-gray-500">
+                    Required registration documents for this customer and
+                    vehicle.
+                  </p>
+                </div>
+
+                <button
+                  type="button"
+                  onClick={() => setShowRegistrationDocumentsModal(false)}
+                  className="rounded-lg px-2 py-1 text-gray-400 hover:bg-gray-100 hover:text-gray-700"
+                >
+                  ✕
+                </button>
+              </div>
+            </div>
+            <div className="min-h-0 flex-1 space-y-4 overflow-y-auto px-6 py-6">
+              <div className="grid gap-3 sm:grid-cols-2">
+                {(registrationDocuments?.required_documents || []).map(
+                  (document) => (
+                    <div
+                      key={document.key}
+                      className={`rounded-xl border p-4 ${
+                        document.available
+                          ? "border-green-200 bg-green-50"
+                          : "border-amber-200 bg-amber-50"
+                      }`}
+                    >
+                      <div className="flex items-start justify-between gap-3">
+                        <div>
+                          <div className="font-medium text-gray-900">
+                            {document.label}
+                          </div>
+
+                          <div
+                            className={`mt-1 text-xs font-medium ${
+                              document.available
+                                ? "text-green-700"
+                                : "text-amber-700"
+                            }`}
+                          >
+                            {document.available ? "Available" : "Missing"}
+                          </div>
+                        </div>
+
+                        <span
+                          className={`flex h-7 w-7 shrink-0 items-center justify-center rounded-full text-sm font-bold ${
+                            document.available
+                              ? "bg-green-600 text-white"
+                              : "bg-amber-200 text-amber-800"
+                          }`}
+                        >
+                          {document.available ? "✓" : "!"}
+                        </span>
+                      </div>
+                    </div>
+                  ),
+                )}
+              </div>
+
+              {registrationDocuments?.documents?.filter(
+                (document) => document.download_available,
+              ).length > 0 && (
+                <div className="space-y-3">
+                  <div>
+                    <h3 className="text-sm font-semibold text-gray-900">
+                      Available Documents
+                    </h3>
+
+                    <p className="mt-1 text-xs text-gray-500">
+                      Download each available document individually as a PDF.
+                    </p>
+                  </div>
+
+                  <div className="space-y-2">
+                    {registrationDocuments.documents
+                      .filter((document) => document.download_available)
+                      .map((document) => {
+                        const loadingKey = `${document.source}:${document.id}`;
+                        const isDownloading =
+                          downloadingRegistrationDocument === loadingKey;
+
+                        return (
+                          <div
+                            key={loadingKey}
+                            className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-gray-200 bg-white p-4"
+                          >
+                            <div className="min-w-0">
+                              <div className="font-medium text-gray-900">
+                                {document.document_label ||
+                                  document.document_type}
+                              </div>
+
+                              <div className="mt-1 truncate text-xs text-gray-500">
+                                {document.file_name || "Document"}
+                              </div>
+                            </div>
+
+                            <button
+                              type="button"
+                              onClick={() =>
+                                handleRegistrationDocumentDownload(document)
+                              }
+                              disabled={isDownloading}
+                              className="shrink-0 rounded-lg bg-gray-900 px-3 py-2 text-xs font-semibold text-white hover:bg-gray-800 disabled:cursor-not-allowed disabled:opacity-60"
+                            >
+                              {isDownloading
+                                ? "Downloading..."
+                                : "Download PDF"}
+                            </button>
+                          </div>
+                        );
+                      })}
+                  </div>
+                </div>
+              )}
+
+              {registrationDocuments?.missing_documents?.length > 0 && (
+                <div className="rounded-xl border border-amber-200 bg-amber-50 p-4">
+                  <div className="text-sm font-semibold text-amber-800">
+                    Missing registration documents
+                  </div>
+
+                  <div className="mt-2 text-sm text-amber-700">
+                    {registrationDocuments.missing_documents
+                      .map((document) => document.label)
+                      .join(", ")}
+                  </div>
+                </div>
+              )}
+
+              {registrationDocuments?.registration_documents_ready ? (
+                <div className="rounded-xl border border-green-200 bg-green-50 p-4">
+                  <div className="text-sm font-semibold text-green-800">
+                    Registration documents are ready.
+                  </div>
+                </div>
+              ) : (
+                <div className="rounded-xl border border-gray-200 bg-gray-50 p-4">
+                  <div className="text-sm font-medium text-gray-700">
+                    Registration preparation is not complete yet.
+                  </div>
+                </div>
+              )}
+
+              <div className="sticky bottom-0 flex gap-3 border-t border-gray-100 bg-white pt-4">
+                <button
+                  type="button"
+                  onClick={() => setShowRegistrationDocumentsModal(false)}
+                  className="flex-1 rounded-xl border border-gray-300 bg-white px-4 py-3 text-sm font-medium text-gray-700 hover:bg-gray-50"
+                >
+                  Close
+                </button>
+
+                <button
+                  type="button"
+                  onClick={continueFromRegistrationDocuments}
+                  disabled={
+                    !registrationDocuments?.registration_documents_ready
+                  }
+                  className="flex-1 rounded-xl bg-gray-900 px-4 py-3 text-sm font-semibold text-white hover:bg-gray-800 disabled:cursor-not-allowed disabled:opacity-40"
+                >
+                  Continue to Registration
                 </button>
               </div>
             </div>

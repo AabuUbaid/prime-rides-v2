@@ -122,13 +122,9 @@ class RTARecordSerializer(serializers.ModelSerializer):
             getattr(self.instance, "company", None),
         )
 
+        # -------------------------------------------------
         # Required relationships
-        if not quote:
-            raise serializers.ValidationError(
-                {
-                    "quote": "Quote is required.",
-                }
-            )
+        # -------------------------------------------------
 
         if not car:
             raise serializers.ValidationError(
@@ -144,56 +140,105 @@ class RTARecordSerializer(serializers.ModelSerializer):
                 }
             )
 
-        # Ensure selected vehicle matches quote
-        quote_car = getattr(quote, "car", None)
+        # -------------------------------------------------
+        # PURCHASE
+        # -------------------------------------------------
 
-        if quote_car and quote_car.pk != car.pk:
+        if record_type == RTARecord.RecordType.PURCHASE:
+            # Purchase RTA is created directly from Inventory.
+            if quote:
+                raise serializers.ValidationError(
+                    {
+                        "quote": (
+                            "Quote must not be supplied "
+                            "for a purchase RTA record."
+                        ),
+                    }
+                )
+
+            supplier_name = attrs.get(
+                "supplier_name",
+                getattr(self.instance, "supplier_name", ""),
+            )
+
+            if not supplier_name:
+                raise serializers.ValidationError(
+                    {
+                        "supplier_name": (
+                            "Supplier name is required for "
+                            "a purchase RTA record."
+                        ),
+                    }
+                )
+
+            duplicate_queryset = RTARecord.objects.filter(
+                car=car,
+                record_type=record_type,
+            )
+
+        # -------------------------------------------------
+        # SALE
+        # -------------------------------------------------
+
+        elif record_type == RTARecord.RecordType.SALE:
+            if not quote:
+                raise serializers.ValidationError(
+                    {
+                        "quote": (
+                            "Quote is required for "
+                            "a sale RTA record."
+                        ),
+                    }
+                )
+
+            quote_car = getattr(quote, "car", None)
+
+            if not quote_car:
+                raise serializers.ValidationError(
+                    {
+                        "quote": (
+                            "The selected quote is not "
+                            "associated with a vehicle."
+                        ),
+                    }
+                )
+
+            if quote_car.pk != car.pk:
+                raise serializers.ValidationError(
+                    {
+                        "car": (
+                            "The selected vehicle does not "
+                            "match the vehicle associated with "
+                            "the quote."
+                        ),
+                    }
+                )
+
+            if not customer:
+                raise serializers.ValidationError(
+                    {
+                        "customer": (
+                            "Customer is required for "
+                            "a sale RTA record."
+                        ),
+                    }
+                )
+
+            duplicate_queryset = RTARecord.objects.filter(
+                quote=quote,
+                record_type=record_type,
+            )
+
+        else:
             raise serializers.ValidationError(
                 {
-                    "car": (
-                        "The selected vehicle does not match "
-                        "the vehicle associated with the quote."
-                    ),
+                    "record_type": "Invalid RTA record type.",
                 }
             )
 
-        # Customer is mandatory for Sale records
-        if (
-            record_type == RTARecord.RecordType.SALE
-            and not customer
-        ):
-            raise serializers.ValidationError(
-                {
-                    "customer": (
-                        "Customer is required for a sale RTA record."
-                    ),
-                }
-            )
-
-        # Supplier name is mandatory for Purchase records
-        supplier_name = attrs.get(
-            "supplier_name",
-            getattr(self.instance, "supplier_name", ""),
-        )
-
-        if (
-            record_type == RTARecord.RecordType.PURCHASE
-            and not supplier_name
-        ):
-            raise serializers.ValidationError(
-                {
-                    "supplier_name": (
-                        "Supplier name is required for "
-                        "a purchase RTA record."
-                    ),
-                }
-            )
-
-        # Prevent duplicate records for the same quote and type
-        duplicate_queryset = RTARecord.objects.filter(
-            quote=quote,
-            record_type=record_type,
-        )
+        # -------------------------------------------------
+        # Duplicate protection
+        # -------------------------------------------------
 
         if self.instance:
             duplicate_queryset = duplicate_queryset.exclude(
@@ -201,11 +246,21 @@ class RTARecordSerializer(serializers.ModelSerializer):
             )
 
         if duplicate_queryset.exists():
+            if record_type == RTARecord.RecordType.PURCHASE:
+                raise serializers.ValidationError(
+                    {
+                        "car": (
+                            "A purchase RTA record already "
+                            "exists for this vehicle."
+                        ),
+                    }
+                )
+
             raise serializers.ValidationError(
                 {
                     "quote": (
-                        "An RTA record with this quote and "
-                        "record type already exists."
+                        "A sale RTA record already exists "
+                        "for this quote."
                     ),
                 }
             )

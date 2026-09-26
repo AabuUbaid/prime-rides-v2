@@ -45,7 +45,7 @@ class RTARecordListCreateView(generics.ListCreateAPIView):
         return queryset
 
     def perform_create(self, serializer):
-        quote = serializer.validated_data["quote"]
+        quote = serializer.validated_data.get("quote")
 
         car = serializer.validated_data.get("car")
         customer = serializer.validated_data.get("customer")

@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 
-function UploadSection({ car, formData, setFormData }) {
+function UploadSection({ car, formData, setFormData, showImageUpload = true }) {
   const certificateInputRef = useRef(null);
   const imagesInputRef = useRef(null);
   const [brokenImageIds, setBrokenImageIds] = useState([]);
@@ -123,81 +123,85 @@ function UploadSection({ car, formData, setFormData }) {
         )}
       </div>
 
-      <div className="space-y-3">
-        <label className="block text-[11px] font-bold uppercase tracking-[0.08em] text-slate-500">
-          Vehicle Images
-        </label>
+      {showImageUpload && (
+        <div className="space-y-3">
+          <label className="block text-[11px] font-bold uppercase tracking-[0.08em] text-slate-500">
+            Vehicle Images
+          </label>
 
-        <input
-          ref={imagesInputRef}
-          type="file"
-          multiple
-          accept="image/*"
-          onChange={handleImagesChange}
-          className="block w-full rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-sm text-slate-700 file:mr-4 file:rounded-lg file:border-0 file:bg-amber-50 file:px-3 file:py-1.5 file:text-xs file:font-semibold file:text-amber-700 hover:file:bg-amber-100"
-        />
+          <input
+            ref={imagesInputRef}
+            type="file"
+            multiple
+            accept="image/*"
+            onChange={handleImagesChange}
+            className="block w-full rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-sm text-slate-700 file:mr-4 file:rounded-lg file:border-0 file:bg-amber-50 file:px-3 file:py-1.5 file:text-xs file:font-semibold file:text-amber-700 hover:file:bg-amber-100"
+          />
 
-        {car?.images?.length > 0 && (
-          <>
-            <h3 className="pt-2 text-sm font-bold text-slate-800">
-              Existing Images
-            </h3>
+          {car?.images?.length > 0 && (
+            <>
+              <h3 className="pt-2 text-sm font-bold text-slate-800">
+                Existing Images
+              </h3>
 
-            <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
-              {car.images.map((image) => (
-                <div
-                  key={image.id}
-                  className="overflow-hidden rounded-2xl border border-slate-200 bg-white p-3 text-center shadow-[0_2px_8px_rgba(15,23,42,0.04)]"
-                >
-                  {brokenImageIds.includes(image.id) ? (
-                    <div className="flex h-[120px] items-center justify-center rounded-xl border border-slate-200 bg-slate-50 text-sm text-slate-400">
-                      Image unavailable
-                    </div>
-                  ) : (
-                    <img
-                      src={`${import.meta.env.VITE_URL}${image.image}`}
-                      alt="Vehicle"
-                      width="150"
-                      height="100"
-                      className="h-[120px] w-full rounded-xl object-cover"
-                      onError={() => {
-                        setBrokenImageIds((prev) =>
-                          prev.includes(image.id) ? prev : [...prev, image.id],
-                        );
-                      }}
-                    />
-                  )}
+              <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
+                {car.images.map((image) => (
+                  <div
+                    key={image.id}
+                    className="overflow-hidden rounded-2xl border border-slate-200 bg-white p-3 text-center shadow-[0_2px_8px_rgba(15,23,42,0.04)]"
+                  >
+                    {brokenImageIds.includes(image.id) ? (
+                      <div className="flex h-[120px] items-center justify-center rounded-xl border border-slate-200 bg-slate-50 text-sm text-slate-400">
+                        Image unavailable
+                      </div>
+                    ) : (
+                      <img
+                        src={`${import.meta.env.VITE_URL}${image.image}`}
+                        alt="Vehicle"
+                        width="150"
+                        height="100"
+                        className="h-[120px] w-full rounded-xl object-cover"
+                        onError={() => {
+                          setBrokenImageIds((prev) =>
+                            prev.includes(image.id)
+                              ? prev
+                              : [...prev, image.id],
+                          );
+                        }}
+                      />
+                    )}
 
-                  {image.is_cover && (
-                    <p className="mt-2 text-[10px] font-bold uppercase tracking-wide text-emerald-600">
-                      Cover Image
-                    </p>
-                  )}
-                </div>
-              ))}
+                    {image.is_cover && (
+                      <p className="mt-2 text-[10px] font-bold uppercase tracking-wide text-emerald-600">
+                        Cover Image
+                      </p>
+                    )}
+                  </div>
+                ))}
+              </div>
+            </>
+          )}
+
+          {formData.images.length > 0 && (
+            <div className="rounded-2xl border border-slate-200 bg-slate-50 p-4">
+              <p className="mb-2 text-[11px] font-bold uppercase tracking-[0.08em] text-slate-500">
+                Selected Images
+              </p>
+
+              <ul className="space-y-1.5">
+                {formData.images.map((image, index) => (
+                  <li
+                    key={index}
+                    className="rounded-lg bg-white px-3 py-2 text-sm text-slate-600"
+                  >
+                    {image.name}
+                  </li>
+                ))}
+              </ul>
             </div>
-          </>
-        )}
-
-        {formData.images.length > 0 && (
-          <div className="rounded-2xl border border-slate-200 bg-slate-50 p-4">
-            <p className="mb-2 text-[11px] font-bold uppercase tracking-[0.08em] text-slate-500">
-              Selected Images
-            </p>
-
-            <ul className="space-y-1.5">
-              {formData.images.map((image, index) => (
-                <li
-                  key={index}
-                  className="rounded-lg bg-white px-3 py-2 text-sm text-slate-600"
-                >
-                  {image.name}
-                </li>
-              ))}
-            </ul>
-          </div>
-        )}
-      </div>
+          )}
+        </div>
+      )}
     </div>
   );
 }

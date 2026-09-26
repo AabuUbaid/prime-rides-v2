@@ -7,7 +7,10 @@ from django.db.models import (
     Avg,
     Q,
     F,
+    Value,
+    DecimalField,
 )
+from django.db.models.functions import Coalesce
 
 from django.db.models import (
     Sum,
@@ -43,10 +46,17 @@ class InventorySelector:
 
         queryset = (
             Car.objects
-            .prefetch_related(
-                "images",
-                "expenses",
+            .annotate(
+                stock_expenses_total=Coalesce(
+                    Sum("expenses__amount"),
+                    Value(0),
+                    output_field=DecimalField(
+                        max_digits=12,
+                        decimal_places=2,
+                    ),
+                )
             )
+            .prefetch_related("images")
         )
 
         if search:

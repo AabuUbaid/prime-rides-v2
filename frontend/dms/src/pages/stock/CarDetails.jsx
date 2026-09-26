@@ -1,13 +1,20 @@
 import { useEffect, useState } from "react";
 import { useParams } from "react-router-dom";
+import { toast } from "react-toastify";
 import { useAuth } from "../../context/AuthContext";
 import {
   getCar,
+  getVehicleDocuments,
+  uploadVehicleDocument,
+  deleteVehicleDocument,
+  archiveVehicleDocument,
+  updateCar,
   deleteImage,
   reorderImages,
   bulkDeleteImages,
   setCoverImage,
 } from "../../api/inventory";
+import { resolveBackendUrl } from "../../api/url";
 import ExpenseList from "./components/ExpenseList";
 import ExpenseForm from "./components/ExpenseForm";
 import { createExpense, updateExpense, deleteExpense } from "../../api/expense";
@@ -18,9 +25,141 @@ function CarDetails() {
 
   const [car, setCar] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [vehicleDocuments, setVehicleDocuments] = useState([]);
+  const [documentsLoading, setDocumentsLoading] = useState(true);
+  const [documentType, setDocumentType] = useState("POSSESSION");
+  const [selectedDocumentFile, setSelectedDocumentFile] = useState(null);
+  const [documentUploading, setDocumentUploading] = useState(false);
+  const [documentUploadError, setDocumentUploadError] = useState("");
+  const [documentDeletingId, setDocumentDeletingId] = useState(null);
   const [draggedImageId, setDraggedImageId] = useState(null);
   const [selectedImageIds, setSelectedImageIds] = useState([]);
   const [brokenImageIds, setBrokenImageIds] = useState([]);
+  const [selectedImageFiles, setSelectedImageFiles] = useState([]);
+  const [imagesUploading, setImagesUploading] = useState(false);
+
+  async function loadVehicleDocuments() {
+    try {
+      setDocumentsLoading(true);
+
+      const response = await getVehicleDocuments(id);
+
+      setVehicleDocuments(Array.isArray(response?.data) ? response.data : []);
+    } catch (error) {
+      console.error("LOAD VEHICLE DOCUMENTS FAILED:", error);
+      setVehicleDocuments([]);
+    } finally {
+      setDocumentsLoading(false);
+    }
+  }
+
+  async function handleVehicleDocumentUpload() {
+    setDocumentUploadError("");
+
+    if (!selectedDocumentFile) {
+      setDocumentUploadError("Please select a document file.");
+      return;
+    }
+
+    if (!documentType) {
+      setDocumentUploadError("Please select a document type.");
+      return;
+    }
+
+    setDocumentUploading(true);
+
+    try {
+      const uploadedDocument = await uploadVehicleDocument(
+        id,
+        documentType,
+        selectedDocumentFile,
+      );
+
+      const carResponse = await getCar(id);
+
+      setCar(carResponse.data);
+
+      setSelectedDocumentFile(null);
+      setDocumentType("POSSESSION");
+
+      await loadVehicleDocuments();
+
+      toast.success(
+        documentType === "POSSESSION"
+          ? "Possession certificate uploaded successfully."
+          : "Vehicle document uploaded successfully.",
+      );
+
+      return uploadedDocument;
+    } catch (error) {
+      console.error("UPLOAD VEHICLE DOCUMENT FAILED:", error);
+
+      let message = "Unable to upload vehicle document.";
+
+      if (error?.cause && typeof error.cause === "object") {
+        const firstFieldError = Object.values(error.cause)[0];
+
+        if (Array.isArray(firstFieldError) && firstFieldError.length > 0) {
+          message = firstFieldError[0];
+        } else if (typeof firstFieldError === "string") {
+          message = firstFieldError;
+        }
+      }
+
+      setDocumentUploadError(
+        message || error?.message || "Unable to upload vehicle document.",
+      );
+    } finally {
+      setDocumentUploading(false);
+    }
+  }
+
+  function canDeleteVehicleDocument(document) {
+    if (user?.role === "MASTER") {
+      return true;
+    }
+
+    if (document.is_archived) {
+      return false;
+    }
+
+    if (
+      !document.uploaded_by ||
+      !user?.id ||
+      String(document.uploaded_by) !== String(user.id)
+    ) {
+      return false;
+    }
+
+    return true;
+  }
+
+  async function handleUploadImages() {
+    if (selectedImageFiles.length === 0 || imagesUploading) {
+      return;
+    }
+
+    try {
+      setImagesUploading(true);
+
+      await updateCar(id, {
+        images: selectedImageFiles,
+      });
+
+      const response = await getCar(id);
+      setCar(response.data);
+
+      setSelectedImageFiles([]);
+
+      toast.success("Vehicle images uploaded successfully.");
+    } catch (error) {
+      console.error("UPLOAD VEHICLE IMAGES FAILED:", error);
+
+      toast.error(error?.message || "Unable to upload vehicle images.");
+    } finally {
+      setImagesUploading(false);
+    }
+  }
 
   useEffect(() => {
     async function loadCar() {
@@ -38,6 +177,7 @@ function CarDetails() {
     setBrokenImageIds([]);
 
     loadCar();
+    loadVehicleDocuments();
   }, [id]);
 
   const handleDeleteImage = async (imageId) => {
@@ -192,6 +332,67 @@ function CarDetails() {
     }
   };
 
+  async function handleDeleteVehicleDocument(document) {
+    if (
+      !window.confirm(
+        `Delete "${document.original_filename || "this document"}"?`,
+      )
+    ) {
+      return;
+    }
+
+    setDocumentDeletingId(document.id);
+
+    try {
+      await deleteVehicleDocument(document.id);
+
+      toast.success("Vehicle document deleted successfully.");
+
+      await loadVehicleDocuments();
+    } catch (error) {
+      console.error("DELETE VEHICLE DOCUMENT FAILED:", error);
+
+      toast.error(error?.message || "Unable to delete vehicle document.");
+    } finally {
+      setDocumentDeletingId(null);
+    }
+  }
+
+  async function handleArchiveVehicleDocument(document) {
+    if (user?.role !== "MASTER") {
+      return;
+    }
+
+    if (document.is_archived) {
+      return;
+    }
+
+    const confirmed = window.confirm(
+      `Archive "${document.original_filename || "this document"}"?`,
+    );
+
+    if (!confirmed) {
+      return;
+    }
+
+    try {
+      await archiveVehicleDocument(document.id);
+
+      toast.success("Vehicle document archived successfully.");
+
+      await loadVehicleDocuments();
+
+      if (document.document_type === "POSSESSION") {
+        const response = await getCar(id);
+        setCar(response.data);
+      }
+    } catch (error) {
+      console.error("ARCHIVE VEHICLE DOCUMENT FAILED:", error);
+
+      toast.error(error?.message || "Unable to archive vehicle document.");
+    }
+  }
+
   if (loading) {
     return (
       <div className="flex min-h-[50vh] items-center justify-center">
@@ -240,7 +441,6 @@ function CarDetails() {
         </div>
       </div>
       <table className="w-full overflow-hidden rounded-2xl border border-slate-200 bg-white text-sm shadow-[0_2px_8px_rgba(15,23,42,0.04)]">
-        {" "}
         <tbody>
           <tr className="border-b border-slate-100 last:border-b-0">
             <th className="w-1/3 bg-slate-50 px-4 py-3 text-left text-[11px] font-bold uppercase tracking-[0.06em] text-slate-500">
@@ -439,10 +639,10 @@ function CarDetails() {
             <td className="px-4 py-3 font-medium text-slate-800">
               {car.possession_certificate ? (
                 <a
-                  href={`${import.meta.env.VITE_URL}${car.possession_certificate}`}
+                  href={resolveBackendUrl(car.possession_certificate)}
                   target="_blank"
                   rel="noreferrer"
-                  className="text-amber-600 underline-offset-2 hover:text-amber-700 hover:underline "
+                  className="text-amber-600 underline-offset-2 hover:text-amber-700 hover:underline"
                 >
                   View Certificate
                 </a>
@@ -453,6 +653,210 @@ function CarDetails() {
           </tr>
         </tbody>
       </table>
+
+      <section className="space-y-4">
+        <div>
+          <h2 className="text-lg font-bold tracking-tight text-slate-900">
+            Vehicle Documents
+          </h2>
+
+          <p className="mt-1 text-sm text-slate-500">
+            Documents associated with this vehicle.
+          </p>
+          <div className="rounded-2xl border border-amber-100 bg-amber-50/30 p-4">
+            <div className="grid gap-4 md:grid-cols-[220px_minmax(0,1fr)_auto] md:items-end">
+              <div>
+                <label
+                  htmlFor="vehicle-document-type"
+                  className="mb-1.5 block text-[11px] font-bold uppercase tracking-[0.08em] text-slate-500"
+                >
+                  Document Type
+                </label>
+
+                <select
+                  id="vehicle-document-type"
+                  value={documentType}
+                  onChange={(event) => {
+                    setDocumentType(event.target.value);
+                    setDocumentUploadError("");
+                  }}
+                  disabled={documentUploading}
+                  className="w-full rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-sm text-slate-800 transition-colors focus:border-amber-400 focus:outline-none focus:ring-2 focus:ring-amber-400/15 disabled:cursor-not-allowed disabled:bg-slate-50"
+                >
+                  <option value="POSSESSION">Possession</option>
+                  <option value="RTA_PASSING">RTA Passing</option>
+                  <option value="INVOICE">Invoice</option>
+                  <option value="OTHER">Other</option>
+                </select>
+              </div>
+
+              <div>
+                <label
+                  htmlFor="vehicle-document-file"
+                  className="mb-1.5 block text-[11px] font-bold uppercase tracking-[0.08em] text-slate-500"
+                >
+                  Document File
+                </label>
+
+                <input
+                  id="vehicle-document-file"
+                  type="file"
+                  accept=".pdf,.jpg,.jpeg,.png,application/pdf,image/jpeg,image/png"
+                  disabled={documentUploading}
+                  onChange={(event) => {
+                    setSelectedDocumentFile(event.target.files?.[0] || null);
+                    setDocumentUploadError("");
+                  }}
+                  className="block w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm text-slate-700 file:mr-3 file:rounded-lg file:border-0 file:bg-slate-100 file:px-3 file:py-1.5 file:text-xs file:font-semibold file:text-slate-700"
+                />
+
+                {selectedDocumentFile && (
+                  <p className="mt-1.5 text-xs text-slate-500">
+                    Selected: {selectedDocumentFile.name}
+                  </p>
+                )}
+              </div>
+
+              <button
+                type="button"
+                onClick={handleVehicleDocumentUpload}
+                disabled={!selectedDocumentFile || documentUploading}
+                className="rounded-xl bg-amber-500 px-4 py-2.5 text-sm font-semibold text-slate-950 transition hover:bg-amber-400 disabled:cursor-not-allowed disabled:opacity-50"
+              >
+                {documentUploading ? "Uploading..." : "Upload Document"}
+              </button>
+            </div>
+
+            {documentUploadError && (
+              <p className="mt-3 text-sm font-medium text-rose-600">
+                {documentUploadError}
+              </p>
+            )}
+
+            <p className="mt-3 text-xs text-slate-500">
+              Supported files: PDF, JPG and PNG. Maximum size: 10 MB.
+            </p>
+          </div>
+        </div>
+
+        {documentsLoading ? (
+          <div className="rounded-2xl border border-slate-200 bg-white p-8 text-center">
+            <div className="mx-auto mb-3 h-7 w-7 animate-spin rounded-full border-2 border-slate-200 border-t-amber-500" />
+
+            <p className="text-sm font-medium text-slate-600">
+              Loading vehicle documents...
+            </p>
+          </div>
+        ) : vehicleDocuments.length === 0 ? (
+          <p className="rounded-2xl border border-dashed border-slate-300 bg-slate-50 p-10 text-center text-sm text-slate-500">
+            No vehicle documents uploaded.
+          </p>
+        ) : (
+          <div className="overflow-x-auto rounded-2xl border border-slate-200 bg-white">
+            <table className="min-w-full text-sm">
+              <thead>
+                <tr className="border-b border-slate-200 bg-slate-50">
+                  <th className="px-4 py-3 text-left text-[10px] font-bold uppercase tracking-[0.08em] text-slate-500">
+                    Document Type
+                  </th>
+
+                  <th className="px-4 py-3 text-left text-[10px] font-bold uppercase tracking-[0.08em] text-slate-500">
+                    File Name
+                  </th>
+
+                  <th className="px-4 py-3 text-left text-[10px] font-bold uppercase tracking-[0.08em] text-slate-500">
+                    Uploaded By
+                  </th>
+
+                  <th className="px-4 py-3 text-left text-[10px] font-bold uppercase tracking-[0.08em] text-slate-500">
+                    Uploaded At
+                  </th>
+
+                  <th className="px-4 py-3 text-right text-[10px] font-bold uppercase tracking-[0.08em] text-slate-500">
+                    Action
+                  </th>
+                </tr>
+              </thead>
+
+              <tbody className="divide-y divide-slate-100">
+                {vehicleDocuments.map((document) => (
+                  <tr key={document.id}>
+                    <td className="px-4 py-3 font-medium text-slate-800">
+                      {document.document_type_display ||
+                        document.document_type ||
+                        "-"}
+                    </td>
+
+                    <td className="px-4 py-3 text-slate-600">
+                      {document.original_filename || "-"}
+                    </td>
+
+                    <td className="px-4 py-3 text-slate-600">
+                      {document.uploaded_by_name || "-"}
+                    </td>
+
+                    <td className="px-4 py-3 text-slate-600">
+                      {document.uploaded_at
+                        ? new Date(document.uploaded_at).toLocaleString("en-AE")
+                        : "-"}
+                    </td>
+                    <td className="px-4 py-3 text-right">
+                      <div className="flex items-center justify-end gap-2">
+                        {document.file_url ? (
+                          <button
+                            type="button"
+                            onClick={() => {
+                              window.open(
+                                document.file_url,
+                                "_blank",
+                                "noopener,noreferrer",
+                              );
+                            }}
+                            className="rounded-xl border border-slate-200 bg-white px-3 py-1.5 text-xs font-semibold text-slate-700 transition hover:bg-slate-50"
+                          >
+                            View
+                          </button>
+                        ) : (
+                          <span className="text-xs text-slate-400">
+                            Unavailable
+                          </span>
+                        )}
+
+                        {user?.role === "MASTER" && !document.is_archived && (
+                          <button
+                            type="button"
+                            onClick={() =>
+                              handleArchiveVehicleDocument(document)
+                            }
+                            className="rounded-xl border border-amber-200 bg-amber-50 px-3 py-1.5 text-xs font-semibold text-amber-700 transition hover:bg-amber-100"
+                          >
+                            Archive
+                          </button>
+                        )}
+
+                        {canDeleteVehicleDocument(document) && (
+                          <button
+                            type="button"
+                            onClick={() =>
+                              handleDeleteVehicleDocument(document)
+                            }
+                            disabled={documentDeletingId === document.id}
+                            className="rounded-xl bg-rose-500 px-3 py-1.5 text-xs font-semibold text-white transition hover:bg-rose-600 disabled:cursor-not-allowed disabled:opacity-50"
+                          >
+                            {documentDeletingId === document.id
+                              ? "Deleting..."
+                              : "Delete"}
+                          </button>
+                        )}
+                      </div>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
+      </section>
 
       <h2 className="text-lg font-bold tracking-tight text-slate-900">
         Vehicle Images
@@ -468,6 +872,46 @@ function CarDetails() {
         </p>
       ) : (
         <>
+          <div className="rounded-2xl border border-amber-100 bg-amber-50/30 p-4">
+            <div className="flex flex-col gap-3 sm:flex-row sm:items-end">
+              <div className="min-w-0 flex-1">
+                <label
+                  htmlFor="vehicle-image-upload"
+                  className="mb-1.5 block text-[11px] font-bold uppercase tracking-[0.08em] text-slate-500"
+                >
+                  Add Vehicle Images
+                </label>
+
+                <input
+                  id="vehicle-image-upload"
+                  type="file"
+                  multiple
+                  accept="image/jpeg,image/png,image/webp"
+                  disabled={imagesUploading}
+                  onChange={(event) => {
+                    setSelectedImageFiles(Array.from(event.target.files || []));
+                  }}
+                  className="block w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm text-slate-700 file:mr-3 file:rounded-lg file:border-0 file:bg-slate-100 file:px-3 file:py-1.5 file:text-xs file:font-semibold file:text-slate-700"
+                />
+
+                {selectedImageFiles.length > 0 && (
+                  <p className="mt-1.5 text-xs text-slate-500">
+                    {selectedImageFiles.length} image
+                    {selectedImageFiles.length === 1 ? "" : "s"} selected.
+                  </p>
+                )}
+              </div>
+
+              <button
+                type="button"
+                onClick={handleUploadImages}
+                disabled={selectedImageFiles.length === 0 || imagesUploading}
+                className="rounded-xl bg-amber-500 px-4 py-2.5 text-sm font-semibold text-slate-950 transition hover:bg-amber-400 disabled:cursor-not-allowed disabled:opacity-50"
+              >
+                {imagesUploading ? "Uploading..." : "Upload Images"}
+              </button>
+            </div>
+          </div>
           <h3 className="text-lg font-semibold text-gray-800">Gallery</h3>
 
           {selectedImageIds.length > 0 && (
@@ -517,7 +961,7 @@ function CarDetails() {
                   </div>
                 ) : (
                   <img
-                    src={`${import.meta.env.VITE_URL}${image.image}`}
+                    src={resolveBackendUrl(image.image)}
                     alt="Vehicle"
                     width="150"
                     height="100"

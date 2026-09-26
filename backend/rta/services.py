@@ -224,7 +224,7 @@ def build_rta_snapshot(
 def create_rta_record(
     *,
     record_type,
-    quote,
+    quote=None,
     user=None,
     car=None,
     customer=None,

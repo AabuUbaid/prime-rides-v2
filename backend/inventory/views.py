@@ -570,17 +570,28 @@ class VehicleDocumentAPIView(APIView):
 
         uploaded_file = serializer.validated_data["file"]
 
+        document_type = serializer.validated_data[
+            "document_type"
+        ]
+
         document = VehicleDocument.objects.create(
             car=car,
-            document_type=serializer.validated_data[
-                "document_type"
-            ],
+            document_type=document_type,
             file=uploaded_file,
             original_filename=uploaded_file.name,
             mime_type=uploaded_file.content_type,
             file_size=uploaded_file.size,
             uploaded_by=request.user,
         )
+
+        if document_type == VehicleDocument.DocumentType.POSSESSION:
+            car.possession_certificate = document.file.name
+
+            car.save(
+                update_fields=[
+                    "possession_certificate",
+                ]
+            )
 
         return Response(
             {
@@ -599,6 +610,36 @@ class VehicleDocumentAPIView(APIView):
 class VehicleDocumentDeleteAPIView(APIView):
     permission_classes = [IsAuthenticated]
 
+    @staticmethod
+    def _sync_legacy_possession_certificate(car):
+        """
+        Keep Car.possession_certificate synchronized with
+        the latest active POSSESSION VehicleDocument.
+        """
+
+        latest_possession = (
+            VehicleDocument.objects
+            .filter(
+                car=car,
+                document_type=VehicleDocument.DocumentType.POSSESSION,
+                is_archived=False,
+            )
+            .exclude(file="")
+            .order_by("-uploaded_at")
+            .first()
+        )
+
+        if latest_possession:
+            car.possession_certificate = latest_possession.file.name
+        else:
+            car.possession_certificate = None
+
+        car.save(
+            update_fields=[
+                "possession_certificate",
+            ]
+        )
+
     def delete(self, request, document_id):
         document = get_object_or_404(
             VehicleDocument,
@@ -607,8 +648,18 @@ class VehicleDocumentDeleteAPIView(APIView):
 
         # MASTER can delete any non-archived document.
         if request.user.role == "MASTER":
+
+            car = document.car
+            is_possession = (
+                document.document_type
+                == VehicleDocument.DocumentType.POSSESSION
+            )
+
             document.file.delete(save=False)
             document.delete()
+
+            if is_possession:
+                self._sync_legacy_possession_certificate(car)
 
             return Response(
                 {
@@ -657,8 +708,17 @@ class VehicleDocumentDeleteAPIView(APIView):
                 status=status.HTTP_403_FORBIDDEN,
             )
 
+        car = document.car
+        is_possession = (
+            document.document_type
+            == VehicleDocument.DocumentType.POSSESSION
+        )
+
         document.file.delete(save=False)
         document.delete()
+
+        if is_possession:
+            self._sync_legacy_possession_certificate(car)
 
         return Response(
             {
@@ -677,14 +737,11 @@ class VehicleDocumentArchiveAPIView(APIView):
             id=document_id,
         )
 
-        # Only MASTER can archive documents.
         if request.user.role != "MASTER":
             return Response(
                 {
                     "success": False,
-                    "message": (
-                        "Only MASTER users can archive documents."
-                    ),
+                    "message": "Only MASTER users can archive documents.",
                 },
                 status=status.HTTP_403_FORBIDDEN,
             )
@@ -698,6 +755,13 @@ class VehicleDocumentArchiveAPIView(APIView):
                 status=status.HTTP_400_BAD_REQUEST,
             )
 
+        car = document.car
+
+        is_possession = (
+            document.document_type
+            == VehicleDocument.DocumentType.POSSESSION
+        )
+
         document.is_archived = True
         document.archived_by = request.user
         document.archived_at = timezone.now()
@@ -709,6 +773,11 @@ class VehicleDocumentArchiveAPIView(APIView):
                 "archived_at",
             ]
         )
+
+        if is_possession:
+            VehicleDocumentDeleteAPIView._sync_legacy_possession_certificate(
+                car
+            )
 
         return Response(
             {

@@ -330,6 +330,15 @@ class InventoryFinancialFieldsMixin:
     estimated_margin = serializers.SerializerMethodField()
 
     def get_expenses_total(self, obj):
+        annotated_total = getattr(
+            obj,
+            "stock_expenses_total",
+            None,
+        )
+
+        if annotated_total is not None:
+            return annotated_total
+
         from .selectors import InventorySelector
 
         summary = InventorySelector.get_expense_summary(obj)
@@ -431,6 +440,9 @@ class CarDetailSerializer(
     InventoryFinancialFieldsMixin,
     serializers.ModelSerializer,
 ):
+    expenses_total = serializers.SerializerMethodField()
+    total_cost = serializers.SerializerMethodField()
+    estimated_margin = serializers.SerializerMethodField()
 
     images = CarImageSerializer(
         many=True,
@@ -1402,11 +1414,12 @@ class VehicleDocumentSerializer(serializers.ModelSerializer):
             VehicleDocument.DocumentType.POSSESSION,
             VehicleDocument.DocumentType.RTA_PASSING,
             VehicleDocument.DocumentType.INVOICE,
+            VehicleDocument.DocumentType.OTHER,
         }
 
         if value not in allowed_types:
             raise serializers.ValidationError(
-                "Only POSSESSION and RTA_PASSING documents are allowed."
+                "Only POSSESSION, RTA_PASSING, INVOICE and OTHER documents are allowed."
             )
 
         return value

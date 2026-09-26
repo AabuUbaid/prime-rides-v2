@@ -1,5 +1,6 @@
 
 from django.db import models
+from django.db.models import Q
 from django.utils import timezone
 from django.conf import settings
 import uuid
@@ -50,6 +51,8 @@ class RTARecord(models.Model):
         "quotes.Quote",
         on_delete=models.PROTECT,
         related_name="rta_records",
+        null=True,
+        blank=True,
     )
 
     car = models.ForeignKey(
@@ -262,15 +265,38 @@ class RTARecord(models.Model):
         constraints = [
             models.UniqueConstraint(
                 fields=["quote", "record_type"],
-                name="unique_rta_record_per_quote_type",
+                condition=Q(
+                    record_type="SALE",
+                    quote__isnull=False,
+                ),
+                name="unique_sale_rta_per_quote",
+            ),
+            models.UniqueConstraint(
+                fields=["car", "record_type"],
+                condition=Q(
+                    record_type="PURCHASE",
+                ),
+                name="unique_purchase_rta_per_car",
             ),
         ]
 
     def __str__(self):
+        reference = (
+            f"Quote {self.quote_id}"
+            if self.quote_id
+            else f"Vehicle {self.car_id}"
+        )
+
+        vehicle_reference = (
+            self.vehicle_stock_id
+            or self.vehicle_chassis_number
+            or self.car_id
+        )
+
         return (
             f"{self.record_type} - "
-            f"Quote {self.quote_id} - "
-            f"{self.vehicle_stock_id or self.vehicle_chassis_number}"
+            f"{reference} - "
+            f"{vehicle_reference}"
         )
         
         

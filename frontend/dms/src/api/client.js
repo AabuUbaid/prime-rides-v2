@@ -142,10 +142,14 @@ export async function apiClient(endpoint, options = {}) {
 
   let data = null;
 
-  try {
-    data = await response.json();
-  } catch {
-    // Response may not contain JSON
+  if (options.responseType === "blob") {
+    data = await response.blob();
+  } else {
+    try {
+      data = await response.json();
+    } catch {
+      // Response may not contain JSON
+    }
   }
 
   if (!response.ok) {

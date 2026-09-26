@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { createCar } from "../../api/inventory";
 import { toast } from "react-toastify";
 
@@ -41,6 +42,7 @@ const initialFormData = {
 };
 
 function AddCar() {
+  const navigate = useNavigate();
   const [formData, setFormData] = useState(initialFormData);
   const [saving, setSaving] = useState(false);
 
@@ -95,9 +97,18 @@ function AddCar() {
 
       console.log(result);
 
+      const createdCar = result?.data ?? result;
+      const createdCarId = createdCar?.id;
+
+      if (!createdCarId) {
+        throw new Error(
+          "Vehicle was created but the server did not return its ID.",
+        );
+      }
+
       toast.success("Vehicle created successfully.");
 
-      setFormData(initialFormData);
+      navigate(`/rta/purchase/${createdCarId}`);
     } catch (error) {
       console.error(error);
 

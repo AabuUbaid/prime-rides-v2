@@ -91,17 +91,41 @@ class CarDemandSerializer(serializers.ModelSerializer):
         }
 
     def get_agent_name(self, obj):
+        if not obj.agent:
+            return None
+
+        full_name = " ".join(
+            part
+            for part in [
+                getattr(obj.agent, "first_name", ""),
+                getattr(obj.agent, "last_name", ""),
+            ]
+            if part
+        ).strip()
+
         return (
-            getattr(obj.agent, "full_name", None)
-            or getattr(obj.agent, "username", None)
+            full_name
+            or getattr(obj.agent, "email", None)
             or str(obj.agent_id)
         )
 
 
     def get_created_by_name(self, obj):
+        if not obj.created_by:
+            return None
+
+        full_name = " ".join(
+            part
+            for part in [
+                getattr(obj.created_by, "first_name", ""),
+                getattr(obj.created_by, "last_name", ""),
+            ]
+            if part
+        ).strip()
+
         return (
-            getattr(obj.created_by, "full_name", None)
-            or getattr(obj.created_by, "username", None)
+            full_name
+            or getattr(obj.created_by, "email", None)
             or str(obj.created_by_id)
         )
 
