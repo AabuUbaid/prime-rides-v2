@@ -10,9 +10,16 @@ class CarListQuerySerializer(serializers.Serializer):
     status = serializers.CharField(
         required=False,
     )
+
+    branch = serializers.IntegerField(
+        required=False,
+        min_value=1,
+    )
+
     make = serializers.CharField(
         required=False,
     )
+
     vehicle_type = serializers.CharField(
         required=False,
     )
@@ -32,7 +39,6 @@ class CarListQuerySerializer(serializers.Serializer):
     highlight_public = serializers.BooleanField(
         required=False,
         allow_null=True,
-
     )
 
     min_price = serializers.DecimalField(
@@ -54,6 +60,7 @@ class CarListQuerySerializer(serializers.Serializer):
     max_mileage = serializers.IntegerField(
         required=False,
     )
+
     age = serializers.IntegerField(
         required=False,
         min_value=0,
@@ -117,5 +124,3 @@ class CarListQuerySerializer(serializers.Serializer):
             )
 
         return attrs
-    
-    

@@ -5,6 +5,7 @@ from .views import (
     CustomerDocumentDetailView,
     CustomerDocumentListCreateView,
     CustomerListCreateView,
+    CustomerCSVImportView,
 )
 
 
@@ -14,7 +15,10 @@ urlpatterns = [
         CustomerListCreateView.as_view(),
         name="customer-list-create",
     ),
-
+    path(
+            "import/",
+            CustomerCSVImportView.as_view(),
+    ),
     path(
         "<int:pk>/",
         CustomerDetailView.as_view(),
@@ -32,4 +36,5 @@ urlpatterns = [
         CustomerDocumentDetailView.as_view(),
         name="customer-document-detail",
     ),
+    
 ]

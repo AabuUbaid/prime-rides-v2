@@ -123,6 +123,47 @@ class RTARecordSerializer(serializers.ModelSerializer):
         )
 
         # -------------------------------------------------
+        # STATUS TRANSITIONS
+        # -------------------------------------------------
+
+        if not self.instance:
+            requested_status = attrs.get(
+                "status",
+                RTARecord.Status.DRAFT,
+            )
+
+            if requested_status != RTARecord.Status.DRAFT:
+                raise serializers.ValidationError(
+                    {
+                        "status": (
+                            "A new RTA record must start "
+                            "in DRAFT status."
+                        ),
+                    }
+                )
+
+        elif "status" in attrs:
+            current_status = self.instance.status
+            new_status = attrs["status"]
+
+            allowed_transitions = RTARecord.allowed_status_transitions()
+
+            if new_status != current_status:
+                if new_status not in allowed_transitions.get(
+                    current_status,
+                    set(),
+                ):
+                    raise serializers.ValidationError(
+                        {
+                            "status": (
+                                f"Invalid RTA status transition "
+                                f"from {current_status} to "
+                                f"{new_status}."
+                            ),
+                        }
+                    )
+
+        # -------------------------------------------------
         # Required relationships
         # -------------------------------------------------
 
@@ -266,8 +307,8 @@ class RTARecordSerializer(serializers.ModelSerializer):
             )
 
         return attrs
-    
-    
+
+
 class RTADocumentSerializer(serializers.ModelSerializer):
     class Meta:
         model = RTADocument
@@ -287,6 +328,7 @@ class RTADocumentSerializer(serializers.ModelSerializer):
         read_only_fields = [
             "id",
             "original_filename",
+            "rta_record",
             "mime_type",
             "file_size",
             "uploaded_by",

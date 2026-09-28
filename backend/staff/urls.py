@@ -9,6 +9,10 @@ from .views import (
     UserAccessDetailView,
     UserAccessListCreateView,
     UserAccessPasswordView,
+    AttendanceListCreateView,
+    AttendanceDetailView,
+    PayrollListCreateView,
+    PayrollDetailView,
 )
 
 
@@ -59,5 +63,25 @@ urlpatterns = [
         "<int:pk>/performance/",
         StaffPerformanceView.as_view(),
         name="staff-performance",
+    ),
+    path(
+    "attendance/",
+        AttendanceListCreateView.as_view(),
+        name="attendance-list-create",
+    ),
+    path(
+        "attendance/<int:pk>/",
+        AttendanceDetailView.as_view(),
+        name="attendance-detail",
+    ),
+    path(
+        "payroll/",
+        PayrollListCreateView.as_view(),
+        name="payroll-list-create",
+    ),
+    path(
+        "payroll/<int:pk>/",
+        PayrollDetailView.as_view(),
+        name="payroll-detail",
     ),
 ]

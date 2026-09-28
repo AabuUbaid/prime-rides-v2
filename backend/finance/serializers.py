@@ -3,7 +3,7 @@ from decimal import Decimal
 from rest_framework import serializers
 
 from inventory.models import Car
-from django.db.models import Sum
+from django.db.models import Q, Sum
 from .models import (
     Bank,
     BankProcessingConfiguration,
@@ -1812,19 +1812,115 @@ class BalanceSheetSerializer(serializers.ModelSerializer):
             "vehicle_chassis_number",
         )
 
-    def get_total_received(self, obj):
+    def _get_receipt_totals(self, obj):
+        cached_totals = getattr(
+            obj,
+            "_balance_sheet_receipt_totals",
+            None,
+        )
+        if cached_totals is not None:
+            return cached_totals
+
+        receipts = getattr(
+            obj.quote,
+            "_balance_sheet_receipts",
+            None,
+        )
+        if receipts is not None:
+            totals = {
+                "received": sum(
+                    (
+                        receipt.amount
+                        for receipt in receipts
+                        if receipt.direction
+                        == CashReceipt.Direction.CUSTOMER_PAYMENT
+                    ),
+                    Decimal("0.00"),
+                ),
+                "spent": sum(
+                    (
+                        receipt.amount
+                        for receipt in receipts
+                        if receipt.direction
+                        == CashReceipt.Direction.COMPANY_ON_BEHALF
+                    ),
+                    Decimal("0.00"),
+                ),
+            }
+        else:
+            totals = CashReceipt.objects.filter(
+                quote_id=obj.quote_id,
+            ).aggregate(
+                received=Sum(
+                    "amount",
+                    filter=Q(
+                        direction=CashReceipt.Direction.CUSTOMER_PAYMENT,
+                    ),
+                ),
+                spent=Sum(
+                    "amount",
+                    filter=Q(
+                        direction=CashReceipt.Direction.COMPANY_ON_BEHALF,
+                    ),
+                ),
+            )
+
+        obj._balance_sheet_receipt_totals = totals
+        return totals
+
+    def _get_company_receipts(self, obj):
+        receipts = getattr(
+            obj.quote,
+            "_balance_sheet_receipts",
+            None,
+        )
+        if receipts is not None:
+            return [
+                receipt
+                for receipt in receipts
+                if receipt.direction
+                == CashReceipt.Direction.COMPANY_ON_BEHALF
+            ]
+
         return (
             CashReceipt.objects
             .filter(
                 quote_id=obj.quote_id,
-                direction=CashReceipt.Direction.CUSTOMER_PAYMENT,
+                direction=CashReceipt.Direction.COMPANY_ON_BEHALF,
             )
-            .aggregate(
-                total=Sum("amount")
+            .order_by(
+                "transaction_date",
+                "created_at",
             )
-            .get("total")
-            or 0
         )
+
+    def _get_cash_deal(self, obj):
+        quote = obj.quote
+        if "cash_deal" in quote._state.fields_cache:
+            return quote._state.fields_cache["cash_deal"]
+
+        return CashDeal.objects.filter(
+            quote_id=obj.quote_id,
+        ).first()
+
+    def _get_latest_bank_loan(self, obj):
+        loans = getattr(
+            obj.quote,
+            "_balance_sheet_bank_loans",
+            None,
+        )
+        if loans is not None:
+            return loans[0] if loans else None
+
+        return (
+            BankLoan.objects
+            .filter(quote_id=obj.quote_id)
+            .order_by("-created_at")
+            .first()
+        )
+
+    def get_total_received(self, obj):
+        return self._get_receipt_totals(obj)["received"] or 0
 
     def get_total_spent(self, obj):
         quote = obj.quote
@@ -1845,13 +1941,7 @@ class BalanceSheetSerializer(serializers.ModelSerializer):
         )
 
         company_on_behalf = (
-            CashReceipt.objects
-            .filter(
-                quote_id=obj.quote_id,
-                direction=CashReceipt.Direction.COMPANY_ON_BEHALF,
-            )
-            .aggregate(total=Sum("amount"))
-            .get("total")
+            self._get_receipt_totals(obj)["spent"]
             or Decimal("0.00")
         )
 
@@ -1936,14 +2026,20 @@ class BalanceSheetSerializer(serializers.ModelSerializer):
             or Decimal("0.00")
         )
 
-        quote_expenses = (
-            quote.expenses
-            .filter(
-                actual_amount__isnull=False,
-                applies=True,
-            )
-            .order_by("created_at")
+        quote_expenses = getattr(
+            quote,
+            "_balance_sheet_expenses",
+            None,
         )
+        if quote_expenses is None:
+            quote_expenses = (
+                quote.expenses
+                .filter(
+                    actual_amount__isnull=False,
+                    applies=True,
+                )
+                .order_by("created_at")
+            )
 
         breakdown = [
             {
@@ -1973,17 +2069,7 @@ class BalanceSheetSerializer(serializers.ModelSerializer):
                 }
             )
 
-        company_receipts = (
-            CashReceipt.objects
-            .filter(
-                quote_id=obj.quote_id,
-                direction=CashReceipt.Direction.COMPANY_ON_BEHALF,
-            )
-            .order_by(
-                "transaction_date",
-                "created_at",
-            )
-        )
+        company_receipts = self._get_company_receipts(obj)
 
         for receipt in company_receipts:
             breakdown.append(
@@ -2027,14 +2113,7 @@ class BalanceSheetSerializer(serializers.ModelSerializer):
 
     def get_evaluation(self, obj):
         if obj.quote.payment_method == "Cash":
-            cash_deal = (
-                CashDeal.objects
-                .filter(
-                    quote_id=obj.quote_id,
-                )
-                .order_by("-created_at")
-                .first()
-            )
+            cash_deal = self._get_cash_deal(obj)
 
             return (
                 getattr(cash_deal, "evaluation", None)
@@ -2086,41 +2165,15 @@ class BalanceSheetSerializer(serializers.ModelSerializer):
         )
 
     def get_cash_deal_id(self, obj):
-        return (
-            CashDeal.objects
-            .filter(
-                quote_id=obj.quote_id,
-            )
-            .values_list(
-                "id",
-                flat=True,
-            )
-            .first()
-        )
+        cash_deal = self._get_cash_deal(obj)
+        return cash_deal.id if cash_deal else None
 
     def get_bank_loan_id(self, obj):
-        return (
-            BankLoan.objects
-            .filter(
-                quote_id=obj.quote_id,
-            )
-            .order_by("-created_at")
-            .values_list(
-                "id",
-                flat=True,
-            )
-            .first()
-        )
+        bank_loan = self._get_latest_bank_loan(obj)
+        return bank_loan.id if bank_loan else None
 
     def get_bank_name(self, obj):
-        bank_loan = (
-            BankLoan.objects
-            .filter(
-                quote_id=obj.quote_id,
-            )
-            .order_by("-created_at")
-            .first()
-        )
+        bank_loan = self._get_latest_bank_loan(obj)
 
         return (
             bank_loan.bank_name
@@ -2129,14 +2182,7 @@ class BalanceSheetSerializer(serializers.ModelSerializer):
         )
 
     def get_requested_finance(self, obj):
-        bank_loan = (
-            BankLoan.objects
-            .filter(
-                quote_id=obj.quote_id,
-            )
-            .order_by("-created_at")
-            .first()
-        )
+        bank_loan = self._get_latest_bank_loan(obj)
 
         return (
             bank_loan.requested_finance
@@ -2145,14 +2191,7 @@ class BalanceSheetSerializer(serializers.ModelSerializer):
         )
 
     def get_approved_finance(self, obj):
-        bank_loan = (
-            BankLoan.objects
-            .filter(
-                quote_id=obj.quote_id,
-            )
-            .order_by("-created_at")
-            .first()
-        )
+        bank_loan = self._get_latest_bank_loan(obj)
 
         return (
             bank_loan.approved_finance
@@ -2193,20 +2232,24 @@ class BalanceSheetSerializer(serializers.ModelSerializer):
         return "customer_payable"
 
     def get_transactions(self, obj):
-        receipts = (
-            CashReceipt.objects
-            .filter(
-                quote_id=obj.quote_id,
-            )
-            .select_related(
-                "customer",
-                "created_by",
-            )
-            .order_by(
-                "transaction_date",
-                "created_at",
-            )
+        receipts = getattr(
+            obj.quote,
+            "_balance_sheet_receipts",
+            None,
         )
+        if receipts is None:
+            receipts = (
+                CashReceipt.objects
+                .filter(quote_id=obj.quote_id)
+                .select_related(
+                    "customer",
+                    "created_by",
+                )
+                .order_by(
+                    "transaction_date",
+                    "created_at",
+                )
+            )
 
         return CashReceiptSerializer(
             receipts,

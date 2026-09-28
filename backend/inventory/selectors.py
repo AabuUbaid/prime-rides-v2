@@ -41,6 +41,7 @@ class InventorySelector:
         min_mileage=None,
         max_mileage=None,
         vehicle_type=None,
+        branch=None,
         ordering="-created_at",
     ):
 
@@ -105,7 +106,10 @@ class InventorySelector:
             queryset = queryset.filter(
                 vehicle_type__iexact=vehicle_type,
             )
-
+            
+        if branch is not None:
+            queryset = queryset.filter(branch_id=branch)
+            
         if source:
 
             queryset = queryset.filter(

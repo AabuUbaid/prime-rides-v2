@@ -2,6 +2,7 @@ from rest_framework import status
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.views import APIView
+from config.pagination import StandardResultsSetPagination
 from rest_framework.exceptions import (
     NotFound,
     ValidationError,
@@ -37,18 +38,17 @@ class QuoteListCreateView(APIView):
         user=request.user,
         )
 
+        paginator = StandardResultsSetPagination()
+        page = paginator.paginate_queryset(queryset, request, view=self)
+
         serializer = QuoteListSerializer(
-            queryset,
+            page,
             many=True,
         )
 
-        return Response(
-            {
-                "success": True,
-                "data": serializer.data,
-            },
-            status=status.HTTP_200_OK,
-        )
+        response = paginator.get_paginated_response(serializer.data)
+        response.status_code = status.HTTP_200_OK
+        return response
 
     def post(self, request):
         serializer = QuoteCreateSerializer(

@@ -1,10 +1,23 @@
 from django.core.exceptions import ValidationError as DjangoValidationError
 from django.shortcuts import get_object_or_404
-from django.db.models import Q, Sum
+from decimal import Decimal
+
+from django.db.models import (
+    DecimalField,
+    F,
+    OuterRef,
+    Prefetch,
+    Q,
+    Subquery,
+    Sum,
+    Value,
+)
+from django.db.models.functions import Coalesce
 from rest_framework import status , generics
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.views import APIView
+from config.pagination import StandardResultsSetPagination
 from quotes.models import Quote
 from customers.models import Customer
 from inventory.models import Car
@@ -25,6 +38,7 @@ from .models import (
     
 )
 from accounts.permissions import IsMasterOrAdmin, IsMaster
+from quotes.models import QuoteExpense
 
 from .serializers import (
     BankSerializer,
@@ -71,6 +85,54 @@ from .services import (
     
 )
 from accounts.permissions import IsMaster
+
+
+def _balance_sheet_queryset():
+    receipt_queryset = CashReceipt.objects.select_related(
+        "customer",
+        "created_by",
+    ).order_by(
+        "transaction_date",
+        "created_at",
+    )
+    expense_queryset = QuoteExpense.objects.filter(
+        actual_amount__isnull=False,
+        applies=True,
+    ).order_by("created_at")
+    bank_loan_queryset = BankLoan.objects.order_by(
+        "-created_at",
+    )
+
+    return (
+        BalanceSheet.objects
+        .select_related(
+            "customer",
+            "quote",
+            "quote__car",
+            "quote__salesperson",
+            "quote__emi_sheet",
+            "quote__cash_deal",
+            "car",
+            "created_by",
+        )
+        .prefetch_related(
+            Prefetch(
+                "quote__cash_receipts",
+                queryset=receipt_queryset,
+                to_attr="_balance_sheet_receipts",
+            ),
+            Prefetch(
+                "quote__expenses",
+                queryset=expense_queryset,
+                to_attr="_balance_sheet_expenses",
+            ),
+            Prefetch(
+                "quote__bank_loans",
+                queryset=bank_loan_queryset,
+                to_attr="_balance_sheet_bank_loans",
+            ),
+        )
+    )
 
 
 # =========================================================
@@ -448,18 +510,17 @@ class EmiSheetListCreateView(APIView):
                 bank_id=bank_filter
             )
 
+        paginator = StandardResultsSetPagination()
+        page = paginator.paginate_queryset(queryset, request, view=self)
+
         serializer = EmiSheetSerializer(
-            queryset,
+            page,
             many=True,
         )
 
-        return Response(
-            {
-                "success": True,
-                "data": serializer.data,
-            },
-            status=status.HTTP_200_OK,
-        )
+        response = paginator.get_paginated_response(serializer.data)
+        response.status_code = status.HTTP_200_OK
+        return response
 
     def post(self, request):
         """
@@ -1313,15 +1374,17 @@ class BankLoanListView(APIView):
             .order_by("-created_at")
         )
 
+        paginator = StandardResultsSetPagination()
+        page = paginator.paginate_queryset(queryset, request, view=self)
+
         serializer = BankLoanSerializer(
-            queryset,
+            page,
             many=True,
         )
 
-        return Response(
-            serializer.data,
-            status=status.HTTP_200_OK,
-        )
+        response = paginator.get_paginated_response(serializer.data)
+        response.status_code = status.HTTP_200_OK
+        return response
         
 class BankLoanDetailView(APIView):
     permission_classes = [
@@ -1403,18 +1466,17 @@ class CashDealListCreateView(APIView):
                 status=status_filter
             )
 
+        paginator = StandardResultsSetPagination()
+        page = paginator.paginate_queryset(queryset, request, view=self)
+
         serializer = CashDealSerializer(
-            queryset,
+            page,
             many=True,
         )
 
-        return Response(
-            {
-                "success": True,
-                "data": serializer.data,
-            },
-            status=status.HTTP_200_OK,
-        )
+        response = paginator.get_paginated_response(serializer.data)
+        response.status_code = status.HTTP_200_OK
+        return response
 
     def post(self, request):
         serializer = CashDealCreateSerializer(
@@ -1771,10 +1833,9 @@ class CashReceiptListCreateView(APIView):
                 payment_method=payment_method
             )
 
-        serializer = CashReceiptSerializer(
-            queryset,
-            many=True,
-        )
+        paginator = StandardResultsSetPagination()
+        page = paginator.paginate_queryset(queryset, request, view=self)
+        serializer = CashReceiptSerializer(page, many=True)
 
         total_received = (
             queryset
@@ -1788,16 +1849,12 @@ class CashReceiptListCreateView(APIView):
             or 0
         )
 
-        return Response(
-            {
-                "success": True,
-                "data": serializer.data,
-                "summary": {
-                    "total_received": total_received,
-                },
-            },
-            status=status.HTTP_200_OK,
-        )
+        response = paginator.get_paginated_response(serializer.data)
+        response.data["summary"] = {
+            "total_received": total_received,
+        }
+        response.status_code = status.HTTP_200_OK
+        return response
 
     def post(self, request):
         serializer = CashReceiptCreateSerializer(
@@ -2219,15 +2276,8 @@ class BalanceSheetListCreateView(APIView):
     permission_classes = [IsMasterOrAdmin]
 
     def get(self, request):
-        queryset = (
-            BalanceSheet.objects
-            .select_related(
-                "customer",
-                "quote",
-                "car",
-                "created_by",
-            )
-            .order_by("-created_at")
+        queryset = _balance_sheet_queryset().order_by(
+            "-created_at",
         )
 
         customer_id = request.query_params.get(
@@ -2307,18 +2357,12 @@ class BalanceSheetListCreateView(APIView):
         # Calculate it from CashReceipt movements.
         # -------------------------------------------------
         if balance_status:
-            balance_sheet_quote_ids = list(
-                queryset.values_list(
-                    "quote_id",
-                    flat=True,
-                )
-            )
-
             receipt_totals = (
                 CashReceipt.objects
                 .filter(
-                    quote_id__in=balance_sheet_quote_ids,
+                    quote_id=OuterRef("quote_id"),
                 )
+                .order_by()
                 .values("quote_id")
                 .annotate(
                     total_received=Sum(
@@ -2339,74 +2383,50 @@ class BalanceSheetListCreateView(APIView):
                     ),
                 )
             )
-
-            status_quote_ids = []
-
-            for row in receipt_totals:
-                received = (
-                    row["total_received"]
-                    or 0
-                )
-                spent = (
-                    row["total_spent"]
-                    or 0
-                )
-
-                net = received - spent
-
-                if (
-                    balance_status == "settled"
-                    and net == 0
-                ):
-                    status_quote_ids.append(
-                        row["quote_id"]
-                    )
-
-                elif (
-                    balance_status == "customer_receivable"
-                    and net > 0
-                ):
-                    status_quote_ids.append(
-                        row["quote_id"]
-                    )
-
-                elif (
-                    balance_status == "customer_payable"
-                    and net < 0
-                ):
-                    status_quote_ids.append(
-                        row["quote_id"]
-                    )
-
-            # Deals with zero transactions are settled.
-            if balance_status == "settled":
-                receipt_quote_ids = {
-                    row["quote_id"]
-                    for row in receipt_totals
-                }
-
-                status_quote_ids.extend(
-                    quote_id
-                    for quote_id in balance_sheet_quote_ids
-                    if quote_id not in receipt_quote_ids
-                )
-
-            queryset = queryset.filter(
-                quote_id__in=status_quote_ids
+            zero_amount = Value(
+                Decimal("0.00"),
+                output_field=DecimalField(
+                    max_digits=12,
+                    decimal_places=2,
+                ),
+            )
+            queryset = queryset.annotate(
+                _balance_received=Coalesce(
+                    Subquery(
+                        receipt_totals.values("total_received")[:1],
+                    ),
+                    zero_amount,
+                ),
+                _balance_spent=Coalesce(
+                    Subquery(
+                        receipt_totals.values("total_spent")[:1],
+                    ),
+                    zero_amount,
+                ),
             )
 
-        serializer = BalanceSheetListSerializer(
-            queryset,
-            many=True,
-        )
+            if balance_status == "settled":
+                queryset = queryset.filter(
+                    _balance_received=F("_balance_spent"),
+                )
+            elif balance_status == "customer_receivable":
+                queryset = queryset.filter(
+                    _balance_received__gt=F("_balance_spent"),
+                )
+            elif balance_status == "customer_payable":
+                queryset = queryset.filter(
+                    _balance_received__lt=F("_balance_spent"),
+                )
+            else:
+                queryset = queryset.none()
 
-        return Response(
-            {
-                "success": True,
-                "data": serializer.data,
-            },
-            status=status.HTTP_200_OK,
-        )
+        paginator = StandardResultsSetPagination()
+        page = paginator.paginate_queryset(queryset, request, view=self)
+        serializer = BalanceSheetListSerializer(page, many=True)
+
+        response = paginator.get_paginated_response(serializer.data)
+        response.status_code = status.HTTP_200_OK
+        return response
 
     def post(self, request):
         serializer = BalanceSheetCreateSerializer(
@@ -2485,12 +2505,7 @@ class BalanceSheetDetailView(APIView):
 
     def get(self, request, pk):
         balance_sheet = get_object_or_404(
-            BalanceSheet.objects.select_related(
-                "customer",
-                "quote",
-                "car",
-                "created_by",
-            ),
+            _balance_sheet_queryset(),
             pk=pk,
         )
 

@@ -8,6 +8,7 @@ from rest_framework import status
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.views import APIView
+from config.pagination import StandardResultsSetPagination
 from accounts.permissions import IsMasterOrAdmin
 from accounts.permissions import IsMaster
 from insurance.models import Insurance
@@ -49,16 +50,14 @@ class ProformaListCreateAPIView(APIView):
                 | Q(vehicle_engine_number__icontains=search)
             )
 
-        return Response(
-            {
-                "success": True,
-                "data": ProformaSerializer(
-                    queryset,
-                    many=True,
-                ).data,
-            },
-            status=status.HTTP_200_OK,
+        paginator = StandardResultsSetPagination()
+        page = paginator.paginate_queryset(queryset, request, view=self)
+
+        response = paginator.get_paginated_response(
+            ProformaSerializer(page, many=True).data,
         )
+        response.status_code = status.HTTP_200_OK
+        return response
 
     def post(self, request):
         serializer = ProformaCreateSerializer(

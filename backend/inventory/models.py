@@ -3,6 +3,7 @@ import uuid
 from django.conf import settings
 from django.core.validators import MinValueValidator, FileExtensionValidator
 from django.db import models
+from company.models import CompanyBranch
 
 class Car(models.Model):
     class Status(models.TextChoices):
@@ -41,6 +42,14 @@ class Car(models.Model):
     stock_id = models.CharField(
         max_length=20,
         unique=True,
+    )
+    
+    branch = models.ForeignKey(
+        CompanyBranch,
+        on_delete=models.PROTECT,
+        related_name="inventory_cars",
+        null=True,
+        blank=True,
     )
     
     vehicle_type = models.CharField(
@@ -327,6 +336,12 @@ class VehicleDocument(models.Model):
         POSSESSION = "POSSESSION", "Possession"
         RTA_PASSING = "RTA_PASSING", "RTA Passing"
         INVOICE = "INVOICE", "Invoice"
+        MULKIYA = "MULKIYA", "Mulkiya / Registration Card"
+        RTA_SUBMISSION_FORM = (
+            "RTA_SUBMISSION_FORM",
+            "RTA Submission Form",
+        )
+        
         OTHER = "OTHER", "Other"
 
     id = models.UUIDField(

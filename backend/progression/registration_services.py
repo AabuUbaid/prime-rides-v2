@@ -11,12 +11,12 @@ REQUIRED_DOCUMENTS = (
         "label": "Possession Certificate",
     },
     {
-        "key": "emirates_id",
-        "label": "Customer Emirates ID",
+        "key": "rta_passing",
+        "label": "RTA Passing",
     },
     {
-        "key": "driving_license",
-        "label": "Customer Driving License",
+        "key": "mulkiya",
+        "label": "Mulkiya / Registration Card",
     },
     {
         "key": "rta_submission_form",
@@ -155,20 +155,38 @@ def get_registration_documents(*, quote):
         for document in documents
     )
 
-    availability = {
-        "possession_certificate": vehicle_has_possession,
-        "emirates_id": (
-            CustomerDocument.Category.EMIRATES_ID
-            in customer_categories
-        ),
-        "driving_license": (
-            CustomerDocument.Category.DRIVING_LICENSE
-            in customer_categories
-        ),
-        # RTA module will provide this later.
-        "rta_submission_form": False,
-    }
+    vehicle_document_types = set(
+        VehicleDocument.objects.filter(
+            car=quote.car,
+            is_archived=False,
+        ).values_list(
+            "document_type",
+            flat=True,
+        )
+    )
 
+    availability = {
+        "possession_certificate": (
+            vehicle_has_possession
+            or (
+                VehicleDocument.DocumentType.POSSESSION
+                in vehicle_document_types
+            )
+        ),
+        "rta_passing": (
+            VehicleDocument.DocumentType.RTA_PASSING
+            in vehicle_document_types
+        ),
+        "mulkiya": (
+            VehicleDocument.DocumentType.MULKIYA
+            in vehicle_document_types
+        ),
+        "rta_submission_form": (
+            VehicleDocument.DocumentType.RTA_SUBMISSION_FORM
+            in vehicle_document_types
+        ),
+    }
+ 
     for requirement in REQUIRED_DOCUMENTS:
         key = requirement["key"]
 

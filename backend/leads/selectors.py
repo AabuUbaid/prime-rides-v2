@@ -18,10 +18,6 @@ def list_leads(
             "assigned_to",
             "assigned_to__user",
         )
-        .prefetch_related(
-            "activities",
-            "assignment_history",
-        )
     )
 
     if user.role == "SALES_STAFF":

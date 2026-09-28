@@ -106,6 +106,7 @@ class CarCreateSerializer(serializers.ModelSerializer):
         fields = (
             "id",
             "stock_id",
+            "branch",
             "make",
             "model",
             "variant",
@@ -405,6 +406,7 @@ class CarListSerializer(
         fields = (
             "id",
             "stock_id",
+            "branch",
             "year",
             "make",
             "model",
@@ -500,6 +502,7 @@ class CarDetailSerializer(
         fields = (
             "id",
             "stock_id",
+            "branch",
             "year",
             "make",
             "model",
@@ -615,6 +618,7 @@ class CarPrintSerializer(serializers.ModelSerializer):
         fields = (
             "id",
             "stock_id",
+            "branch",
             "make",
             "model",
             "variant",
@@ -708,6 +712,7 @@ class CarUpdateSerializer(serializers.ModelSerializer):
         model = Car
 
         fields = (
+            "branch",
             "make",
             "model",
             "variant",
@@ -1414,12 +1419,15 @@ class VehicleDocumentSerializer(serializers.ModelSerializer):
             VehicleDocument.DocumentType.POSSESSION,
             VehicleDocument.DocumentType.RTA_PASSING,
             VehicleDocument.DocumentType.INVOICE,
+            VehicleDocument.DocumentType.MULKIYA,
+            VehicleDocument.DocumentType.RTA_SUBMISSION_FORM,
             VehicleDocument.DocumentType.OTHER,
         }
 
         if value not in allowed_types:
             raise serializers.ValidationError(
-                "Only POSSESSION, RTA_PASSING, INVOICE and OTHER documents are allowed."
+                "Only POSSESSION, RTA_PASSING, INVOICE, MULKIYA and OTHER documents are allowed."
             )
 
         return value
+    

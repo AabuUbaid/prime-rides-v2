@@ -5,6 +5,8 @@ from .views import (
     CompanyBranchListCreateView,
     CompanyDetailView,
     CompanyListCreateView,
+    CompanyDocumentListCreateView,
+    CompanyDocumentDetailView
 )
 
 
@@ -31,5 +33,15 @@ urlpatterns = [
         "branches/<int:pk>/",
         CompanyBranchDetailView.as_view(),
         name="company-branch-detail",
+    ),
+    path(
+        "documents/",
+        CompanyDocumentListCreateView.as_view(),
+        name="company-document-list-create",
+    ),
+    path(
+        "documents/<int:document_id>/",
+        CompanyDocumentDetailView.as_view(),
+        name="company-document-detail",
     ),
 ]

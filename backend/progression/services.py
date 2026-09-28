@@ -306,9 +306,13 @@ def list_progressions(*, user):
             "quote__customer",
             "quote__car",
             "quote__salesperson",
+            "quote__salesperson__staff_profile",
+            "quote__emi_sheet",
             "bank_loan",
             "bank_loan__bank",
+            "bank_loan__agent__staff_profile",
             "cash_deal",
+            "cash_deal__agent__staff_profile",
         )
         .all()
     )

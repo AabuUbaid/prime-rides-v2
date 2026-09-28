@@ -33,6 +33,7 @@ def list_customers(
             queryset = queryset.filter(
                 Q(customer_name__icontains=search)
                 | Q(phone_number__icontains=search)
+                | Q(email__icontains=search)
             )
 
     return queryset.order_by(

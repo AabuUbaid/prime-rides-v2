@@ -67,7 +67,8 @@ INSTALLED_APPS = [
     "progression",
     "ledger_accounts",
     "company",
-    "rta"
+    "rta",
+    "reports"
     
 ]
 

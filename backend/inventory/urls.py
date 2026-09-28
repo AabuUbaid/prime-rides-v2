@@ -20,6 +20,8 @@ from .views import (
     VehicleDocumentAPIView,
     VehicleDocumentDeleteAPIView,
     VehicleDocumentArchiveAPIView,
+    VehicleDocumentDownloadAPIView,
+    DeleteAllInventoryCarsAPIView
 )
 
 from .car_demand_views import (
@@ -66,6 +68,11 @@ urlpatterns = [
         "cars/<uuid:car_id>/",
         CarDetailAPIView.as_view(),
         name="car-detail",
+    ),
+    path(
+        "cars/delete-all/",
+        DeleteAllInventoryCarsAPIView.as_view(),
+        name="inventory-cars-delete-all",
     ),
 
     # ---------------------------------------------------------
@@ -169,7 +176,13 @@ urlpatterns = [
         VehicleDocumentAPIView.as_view(),
         name="vehicle-documents",
     ),
-
+    
+    path(
+        "documents/<uuid:document_id>/download/",
+        VehicleDocumentDownloadAPIView.as_view(),
+        name="vehicle-document-download",
+    ),
+    
     path(
         "documents/<uuid:document_id>/delete/",
         VehicleDocumentDeleteAPIView.as_view(),

@@ -62,6 +62,10 @@ def create_customer(
     customer_name,
     phone_number,
     email="",
+    customer_type=Customer.CustomerType.INDIVIDUAL,
+    company_name="",
+    trn="",
+    trade_license_number="",
     agent=None,
     documents=None,
 ):
@@ -92,6 +96,10 @@ def create_customer(
             customer_name=customer_name,
             phone_number=phone_number,
             email=email,
+            customer_type=customer_type,
+            company_name=company_name,
+            trn=trn,
+            trade_license_number=trade_license_number,
             agent=agent,
         )
         created = True
@@ -121,19 +129,19 @@ def update_customer(
     customer_name=None,
     phone_number=None,
     email=None,
+    customer_type=None,
+    company_name=None,
+    trn=None,
+    trade_license_number=None,
 ):
     if customer_name is not None:
-        customer.customer_name = (
-            validate_customer_name(
-                customer_name,
-            )
+        customer.customer_name = validate_customer_name(
+            customer_name,
         )
 
     if phone_number is not None:
-        normalized_phone = (
-            normalize_phone_number(
-                phone_number,
-            )
+        normalized_phone = normalize_phone_number(
+            phone_number,
         )
 
         existing_customer = (
@@ -164,10 +172,21 @@ def update_customer(
             email,
         )
 
+    if customer_type is not None:
+        customer.customer_type = customer_type
+
+    if company_name is not None:
+        customer.company_name = company_name
+
+    if trn is not None:
+        customer.trn = trn
+
+    if trade_license_number is not None:
+        customer.trade_license_number = trade_license_number
+
     customer.save()
 
     return customer
-
 
 @transaction.atomic
 def delete_customer(

@@ -1,17 +1,24 @@
 from django.http import FileResponse
 from django.shortcuts import get_object_or_404
-
+from .services import (
+    create_rta_record,
+    build_rta_document_data,
+)
 from rest_framework import generics, status
 from rest_framework.parsers import FormParser, MultiPartParser
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.views import APIView
+from config.pagination import StandardResultsSetPagination
 
 from accounts.permissions import IsMasterOrAdmin
 
 from .models import RTARecord, RTADocument
 from .serializers import RTARecordSerializer, RTADocumentSerializer
-from .services import create_rta_record
+from .services import (
+    create_rta_record,
+    build_rta_document_data,
+)
 
 
 class RTARecordListCreateView(generics.ListCreateAPIView):
@@ -25,6 +32,7 @@ class RTARecordListCreateView(generics.ListCreateAPIView):
 
     serializer_class = RTARecordSerializer
     permission_classes = [IsAuthenticated]
+    pagination_class = StandardResultsSetPagination
 
     def get_queryset(self):
         queryset = super().get_queryset()
@@ -94,7 +102,7 @@ class RTAMasterUpdateView(generics.RetrieveUpdateAPIView):
         IsAuthenticated,
         IsMasterOrAdmin,
     ]
-    
+
 class RTADocumentListCreateView(generics.ListCreateAPIView):
     serializer_class = RTADocumentSerializer
     permission_classes = [
@@ -186,4 +194,58 @@ class RTADocumentDeleteView(APIView):
                 "message": "RTA document deleted successfully.",
             },
             status=status.HTTP_204_NO_CONTENT,
+        )
+        
+class RTAGeneratedDocumentView(APIView):
+    permission_classes = [
+        IsAuthenticated,
+        IsMasterOrAdmin,
+    ]
+
+    def get(self, request, pk):
+        rta_record = get_object_or_404(
+            RTARecord.objects.select_related(
+                "quote",
+                "car",
+                "customer",
+                "company",
+                "branch",
+            ),
+            pk=pk,
+        )
+
+        if rta_record.status == RTARecord.Status.CANCELLED:
+            return Response(
+                {
+                    "success": False,
+                    "message": (
+                        "A document cannot be generated for "
+                        "a cancelled RTA record."
+                    ),
+                },
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        try:
+            document_data = build_rta_document_data(
+                rta_record,
+            )
+        except ValueError as exc:
+            return Response(
+                {
+                    "success": False,
+                    "message": str(exc),
+                },
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        return Response(
+            {
+                "success": True,
+                "message": (
+                    "RTA document data generated successfully."
+                ),
+                "data": document_data,
+            },
+            status=status.HTTP_200_OK,
         )

@@ -5,6 +5,7 @@ from django.db.models import Q
 from rest_framework import status
 from rest_framework.response import Response
 from rest_framework.views import APIView
+from config.pagination import StandardResultsSetPagination
 
 from accounts.permissions import IsMasterOrAdmin
 from quotes.models import Quote
@@ -166,16 +167,14 @@ class InsuranceListAPIView(APIView):
                 | Q(vehicle_engine_number__icontains=search)
             ).distinct()
 
-        return Response(
-            {
-                "success": True,
-                "data": InsuranceSerializer(
-                    insurances,
-                    many=True,
-                ).data,
-            },
-            status=status.HTTP_200_OK,
+        paginator = StandardResultsSetPagination()
+        page = paginator.paginate_queryset(insurances, request, view=self)
+
+        response = paginator.get_paginated_response(
+            InsuranceSerializer(page, many=True).data,
         )
+        response.status_code = status.HTTP_200_OK
+        return response
 
 
 class InsuranceDetailAPIView(APIView):

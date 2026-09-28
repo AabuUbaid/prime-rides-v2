@@ -3,14 +3,40 @@ from django.db import models
 
 
 class Customer(models.Model):
+    class CustomerType(models.TextChoices):
+        INDIVIDUAL = "INDIVIDUAL", "Individual"
+        COMPANY = "COMPANY", "Company"
+
+    customer_type = models.CharField(
+        max_length=20,
+        choices=CustomerType.choices,
+        default=CustomerType.INDIVIDUAL,
+    )
+
     customer_name = models.CharField(
         max_length=255,
+    )
+
+    company_name = models.CharField(
+        max_length=255,
+        blank=True,
+    )
+
+    trn = models.CharField(
+        max_length=100,
+        blank=True,
+    )
+
+    trade_license_number = models.CharField(
+        max_length=100,
+        blank=True,
     )
 
     phone_number = models.CharField(
         max_length=30,
         unique=True,
     )
+
     email = models.EmailField(
         max_length=254,
         blank=True,
@@ -45,6 +71,9 @@ class Customer(models.Model):
             ),
             models.Index(
                 fields=["created_at"],
+            ),
+            models.Index(
+                fields=["customer_type"],
             ),
         ]
 

@@ -1,7 +1,6 @@
 
 from django.db import transaction
 from django.utils import timezone
-
 from .models import RTARecord
 
 
@@ -271,14 +270,18 @@ def create_rta_record(
 
     # Company is the first party for both record types.
     first_party_name = company_name
-    first_party_role = "Company" if company_name else ""
+    first_party_role = (
+        RTARecord.PartyRole.COMPANY
+        if company_name
+        else ""
+    )
 
     # Sale: Company -> Customer
     # Purchase: Company -> Supplier
     if record_type == RTARecord.RecordType.PURCHASE:
         second_party_name = supplier_data["name"]
         second_party_role = (
-            "Supplier"
+            RTARecord.PartyRole.SUPPLIER
             if second_party_name
             else ""
         )
@@ -287,7 +290,7 @@ def create_rta_record(
     else:
         second_party_name = customer_data["name"] or ""
         second_party_role = (
-            "Customer"
+            RTARecord.PartyRole.CUSTOMER
             if second_party_name
             else ""
         )
@@ -342,6 +345,7 @@ def create_rta_record(
 
     record = RTARecord.objects.create(
         record_type=record_type,
+        status=RTARecord.Status.DRAFT,
         quote=quote,
         car=car,
         customer=customer,
@@ -358,3 +362,93 @@ def create_rta_record(
     )
 
     return record
+
+def build_rta_document_data(rta_record):
+    """
+    Build the authoritative backend document data for an RTA record.
+
+    Historical transaction data comes from snapshot_data so later
+    changes to related records do not alter the RTA document context.
+    """
+
+    snapshot = rta_record.snapshot_data or {}
+
+    if rta_record.record_type == RTARecord.RecordType.PURCHASE:
+        document_type = "PURCHASE_LETTER"
+        document_title = "RTA Purchase Submission Letter"
+
+    elif rta_record.record_type == RTARecord.RecordType.SALE:
+        document_type = "SALE_AGREEMENT"
+        document_title = "RTA Sale Agreement"
+
+    else:
+        raise ValueError(
+            "Unsupported RTA record type."
+        )
+
+    return {
+        "document_type": document_type,
+        "document_title": document_title,
+
+        "rta_record": {
+            "id": rta_record.id,
+            "record_type": rta_record.record_type,
+            "status": rta_record.status,
+            "rta_date": rta_record.rta_date,
+            "rta_reference_number": (
+                rta_record.rta_reference_number
+            ),
+        },
+
+        "parties": {
+            "first_party": {
+                "name": rta_record.first_party_name,
+                "role": rta_record.first_party_role,
+                "signatory_name": (
+                    rta_record.first_party_signatory_name
+                ),
+            },
+            "second_party": {
+                "name": rta_record.second_party_name,
+                "role": rta_record.second_party_role,
+                "mobile": rta_record.second_party_mobile,
+                "signatory_name": (
+                    rta_record.second_party_signatory_name
+                ),
+            },
+        },
+
+        "company": snapshot.get(
+            "company",
+            {},
+        ),
+
+        "branch": snapshot.get(
+            "branch",
+            {},
+        ),
+
+        "supplier": snapshot.get(
+            "supplier",
+            {},
+        ),
+
+        "customer": snapshot.get(
+            "customer",
+            {},
+        ),
+
+        "vehicle": snapshot.get(
+            "vehicle",
+            {},
+        ),
+
+        "quote": snapshot.get(
+            "quote",
+            {},
+        ),
+
+        "notes": rta_record.notes,
+
+        "snapshot": snapshot,
+    }

@@ -10,9 +10,10 @@ from rest_framework.exceptions import ValidationError
 from accounts.permissions import IsMaster
 from django.http import QueryDict
 from datetime import timedelta
-
+from django.db.models.deletion import ProtectedError
+from django.http import FileResponse
 from django.utils import timezone
-from .pagination import InventoryPagination
+from config.pagination import StandardResultsSetPagination
 from django.shortcuts import get_object_or_404
 from .models import (
     Car,
@@ -69,7 +70,7 @@ class CarAPIView(APIView):
             **query_serializer.validated_data,
         )
 
-        paginator = InventoryPagination()
+        paginator = StandardResultsSetPagination()
 
         page = paginator.paginate_queryset(
             cars,
@@ -85,10 +86,7 @@ class CarAPIView(APIView):
         )
 
         return paginator.get_paginated_response(
-            {
-                "success": True,
-                "data": serializer.data,
-            }
+            serializer.data,
         )
 
     def post(self, request):
@@ -366,7 +364,48 @@ class CarDetailAPIView(APIView):
             status=status.HTTP_200_OK,
         )
 
+class DeleteAllInventoryCarsAPIView(APIView):
 
+    permission_classes = [IsAuthenticated, IsMaster]
+
+    def delete(self, request):
+
+        cars = Car.objects.all()
+
+        if not cars.exists():
+            return Response(
+                {
+                    "success": True,
+                    "message": "Inventory stock is already empty.",
+                    "deleted_count": 0,
+                },
+                status=status.HTTP_200_OK,
+            )
+
+        try:
+            deleted_count = InventoryService.delete_all_cars(cars)
+
+        except ProtectedError:
+            return Response(
+                {
+                    "success": False,
+                    "message": (
+                        "Full inventory deletion was blocked because "
+                        "one or more vehicles are referenced by existing "
+                        "business records."
+                    ),
+                },
+                status=status.HTTP_409_CONFLICT,
+            )
+
+        return Response(
+            {
+                "success": True,
+                "message": "All inventory stock deleted successfully.",
+                "deleted_count": deleted_count,
+            },
+            status=status.HTTP_200_OK,
+        )
 class CarImageCoverAPIView(APIView):
 
     permission_classes = [IsAuthenticated]
@@ -606,6 +645,65 @@ class VehicleDocumentAPIView(APIView):
             },
             status=status.HTTP_201_CREATED,
         )
+
+class VehicleDocumentDownloadAPIView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request, document_id):
+        try:
+            document = VehicleDocument.objects.select_related("car").get(
+                id=document_id
+            )
+        except VehicleDocument.DoesNotExist:
+            return Response(
+                {
+                    "success": False,
+                    "message": "Vehicle document not found.",
+                },
+                status=status.HTTP_404_NOT_FOUND,
+            )
+
+        # Archived documents are not available to non-MASTER users.
+        if document.is_archived and request.user.role != "MASTER":
+            return Response(
+                {
+                    "success": False,
+                    "message": "You do not have permission to access this document.",
+                },
+                status=status.HTTP_403_FORBIDDEN,
+            )
+
+        # The document must have an actual stored file.
+        if not document.file:
+            return Response(
+                {
+                    "success": False,
+                    "message": "Document file not found.",
+                },
+                status=status.HTTP_404_NOT_FOUND,
+            )
+
+        try:
+            file_handle = document.file.open("rb")
+        except FileNotFoundError:
+            return Response(
+                {
+                    "success": False,
+                    "message": "Document file not found.",
+                },
+                status=status.HTTP_404_NOT_FOUND,
+            )
+
+        response = FileResponse(
+            file_handle,
+            content_type=document.mime_type or "application/octet-stream",
+        )
+
+        response["Content-Disposition"] = (
+            f'attachment; filename="{document.original_filename}"'
+        )
+
+        return response
 
 class VehicleDocumentDeleteAPIView(APIView):
     permission_classes = [IsAuthenticated]
@@ -1168,15 +1266,11 @@ class SpecialPriceRequestListAPIView(APIView):
                 requested_by=request.user,
             )
 
+        SpecialPriceService.expire_queryset(queryset)
+
         data = []
 
         for special_request in queryset:
-            special_request = (
-                SpecialPriceService.expire_if_required(
-                    special_request,
-                )
-            )
-
             item = SpecialPriceRequestSerializer(
                 special_request,
             ).data

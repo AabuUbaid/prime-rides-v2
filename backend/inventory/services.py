@@ -948,7 +948,73 @@ class InventoryService:
             deleted += 1
 
         return deleted
+    
+    @staticmethod
+    @transaction.atomic
+    def delete_all_cars(cars):
+        """
+        Delete the complete inventory stock atomically.
 
+        The database deletion is completed first. Physical files are
+        removed only after the transaction successfully commits.
+
+        If any vehicle is protected by an existing business record,
+        the entire database operation is rolled back.
+        """
+
+        cars = list(
+            cars.select_for_update()
+        )
+
+        if not cars:
+            return 0
+
+        files_to_delete = []
+
+        for car in cars:
+
+            if car.possession_certificate:
+                files_to_delete.append(
+                    car.possession_certificate.name
+                )
+
+            for image in car.images.all():
+
+                if image.image:
+                    files_to_delete.append(
+                        image.image.name
+                    )
+
+            for document in car.vehicle_documents.all():
+
+                if document.file:
+                    files_to_delete.append(
+                        document.file.name
+                    )
+
+        deleted_count = len(cars)
+
+        # Database deletion happens before physical file deletion.
+        # PROTECT relationships will raise an exception here and
+        # transaction.atomic will roll back the entire operation.
+        Car.objects.filter(
+            id__in=[car.id for car in cars]
+        ).delete()
+
+        def delete_files():
+
+            from django.core.files.storage import default_storage
+
+            for file_name in files_to_delete:
+
+                if file_name and default_storage.exists(file_name):
+                    default_storage.delete(file_name)
+
+        transaction.on_commit(
+            delete_files
+        )
+
+        return deleted_count
     @staticmethod
     def parse_vehicle_import_file(file):
         """

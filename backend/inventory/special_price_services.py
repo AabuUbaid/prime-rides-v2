@@ -303,6 +303,19 @@ class SpecialPriceService:
 
     @staticmethod
     @transaction.atomic
+    def expire_queryset(queryset, *, at=None):
+        expired_at = at or timezone.now()
+
+        return queryset.filter(
+            status=SpecialPriceRequest.Status.APPROVED,
+            expires_at__lte=expired_at,
+        ).update(
+            status=SpecialPriceRequest.Status.EXPIRED,
+            updated_at=expired_at,
+        )
+
+    @staticmethod
+    @transaction.atomic
     def mark_used(
         *,
         request_id,

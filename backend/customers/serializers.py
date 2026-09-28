@@ -73,6 +73,29 @@ class CustomerCreateSerializer(
         many=True,
         required=False,
     )
+    customer_type = serializers.ChoiceField(
+        choices=Customer.CustomerType.choices,
+        required=False,
+        default=Customer.CustomerType.INDIVIDUAL,
+    )
+
+    company_name = serializers.CharField(
+        max_length=255,
+        required=False,
+        allow_blank=True,
+    )
+
+    trn = serializers.CharField(
+        max_length=100,
+        required=False,
+        allow_blank=True,
+    )
+
+    trade_license_number = serializers.CharField(
+        max_length=100,
+        required=False,
+        allow_blank=True,
+    )
 
     def validate_customer_name(
         self,
@@ -105,6 +128,61 @@ class CustomerCreateSerializer(
             )
 
         return value
+    def validate(self, attrs):
+        customer_type = attrs.get(
+            "customer_type",
+            Customer.CustomerType.INDIVIDUAL,
+        )
+
+        company_name = attrs.get(
+            "company_name",
+            "",
+        ).strip()
+
+        trn = attrs.get(
+            "trn",
+            "",
+        ).strip()
+
+        trade_license_number = attrs.get(
+            "trade_license_number",
+            "",
+        ).strip()
+
+        if customer_type == Customer.CustomerType.COMPANY:
+            if not company_name:
+                raise serializers.ValidationError(
+                    {
+                        "company_name": (
+                            "Company name is required for company customers."
+                        )
+                    }
+                )
+
+            if not trn:
+                raise serializers.ValidationError(
+                    {
+                        "trn": (
+                            "TRN is required for company customers."
+                        )
+                    }
+                )
+
+            if not trade_license_number:
+                raise serializers.ValidationError(
+                    {
+                        "trade_license_number": (
+                            "Trade licence number is required "
+                            "for company customers."
+                        )
+                    }
+                )
+
+        attrs["company_name"] = company_name
+        attrs["trn"] = trn
+        attrs["trade_license_number"] = trade_license_number
+
+        return attrs
 
 
 class CustomerUpdateSerializer(
@@ -124,6 +202,92 @@ class CustomerUpdateSerializer(
         required=False,
         allow_blank=True,
     )
+    customer_type = serializers.ChoiceField(
+        choices=Customer.CustomerType.choices,
+        required=False,
+    )
+
+    company_name = serializers.CharField(
+        max_length=255,
+        required=False,
+        allow_blank=True,
+    )
+
+    trn = serializers.CharField(
+        max_length=100,
+        required=False,
+        allow_blank=True,
+    )
+
+    trade_license_number = serializers.CharField(
+        max_length=100,
+        required=False,
+        allow_blank=True,
+    )
+    
+    def validate(self, attrs):
+        customer_type = attrs.get(
+            "customer_type",
+            getattr(
+                self.instance,
+                "customer_type",
+                Customer.CustomerType.INDIVIDUAL,
+            ),
+        )
+
+        company_name = attrs.get(
+            "company_name",
+            getattr(self.instance, "company_name", ""),
+        ).strip()
+
+        trn = attrs.get(
+            "trn",
+            getattr(self.instance, "trn", ""),
+        ).strip()
+
+        trade_license_number = attrs.get(
+            "trade_license_number",
+            getattr(
+                self.instance,
+                "trade_license_number",
+                "",
+            ),
+        ).strip()
+
+        if customer_type == Customer.CustomerType.COMPANY:
+            if not company_name:
+                raise serializers.ValidationError(
+                    {
+                        "company_name": (
+                            "Company name is required for company customers."
+                        )
+                    }
+                )
+
+            if not trn:
+                raise serializers.ValidationError(
+                    {
+                        "trn": (
+                            "TRN is required for company customers."
+                        )
+                    }
+                )
+
+            if not trade_license_number:
+                raise serializers.ValidationError(
+                    {
+                        "trade_license_number": (
+                            "Trade license number is required "
+                            "for company customers."
+                        )
+                    }
+                )
+
+        attrs["company_name"] = company_name
+        attrs["trn"] = trn
+        attrs["trade_license_number"] = trade_license_number
+
+        return attrs
 
 
 class CustomerListSerializer(
@@ -139,7 +303,11 @@ class CustomerListSerializer(
 
         fields = (
             "id",
+            "customer_type",
             "customer_name",
+            "company_name",
+            "trn",
+            "trade_license_number",
             "phone_number",
             "email",
             "agent_id",
@@ -199,6 +367,10 @@ class CustomerDetailSerializer(
             "agent_id",
             "documents",
             "quotes",
+            "customer_type",
+            "company_name",
+            "trn",
+            "trade_license_number",
             "created_at",
             "updated_at",
         )

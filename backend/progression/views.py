@@ -2,6 +2,7 @@ from rest_framework import status
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.views import APIView
+from config.pagination import StandardResultsSetPagination
 from rest_framework.exceptions import ValidationError
 from . import services
 from rest_framework.response import Response
@@ -45,15 +46,11 @@ class ProgressionListView(APIView):
             user=request.user,
         )
 
-        return Response(
-            {
-                "success": True,
-                "data": ProgressionSerializer(
-                    queryset,
-                    many=True,
-                ).data,
-            },
-            status=status.HTTP_200_OK,
+        paginator = StandardResultsSetPagination()
+        page = paginator.paginate_queryset(queryset, request, view=self)
+
+        return paginator.get_paginated_response(
+            ProgressionSerializer(page, many=True).data,
         )
 
 

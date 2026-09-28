@@ -279,6 +279,29 @@ class RTARecord(models.Model):
                 name="unique_purchase_rta_per_car",
             ),
         ]
+        
+    @classmethod
+    def allowed_status_transitions(cls):
+            return {
+                cls.Status.DRAFT: {
+                    cls.Status.GENERATED,
+                    cls.Status.CANCELLED,
+                },
+                cls.Status.GENERATED: {
+                    cls.Status.SIGNED,
+                    cls.Status.CANCELLED,
+                },
+                cls.Status.SIGNED: {
+                    cls.Status.SUBMITTED,
+                    cls.Status.CANCELLED,
+                },
+                cls.Status.SUBMITTED: {
+                    cls.Status.COMPLETED,
+                    cls.Status.CANCELLED,
+                },
+                cls.Status.COMPLETED: set(),
+                cls.Status.CANCELLED: set(),
+            }
 
     def __str__(self):
         reference = (
@@ -366,6 +389,8 @@ class RTADocument(models.Model):
     class Meta:
         db_table = "rta_documents"
         ordering = ["-created_at"]
+
+    
 
     def __str__(self):
         return (

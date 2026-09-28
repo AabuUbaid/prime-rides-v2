@@ -3,7 +3,7 @@ from rest_framework import serializers
 
 from accounts.models import User
 
-from .models import Staff
+from .models import Staff, Attendance, Payroll
 
 
 class StaffUserSerializer(serializers.ModelSerializer):
@@ -356,3 +356,227 @@ class StaffPerformanceSerializer(serializers.Serializer):
         max_digits=14,
         decimal_places=2,
     )
+    
+    
+class AttendanceSerializer(serializers.ModelSerializer):
+    staff_name = serializers.CharField(
+        source="staff.name",
+        read_only=True,
+    )
+
+    class Meta:
+        model = Attendance
+        fields = [
+            "id",
+            "staff",
+            "staff_name",
+            "attendance_date",
+            "status",
+            "check_in",
+            "check_out",
+            "notes",
+            "created_at",
+            "updated_at",
+        ]
+        read_only_fields = [
+            "id",
+            "staff_name",
+            "created_at",
+            "updated_at",
+        ]
+
+    def validate(self, attrs):
+        check_in = attrs.get(
+            "check_in",
+            getattr(self.instance, "check_in", None),
+        )
+        check_out = attrs.get(
+            "check_out",
+            getattr(self.instance, "check_out", None),
+        )
+
+        if check_in and check_out and check_out < check_in:
+            raise serializers.ValidationError(
+                {
+                    "check_out": (
+                        "Check-out time cannot be earlier "
+                        "than check-in time."
+                    )
+                }
+            )
+
+        return attrs
+
+
+class AttendanceCreateSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Attendance
+        fields = [
+            "staff",
+            "attendance_date",
+            "status",
+            "check_in",
+            "check_out",
+            "notes",
+        ]
+
+    def validate(self, attrs):
+        check_in = attrs.get("check_in")
+        check_out = attrs.get("check_out")
+        status = attrs.get("status")
+
+        if check_in and check_out and check_out < check_in:
+            raise serializers.ValidationError(
+                {
+                    "check_out": (
+                        "Check-out time cannot be earlier "
+                        "than check-in time."
+                    )
+                }
+            )
+
+        if status in {
+            Attendance.Status.PRESENT,
+            Attendance.Status.HALF_DAY,
+        }:
+            if not check_in or not check_out:
+                raise serializers.ValidationError(
+                    {
+                        "check_in": (
+                            "Check-in and check-out are required "
+                            "for Present or Half Day attendance."
+                        ),
+                        "check_out": (
+                            "Check-in and check-out are required "
+                            "for Present or Half Day attendance."
+                        ),
+                    }
+                )
+
+        if status in {
+            Attendance.Status.ABSENT,
+            Attendance.Status.LEAVE,
+            Attendance.Status.HOLIDAY,
+        }:
+            if check_in or check_out:
+                raise serializers.ValidationError(
+                    {
+                        "check_in": (
+                            "Check-in and check-out should be empty "
+                            "for Absent, Leave, or Holiday."
+                        ),
+                        "check_out": (
+                            "Check-in and check-out should be empty "
+                            "for Absent, Leave, or Holiday."
+                        ),
+                    }
+                )
+
+        return attrs
+
+
+class AttendanceUpdateSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Attendance
+        fields = [
+            "attendance_date",
+            "status",
+            "check_in",
+            "check_out",
+            "notes",
+        ]
+
+    def validate(self, attrs):
+        check_in = attrs.get(
+            "check_in",
+            getattr(self.instance, "check_in", None),
+        )
+        check_out = attrs.get(
+            "check_out",
+            getattr(self.instance, "check_out", None),
+        )
+
+        if check_in and check_out and check_out < check_in:
+            raise serializers.ValidationError(
+                {
+                    "check_out": (
+                        "Check-out time cannot be earlier "
+                        "than check-in time."
+                    )
+                }
+            )
+
+        return attrs
+
+
+class PayrollSerializer(serializers.ModelSerializer):
+    staff_name = serializers.CharField(
+        source="staff.name",
+        read_only=True,
+    )
+
+    class Meta:
+        model = Payroll
+        fields = [
+            "id",
+            "staff",
+            "staff_name",
+            "payroll_year",
+            "payroll_month",
+            "base_salary",
+            "allowances",
+            "deductions",
+            "net_salary",
+            "status",
+            "payment_date",
+            "notes",
+            "created_by",
+            "created_at",
+            "updated_at",
+        ]
+        read_only_fields = [
+            "id",
+            "staff_name",
+            "created_by",
+            "created_at",
+            "updated_at",
+        ]
+
+
+class PayrollCreateSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Payroll
+        fields = [
+            "staff",
+            "payroll_year",
+            "payroll_month",
+            "base_salary",
+            "allowances",
+            "deductions",
+            "net_salary",
+            "status",
+            "payment_date",
+            "notes",
+        ]
+
+    def validate_payroll_month(self, value):
+        if value < 1 or value > 12:
+            raise serializers.ValidationError(
+                "Payroll month must be between 1 and 12."
+            )
+
+        return value
+
+
+class PayrollUpdateSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Payroll
+        fields = [
+            "base_salary",
+            "allowances",
+            "deductions",
+            "net_salary",
+            "status",
+            "payment_date",
+            "notes",
+        ]

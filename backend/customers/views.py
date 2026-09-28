@@ -1,11 +1,14 @@
 from django.shortcuts import get_object_or_404
-
+from .import_services import (
+    import_customers_from_csv,
+)
 from rest_framework import status
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.views import APIView
 from rest_framework.exceptions import ValidationError
-
+from rest_framework.parsers import MultiPartParser, FormParser
+from config.pagination import StandardResultsSetPagination
 from .models import Customer, CustomerDocument
 from .selectors import (
     get_customer,
@@ -43,18 +46,17 @@ class CustomerListCreateView(APIView):
             ),
         )
 
+        paginator = StandardResultsSetPagination()
+        page = paginator.paginate_queryset(queryset, request, view=self)
+
         serializer = CustomerListSerializer(
-            queryset,
+            page,
             many=True,
         )
 
-        return Response(
-            {
-                "success": True,
-                "data": serializer.data,
-            },
-            status=status.HTTP_200_OK,
-        )
+        response = paginator.get_paginated_response(serializer.data)
+        response.status_code = status.HTTP_200_OK
+        return response
 
     def post(
         self,
@@ -69,14 +71,26 @@ class CustomerListCreateView(APIView):
         )
 
         result = create_customer(
-            customer_name=serializer.validated_data[
-                "customer_name"
-            ],
-            phone_number=serializer.validated_data[
-                "phone_number"
-            ],
+            customer_name=serializer.validated_data["customer_name"],
+            phone_number=serializer.validated_data["phone_number"],
             email=serializer.validated_data.get(
                 "email",
+                "",
+            ),
+            customer_type=serializer.validated_data.get(
+                "customer_type",
+                Customer.CustomerType.INDIVIDUAL,
+            ),
+            company_name=serializer.validated_data.get(
+                "company_name",
+                "",
+            ),
+            trn=serializer.validated_data.get(
+                "trn",
+                "",
+            ),
+            trade_license_number=serializer.validated_data.get(
+                "trade_license_number",
                 "",
             ),
             agent=request.user,
@@ -318,6 +332,64 @@ class CustomerDocumentDetailView(
                 "message": (
                     "Customer document deleted successfully."
                 ),
+            },
+            status=status.HTTP_200_OK,
+        )
+        
+class CustomerCSVImportView(APIView):
+    permission_classes = [
+        IsAuthenticated,
+    ]
+
+    parser_classes = [
+        MultiPartParser,
+        FormParser,
+    ]
+
+    def post(
+        self,
+        request,
+    ):
+        uploaded_file = request.FILES.get(
+            "file"
+        )
+
+        if uploaded_file is None:
+            return Response(
+                {
+                    "success": False,
+                    "message": (
+                        "CSV file is required."
+                    ),
+                },
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        if not uploaded_file.name.lower().endswith(
+            ".csv"
+        ):
+            return Response(
+                {
+                    "success": False,
+                    "message": (
+                        "Only CSV files are supported."
+                    ),
+                },
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        result = import_customers_from_csv(
+            uploaded_file=uploaded_file,
+            agent=request.user,
+        )
+
+        return Response(
+            {
+                "success": True,
+                "message": (
+                    "Customer CSV import completed."
+                ),
+                "data": result,
             },
             status=status.HTTP_200_OK,
         )

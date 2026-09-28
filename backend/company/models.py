@@ -1,5 +1,8 @@
 from django.db import models
 
+import uuid
+from django.conf import settings
+from django.core.validators import FileExtensionValidator
 
 class Company(models.Model):
     legal_entity_name = models.CharField(
@@ -92,3 +95,40 @@ class CompanyBranch(models.Model):
 
     def __str__(self):
         return f"{self.company.legal_entity_name} - {self.name}"
+    
+    
+class CompanyDocument(models.Model):
+    company = models.ForeignKey(
+        Company,
+        on_delete=models.PROTECT,
+        related_name="documents",
+    )
+
+    name = models.CharField(
+        max_length=255,
+    )
+
+    file = models.FileField(
+        upload_to="company/documents/",
+    )
+
+    uploaded_by = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.PROTECT,
+        related_name="uploaded_company_documents",
+    )
+
+    uploaded_at = models.DateTimeField(
+        auto_now_add=True,
+    )
+
+    class Meta:
+        db_table = "company_documents"
+        ordering = ["-uploaded_at"]
+        indexes = [
+            models.Index(fields=["company"]),
+            models.Index(fields=["uploaded_at"]),
+        ]
+
+    def __str__(self):
+        return self.name

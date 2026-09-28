@@ -6,6 +6,7 @@ from .views import (
     RTADocumentListCreateView,
     RTADocumentDownloadView,
     RTADocumentDeleteView,
+    RTAGeneratedDocumentView,
 )
 
 
@@ -15,7 +16,13 @@ urlpatterns = [
         RTARecordListCreateView.as_view(),
         name="rta-list-create",
     ),
-
+    
+    path(
+        "<int:pk>/generated-document/",
+        RTAGeneratedDocumentView.as_view(),
+        name="rta-generated-document",
+    ),
+    
     path(
         "<int:pk>/",
         RTAMasterUpdateView.as_view(),
@@ -39,4 +46,6 @@ urlpatterns = [
         RTADocumentDeleteView.as_view(),
         name="rta-document-delete",
     ),
+    
+    
 ]

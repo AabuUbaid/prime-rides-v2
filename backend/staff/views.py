@@ -4,8 +4,9 @@ from rest_framework.exceptions import NotFound
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.views import APIView
-
-from .models import Staff
+from config.pagination import StandardResultsSetPagination
+from django.shortcuts import get_object_or_404
+from .models import Staff, Attendance, Payroll
 from .permissions import (
     IsMaster,
     IsMasterOrAdmin,
@@ -22,7 +23,13 @@ from .serializers import (
     UserAccessCreateSerializer,
     UserAccessSerializer,
     UserAccessUpdateSerializer,
-    StaffPerformanceSerializer
+    StaffPerformanceSerializer,
+    AttendanceSerializer,
+    AttendanceCreateSerializer,
+    AttendanceUpdateSerializer,
+    PayrollSerializer,
+    PayrollCreateSerializer,
+    PayrollUpdateSerializer,
 )
 from .services import (
     create_staff,
@@ -68,15 +75,11 @@ class StaffListCreateView(APIView):
             ),
         )
 
-        return Response(
-            {
-                "success": True,
-                "data": StaffSerializer(
-                    staff,
-                    many=True,
-                ).data,
-            },
-            status=status.HTTP_200_OK,
+        paginator = StandardResultsSetPagination()
+        page = paginator.paginate_queryset(staff, request, view=self)
+
+        return paginator.get_paginated_response(
+            StaffSerializer(page, many=True).data,
         )
 
     def post(self, request):
@@ -248,16 +251,14 @@ class UserAccessListCreateView(APIView):
                 role=role,
             )
 
-        return Response(
-            {
-                "success": True,
-                "data": UserAccessSerializer(
-                    queryset,
-                    many=True,
-                ).data,
-            },
-            status=status.HTTP_200_OK,
+        paginator = StandardResultsSetPagination()
+        page = paginator.paginate_queryset(queryset, request, view=self)
+
+        response = paginator.get_paginated_response(
+            UserAccessSerializer(page, many=True).data,
         )
+        response.status_code = status.HTTP_200_OK
+        return response
 
     def post(self, request):
         serializer = UserAccessCreateSerializer(
@@ -467,3 +468,204 @@ class StaffPerformanceView(APIView):
         )
 
         return Response(serializer.data)
+    
+class AttendanceListCreateView(APIView):
+    """
+    List and create staff attendance records.
+    """
+
+    permission_classes = [IsMasterOrAdmin]
+
+    def get(self, request):
+        queryset = Attendance.objects.select_related("staff").all()
+
+        staff_id = request.query_params.get("staff")
+        date_from = request.query_params.get("date_from")
+        date_to = request.query_params.get("date_to")
+        status = request.query_params.get("status")
+
+        if staff_id:
+            queryset = queryset.filter(staff_id=staff_id)
+
+        if date_from:
+            queryset = queryset.filter(
+                attendance_date__gte=date_from
+            )
+
+        if date_to:
+            queryset = queryset.filter(
+                attendance_date__lte=date_to
+            )
+
+        if status:
+            queryset = queryset.filter(status=status)
+
+        paginator = StandardResultsSetPagination()
+        page = paginator.paginate_queryset(queryset, request, view=self)
+        return paginator.get_paginated_response(
+            AttendanceSerializer(page, many=True).data,
+        )
+
+    def post(self, request):
+        serializer = AttendanceCreateSerializer(
+            data=request.data
+        )
+
+        serializer.is_valid(raise_exception=True)
+
+        attendance = serializer.save()
+
+        return Response(
+            AttendanceSerializer(attendance).data,
+            status=status.HTTP_201_CREATED,
+        )
+
+
+class AttendanceDetailView(APIView):
+    """
+    Retrieve, update, or delete an attendance record.
+    """
+
+    permission_classes = [IsMasterOrAdmin]
+
+    def get_object(self, pk):
+        return get_object_or_404(
+            Attendance.objects.select_related("staff"),
+            pk=pk,
+        )
+
+    def get(self, request, pk):
+        attendance = self.get_object(pk)
+
+        serializer = AttendanceSerializer(attendance)
+
+        return Response(serializer.data)
+
+    def patch(self, request, pk):
+        attendance = self.get_object(pk)
+
+        serializer = AttendanceUpdateSerializer(
+            attendance,
+            data=request.data,
+            partial=True,
+        )
+
+        serializer.is_valid(raise_exception=True)
+
+        attendance = serializer.save()
+
+        return Response(
+            AttendanceSerializer(attendance).data
+        )
+
+    def delete(self, request, pk):
+        attendance = self.get_object(pk)
+
+        attendance.delete()
+
+        return Response(
+            status=status.HTTP_204_NO_CONTENT
+        )
+
+
+class PayrollListCreateView(APIView):
+    """
+    List and create monthly payroll records.
+    """
+
+    permission_classes = [IsMasterOrAdmin]
+
+    def get(self, request):
+        queryset = Payroll.objects.select_related("staff").all()
+
+        staff_id = request.query_params.get("staff")
+        year = request.query_params.get("year")
+        month = request.query_params.get("month")
+        payroll_status = request.query_params.get("status")
+
+        if staff_id:
+            queryset = queryset.filter(staff_id=staff_id)
+
+        if year:
+            queryset = queryset.filter(
+                payroll_year=year
+            )
+
+        if month:
+            queryset = queryset.filter(
+                payroll_month=month
+            )
+
+        if payroll_status:
+            queryset = queryset.filter(
+                status=payroll_status
+            )
+
+        paginator = StandardResultsSetPagination()
+        page = paginator.paginate_queryset(queryset, request, view=self)
+        return paginator.get_paginated_response(
+            PayrollSerializer(page, many=True).data,
+        )
+
+    def post(self, request):
+        serializer = PayrollCreateSerializer(
+            data=request.data
+        )
+
+        serializer.is_valid(raise_exception=True)
+
+        payroll = serializer.save(
+            created_by=request.user
+        )
+
+        return Response(
+            PayrollSerializer(payroll).data,
+            status=status.HTTP_201_CREATED,
+        )
+
+
+class PayrollDetailView(APIView):
+    """
+    Retrieve, update, or delete a payroll record.
+    """
+
+    permission_classes = [IsMasterOrAdmin]
+
+    def get_object(self, pk):
+        return get_object_or_404(
+            Payroll.objects.select_related("staff"),
+            pk=pk,
+        )
+
+    def get(self, request, pk):
+        payroll = self.get_object(pk)
+
+        serializer = PayrollSerializer(payroll)
+
+        return Response(serializer.data)
+
+    def patch(self, request, pk):
+        payroll = self.get_object(pk)
+
+        serializer = PayrollUpdateSerializer(
+            payroll,
+            data=request.data,
+            partial=True,
+        )
+
+        serializer.is_valid(raise_exception=True)
+
+        payroll = serializer.save()
+
+        return Response(
+            PayrollSerializer(payroll).data
+        )
+
+    def delete(self, request, pk):
+        payroll = self.get_object(pk)
+
+        payroll.delete()
+
+        return Response(
+            status=status.HTTP_204_NO_CONTENT
+        )
