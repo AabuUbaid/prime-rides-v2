@@ -35,6 +35,11 @@ urlpatterns = [
         name="company-branch-detail",
     ),
     path(
+        "documents/<int:document_id>/download/",
+        CompanyDocumentDetailView.as_view(),
+        {"download": True},
+        ),
+    path(
         "documents/",
         CompanyDocumentListCreateView.as_view(),
         name="company-document-list-create",

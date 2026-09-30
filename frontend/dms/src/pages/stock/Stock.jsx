@@ -16,9 +16,12 @@ import {
   getCarBrands,
   getDashboardSummary,
   bulkDeleteCars,
+  deleteAllCars,
   bulkImportCars,
 } from "../../api/inventory";
+import { getBranches, getCompanies } from "../../api/company";
 import { resolveBackendUrl } from "../../api/url";
+import { getInventoryStockOutputFields } from "../../utils/inventoryStockOutput";
 
 import InventoryVehiclePrintTemplate from "../../components/printing/templates/InventoryVehiclePrintTemplate";
 import { printInventoryVehicle } from "../../utils/print";
@@ -32,6 +35,7 @@ const INITIAL_FILTERS = {
   vehicle_type: "",
   source: "",
   supplier: "",
+  branch: "",
   year: "",
   highlight_public: "",
   min_price: "",
@@ -96,7 +100,10 @@ function Stock() {
   const { user } = useAuth();
   const isMaster = user?.role === "MASTER";
   const [brands, setBrands] = useState([]);
+  const [branches, setBranches] = useState([]);
   const [cars, setCars] = useState([]);
+  const [company, setCompany] = useState(null);
+  const [companyLoading, setCompanyLoading] = useState(true);
   const [loading, setLoading] = useState(true);
 
   const [search, setSearch] = useState("");
@@ -125,10 +132,23 @@ function Stock() {
   const [selectedCars, setSelectedCars] = useState([]);
   const [shareCar, setShareCar] = useState(null);
   const [shareImageIndex, setShareImageIndex] = useState(0);
+  const [shareOutputFields, setShareOutputFields] = useState([]);
+  const [selectedShareOutputFields, setSelectedShareOutputFields] = useState(
+    [],
+  );
   const [printCar, setPrintCar] = useState(null);
-  const [printStock, setPrintStock] = useState(false);
+
+  const [showStockOutputModal, setShowStockOutputModal] = useState(false);
+  const [stockOutputFields, setStockOutputFields] = useState([]);
+  const [selectedStockOutputFields, setSelectedStockOutputFields] = useState(
+    [],
+  );
+
+  const [printStockConfig, setPrintStockConfig] = useState(null);
+  const [printingStock, setPrintingStock] = useState(false);
 
   const [refreshKey, setRefreshKey] = useState(0);
+  const [deletingAll, setDeletingAll] = useState(false);
 
   const [showImportModal, setShowImportModal] = useState(false);
   const [selectedImportFile, setSelectedImportFile] = useState(null);
@@ -174,6 +194,66 @@ function Stock() {
   }, []);
 
   useEffect(() => {
+    let cancelled = false;
+
+    async function loadCompany() {
+      try {
+        setCompanyLoading(true);
+
+        const response = await getCompanies();
+
+        const data = response?.data ?? response;
+
+        if (!cancelled) {
+          setCompany(data && typeof data === "object" ? data : null);
+        }
+      } catch (error) {
+        if (!cancelled) {
+          console.error("Failed to load company information:", error);
+          setCompany(null);
+        }
+      } finally {
+        if (!cancelled) {
+          setCompanyLoading(false);
+        }
+      }
+    }
+
+    loadCompany();
+
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  useEffect(() => {
+    if (!isMaster) {
+      setBranches([]);
+      return;
+    }
+
+    async function loadBranches() {
+      try {
+        const response = await getBranches();
+
+        setBranches(
+          Array.isArray(response)
+            ? response
+            : Array.isArray(response?.data)
+              ? response.data
+              : [],
+        );
+      } catch (error) {
+        console.error("Failed to load company branches:", error);
+
+        setBranches([]);
+      }
+    }
+
+    loadBranches();
+  }, [isMaster]);
+
+  useEffect(() => {
     const timer = setTimeout(() => {
       setSearchQuery(search);
       setPage(1);
@@ -212,7 +292,7 @@ function Stock() {
         }
 
         setCars(response.data || []);
-        setTotalCount(response.count || 0);
+        setTotalCount(response.pagination?.count || 0);
       } catch (error) {
         if (!cancelled) {
           console.error("Failed to load inventory:", error);
@@ -253,25 +333,94 @@ function Stock() {
       .map((image) => getImageUrl(image.image));
   }
 
-  async function handleShareVehicle(car) {
-    const shareText = [
+  function formatShareFieldValue(car, fieldKey) {
+    switch (fieldKey) {
+      case "stock_id":
+        return car.stock_id ? `Stock ID: ${car.stock_id}` : null;
+
+      case "make":
+        return car.make ? `Make: ${car.make}` : null;
+
+      case "model":
+        return car.model ? `Model: ${car.model}` : null;
+
+      case "year":
+        return car.year ? `Year: ${car.year}` : null;
+
+      case "colour":
+        return car.colour ? `Colour: ${car.colour}` : null;
+
+      case "mileage":
+        return car.mileage !== null &&
+          car.mileage !== undefined &&
+          car.mileage !== ""
+          ? `Mileage: ${Number(car.mileage).toLocaleString("en-AE")} km`
+          : null;
+
+      case "asking_price":
+        return car.status === "booked"
+          ? null
+          : car.asking_price !== null &&
+              car.asking_price !== undefined &&
+              car.asking_price !== ""
+            ? `Asking Price: AED ${Number(car.asking_price).toLocaleString(
+                "en-AE",
+              )}`
+            : null;
+
+      case "status":
+        return car.status ? `Status: ${getStatusLabel(car.status)}` : null;
+
+      case "chassis_number":
+        return car.chassis_number ? `Chassis No: ${car.chassis_number}` : null;
+
+      case "date_added":
+        return car.date_added || car.created_at
+          ? `Date Added: ${new Date(
+              car.date_added || car.created_at,
+            ).toLocaleDateString("en-GB")}`
+          : null;
+
+      case "least_selling_price":
+        return car.least_selling_price !== null &&
+          car.least_selling_price !== undefined &&
+          car.least_selling_price !== ""
+          ? `Least Selling Price: AED ${Number(
+              car.least_selling_price,
+            ).toLocaleString("en-AE")}`
+          : null;
+
+      case "engine_number":
+        return car.engine_number ? `Engine No: ${car.engine_number}` : null;
+
+      case "expected_arrival":
+        return car.expected_arrival
+          ? `Expected Arrival: ${new Date(
+              car.expected_arrival,
+            ).toLocaleDateString("en-GB")}`
+          : null;
+
+      default:
+        return null;
+    }
+  }
+
+  function buildShareText(car, selectedFields) {
+    return [
       `${car.make || ""} ${car.model || ""}`.trim(),
-      car.variant ? car.variant : null,
-      car.vehicle_type ? getVehicleTypeLabel(car.vehicle_type) : null,
-      car.year ? `Year: ${car.year}` : null,
-      car.colour ? `Colour: ${car.colour}` : null,
-      car.mileage !== null && car.mileage !== undefined
-        ? `Mileage: ${Number(car.mileage).toLocaleString("en-AE")} km`
-        : null,
-      car.status ? `Status: ${getStatusLabel(car.status)}` : null,
-      car.status === "booked"
-        ? null
-        : car.asking_price
-          ? `Price: AED ${Number(car.asking_price).toLocaleString("en-AE")}`
-          : null,
-    ]
-      .filter(Boolean)
-      .join("\n");
+      ...selectedFields
+        .map((fieldKey) => formatShareFieldValue(car, fieldKey))
+        .filter(Boolean),
+    ].join("\n");
+  }
+
+  async function handleShareVehicle(car) {
+    if (selectedShareOutputFields.length === 0) {
+      window.alert("Select at least one field to share.");
+      return;
+    }
+
+    const shareText = buildShareText(car, selectedShareOutputFields);
 
     try {
       if (navigator.share) {
@@ -284,7 +433,7 @@ function Stock() {
       }
 
       await navigator.clipboard.writeText(shareText);
-      alert("Vehicle details copied to clipboard.");
+      window.alert("Vehicle details copied to clipboard.");
     } catch (error) {
       if (error?.name !== "AbortError") {
         console.error("Vehicle sharing failed:", error);
@@ -299,16 +448,158 @@ function Stock() {
     }, 0);
   }
 
-  function handlePrintStock() {
-    setPrintStock(true);
+  function openStockOutputModal() {
+    const allowedFields = getInventoryStockOutputFields(user?.role);
 
-    setTimeout(() => {
-      window.print();
+    setStockOutputFields(allowedFields);
+    setSelectedStockOutputFields(allowedFields.map((field) => field.key));
+    setShowStockOutputModal(true);
+  }
+
+  function toggleStockOutputField(fieldKey) {
+    setSelectedStockOutputFields((current) =>
+      current.includes(fieldKey)
+        ? current.filter((key) => key !== fieldKey)
+        : [...current, fieldKey],
+    );
+  }
+
+  function selectAllStockOutputFields() {
+    setSelectedStockOutputFields(stockOutputFields.map((field) => field.key));
+  }
+
+  function clearAllStockOutputFields() {
+    setSelectedStockOutputFields([]);
+  }
+
+  function openVehicleShare(car) {
+    const shareExcludedFields = new Set([
+      "purchase_cost",
+      "total_cost",
+      "expenses_total",
+      "est_margin",
+      "days_in_stock",
+      "source",
+      "notes",
+    ]);
+
+    const allowedFields = getInventoryStockOutputFields(user?.role).filter(
+      (field) => !shareExcludedFields.has(field.key),
+    );
+
+    setShareOutputFields(allowedFields);
+    setSelectedShareOutputFields(allowedFields.map((field) => field.key));
+
+    setShareCar(car);
+    setShareImageIndex(0);
+  }
+
+  function toggleShareOutputField(fieldKey) {
+    setSelectedShareOutputFields((current) =>
+      current.includes(fieldKey)
+        ? current.filter((key) => key !== fieldKey)
+        : [...current, fieldKey],
+    );
+  }
+
+  function selectAllShareOutputFields() {
+    setSelectedShareOutputFields(shareOutputFields.map((field) => field.key));
+  }
+
+  function clearAllShareOutputFields() {
+    setSelectedShareOutputFields([]);
+  }
+
+  async function handleGenerateStockPrint() {
+    if (selectedStockOutputFields.length === 0) {
+      window.alert("Select at least one field to print.");
+      return;
+    }
+
+    if (!company) {
+      window.alert("Company information is not available.");
+      return;
+    }
+
+    try {
+      setPrintingStock(true);
+
+      const printPageSize = 100;
+      let currentPage = 1;
+      let allCars = [];
+
+      while (true) {
+        const response = await getCars({
+          search: searchQuery,
+          ...appliedFilters,
+          ordering,
+          page: currentPage,
+          page_size: printPageSize,
+        });
+
+        const pageCars = Array.isArray(response?.data)
+          ? response.data
+          : Array.isArray(response?.results)
+            ? response.results
+            : Array.isArray(response)
+              ? response
+              : [];
+
+        if (pageCars.length === 0) {
+          break;
+        }
+
+        allCars = [...allCars, ...pageCars];
+
+        if (!response?.pagination?.next) {
+          break;
+        }
+
+        currentPage += 1;
+      }
+
+      if (!allCars.length) {
+        window.alert("No inventory vehicles are available for printing.");
+        return;
+      }
+
+      const previousTitle = document.title;
+
+      const companyName = company.legal_entity_name || "Company";
+
+      const printDate = new Date()
+        .toLocaleDateString("en-GB")
+        .replace(/\//g, "-");
+
+      document.title = `${companyName} - Stock List - ${printDate}`;
+
+      const restoreTitle = () => {
+        document.title = previousTitle;
+        window.removeEventListener("afterprint", restoreTitle);
+      };
+
+      window.addEventListener("afterprint", restoreTitle);
+
+      setShowStockOutputModal(false);
+
+      setPrintStockConfig({
+        cars: allCars,
+        selectedFields: [...selectedStockOutputFields],
+        company,
+      });
 
       setTimeout(() => {
-        setPrintStock(false);
-      }, 100);
-    }, 0);
+        window.print();
+      }, 150);
+    } catch (error) {
+      console.error("Failed to prepare stock print:", error);
+
+      window.alert(
+        error?.message || "Unable to prepare the stock list for printing.",
+      );
+    } finally {
+      setPrintingStock(false);
+    }
   }
 
   async function handleBulkDelete() {
@@ -338,6 +629,52 @@ function Stock() {
     } catch (error) {
       console.error("Bulk vehicle deletion failed:", error);
       alert("Failed to delete selected vehicles.");
+    }
+  }
+
+  async function handleDeleteAllCars() {
+    if (!isMaster || deletingAll) {
+      return;
+    }
+
+    const confirmed = window.confirm(
+      "Delete ALL inventory vehicles?\n\nThis is an irreversible operation. All vehicles that are not protected by existing backend relationships will be deleted.\n\nContinue?",
+    );
+
+    if (!confirmed) {
+      return;
+    }
+
+    try {
+      setDeletingAll(true);
+
+      const response = await deleteAllCars();
+
+      if (!response?.success) {
+        throw new Error(response?.message || "Unable to delete all inventory.");
+      }
+
+      const deletedCount = Number(response?.deleted_count || 0);
+
+      setSelectedCars([]);
+      setPage(1);
+      setRefreshKey((current) => current + 1);
+
+      window.alert(
+        response?.message ||
+          `Inventory cleared successfully. ${deletedCount} vehicle(s) deleted.`,
+      );
+    } catch (error) {
+      console.error("Delete all inventory failed:", error);
+
+      const backendMessage =
+        error?.cause?.message ||
+        error?.message ||
+        "Unable to delete all inventory.";
+
+      window.alert(backendMessage);
+    } finally {
+      setDeletingAll(false);
     }
   }
 
@@ -480,13 +817,24 @@ function Stock() {
 
           <div className="flex flex-wrap gap-2">
             {isMaster && (
-              <Button
-                type="button"
-                variant="primary"
-                onClick={() => setShowImportModal(true)}
-              >
-                Bulk Import
-              </Button>
+              <>
+                <Button
+                  type="button"
+                  variant="primary"
+                  onClick={() => setShowImportModal(true)}
+                >
+                  Bulk Import
+                </Button>
+
+                <Button
+                  type="button"
+                  variant="danger"
+                  onClick={handleDeleteAllCars}
+                  disabled={deletingAll || loading}
+                >
+                  {deletingAll ? "Deleting All..." : "Delete All Inventory"}
+                </Button>
+              </>
             )}
           </div>
         </div>
@@ -831,6 +1179,31 @@ function Stock() {
                     />
                   </div>
 
+                  <div>
+                    <label
+                      htmlFor="branch"
+                      className="mb-1.5 block text-[11px] font-bold uppercase tracking-[0.08em] text-slate-500"
+                    >
+                      Branch
+                    </label>
+
+                    <select
+                      id="branch"
+                      name="branch"
+                      value={filters.branch}
+                      onChange={handleFilterChange}
+                      className="h-10 w-full rounded-xl border border-slate-200 bg-white px-3 text-sm text-slate-800 outline-none transition placeholder:text-slate-400 focus:border-amber-400 focus:ring-2 focus:ring-amber-400/15"
+                    >
+                      <option value="">All Branches</option>
+
+                      {branches.map((branch) => (
+                        <option key={branch.id} value={branch.id}>
+                          {branch.name}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+
                   {/* Highlight */}
                   <div>
                     <label
@@ -1023,10 +1396,10 @@ function Stock() {
                 type="button"
                 variant="secondary"
                 icon={Printer}
-                disabled={cars.length === 0}
-                onClick={handlePrintStock}
+                disabled={cars.length === 0 || companyLoading || !company}
+                onClick={openStockOutputModal}
               >
-                Print Stock
+                {companyLoading ? "Loading Company..." : "Print Stock"}
               </Button>
 
               <select
@@ -1242,8 +1615,7 @@ function Stock() {
                         className="h-8 w-8 !shrink-0 !p-0"
                         title="Share vehicle"
                         onClick={() => {
-                          setShareCar(car);
-                          setShareImageIndex(0);
+                          openVehicleShare(car);
                         }}
                       >
                         <span className="sr-only">Share</span>
@@ -1414,8 +1786,7 @@ function Stock() {
                               size="sm"
                               icon={Share2Icon}
                               onClick={() => {
-                                setShareCar(car);
-                                setShareImageIndex(0);
+                                openVehicleShare(car);
                               }}
                             >
                               <span className="sr-only">Share</span>
@@ -1524,9 +1895,120 @@ function Stock() {
         )}
       </div>
 
+      {showStockOutputModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/45 p-4 backdrop-blur-sm">
+          <div className="w-full max-w-2xl overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-2xl">
+            <div className="flex items-center justify-between border-b border-slate-200 px-5 py-4">
+              <div>
+                <h2 className="text-lg font-semibold text-slate-900">
+                  Customize Stock Output
+                </h2>
+
+                <p className="mt-1 text-sm text-slate-500">
+                  Select the fields to include in the stock print/share output.
+                </p>
+              </div>
+
+              <div className="flex items-center gap-2">
+                <button
+                  type="button"
+                  onClick={() => setShowStockOutputModal(false)}
+                  className="rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm font-semibold text-slate-700 transition hover:bg-slate-50"
+                >
+                  Cancel
+                </button>
+
+                <button
+                  type="button"
+                  onClick={handleGenerateStockPrint}
+                  disabled={
+                    selectedStockOutputFields.length === 0 || printingStock
+                  }
+                  className="rounded-xl bg-slate-900 px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-slate-800 disabled:cursor-not-allowed disabled:opacity-50"
+                >
+                  <Printer size={16} className="mr-2 inline-block" />
+                  {printingStock ? "Preparing..." : "Generate & Print"}
+                </button>
+              </div>
+            </div>
+
+            <div className="p-5">
+              <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
+                <p className="text-xs font-semibold uppercase tracking-[0.08em] text-slate-500">
+                  Available Fields
+                </p>
+
+                <div className="flex items-center gap-2">
+                  <button
+                    type="button"
+                    onClick={selectAllStockOutputFields}
+                    className="rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-xs font-semibold text-slate-700 hover:bg-slate-50"
+                  >
+                    Select All
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={clearAllStockOutputFields}
+                    className="rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-xs font-semibold text-slate-700 hover:bg-slate-50"
+                  >
+                    Clear All
+                  </button>
+                </div>
+              </div>
+
+              <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
+                {stockOutputFields.map((field) => {
+                  const checked = selectedStockOutputFields.includes(field.key);
+
+                  return (
+                    <label
+                      key={field.key}
+                      className="flex cursor-pointer items-center gap-3 rounded-xl border border-slate-200 bg-slate-50 px-3 py-3 transition hover:bg-slate-100"
+                    >
+                      <input
+                        type="checkbox"
+                        checked={checked}
+                        onChange={() => toggleStockOutputField(field.key)}
+                        className="h-4 w-4 rounded border-slate-300 text-amber-500 focus:ring-amber-400"
+                      />
+
+                      <span className="text-sm font-medium text-slate-700">
+                        {field.label}
+                      </span>
+                    </label>
+                  );
+                })}
+              </div>
+
+              {!stockOutputFields.length && (
+                <div className="rounded-xl border border-dashed border-slate-300 bg-slate-50 px-4 py-8 text-center text-sm text-slate-500">
+                  No stock output fields are available for your role.
+                </div>
+              )}
+
+              <div className="mt-5 flex items-center justify-between border-t border-slate-200 pt-4">
+                <p className="text-xs text-slate-500">
+                  {selectedStockOutputFields.length} of{" "}
+                  {stockOutputFields.length} fields selected
+                </p>
+
+                <button
+                  type="button"
+                  onClick={() => setShowStockOutputModal(false)}
+                  className="rounded-xl bg-slate-900 px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-slate-800"
+                >
+                  Close
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
       {shareCar && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/45 backdrop-blur-sm p-4">
-          <div className="w-full max-w-lg overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-2xl">
+        <div className="fixed inset-0 z-50 flex items-start justify-center overflow-y-auto bg-slate-950/45 p-3 backdrop-blur-sm sm:items-center sm:p-4">
+          <div className="my-3 flex max-h-[calc(100dvh-1.5rem)] w-full max-w-2xl flex-col overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-2xl sm:my-4 sm:max-h-[calc(100dvh-2rem)]">
             {(() => {
               const shareImages = getShareImages(shareCar);
               const currentImage =
@@ -1535,7 +2017,7 @@ function Stock() {
               return (
                 <>
                   {/* Header */}
-                  <div className="flex items-center justify-between border-b border-slate-100 px-5 py-4">
+                  <div className="flex shrink-0 items-center justify-between gap-3 border-b border-slate-100 px-4 py-3 sm:px-5 sm:py-4">
                     <div>
                       <h2 className="text-lg font-semibold text-gray-900">
                         {shareCar.make} {shareCar.model}
@@ -1558,7 +2040,7 @@ function Stock() {
 
                   {/* Photo carousel */}
                   <div className="relative bg-gray-100">
-                    <div className="h-72 w-full overflow-hidden">
+                    <div className="h-48 w-full overflow-hidden sm:h-56 md:h-60 lg:h-64">
                       {currentImage ? (
                         <img
                           src={currentImage}
@@ -1622,70 +2104,80 @@ function Stock() {
                     )}
                   </div>
 
-                  {/* Vehicle information */}
-                  <div className="space-y-4 p-5">
-                    <div className="grid grid-cols-2 gap-3">
-                      <div className="rounded-xl border border-slate-100 bg-slate-50 p-3">
-                        <p className="text-xs text-gray-500">Vehicle Type</p>
-                        <p className="mt-1 text-sm font-semibold text-gray-900">
-                          {getVehicleTypeLabel(shareCar.vehicle_type)}
+                  {/* Share customization */}
+                  <div className="min-h-0 flex-1 overflow-y-auto space-y-4 p-4 sm:p-5">
+                    <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                      <div>
+                        <h3 className="text-sm font-semibold text-gray-900">
+                          Customize Shared Details
+                        </h3>
+
+                        <p className="mt-1 text-xs text-gray-500">
+                          Select the fields to include when sharing this
+                          vehicle.
                         </p>
                       </div>
 
-                      <div className="rounded-lg bg-gray-50 p-3">
-                        <p className="text-xs text-gray-500">Year</p>
-                        <p className="mt-1 text-sm font-semibold text-gray-900">
-                          {shareCar.year || "-"}
-                        </p>
-                      </div>
+                      <div className="flex items-center gap-2">
+                        <button
+                          type="button"
+                          onClick={selectAllShareOutputFields}
+                          className="rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-xs font-semibold text-slate-700 hover:bg-slate-50"
+                        >
+                          All
+                        </button>
 
-                      <div className="rounded-lg bg-gray-50 p-3">
-                        <p className="text-xs text-gray-500">Mileage</p>
-                        <p className="mt-1 text-sm font-semibold text-gray-900">
-                          {shareCar.mileage !== null &&
-                          shareCar.mileage !== undefined
-                            ? `${Number(shareCar.mileage).toLocaleString("en-AE")} km`
-                            : "-"}
-                        </p>
-                      </div>
-
-                      <div className="rounded-lg bg-gray-50 p-3">
-                        <p className="text-xs text-gray-500">Colour</p>
-                        <p className="mt-1 text-sm font-semibold text-gray-900">
-                          {shareCar.colour || "-"}
-                        </p>
+                        <button
+                          type="button"
+                          onClick={clearAllShareOutputFields}
+                          className="rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-xs font-semibold text-slate-700 hover:bg-slate-50"
+                        >
+                          Clear
+                        </button>
                       </div>
                     </div>
 
-                    {/* Status */}
-                    <div className="rounded-xl border border-gray-200 p-4">
-                      <div className="flex items-center justify-between">
-                        <span className="text-sm text-gray-500">Status</span>
+                    <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
+                      {shareOutputFields.map((field) => {
+                        const checked = selectedShareOutputFields.includes(
+                          field.key,
+                        );
 
-                        <span className="rounded-full bg-gray-900 px-3 py-1 text-xs font-semibold text-white">
-                          {getStatusLabel(shareCar.status)}
-                        </span>
-                      </div>
+                        return (
+                          <label
+                            key={field.key}
+                            className="flex cursor-pointer items-center gap-3 rounded-xl border border-slate-200 bg-slate-50 px-3 py-3 transition hover:bg-slate-100"
+                          >
+                            <input
+                              type="checkbox"
+                              checked={checked}
+                              onChange={() => toggleShareOutputField(field.key)}
+                              className="h-4 w-4 rounded border-slate-300 text-amber-500 focus:ring-amber-400"
+                            />
+
+                            <span className="text-sm font-medium text-slate-700">
+                              {field.label}
+                            </span>
+                          </label>
+                        );
+                      })}
                     </div>
 
-                    {/* Price */}
-                    {shareCar.status !== "booked" && (
-                      <div className="rounded-xl border border-gray-200 bg-gray-50 p-4">
-                        <p className="text-xs text-gray-500">Asking Price</p>
+                    <div className="rounded-xl border border-slate-200 bg-slate-50 p-4">
+                      <p className="text-xs font-semibold uppercase tracking-wide text-slate-500">
+                        Preview
+                      </p>
 
-                        <p className="mt-1 text-2xl font-bold text-gray-900">
-                          AED{" "}
-                          {Number(shareCar.asking_price || 0).toLocaleString(
-                            "en-AE",
-                          )}
-                        </p>
+                      <div className="mt-3 max-h-48 overflow-y-auto whitespace-pre-line break-words rounded-lg bg-white p-4 text-sm leading-6 text-slate-700 sm:max-h-56">
+                        {buildShareText(shareCar, selectedShareOutputFields)}
                       </div>
-                    )}
+                    </div>
 
                     <button
                       type="button"
                       onClick={() => handleShareVehicle(shareCar)}
-                      className="flex w-full items-center justify-center gap-2 rounded-xl bg-gray-900 px-4 py-3 text-sm font-semibold text-white transition hover:bg-gray-800"
+                      disabled={selectedShareOutputFields.length === 0}
+                      className="sticky bottom-0 flex w-full items-center justify-center gap-2 rounded-xl bg-gray-900 px-4 py-3 text-sm font-semibold text-white shadow-lg transition hover:bg-gray-800 disabled:cursor-not-allowed disabled:opacity-50 sm:static"
                     >
                       <Share2Icon size={18} />
                       Share Vehicle
@@ -1766,9 +2258,13 @@ function Stock() {
         </div>
       )}
 
-      {printStock && (
+      {printStockConfig && (
         <div className="inventory-stock-print-wrapper">
-          <InventoryStockPrintTemplate cars={cars} />
+          <InventoryStockPrintTemplate
+            cars={printStockConfig.cars}
+            selectedFields={printStockConfig.selectedFields}
+            company={printStockConfig.company}
+          />
         </div>
       )}
     </div>

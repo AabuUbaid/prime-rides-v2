@@ -8,6 +8,7 @@ import {
   ChevronLeft,
   ChevronRight,
   ClipboardList,
+  FileChartColumnIncreasing,
   FileCheck2,
   FileText,
   GitBranch,
@@ -160,10 +161,27 @@ function Sidebar({ user, onLogout, mobileOpen, onCloseMobile }) {
           roles: ["MASTER", "ADMIN"],
         },
         {
+          label: "Reports",
+          path: "/reports",
+          icon: FileChartColumnIncreasing,
+        },
+        {
           label: "User Access",
           path: "/user-access",
           icon: Users,
           roles: ["MASTER"],
+        },
+        {
+          label: "Attendance",
+          path: "/staff/attendance",
+          icon: ClipboardList,
+          roles: ["MASTER", "ADMIN"],
+        },
+        {
+          label: "Payroll",
+          path: "/staff/payroll",
+          icon: ReceiptText,
+          roles: ["MASTER", "ADMIN"],
         },
         {
           label: "Ledger Accounts",

@@ -1,0 +1,1032 @@
+===== COMPANY SOURCE =====
+import { apiClient } from "./client";
+
+// =========================================================
+// COMPANIES
+// =========================================================
+
+export function getCompanies() {
+  return apiClient("/company/");
+}
+
+export function getCompany(companyId) {
+  return apiClient(`/company/${companyId}/`);
+}
+
+export function createCompany(company) {
+  return apiClient("/company/", {
+    method: "POST",
+    body: JSON.stringify(company),
+  });
+}
+
+export function updateCompany(companyId, company) {
+  return apiClient(`/company/${companyId}/`, {
+    method: "PATCH",
+    body: JSON.stringify(company),
+  });
+}
+
+// =========================================================
+// BRANCHES
+// =========================================================
+
+export function getBranches(companyId) {
+  const query = companyId ? `?company=${encodeURIComponent(companyId)}` : "";
+
+  return apiClient(`/company/branches/${query}`);
+}
+
+export function getBranch(branchId) {
+  return apiClient(`/company/branches/${branchId}/`);
+}
+
+export function createBranch(branch) {
+  return apiClient("/company/branches/", {
+    method: "POST",
+    body: JSON.stringify(branch),
+  });
+}
+
+export function updateBranch(branchId, branch) {
+  return apiClient(`/company/branches/${branchId}/`, {
+    method: "PATCH",
+    body: JSON.stringify(branch),
+  });
+}
+
+// =========================================================
+// COMPANY DOCUMENTS
+// =========================================================
+
+export function getCompanyDocuments() {
+  return apiClient("/company/documents/");
+}
+
+export function createCompanyDocument({ name, file }) {
+  const formData = new FormData();
+
+  formData.append("name", name);
+  formData.append("file", file);
+
+  return apiClient("/company/documents/", {
+    method: "POST",
+    body: formData,
+  });
+}
+
+export function updateCompanyDocument(documentId, { name, file }) {
+  if (file) {
+    const formData = new FormData();
+
+    formData.append("name", name);
+
+    if (file) {
+      formData.append("file", file);
+    }
+
+    return apiClient(`/company/documents/${documentId}/`, {
+      method: "PATCH",
+      body: formData,
+    });
+  }
+
+  return apiClient(`/company/documents/${documentId}/`, {
+    method: "PATCH",
+    body: JSON.stringify({
+      name,
+    }),
+  });
+}
+
+export function deleteCompanyDocument(documentId) {
+  return apiClient(`/company/documents/${documentId}/`, {
+    method: "DELETE",
+  });
+}
+
+export function downloadCompanyDocument(documentId) {
+  return apiClient(`/company/documents/${documentId}/?download=true`, {
+    responseType: "blob",
+  });
+}
+import { createContext, useContext, useEffect, useState } from "react";
+
+import { login as loginRequest, getCurrentUser } from "../api/auth";
+
+const AuthContext = createContext(null);
+
+export function AuthProvider({ children }) {
+  const [user, setUser] = useState(null);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    async function loadUser() {
+      const token = localStorage.getItem("accessToken");
+
+      if (!token) {
+        setLoading(false);
+        return;
+      }
+
+      try {
+        const currentUser = await getCurrentUser();
+        setUser(currentUser.data);
+      } catch {
+        localStorage.removeItem("accessToken");
+        localStorage.removeItem("refreshToken");
+        setUser(null);
+      } finally {
+        setLoading(false);
+      }
+    }
+
+    loadUser();
+  }, []);
+
+  async function login(email, password) {
+    const response = await loginRequest(email, password);
+
+    const accessToken = response.data.access;
+    const refreshToken = response.data.refresh;
+
+    localStorage.setItem("accessToken", accessToken);
+
+    if (refreshToken) {
+      localStorage.setItem("refreshToken", refreshToken);
+    }
+
+    const currentUser = await getCurrentUser();
+
+    setUser(currentUser.data);
+
+    return currentUser.data;
+  }
+
+  function logout() {
+    localStorage.removeItem("accessToken");
+    localStorage.removeItem("refreshToken");
+
+    setUser(null);
+  }
+
+  return (
+    <AuthContext.Provider
+      value={{
+        user,
+        loading,
+        login,
+        logout,
+        isAuthenticated: Boolean(user),
+      }}
+    >
+      {children}
+    </AuthContext.Provider>
+  );
+}
+
+export function useAuth() {
+  return useContext(AuthContext);
+}
+frontend/dms/src/components/printing/PrintDocument.jsx:9:  const companyName = company?.legal_entity_name || "Company Name";
+frontend/dms/src/components/printing/PrintDocument.jsx:11:  const companyAddress = company?.showroom_address || "-";
+frontend/dms/src/components/printing/PrintDocument.jsx:13:  const companyMobile = company?.main_contact_mobile || "-";
+frontend/dms/src/components/printing/templates/InventoryStockPrintTemplate.jsx:498:                              {company?.legal_entity_name || "Company"}
+frontend/dms/src/components/printing/templates/InventoryStockPrintTemplate.jsx:549:            {company?.legal_entity_name || "Company"}
+frontend/dms/src/api/company.js:11:export function getCompany(companyId) {
+frontend/dms/src/api/company.js:61:export function getCompanyDocuments() {
+frontend/dms/src/pages/rta/RtaRecordCreate.jsx:42:  const [selectedCompanyId, setSelectedCompanyId] = useState("");
+frontend/dms/src/pages/stock/Stock.jsx:105:  const [company, setCompany] = useState(null);
+frontend/dms/src/pages/stock/Stock.jsx:106:  const [companyLoading, setCompanyLoading] = useState(true);
+frontend/dms/src/pages/stock/Stock.jsx:568:      const companyName = company.legal_entity_name || "Company";
+frontend/dms/src/pages/company/CompanyManagement.jsx:18:  getCompanyDocuments,
+frontend/dms/src/pages/company/CompanyManagement.jsx:24:  legal_entity_name: "",
+frontend/dms/src/pages/company/CompanyManagement.jsx:28:  showroom_address: "",
+frontend/dms/src/pages/company/CompanyManagement.jsx:29:  main_contact_mobile: "",
+frontend/dms/src/pages/company/CompanyManagement.jsx:49:  const [companyDocuments, setCompanyDocuments] = useState([]);
+frontend/dms/src/pages/company/CompanyManagement.jsx:57:  const [showCompanyForm, setShowCompanyForm] = useState(false);
+frontend/dms/src/pages/company/CompanyManagement.jsx:58:  const [editingCompany, setEditingCompany] = useState(null);
+frontend/dms/src/pages/company/CompanyManagement.jsx:59:  const [companyForm, setCompanyForm] = useState(EMPTY_COMPANY_FORM);
+frontend/dms/src/pages/company/CompanyManagement.jsx:60:  const [companySaving, setCompanySaving] = useState(false);
+frontend/dms/src/pages/company/CompanyManagement.jsx:61:  const [companyFieldErrors, setCompanyFieldErrors] = useState({});
+frontend/dms/src/pages/company/CompanyManagement.jsx:97:      const response = await getCompanyDocuments();
+frontend/dms/src/pages/company/CompanyManagement.jsx:209:      legal_entity_name: company.legal_entity_name ?? "",
+frontend/dms/src/pages/company/CompanyManagement.jsx:213:      showroom_address: company.showroom_address ?? "",
+frontend/dms/src/pages/company/CompanyManagement.jsx:214:      main_contact_mobile: company.main_contact_mobile ?? "",
+frontend/dms/src/pages/company/CompanyManagement.jsx:283:    if (!companyForm.legal_entity_name.trim()) {
+frontend/dms/src/pages/company/CompanyManagement.jsx:285:        legal_entity_name: "Company name is required.",
+frontend/dms/src/pages/company/CompanyManagement.jsx:291:      legal_entity_name: companyForm.legal_entity_name.trim(),
+frontend/dms/src/pages/company/CompanyManagement.jsx:295:      showroom_address: companyForm.showroom_address.trim(),
+frontend/dms/src/pages/company/CompanyManagement.jsx:296:      main_contact_mobile: companyForm.main_contact_mobile.trim(),
+frontend/dms/src/pages/company/CompanyManagement.jsx:480:                    id="legal_entity_name"
+frontend/dms/src/pages/company/CompanyManagement.jsx:481:                    name="legal_entity_name"
+frontend/dms/src/pages/company/CompanyManagement.jsx:483:                    value={companyForm.legal_entity_name}
+frontend/dms/src/pages/company/CompanyManagement.jsx:485:                    error={companyFieldErrors.legal_entity_name?.toString()}
+frontend/dms/src/pages/company/CompanyManagement.jsx:518:                    id="main_contact_mobile"
+frontend/dms/src/pages/company/CompanyManagement.jsx:519:                    name="main_contact_mobile"
+frontend/dms/src/pages/company/CompanyManagement.jsx:521:                    value={companyForm.main_contact_mobile}
+frontend/dms/src/pages/company/CompanyManagement.jsx:523:                    error={companyFieldErrors.main_contact_mobile?.toString()}
+frontend/dms/src/pages/company/CompanyManagement.jsx:583:                      htmlFor="showroom_address"
+frontend/dms/src/pages/company/CompanyManagement.jsx:590:                      id="showroom_address"
+frontend/dms/src/pages/company/CompanyManagement.jsx:591:                      name="showroom_address"
+frontend/dms/src/pages/company/CompanyManagement.jsx:592:                      value={companyForm.showroom_address}
+frontend/dms/src/pages/company/CompanyManagement.jsx:600:                        companyFieldErrors.showroom_address
+frontend/dms/src/pages/company/CompanyManagement.jsx:606:                    {companyFieldErrors.showroom_address && (
+frontend/dms/src/pages/company/CompanyManagement.jsx:608:                        {companyFieldErrors.showroom_address.toString()}
+frontend/dms/src/pages/company/CompanyManagement.jsx:661:                            {company.legal_entity_name || "-"}
+frontend/dms/src/pages/company/CompanyManagement.jsx:701:                            {company.main_contact_mobile || "-"}
+frontend/dms/src/pages/company/CompanyManagement.jsx:755:                            {company.showroom_address || "-"}
+frontend/dms/src/pages/company/CompanyManagement.jsx:1028:                      companyMap.get(branch.company)?.legal_entity_name || "-",
+
+===== QUOTE FINANCIAL CONTRACT =====
+backend/quotes/migrations/0006_remove_orphan_quote_vat_columns.py:7:        ("quotes", "0005_quote_vat_amount_quote_vat_enabled")
+backend/quotes/migrations/0006_remove_orphan_quote_vat_columns.py:13:                "ALTER TABLE quotes DROP COLUMN IF EXISTS vat_amount;",
+backend/quotes/migrations/0006_remove_orphan_quote_vat_columns.py:14:                "ALTER TABLE quotes DROP COLUMN IF EXISTS vat_enabled;",
+backend/quotes/migrations/0006_remove_orphan_quote_vat_columns.py:19:                ADD COLUMN vat_amount numeric NOT NULL DEFAULT 0.00;
+backend/quotes/migrations/0006_remove_orphan_quote_vat_columns.py:23:                ADD COLUMN vat_enabled boolean NOT NULL DEFAULT FALSE;
+backend/quotes/migrations/0007_restore_quote_vat_columns.py:15:                ADD COLUMN IF NOT EXISTS vat_amount
+backend/quotes/migrations/0007_restore_quote_vat_columns.py:20:                ADD COLUMN IF NOT EXISTS vat_enabled
+backend/quotes/migrations/0007_restore_quote_vat_columns.py:27:                DROP COLUMN IF EXISTS vat_amount;
+backend/quotes/migrations/0007_restore_quote_vat_columns.py:31:                DROP COLUMN IF EXISTS vat_enabled;
+backend/quotes/migrations/0005_quote_vat_amount_quote_vat_enabled.py:17:            name='vat_amount',
+backend/quotes/migrations/0005_quote_vat_amount_quote_vat_enabled.py:22:            name='vat_enabled',
+Binary file backend/quotes/migrations/__pycache__/0004_quote_customer.cpython-313.pyc matches
+Binary file backend/quotes/migrations/__pycache__/0007_restore_quote_vat_columns.cpython-313.pyc matches
+Binary file backend/quotes/migrations/__pycache__/0005_remove_orphan_quote_vat_columns.cpython-313.pyc matches
+Binary file backend/quotes/migrations/__pycache__/0003_remove_quote_quote_price_non_negative_and_more.cpython-313.pyc matches
+Binary file backend/quotes/migrations/__pycache__/0006_remove_orphan_quote_vat_columns.cpython-313.pyc matches
+Binary file backend/quotes/migrations/__pycache__/0001_initial.cpython-313.pyc matches
+Binary file backend/quotes/migrations/__pycache__/0005_quote_vat_amount_quote_vat_enabled.cpython-313.pyc matches
+backend/quotes/migrations/0003_remove_quote_quote_price_non_negative_and_more.py:21:            name='quote_price_non_negative',
+backend/quotes/migrations/0003_remove_quote_quote_price_non_negative_and_more.py:29:            name='down_payment',
+backend/quotes/migrations/0003_remove_quote_quote_price_non_negative_and_more.py:34:            name='extra_down_payment',
+backend/quotes/migrations/0003_remove_quote_quote_price_non_negative_and_more.py:39:            constraint=models.CheckConstraint(condition=models.Q(('down_payment__gte', Decimal('0.00'))), name='quote_down_payment_non_negative'),
+backend/quotes/migrations/0003_remove_quote_quote_price_non_negative_and_more.py:43:            constraint=models.CheckConstraint(condition=models.Q(('extra_down_payment__gte', Decimal('0.00'))), name='quote_extra_down_payment_non_negative'),
+backend/quotes/migrations/0004_quote_customer.py:11:        ('quotes', '0003_remove_quote_quote_price_non_negative_and_more'),
+backend/quotes/migrations/0001_initial.py:49:                ('price', models.DecimalField(decimal_places=2, max_digits=12, validators=[django.core.validators.MinValueValidator(Decimal('0.00'))])),
+backend/quotes/migrations/0001_initial.py:52:                ('deposit_date', models.DateField(blank=True, null=True)),
+backend/quotes/migrations/0001_initial.py:55:                ('emi_vehicle_price', models.DecimalField(blank=True, decimal_places=2, max_digits=12, null=True)),
+backend/quotes/migrations/0001_initial.py:56:                ('emi_vat_enabled', models.BooleanField(blank=True, null=True)),
+backend/quotes/migrations/0001_initial.py:57:                ('emi_vat_amount', models.DecimalField(blank=True, decimal_places=2, max_digits=12, null=True)),
+backend/quotes/migrations/0001_initial.py:58:                ('emi_down_payment', models.DecimalField(blank=True, decimal_places=2, max_digits=12, null=True)),
+backend/quotes/migrations/0001_initial.py:135:            constraint=models.CheckConstraint(condition=models.Q(('price__gte', Decimal('0.00'))), name='quote_price_non_negative'),
+backend/quotes/services.py:11:from inventory.special_price_services import (
+backend/quotes/services.py:12:        SpecialPriceService,
+backend/quotes/services.py:137:    quote.emi_vehicle_price = emi_sheet.vehicle_price
+backend/quotes/services.py:138:    quote.emi_vat_enabled = emi_sheet.vat_enabled
+backend/quotes/services.py:139:    quote.emi_vat_amount = emi_sheet.vat_amount
+backend/quotes/services.py:141:    # Quote vehicle price is the Car Value (Evaluation)
+backend/quotes/services.py:142:    quote.price = emi_sheet.car_value_evaluation
+backend/quotes/services.py:144:    quote.down_payment =(
+backend/quotes/services.py:149:    quote.emi_down_payment = emi_sheet.down_payment
+backend/quotes/services.py:434:    price,
+backend/quotes/services.py:436:    vat_enabled=False,
+backend/quotes/services.py:437:    vat_amount=Decimal("0.00"),
+backend/quotes/services.py:438:    extra_down_payment=Decimal("0.00"),
+backend/quotes/services.py:439:    deposit_date=None,
+backend/quotes/services.py:444:    special_price_request_id=None,
+backend/quotes/services.py:487:    # Special Price validation
+backend/quotes/services.py:499:    special_price_request = (
+backend/quotes/services.py:500:        SpecialPriceService.validate_transaction_price(
+backend/quotes/services.py:501:            special_price_request_id=(
+backend/quotes/services.py:502:                special_price_request_id
+backend/quotes/services.py:505:            transaction_price=price,
+backend/quotes/services.py:550:    # Vehicle Price + VAT + applicable Quote Expenses
+backend/quotes/services.py:552:    quote_price = price
+backend/quotes/services.py:555:        base_price = Decimal(str(price or "0.00"))
+backend/quotes/services.py:558:            Decimal(str(vat_amount or "0.00"))
+backend/quotes/services.py:559:            if vat_enabled
+backend/quotes/services.py:569:        quote_price = (
+backend/quotes/services.py:570:            base_price
+backend/quotes/services.py:589:    price=quote_price,
+backend/quotes/services.py:592:    vat_enabled=vat_enabled,
+backend/quotes/services.py:593:    vat_amount=vat_amount,
+backend/quotes/services.py:595:    extra_down_payment=extra_down_payment,
+backend/quotes/services.py:596:    deposit_date=deposit_date,
+backend/quotes/services.py:623:    if special_price_request is not None:
+backend/quotes/services.py:624:        SpecialPriceService.bind_to_transaction(
+backend/quotes/services.py:625:            special_request=special_price_request,
+backend/quotes/services.py:651:    extra_down_payment=None,
+backend/quotes/services.py:652:    deposit_date=None,
+backend/quotes/services.py:663:        extra_down_payment
+backend/quotes/services.py:664:        deposit_date
+backend/quotes/services.py:737:    if extra_down_payment is not None:
+backend/quotes/services.py:738:        quote.extra_down_payment = extra_down_payment
+backend/quotes/services.py:740:    if deposit_date is not None:
+backend/quotes/services.py:741:        quote.deposit_date = deposit_date
+backend/quotes/models.py:148:    price = models.DecimalField(
+backend/quotes/models.py:156:    vat_enabled = models.BooleanField(
+backend/quotes/models.py:160:    vat_amount = models.DecimalField(
+backend/quotes/models.py:169:    down_payment = models.DecimalField(
+backend/quotes/models.py:178:    extra_down_payment = models.DecimalField(
+backend/quotes/models.py:187:    deposit_date = models.DateField(
+backend/quotes/models.py:213:    emi_vehicle_price = models.DecimalField(
+backend/quotes/models.py:220:    emi_vat_enabled = models.BooleanField(
+backend/quotes/models.py:225:    emi_vat_amount = models.DecimalField(
+backend/quotes/models.py:232:    emi_down_payment = models.DecimalField(
+backend/quotes/models.py:338:                    down_payment__gte=Decimal("0.00"),
+backend/quotes/models.py:340:                name="quote_down_payment_non_negative",
+backend/quotes/models.py:344:                    extra_down_payment__gte=Decimal("0.00"),
+backend/quotes/models.py:346:                name="quote_extra_down_payment_non_negative",
+backend/quotes/serializers.py:166:    special_price_request_id = serializers.IntegerField(
+backend/quotes/serializers.py:181:            "price",
+backend/quotes/serializers.py:184:            "vat_enabled",
+backend/quotes/serializers.py:185:            "vat_amount",
+backend/quotes/serializers.py:187:            "extra_down_payment",
+backend/quotes/serializers.py:188:            "deposit_date",
+backend/quotes/serializers.py:190:            "special_price_request_id",
+backend/quotes/serializers.py:199:        vat_enabled = attrs.get(
+backend/quotes/serializers.py:200:            "vat_enabled",
+backend/quotes/serializers.py:204:        vat_amount = attrs.get(
+backend/quotes/serializers.py:205:            "vat_amount",
+backend/quotes/serializers.py:310:        if vat_amount is None:
+backend/quotes/serializers.py:311:            vat_amount = Decimal("0.00")
+backend/quotes/serializers.py:313:        if vat_amount < Decimal("0.00"):
+backend/quotes/serializers.py:316:                    "vat_amount": (
+backend/quotes/serializers.py:322:        if not vat_enabled and vat_amount != Decimal("0.00"):
+backend/quotes/serializers.py:325:                    "vat_amount": (
+backend/quotes/serializers.py:372:            "extra_down_payment",
+backend/quotes/serializers.py:373:            "deposit_date",
+backend/quotes/serializers.py:383:            "extra_down_payment",
+backend/quotes/serializers.py:384:            "deposit_date",
+backend/quotes/serializers.py:439:            "price",
+backend/quotes/serializers.py:441:            "down_payment",
+backend/quotes/serializers.py:442:            "extra_down_payment",
+backend/quotes/serializers.py:443:            "deposit_date",
+backend/quotes/serializers.py:572:            "price",
+backend/quotes/serializers.py:574:            "vat_enabled",
+backend/quotes/serializers.py:575:            "vat_amount",
+backend/quotes/serializers.py:576:            "down_payment",
+backend/quotes/serializers.py:577:            "extra_down_payment",
+backend/quotes/serializers.py:578:            "deposit_date",
+backend/quotes/serializers.py:582:            "emi_vehicle_price",
+backend/quotes/serializers.py:583:            "emi_vat_enabled",
+backend/quotes/serializers.py:584:            "emi_vat_amount",
+backend/quotes/serializers.py:585:            "emi_down_payment",
+backend/quotes/serializers.py:652:            "price",
+backend/quotes/serializers.py:654:            "vat_enabled",
+backend/quotes/serializers.py:655:            "vat_amount",
+backend/quotes/serializers.py:656:            "down_payment",
+backend/quotes/serializers.py:657:            "extra_down_payment",
+backend/quotes/serializers.py:658:            "deposit_date",
+backend/quotes/serializers.py:662:            "emi_vat_enabled",
+backend/quotes/serializers.py:663:            "emi_vat_amount",
+backend/quotes/serializers.py:696:            "price": data["price"],
+backend/quotes/serializers.py:699:                "enabled": data["vat_enabled"],
+backend/quotes/serializers.py:700:                "amount": data["vat_amount"],
+backend/quotes/serializers.py:702:            "down_payment": data["down_payment"],
+backend/quotes/serializers.py:703:            "extra_down_payment": data["extra_down_payment"],
+backend/quotes/serializers.py:704:            "deposit_date": data["deposit_date"],
+backend/quotes/serializers.py:712:                "vat_enabled": (
+backend/quotes/serializers.py:713:                    data["emi_vat_enabled"]
+backend/quotes/serializers.py:717:                "vat_amount": (
+backend/quotes/serializers.py:718:                    data["emi_vat_amount"]
+Binary file backend/quotes/__pycache__/serializers.cpython-313.pyc matches
+Binary file backend/quotes/__pycache__/models.cpython-313.pyc matches
+Binary file backend/quotes/__pycache__/tests.cpython-313.pyc matches
+Binary file backend/quotes/__pycache__/services.cpython-313.pyc matches
+backend/quotes/tests.py:21:                "price": "50000.00",
+backend/quotes/tests.py:34:                "price": "50000.00",
+backend/quotes/tests.py:93:            asking_price=Decimal("50000.00"),
+backend/quotes/tests.py:119:            price=Decimal("50000.00"),
+backend/quotes/tests.py:158:            price=Decimal("50000.00"),
+backend/quotes/tests.py:163:        self.car.asking_price = Decimal("55000.00")
+backend/quotes/tests.py:180:            quote.price,
+backend/quotes/tests.py:213:            vehicle_price=Decimal("100000.00"),
+backend/quotes/tests.py:214:            vat_enabled=False,
+backend/quotes/tests.py:215:            vat_amount=Decimal("0.00"),
+backend/quotes/tests.py:216:            price_after_vat=Decimal("100000.00"),
+backend/quotes/tests.py:217:            down_payment=Decimal("20000.00"),
+backend/quotes/tests.py:244:            unit_price_after_down_payment=Decimal("80000.00"),
+backend/quotes/tests.py:253:            price=Decimal("100000.00"),
+backend/quotes/tests.py:340:            vehicle_price=Decimal("100000.00"),
+backend/quotes/tests.py:341:            vat_enabled=False,
+backend/quotes/tests.py:342:            vat_amount=Decimal("0.00"),
+backend/quotes/tests.py:343:            price_after_vat=Decimal("100000.00"),
+backend/quotes/tests.py:344:            down_payment=Decimal("20000.00"),
+backend/quotes/tests.py:362:            price=Decimal("100000.00"),
+backend/quotes/tests.py:386:                price=Decimal("50000.00"),
+backend/quotes/tests.py:397:                price=Decimal("50000.00"),
+backend/quotes/tests.py:407:            price=Decimal("50000.00"),
+backend/quotes/tests.py:484:            asking_price=Decimal("50000.00"),
+backend/quotes/tests.py:497:            asking_price=Decimal("100000.00"),
+backend/quotes/tests.py:504:            price=Decimal("50000.00"),
+backend/quotes/tests.py:513:            price=Decimal("100000.00"),
+backend/quotes/tests.py:527:            price=Decimal("75000.00"),
+backend/quotes/tests.py:541:            price=Decimal("60000.00"),
+backend/quotes/tests.py:878:            asking_price=Decimal("60000.00"),
+backend/quotes/tests.py:885:            price=Decimal("60000.00"),
+backend/quotes/tests.py:938:            "price": "65000.00",
+backend/quotes/tests.py:975:            created_quote.price,
+backend/quotes/tests.py:989:            "price": "50000.00",
+backend/quotes/tests.py:1014:            "price": "50000.00",
+backend/quotes/tests.py:1107:            asking_price=Decimal("70000.00"),
+backend/quotes/tests.py:1114:            price=Decimal("70000.00"),
+backend/quotes/tests.py:1171:    def test_patch_deposit_date(self):
+backend/quotes/tests.py:1179:                "deposit_date": "2026-08-31",
+backend/quotes/tests.py:1192:            str(self.quote.deposit_date),
+backend/quotes/tests.py:1300:    def test_protected_price_cannot_be_updated(self):
+backend/quotes/tests.py:1305:        original_price = self.quote.price
+backend/quotes/tests.py:1310:                "price": "999999.00",
+backend/quotes/tests.py:1323:            self.quote.price,
+backend/quotes/tests.py:1324:            original_price,
+backend/finance/migrations/0009_bankprocessingconfiguration_application_charge_and_more.py:57:            name='unit_price_after_down_payment',
+backend/finance/migrations/0009_bankprocessingconfiguration_application_charge_and_more.py:122:            name='maximum_vehicle_price',
+backend/finance/migrations/0009_bankprocessingconfiguration_application_charge_and_more.py:127:            name='minimum_vehicle_price',
+backend/finance/migrations/0019_cashdeal.py:36:                ('selling_price', models.DecimalField(decimal_places=2, max_digits=12, validators=[django.core.validators.MinValueValidator(Decimal('0.00'))])),
+backend/finance/migrations/0019_cashdeal.py:53:                'constraints': [models.CheckConstraint(condition=models.Q(('selling_price__gte', Decimal('0.00'))), name='cash_deal_selling_price_non_negative'), models.CheckConstraint(condition=models.Q(('evaluation__gte', Decimal('0.00'))), name='cash_deal_evaluation_non_negative'), models.CheckConstraint(condition=models.Q(('advance_amount__gte', Decimal('0.00'))), name='cash_deal_advance_non_negative'), models.CheckConstraint(condition=models.Q(('balance_amount__gte', Decimal('0.00'))), name='cash_deal_balance_non_negative')],
+Binary file backend/finance/migrations/__pycache__/0009_bankprocessingconfiguration_application_charge_and_more.cpython-313.pyc matches
+Binary file backend/finance/migrations/__pycache__/0019_cashdeal.cpython-313.pyc matches
+Binary file backend/finance/migrations/__pycache__/0001_initial.cpython-313.pyc matches
+Binary file backend/finance/migrations/__pycache__/0023_cashreceipt.cpython-313.pyc matches
+Binary file backend/finance/migrations/__pycache__/0005_emisheet_bank_processing_amount_and_more.cpython-313.pyc matches
+Binary file backend/finance/migrations/__pycache__/0022_alter_cashdeal_agent.cpython-313.pyc matches
+Binary file backend/finance/migrations/__pycache__/0010_seed_finance_configuration.cpython-313.pyc matches
+Binary file backend/finance/migrations/__pycache__/0021_bankloan_evaluation_bankloan_selling_price.cpython-313.pyc matches
+backend/finance/migrations/0010_seed_finance_configuration.py:83:            "minimum_vehicle_price": Decimal("0.00"),
+backend/finance/migrations/0010_seed_finance_configuration.py:84:            "maximum_vehicle_price": Decimal("50000.00"),
+backend/finance/migrations/0010_seed_finance_configuration.py:93:            "minimum_vehicle_price": Decimal("50000.01"),
+backend/finance/migrations/0010_seed_finance_configuration.py:94:            "maximum_vehicle_price": Decimal("90000.00"),
+backend/finance/migrations/0010_seed_finance_configuration.py:103:            "minimum_vehicle_price": Decimal("90000.01"),
+backend/finance/migrations/0010_seed_finance_configuration.py:104:            "maximum_vehicle_price": Decimal("130000.00"),
+backend/finance/migrations/0001_initial.py:48:                ('vehicle_price', models.DecimalField(decimal_places=2, max_digits=12)),
+backend/finance/migrations/0001_initial.py:49:                ('vat_enabled', models.BooleanField(default=False)),
+backend/finance/migrations/0001_initial.py:50:                ('vat_amount', models.DecimalField(decimal_places=2, default=Decimal('0.00'), max_digits=12)),
+backend/finance/migrations/0001_initial.py:51:                ('price_after_vat', models.DecimalField(decimal_places=2, max_digits=12)),
+backend/finance/migrations/0001_initial.py:52:                ('down_payment', models.DecimalField(decimal_places=2, max_digits=12)),
+backend/finance/migrations/0022_alter_cashdeal_agent.py:11:        ('finance', '0021_bankloan_evaluation_bankloan_selling_price'),
+backend/finance/migrations/0023_cashreceipt.py:27:                ('category', models.CharField(choices=[('advance', 'Advance'), ('final_payment', 'Final Payment'), ('additional_payment', 'Additional Payment'), ('down_payment', 'Down Payment'), ('evaluation', 'Evaluation'), ('bank_processing', 'Bank Processing'), ('rta_passing', 'RTA Passing'), ('registration', 'Registration'), ('insurance', 'Insurance'), ('service_package', 'Service Package'), ('warranty_service_contract', 'Warranty & Service Contract'), ('export_transfer', 'Export / Transfer'), ('other', 'Other')], max_length=50)),
+backend/finance/migrations/0021_bankloan_evaluation_bankloan_selling_price.py:22:            name='selling_price',
+backend/finance/migrations/0005_emisheet_bank_processing_amount_and_more.py:82:                ('minimum_vehicle_price', models.DecimalField(decimal_places=2, max_digits=12)),
+backend/finance/migrations/0005_emisheet_bank_processing_amount_and_more.py:83:                ('maximum_vehicle_price', models.DecimalField(decimal_places=2, max_digits=12)),
+backend/finance/migrations/0005_emisheet_bank_processing_amount_and_more.py:91:                'ordering': ['minimum_vehicle_price'],
+backend/finance/migrations/0005_emisheet_bank_processing_amount_and_more.py:92:                'constraints': [models.CheckConstraint(condition=models.Q(('minimum_vehicle_price__gte', Decimal('0.00'))), name='insurance_band_min_price_non_negative'), models.CheckConstraint(condition=models.Q(('maximum_vehicle_price__gt', models.F('minimum_vehicle_price'))), name='insurance_band_max_greater_than_min'), models.CheckConstraint(condition=models.Q(('amount__gte', Decimal('0.00'))), name='insurance_band_amount_non_negative')],
+backend/finance/services.py:10:    SpecialPriceRequest,
+backend/finance/services.py:37:    get_insurance_band_for_vehicle_price,
+backend/finance/services.py:44:MINIMUM_VEHICLE_PRICE = Decimal("20000.00")
+backend/finance/services.py:96:    vehicle_price,
+backend/finance/services.py:97:    down_payment,
+backend/finance/services.py:99:    vat_enabled=False,
+backend/finance/services.py:105:    vehicle_price = _decimal(vehicle_price)
+backend/finance/services.py:106:    down_payment = _decimal(down_payment)
+backend/finance/services.py:108:    if vehicle_price < MINIMUM_VEHICLE_PRICE:
+backend/finance/services.py:110:            "Vehicle price must be at least AED 20,000.",
+backend/finance/services.py:111:            field="vehicle_price",
+backend/finance/services.py:137:    vat_amount = _money(
+backend/finance/services.py:138:        vehicle_price * VAT_RATE
+backend/finance/services.py:141:    applicable_price = _money(
+backend/finance/services.py:142:        vehicle_price + vat_amount
+backend/finance/services.py:145:    if down_payment < ZERO:
+backend/finance/services.py:148:            field="down_payment",
+backend/finance/services.py:151:    if down_payment > applicable_price:
+backend/finance/services.py:154:            "vehicle price.",
+backend/finance/services.py:155:            field="down_payment",
+backend/finance/services.py:159:        "vehicle_price": _money(vehicle_price),
+backend/finance/services.py:160:        "down_payment": _money(down_payment),
+backend/finance/services.py:162:        "vat_amount": vat_amount,
+backend/finance/services.py:163:        "price_after_vat": applicable_price,
+backend/finance/services.py:434:    vehicle_price,
+backend/finance/services.py:437:    Resolve the active insurance band for the vehicle price.
+backend/finance/services.py:440:    band = get_insurance_band_for_vehicle_price(
+backend/finance/services.py:441:        vehicle_price
+backend/finance/services.py:447:            f"for vehicle price {vehicle_price}."
+backend/finance/services.py:455:    vehicle_price,
+backend/finance/services.py:464:        vehicle_price=vehicle_price,
+backend/finance/services.py:477:        "total_amount": _money(
+backend/finance/services.py:555:    vehicle_price,
+backend/finance/services.py:562:            vehicle_price * percentage / 100,
+backend/finance/services.py:567:    vehicle_price = _decimal(
+backend/finance/services.py:568:        vehicle_price
+backend/finance/services.py:572:        vehicle_price
+backend/finance/services.py:588:    vehicle_price,
+backend/finance/services.py:602:        vehicle_price=vehicle_price,
+backend/finance/services.py:774:    vehicle_price,
+backend/finance/services.py:917:                vehicle_price=vehicle_price,
+backend/finance/services.py:934:            vehicle_price=vehicle_price,
+backend/finance/services.py:942:            "amount": insurance["total_amount"],
+backend/finance/services.py:1012:                vehicle_price
+backend/finance/services.py:1290:    vehicle_price,
+backend/finance/services.py:1291:    down_payment,
+backend/finance/services.py:1294:    vat_enabled=False,
+backend/finance/services.py:1313:        vehicle_price=vehicle_price,
+backend/finance/services.py:1314:        down_payment=down_payment,
+backend/finance/services.py:1316:        vat_enabled=vat_enabled,
+backend/finance/services.py:1319:    vehicle_price = validation[
+backend/finance/services.py:1320:        "vehicle_price"
+backend/finance/services.py:1323:    down_payment = validation[
+backend/finance/services.py:1324:        "down_payment"
+backend/finance/services.py:1331:    vat_amount = validation[
+backend/finance/services.py:1332:        "vat_amount"
+backend/finance/services.py:1335:    price_after_vat = validation[
+backend/finance/services.py:1336:        "price_after_vat"
+backend/finance/services.py:1373:    vehicle_price=vehicle_price,
+backend/finance/services.py:1418:    # Unit price after down payment
+backend/finance/services.py:1421:    unit_price_after_down_payment = _money(
+backend/finance/services.py:1422:        vehicle_price
+backend/finance/services.py:1423:        + vat_amount
+backend/finance/services.py:1424:        - down_payment
+backend/finance/services.py:1430:    # vehicle price
+backend/finance/services.py:1438:        vehicle_price
+backend/finance/services.py:1439:        + vat_amount
+backend/finance/services.py:1442:        - down_payment
+backend/finance/services.py:1453:            field="down_payment",
+backend/finance/services.py:1554:        "vehicle_price": vehicle_price,
+backend/finance/services.py:1555:        "vat_enabled":True,
+backend/finance/services.py:1556:        "vat_amount": vat_amount,
+backend/finance/services.py:1557:        "price_after_vat": price_after_vat,
+backend/finance/services.py:1558:        "down_payment": down_payment,
+backend/finance/services.py:1670:        "unit_price_after_down_payment": (
+backend/finance/services.py:1671:            unit_price_after_down_payment
+backend/finance/services.py:1944:def _resolve_special_price_for_emi(
+backend/finance/services.py:1947:    vehicle_price,
+backend/finance/services.py:1949:    special_price_request_id=None,
+backend/finance/services.py:1952:    Validate a transaction-specific Special Price approval for an EMI.
+backend/finance/services.py:1958:        SpecialPriceRequest | None
+backend/finance/services.py:1964:    current_price = _money(vehicle_price)
+backend/finance/services.py:1966:    least_selling_price = car.least_selling_price
+backend/finance/services.py:1968:    if least_selling_price is None:
+backend/finance/services.py:1971:    # Normal price: no Special Price approval is needed.
+backend/finance/services.py:1972:    if current_price >= least_selling_price:
+backend/finance/services.py:1973:        if special_price_request_id is not None:
+backend/finance/services.py:1975:                "A Special Price approval is only valid for "
+backend/finance/services.py:1976:                "a selling price below the vehicle's Least Selling Price."
+backend/finance/services.py:1981:    # A price below Least Selling Price requires either:
+backend/finance/services.py:1983:    # 2. a valid approved Special Price request.
+backend/finance/services.py:1991:        if special_price_request_id is not None:
+backend/finance/services.py:1993:                "Master users do not need a Special Price approval."
+backend/finance/services.py:1998:    if special_price_request_id is None:
+backend/finance/services.py:2001:                "vehicle_price": (
+backend/finance/services.py:2002:                    "Selling price is below the vehicle's "
+backend/finance/services.py:2003:                    "Least Selling Price. Master Special Price "
+backend/finance/services.py:2010:        SpecialPriceRequest.objects
+backend/finance/services.py:2014:            pk=special_price_request_id,
+backend/finance/services.py:2022:                "special_price_request_id": (
+backend/finance/services.py:2023:                    "Special Price approval was not found."
+backend/finance/services.py:2032:                "special_price_request_id": (
+backend/finance/services.py:2033:                    "The Special Price approval does not belong "
+backend/finance/services.py:2041:        SpecialPriceRequest.Status.APPROVED
+backend/finance/services.py:2044:            SpecialPriceRequest.Status.EXPIRED
+backend/finance/services.py:2048:                    "special_price_request_id": (
+backend/finance/services.py:2049:                        "The Special Price approval has expired."
+backend/finance/services.py:2055:            SpecialPriceRequest.Status.USED
+backend/finance/services.py:2059:                    "special_price_request_id": (
+backend/finance/services.py:2060:                        "The Special Price approval has already been used."
+backend/finance/services.py:2067:                "special_price_request_id": (
+backend/finance/services.py:2068:                    "The Special Price request is not approved."
+backend/finance/services.py:2079:            SpecialPriceRequest.Status.EXPIRED
+backend/finance/services.py:2091:                "special_price_request_id": (
+backend/finance/services.py:2092:                    "The Special Price approval has expired."
+backend/finance/services.py:2097:    # The approved transaction price must exactly match
+backend/finance/services.py:2098:    # the Special Price approval.
+backend/finance/services.py:2099:    if special_request.approved_price != current_price:
+backend/finance/services.py:2102:                "vehicle_price": (
+backend/finance/services.py:2103:                    "Vehicle price must match the approved "
+backend/finance/services.py:2104:                    "Special Price amount."
+backend/finance/services.py:2111:        special_request.least_selling_price_at_request
+backend/finance/services.py:2113:        and current_price >= (
+backend/finance/services.py:2114:            special_request.least_selling_price_at_request
+backend/finance/services.py:2119:                "vehicle_price": (
+backend/finance/services.py:2120:                    "The approved Special Price is not below "
+backend/finance/services.py:2121:                    "the Least Selling Price captured at approval."
+backend/finance/services.py:2136:    vehicle_price,
+backend/finance/services.py:2137:    vat_enabled=False,
+backend/finance/services.py:2138:    down_payment,
+backend/finance/services.py:2149:    special_price_request_id=None,
+backend/finance/services.py:2174:    # Special Price transaction validation
+backend/finance/services.py:2177:    special_price_request = _resolve_special_price_for_emi(
+backend/finance/services.py:2179:        vehicle_price=vehicle_price,
+backend/finance/services.py:2181:        special_price_request_id=special_price_request_id,
+backend/finance/services.py:2189:        vehicle_price=vehicle_price,
+backend/finance/services.py:2190:        down_payment=down_payment,
+backend/finance/services.py:2193:        vat_enabled=vat_enabled,
+backend/finance/services.py:2318:        vehicle_price=(
+backend/finance/services.py:2320:                "vehicle_price"
+backend/finance/services.py:2324:        vat_enabled=(
+backend/finance/services.py:2326:                "vat_enabled"
+backend/finance/services.py:2330:        vat_amount=(
+backend/finance/services.py:2332:                "vat_amount"
+backend/finance/services.py:2336:        price_after_vat=(
+backend/finance/services.py:2338:                "price_after_vat"
+backend/finance/services.py:2342:        down_payment=(
+backend/finance/services.py:2344:                "down_payment"
+backend/finance/services.py:2381:        unit_price_after_down_payment=(
+backend/finance/services.py:2383:                "unit_price_after_down_payment"
+backend/finance/services.py:2553:    # Bind / consume Special Price approval
+backend/finance/services.py:2556:    if special_price_request is not None:
+backend/finance/services.py:2557:        special_price_request.emi_sheet = emi_sheet
+backend/finance/services.py:2558:        special_price_request.status = (
+backend/finance/services.py:2559:            SpecialPriceRequest.Status.USED
+backend/finance/services.py:2561:        special_price_request.used_at = timezone.now()
+backend/finance/services.py:2562:        special_price_request.used_by = created_by
+backend/finance/services.py:2564:        special_price_request.save(
+backend/finance/services.py:2877:        selling_price=quote.price,
+backend/finance/services.py:3059:        selling_price=bank_loan.selling_price,
+backend/finance/services.py:3190:    # Selling price
+backend/finance/services.py:3193:    selling_price = quote.price
+backend/finance/services.py:3195:    if selling_price is None:
+backend/finance/services.py:3197:            "The Quote must have a price before creating a Cash Deal."
+backend/finance/services.py:3200:    selling_price = Decimal(selling_price)
+backend/finance/services.py:3232:        selling_price=selling_price,
+backend/finance/services.py:3239:        balance_amount=selling_price,
+backend/finance/services.py:3253:    selling_price = cash_deal.selling_price
+backend/finance/services.py:3262:    if advance_amount > selling_price:
+backend/finance/services.py:3264:            "Advance amount cannot be greater than the selling price."
+backend/finance/services.py:3268:        selling_price - advance_amount
+backend/finance/services.py:3335:    "down_payment",
+backend/finance/services.py:3579:    CashReceipt.Category.DOWN_PAYMENT,
+backend/finance/models.py:196:    minimum_vehicle_price = models.DecimalField(
+backend/finance/models.py:204:    maximum_vehicle_price = models.DecimalField(
+backend/finance/models.py:244:            "minimum_vehicle_price",
+backend/finance/models.py:249:                    minimum_vehicle_price__gte=Decimal("0.00"),
+backend/finance/models.py:251:                name="insurance_band_min_price_non_negative",
+backend/finance/models.py:255:                    maximum_vehicle_price__gt=models.F(
+backend/finance/models.py:256:                        "minimum_vehicle_price",
+backend/finance/models.py:569:    vehicle_price = models.DecimalField(
+backend/finance/models.py:574:    vat_enabled = models.BooleanField(
+backend/finance/models.py:578:    vat_amount = models.DecimalField(
+backend/finance/models.py:584:    price_after_vat = models.DecimalField(
+backend/finance/models.py:589:    down_payment = models.DecimalField(
+backend/finance/models.py:730:    unit_price_after_down_payment = models.DecimalField(
+backend/finance/models.py:972:    selling_price = models.DecimalField(
+backend/finance/models.py:1284:    selling_price = models.DecimalField(
+backend/finance/models.py:1371:                    selling_price__gte=Decimal("0.00"),
+backend/finance/models.py:1373:                name="cash_deal_selling_price_non_negative",
+backend/finance/models.py:1432:        DOWN_PAYMENT = "down_payment", "Down Payment"
+backend/finance/serializers.py:154:            "minimum_vehicle_price",
+backend/finance/serializers.py:155:            "maximum_vehicle_price",
+backend/finance/serializers.py:170:            "minimum_vehicle_price",
+backend/finance/serializers.py:173:                "minimum_vehicle_price",
+backend/finance/serializers.py:179:            "maximum_vehicle_price",
+backend/finance/serializers.py:182:                "maximum_vehicle_price",
+backend/finance/serializers.py:207:                    "maximum_vehicle_price": (
+backend/finance/serializers.py:208:                        "Maximum vehicle price must be "
+backend/finance/serializers.py:209:                        "greater than minimum vehicle price."
+backend/finance/serializers.py:225:                minimum_vehicle_price__lte=maximum,
+backend/finance/serializers.py:226:                maximum_vehicle_price__gte=minimum,
+backend/finance/serializers.py:237:                    "minimum_vehicle_price",
+backend/finance/serializers.py:242:                        "minimum_vehicle_price": (
+backend/finance/serializers.py:247:                        "maximum_vehicle_price": (
+backend/finance/serializers.py:467:    vehicle_price = serializers.DecimalField(
+backend/finance/serializers.py:473:    down_payment = serializers.DecimalField(
+backend/finance/serializers.py:486:    vat_enabled = serializers.BooleanField(
+backend/finance/serializers.py:531:        vehicle_price = attrs["vehicle_price"]
+backend/finance/serializers.py:532:        down_payment = attrs["down_payment"]
+backend/finance/serializers.py:533:        vat_enabled = attrs.get("vat_enabled", False)
+backend/finance/serializers.py:535:        applicable_price = vehicle_price
+backend/finance/serializers.py:537:        if vehicle_price < Decimal("20000.00"):
+backend/finance/serializers.py:540:                    "vehicle_price": (
+backend/finance/serializers.py:541:                        "Vehicle price must be at least AED 20,000."
+backend/finance/serializers.py:545:        if vat_enabled:
+backend/finance/serializers.py:546:            applicable_price = (
+backend/finance/serializers.py:547:                vehicle_price * Decimal("1.05")
+backend/finance/serializers.py:550:        if down_payment > applicable_price:
+backend/finance/serializers.py:553:                    "down_payment": (
+backend/finance/serializers.py:555:                        "applicable vehicle price."
+backend/finance/serializers.py:664:    vehicle_price = serializers.DecimalField(
+backend/finance/serializers.py:669:    special_price_request_id = serializers.IntegerField(
+backend/finance/serializers.py:674:    vat_enabled = serializers.BooleanField(
+backend/finance/serializers.py:679:    down_payment = serializers.DecimalField(
+backend/finance/serializers.py:788:        vehicle_price = attrs["vehicle_price"]
+backend/finance/serializers.py:789:        down_payment = attrs["down_payment"]
+backend/finance/serializers.py:790:        vat_enabled = attrs.get("vat_enabled", False)
+backend/finance/serializers.py:792:        applicable_price = vehicle_price
+backend/finance/serializers.py:794:        if vehicle_price < Decimal("20000.00"):
+backend/finance/serializers.py:797:                    "vehicle_price": (
+backend/finance/serializers.py:798:                        "Vehicle price must be at least AED 20,000."
+backend/finance/serializers.py:803:        if vat_enabled:
+backend/finance/serializers.py:804:            applicable_price = (
+backend/finance/serializers.py:805:                vehicle_price * Decimal("1.05")
+backend/finance/serializers.py:808:        if down_payment > applicable_price:
+backend/finance/serializers.py:811:                    "down_payment": (
+backend/finance/serializers.py:813:                        "applicable vehicle price."
+backend/finance/serializers.py:960:            "vehicle_price",
+backend/finance/serializers.py:961:            "vat_enabled",
+backend/finance/serializers.py:962:            "vat_amount",
+backend/finance/serializers.py:963:            "price_after_vat",
+backend/finance/serializers.py:964:            "down_payment",
+backend/finance/serializers.py:1053:            "selling_price",
+backend/finance/serializers.py:1325:            "selling_price",
+backend/finance/serializers.py:1671:    selling_price = serializers.SerializerMethodField()
+backend/finance/serializers.py:1719:            "selling_price",
+backend/finance/serializers.py:1939:            getattr(quote, "price", None)
+backend/finance/serializers.py:1957:                    "emi_vehicle_price",
+backend/finance/serializers.py:1966:                    "emi_vat_amount",
+backend/finance/serializers.py:1981:            down_payment = (
+backend/finance/serializers.py:1984:                    "emi_down_payment",
+backend/finance/serializers.py:2008:            if down_payment > 0:
+backend/finance/serializers.py:2011:                        "type": "down_payment",
+backend/finance/serializers.py:2013:                        "amount": -down_payment,
+backend/finance/serializers.py:2019:        vehicle_price = (
+backend/finance/serializers.py:2020:            getattr(obj.car, "asking_price", None)
+backend/finance/serializers.py:2025:            getattr(quote, "vat_amount", None)
+backend/finance/serializers.py:2047:                "narration": "Vehicle Price",
+backend/finance/serializers.py:2048:                "amount": vehicle_price,
+backend/finance/serializers.py:2107:    def get_selling_price(self, obj):
+backend/finance/serializers.py:2110:            "selling_price",
+backend/finance/serializers.py:2111:            getattr(obj.quote, "price", None),
+backend/finance/serializers.py:2133:                "vehicle_price",
+backend/finance/selectors.py:221:    Return insurance bands ordered by minimum vehicle price.
+backend/finance/selectors.py:231:        "minimum_vehicle_price",
+backend/finance/selectors.py:264:def get_insurance_band_for_vehicle_price(
+backend/finance/selectors.py:265:    vehicle_price,
+backend/finance/selectors.py:269:    vehicle price.
+backend/finance/selectors.py:271:    Exactly one active band must match the price.
+backend/finance/selectors.py:278:            If overlapping active bands match the price.
+backend/finance/selectors.py:284:            minimum_vehicle_price__lte=vehicle_price,
+backend/finance/selectors.py:285:            maximum_vehicle_price__gte=vehicle_price,
+backend/finance/selectors.py:288:            "minimum_vehicle_price",
+backend/finance/selectors.py:301:            f"vehicle price {vehicle_price}."
+Binary file backend/finance/__pycache__/serializers.cpython-313.pyc matches
+Binary file backend/finance/__pycache__/models.cpython-313.pyc matches
+Binary file backend/finance/__pycache__/admin.cpython-313.pyc matches
+Binary file backend/finance/__pycache__/selectors.cpython-313.pyc matches
+Binary file backend/finance/__pycache__/tests.cpython-313.pyc matches
+Binary file backend/finance/__pycache__/services.cpython-313.pyc matches
+backend/finance/admin.py:70:        "vat_amount",
+backend/finance/admin.py:71:        "price_after_vat",
+backend/finance/tests.py:142:            minimum_vehicle_price=Decimal(
+backend/finance/tests.py:145:            maximum_vehicle_price=Decimal(
+backend/finance/tests.py:203:            vehicle_price=Decimal("100000.00"),
+backend/finance/tests.py:204:            down_payment=Decimal("20000.00"),
+backend/finance/tests.py:207:            vat_enabled=False,
+backend/finance/tests.py:223:                vehicle_price=Decimal("100000.00"),
+backend/finance/tests.py:224:                down_payment=Decimal("20000.00"),
+backend/finance/tests.py:227:                vat_enabled=False,
+backend/finance/tests.py:238:                vehicle_price=Decimal("100000.00"),
+backend/finance/tests.py:239:                down_payment=Decimal("20000.00"),
+backend/finance/tests.py:242:                vat_enabled=False,
+backend/finance/tests.py:253:                vehicle_price=Decimal("100000.00"),
+backend/finance/tests.py:254:                down_payment=Decimal("20000.00"),
+backend/finance/tests.py:257:                vat_enabled=False,
+backend/finance/tests.py:287:            vehicle_price=Decimal("100000.00"),
+backend/finance/tests.py:319:            vehicle_price=Decimal("100000.00"),
+backend/finance/tests.py:342:            vehicle_price=Decimal("100000.00"),
+backend/finance/tests.py:369:            vehicle_price=Decimal("100000.00"),
+backend/finance/tests.py:397:            vehicle_price=Decimal("100000.00"),
+backend/finance/tests.py:419:            vehicle_price=Decimal("100000.00"),
+backend/finance/tests.py:453:                vehicle_price=Decimal("100000.00"),
+backend/finance/tests.py:473:                vehicle_price=Decimal("100000.00"),
+backend/finance/tests.py:494:                vehicle_price=Decimal("100000.00"),
+backend/finance/tests.py:533:            vehicle_price=Decimal("100000.00"),
+backend/finance/tests.py:534:            vat_enabled=False,
+backend/finance/tests.py:535:            down_payment=Decimal("20000.00"),
+backend/finance/tests.py:582:            vehicle_price=Decimal("100000.00"),
+backend/finance/tests.py:583:            vat_enabled=False,
+backend/finance/tests.py:584:            down_payment=Decimal("20000.00"),
+backend/finance/tests.py:628:            vehicle_price=Decimal("100000.00"),
+backend/finance/tests.py:629:            vat_enabled=False,
+backend/finance/tests.py:630:            down_payment=Decimal("20000.00"),
+backend/finance/tests.py:680:            vehicle_price=Decimal("100000.00"),
+backend/finance/tests.py:681:            vat_enabled=False,
+backend/finance/tests.py:682:            down_payment=Decimal("20000.00"),
+backend/finance/tests.py:726:            vehicle_price=Decimal("100000.00"),
+backend/finance/tests.py:727:            vat_enabled=False,
+backend/finance/tests.py:728:            down_payment=Decimal("20000.00"),
+backend/finance/tests.py:786:            vehicle_price=Decimal("100000.00"),
+backend/finance/tests.py:787:            down_payment=Decimal("20000.00"),
+backend/finance/tests.py:790:            vat_enabled=False,
+backend/finance/tests.py:823:            vehicle_price=Decimal("100000.00"),
+backend/finance/tests.py:824:            down_payment=Decimal("20000.00"),
+backend/finance/tests.py:827:            vat_enabled=False,
+backend/finance/tests.py:863:            vehicle_price=Decimal("100000.00"),
+backend/finance/tests.py:864:            down_payment=Decimal("20000.00"),
+backend/finance/tests.py:867:            vat_enabled=False,
+backend/finance/tests.py:915:                vehicle_price=Decimal("100000.00"),
+backend/finance/tests.py:916:                down_payment=Decimal("20000.00"),
+backend/finance/tests.py:919:                vat_enabled=False,
+backend/finance/tests.py:960:            vehicle_price=Decimal("100000.00"),
+backend/finance/tests.py:961:            vat_enabled=False,
+backend/finance/tests.py:962:            down_payment=Decimal("20000.00"),
+backend/finance/tests.py:1080:            vehicle_price=Decimal("100000.00"),
+backend/finance/tests.py:1081:            vat_enabled=False,
+backend/finance/tests.py:1082:            down_payment=Decimal("20000.00"),
+backend/finance/tests.py:1163:            vehicle_price=Decimal("100000.00"),
+backend/finance/tests.py:1164:            vat_enabled=False,
+backend/finance/tests.py:1165:            down_payment=Decimal("20000.00"),
+backend/finance/tests.py:1232:            vehicle_price=Decimal("100000.00"),
+backend/finance/tests.py:1233:            vat_enabled=False,
+backend/finance/tests.py:1234:            down_payment=Decimal("20000.00"),
+backend/finance/tests.py:1274:            vehicle_price=Decimal("100000.00"),
+backend/finance/tests.py:1275:            vat_enabled=False,
+backend/finance/tests.py:1276:            down_payment=Decimal("20000.00"),
+backend/finance/tests.py:1347:            vehicle_price=Decimal("100000.00"),
+backend/finance/tests.py:1348:            vat_enabled=False,
+backend/finance/tests.py:1349:            down_payment=Decimal("20000.00"),
+frontend/dms/src/pages/deals/Quotes.jsx:349:                    Price
+frontend/dms/src/pages/deals/Quotes.jsx:419:                        {formatCurrency(quote.price)}
+frontend/dms/src/pages/deals/QuoteDetail.jsx:230:    setExtraDownPayment(quote?.extra_down_payment ?? "");
+frontend/dms/src/pages/deals/QuoteDetail.jsx:232:    setDepositDate(formatDateInput(quote?.deposit_date));
+frontend/dms/src/pages/deals/QuoteDetail.jsx:238:    setExtraDownPayment(quote?.extra_down_payment ?? "");
+frontend/dms/src/pages/deals/QuoteDetail.jsx:240:    setDepositDate(formatDateInput(quote?.deposit_date));
+frontend/dms/src/pages/deals/QuoteDetail.jsx:254:        extra_down_payment: extraDownPayment === "" ? null : extraDownPayment,
+frontend/dms/src/pages/deals/QuoteDetail.jsx:255:        deposit_date: depositDate || null,
+frontend/dms/src/pages/deals/QuoteDetail.jsx:655:    quote.emi_vehicle_price,
+frontend/dms/src/pages/deals/QuoteDetail.jsx:882:                <DetailRow label="Price" value={formatCurrency(quote.price)} />
+frontend/dms/src/pages/deals/QuoteDetail.jsx:891:                  value={formatCurrency(quote.down_payment)}
+frontend/dms/src/pages/deals/QuoteDetail.jsx:896:                  value={formatCurrency(quote.extra_down_payment)}
+frontend/dms/src/pages/deals/QuoteDetail.jsx:901:                  value={formatDate(quote.deposit_date)}
+frontend/dms/src/pages/deals/QuoteDetail.jsx:918:                <DetailRow label="Price" value={formatCurrency(quote.price)} />
+frontend/dms/src/pages/deals/QuoteDetail.jsx:927:                  value={formatCurrency(quote.down_payment)}
+frontend/dms/src/pages/deals/QuoteDetail.jsx:986:                label="Vehicle Price"
+frontend/dms/src/pages/deals/QuoteDetail.jsx:987:                value={formatCurrency(quote.emi_vehicle_price)}
+frontend/dms/src/pages/deals/QuoteDetail.jsx:992:                value={quote.emi_vat_enabled ? "Yes" : "No"}
+frontend/dms/src/pages/deals/QuoteDetail.jsx:997:                value={formatCurrency(quote.emi_vat_amount)}
+frontend/dms/src/pages/deals/QuoteDetail.jsx:1002:                value={formatCurrency(quote.emi_down_payment)}
+frontend/dms/src/pages/deals/NewQuote.jsx:19:  getSpecialPriceRequests,
+frontend/dms/src/pages/deals/NewQuote.jsx:20:  createSpecialPriceRequest,
+frontend/dms/src/pages/deals/NewQuote.jsx:21:} from "../../api/specialPrice";
+frontend/dms/src/pages/deals/NewQuote.jsx:128:  const [specialPriceRequests, setSpecialPriceRequests] = useState([]);
+frontend/dms/src/pages/deals/NewQuote.jsx:129:  const [selectedSpecialPriceRequestId, setSelectedSpecialPriceRequestId] =
+frontend/dms/src/pages/deals/NewQuote.jsx:131:  const [loadingSpecialPrices, setLoadingSpecialPrices] = useState(false);
+frontend/dms/src/pages/deals/NewQuote.jsx:132:  const [requestingSpecialPrice, setRequestingSpecialPrice] = useState(false);
+frontend/dms/src/pages/deals/NewQuote.jsx:133:  const [specialPriceRequested, setSpecialPriceRequested] = useState("");
+frontend/dms/src/pages/deals/NewQuote.jsx:166:  const [price, setPrice] = useState("");
+frontend/dms/src/pages/deals/NewQuote.jsx:285:    async function loadSpecialPriceRequests() {
+frontend/dms/src/pages/deals/NewQuote.jsx:287:        setLoadingSpecialPrices(true);
+frontend/dms/src/pages/deals/NewQuote.jsx:289:        const response = await getSpecialPriceRequests();
+frontend/dms/src/pages/deals/NewQuote.jsx:296:        setSpecialPriceRequests(data);
+frontend/dms/src/pages/deals/NewQuote.jsx:299:          setSpecialPriceRequests([]);
+frontend/dms/src/pages/deals/NewQuote.jsx:300:          console.error("Special price requests failed:", err);
+frontend/dms/src/pages/deals/NewQuote.jsx:304:          setLoadingSpecialPrices(false);
+frontend/dms/src/pages/deals/NewQuote.jsx:309:    loadSpecialPriceRequests();
+frontend/dms/src/pages/deals/NewQuote.jsx:317:    const numericPrice = Number(price);
+frontend/dms/src/pages/deals/NewQuote.jsx:319:    if (!Number.isFinite(numericPrice)) {
+frontend/dms/src/pages/deals/NewQuote.jsx:325:        const minimum = Number(band?.minimum_vehicle_price ?? 0);
+frontend/dms/src/pages/deals/NewQuote.jsx:326:        const maximumRaw = band?.maximum_vehicle_price;
+frontend/dms/src/pages/deals/NewQuote.jsx:333:          numericPrice >= minimum &&
+frontend/dms/src/pages/deals/NewQuote.jsx:334:          (maximum === null || numericPrice <= maximum)
+frontend/dms/src/pages/deals/NewQuote.jsx:350:  const usableSpecialPriceRequests = (specialPriceRequests || []).filter(
+frontend/dms/src/pages/deals/NewQuote.jsx:369:  const selectedSpecialPriceRequest =
+frontend/dms/src/pages/deals/NewQuote.jsx:370:    usableSpecialPriceRequests.find(
+frontend/dms/src/pages/deals/NewQuote.jsx:371:      (request) => String(request.id) === String(selectedSpecialPriceRequestId),
+frontend/dms/src/pages/deals/NewQuote.jsx:374:  const selectedApprovedSpecialPrice =
+frontend/dms/src/pages/deals/NewQuote.jsx:375:    selectedSpecialPriceRequest?.approved_price ?? null;
+frontend/dms/src/pages/deals/NewQuote.jsx:411:    setSelectedSpecialPriceRequestId("");
+frontend/dms/src/pages/deals/NewQuote.jsx:415:    setPrice("");
+frontend/dms/src/pages/deals/NewQuote.jsx:434:    setSelectedSpecialPriceRequestId("");
+frontend/dms/src/pages/deals/NewQuote.jsx:439:      setPrice("");
+frontend/dms/src/pages/deals/NewQuote.jsx:462:      const vehiclePrice = vehicle.asking_price ?? "";
+frontend/dms/src/pages/deals/NewQuote.jsx:464:      setPrice(vehiclePrice !== "" ? String(vehiclePrice) : "");
+frontend/dms/src/pages/deals/NewQuote.jsx:472:      setSelectedSpecialPriceRequestId("");
+frontend/dms/src/pages/deals/NewQuote.jsx:473:      setPrice("");
+frontend/dms/src/pages/deals/NewQuote.jsx:498:    const numericPrice = Number(price);
+frontend/dms/src/pages/deals/NewQuote.jsx:503:      !Number.isFinite(numericPrice) ||
+frontend/dms/src/pages/deals/NewQuote.jsx:504:      numericPrice <= 0
+frontend/dms/src/pages/deals/NewQuote.jsx:517:          vehicle_price: numericPrice,
+frontend/dms/src/pages/deals/NewQuote.jsx:518:          vat_enabled: vatEnabled,
+frontend/dms/src/pages/deals/NewQuote.jsx:519:          down_payment: 0,
+frontend/dms/src/pages/deals/NewQuote.jsx:568:    price,
+frontend/dms/src/pages/deals/NewQuote.jsx:625:    if (!selectedSpecialPriceRequest) {
+frontend/dms/src/pages/deals/NewQuote.jsx:627:        selectedCar?.asking_price !== undefined &&
+frontend/dms/src/pages/deals/NewQuote.jsx:628:        selectedCar?.asking_price !== null
+frontend/dms/src/pages/deals/NewQuote.jsx:630:        setPrice(String(selectedCar.asking_price));
+frontend/dms/src/pages/deals/NewQuote.jsx:636:      selectedApprovedSpecialPrice !== null &&
+frontend/dms/src/pages/deals/NewQuote.jsx:637:      selectedApprovedSpecialPrice !== undefined &&
+frontend/dms/src/pages/deals/NewQuote.jsx:638:      selectedApprovedSpecialPrice !== ""
+frontend/dms/src/pages/deals/NewQuote.jsx:640:      setPrice(String(selectedApprovedSpecialPrice));
+frontend/dms/src/pages/deals/NewQuote.jsx:642:  }, [selectedSpecialPriceRequest, selectedApprovedSpecialPrice, selectedCar]);
+frontend/dms/src/pages/deals/NewQuote.jsx:644:  const stockVatAmount = stockCalculation?.vat_amount ?? "0";
+frontend/dms/src/pages/deals/NewQuote.jsx:646:  const stockPriceAfterVat = stockCalculation?.price_after_vat ?? "";
+frontend/dms/src/pages/deals/NewQuote.jsx:655:    stockPriceAfterVat !== ""
+frontend/dms/src/pages/deals/NewQuote.jsx:656:      ? Number(stockPriceAfterVat) + Number(stockExpenseTotal || 0)
+frontend/dms/src/pages/deals/NewQuote.jsx:680:    setSelectedSpecialPriceRequestId("");
+frontend/dms/src/pages/deals/NewQuote.jsx:683:    setPrice("");
+frontend/dms/src/pages/deals/NewQuote.jsx:722:  const financePrice =
+frontend/dms/src/pages/deals/NewQuote.jsx:723:    selectedEmi?.price ??
+frontend/dms/src/pages/deals/NewQuote.jsx:724:    selectedEmi?.vehicle_price ??
+frontend/dms/src/pages/deals/NewQuote.jsx:725:    selectedEmi?.emi_vehicle_price ??
+frontend/dms/src/pages/deals/NewQuote.jsx:729:    selectedEmi?.down_payment ?? selectedEmi?.emi_down_payment ?? "";
+frontend/dms/src/pages/deals/NewQuote.jsx:757:    selectedEmi?.vat_amount ?? selectedEmi?.emi_vat_amount ?? "";
+frontend/dms/src/pages/deals/NewQuote.jsx:803:  const handleSpecialPriceRequest = async () => {
+frontend/dms/src/pages/deals/NewQuote.jsx:809:    const requestedPrice = Number(specialPriceRequested);
+frontend/dms/src/pages/deals/NewQuote.jsx:811:    if (!Number.isFinite(requestedPrice) || requestedPrice <= 0) {
+frontend/dms/src/pages/deals/NewQuote.jsx:812:      toast.error("Enter a valid requested Special Price.");
+frontend/dms/src/pages/deals/NewQuote.jsx:817:      selectedCar?.least_selling_price !== undefined &&
+frontend/dms/src/pages/deals/NewQuote.jsx:818:      selectedCar?.least_selling_price !== null &&
+frontend/dms/src/pages/deals/NewQuote.jsx:819:      requestedPrice >= Number(selectedCar.least_selling_price)
+frontend/dms/src/pages/deals/NewQuote.jsx:822:        "Special Price enquiry is only required below the Least Selling Price.",
+frontend/dms/src/pages/deals/NewQuote.jsx:828:      setRequestingSpecialPrice(true);
+frontend/dms/src/pages/deals/NewQuote.jsx:831:      const response = await createSpecialPriceRequest({
+frontend/dms/src/pages/deals/NewQuote.jsx:833:        requested_price: String(requestedPrice),
+frontend/dms/src/pages/deals/NewQuote.jsx:838:      setSpecialPriceRequests((current) => [createdRequest, ...current]);
+frontend/dms/src/pages/deals/NewQuote.jsx:840:      setSpecialPriceRequested("");
+frontend/dms/src/pages/deals/NewQuote.jsx:841:      toast.success("Special Price enquiry sent to Master.");
+frontend/dms/src/pages/deals/NewQuote.jsx:843:      const message = err?.message || "Unable to submit Special Price enquiry.";
+frontend/dms/src/pages/deals/NewQuote.jsx:848:      setRequestingSpecialPrice(false);
+frontend/dms/src/pages/deals/NewQuote.jsx:871:    if (!price) {
+frontend/dms/src/pages/deals/NewQuote.jsx:872:      return "Price is required.";
+frontend/dms/src/pages/deals/NewQuote.jsx:884:      return "No active insurance band is configured for this vehicle price.";
+frontend/dms/src/pages/deals/NewQuote.jsx:891:    if (selectedSpecialPriceRequestId) {
+frontend/dms/src/pages/deals/NewQuote.jsx:892:      if (!selectedSpecialPriceRequest) {
+frontend/dms/src/pages/deals/NewQuote.jsx:893:        return "The selected special price approval is no longer available.";
+frontend/dms/src/pages/deals/NewQuote.jsx:897:        selectedApprovedSpecialPrice === null ||
+frontend/dms/src/pages/deals/NewQuote.jsx:898:        selectedApprovedSpecialPrice === undefined ||
+frontend/dms/src/pages/deals/NewQuote.jsx:899:        selectedApprovedSpecialPrice === ""
+frontend/dms/src/pages/deals/NewQuote.jsx:901:        return "The approved special price amount is not available.";
+frontend/dms/src/pages/deals/NewQuote.jsx:929:    if (!financePrice) {
+frontend/dms/src/pages/deals/NewQuote.jsx:930:      return "The saved EMI does not contain a vehicle price.";
+frontend/dms/src/pages/deals/NewQuote.jsx:933:    if (selectedSpecialPriceRequestId) {
+frontend/dms/src/pages/deals/NewQuote.jsx:934:      if (!selectedSpecialPriceRequest) {
+frontend/dms/src/pages/deals/NewQuote.jsx:935:        return "The selected special price approval is no longer available.";
+frontend/dms/src/pages/deals/NewQuote.jsx:939:        selectedApprovedSpecialPrice === null ||
+frontend/dms/src/pages/deals/NewQuote.jsx:940:        selectedApprovedSpecialPrice === undefined ||
+frontend/dms/src/pages/deals/NewQuote.jsx:941:        selectedApprovedSpecialPrice === ""
+frontend/dms/src/pages/deals/NewQuote.jsx:943:        return "The approved special price amount is not available.";
+frontend/dms/src/pages/deals/NewQuote.jsx:989:          price: String(price),
+frontend/dms/src/pages/deals/NewQuote.jsx:991:          vat_enabled: vatEnabled,
+frontend/dms/src/pages/deals/NewQuote.jsx:992:          vat_amount: stockVatAmount,
+frontend/dms/src/pages/deals/NewQuote.jsx:993:          special_price_request_id: selectedSpecialPriceRequestId || null,
+frontend/dms/src/pages/deals/NewQuote.jsx:997:          payload.deposit_date = depositDate;
+frontend/dms/src/pages/deals/NewQuote.jsx:1022:         * and price because the CURRENT backend serializer
+frontend/dms/src/pages/deals/NewQuote.jsx:1035:          price: String(financePrice),
+frontend/dms/src/pages/deals/NewQuote.jsx:1038:          vat_enabled: Boolean(
+frontend/dms/src/pages/deals/NewQuote.jsx:1039:            selectedEmi?.vat_enabled ?? selectedEmi?.emi_vat_enabled,
+frontend/dms/src/pages/deals/NewQuote.jsx:1042:          vat_amount:
+frontend/dms/src/pages/deals/NewQuote.jsx:1043:            selectedEmi?.vat_amount ?? selectedEmi?.emi_vat_amount ?? "0.00",
+frontend/dms/src/pages/deals/NewQuote.jsx:1044:          special_price_request_id: selectedSpecialPriceRequestId || null,
+frontend/dms/src/pages/deals/NewQuote.jsx:1048:          payload.extra_down_payment = extraDownPayment;
+frontend/dms/src/pages/deals/NewQuote.jsx:1052:          payload.deposit_date = depositDate;
+frontend/dms/src/pages/deals/NewQuote.jsx:1215:                        setSelectedSpecialPriceRequestId("");
+frontend/dms/src/pages/deals/NewQuote.jsx:1216:                        setPrice("");
+frontend/dms/src/pages/deals/NewQuote.jsx:1273:                                AED {vehicle.asking_price ?? "—"}
+frontend/dms/src/pages/deals/NewQuote.jsx:1308:                          Asking Price
+frontend/dms/src/pages/deals/NewQuote.jsx:1312:                          {formatCurrency(selectedCar.asking_price)}
+frontend/dms/src/pages/deals/NewQuote.jsx:1409:                    Vehicle Price
+frontend/dms/src/pages/deals/NewQuote.jsx:1416:                    value={price}
+frontend/dms/src/pages/deals/NewQuote.jsx:1417:                    onChange={(event) => setPrice(event.target.value)}
+frontend/dms/src/pages/deals/NewQuote.jsx:1419:                      loadingCarDetail ? "Loading vehicle price..." : "0.00"
+frontend/dms/src/pages/deals/NewQuote.jsx:1452:            {/* Special Price */}
+frontend/dms/src/pages/deals/NewQuote.jsx:1453:            {/* Special Price */}
+frontend/dms/src/pages/deals/NewQuote.jsx:1457:                  Special Price
+frontend/dms/src/pages/deals/NewQuote.jsx:1461:                  Request Master approval for a transaction-specific price below
+frontend/dms/src/pages/deals/NewQuote.jsx:1462:                  the vehicle's Least Selling Price.
+frontend/dms/src/pages/deals/NewQuote.jsx:1467:                {loadingSpecialPrices ? (
+frontend/dms/src/pages/deals/NewQuote.jsx:1469:                    Loading special price requests...
+frontend/dms/src/pages/deals/NewQuote.jsx:1471:                ) : usableSpecialPriceRequests.length > 0 ? (
+frontend/dms/src/pages/deals/NewQuote.jsx:1475:                        Approved Special Price
+frontend/dms/src/pages/deals/NewQuote.jsx:1479:                        value={selectedSpecialPriceRequestId}
+frontend/dms/src/pages/deals/NewQuote.jsx:1481:                          setSelectedSpecialPriceRequestId(event.target.value)
+frontend/dms/src/pages/deals/NewQuote.jsx:1485:                        <option value="">Use standard vehicle price</option>
+frontend/dms/src/pages/deals/NewQuote.jsx:1487:                        {usableSpecialPriceRequests.map((request) => (
+frontend/dms/src/pages/deals/NewQuote.jsx:1490:                            {formatCurrency(request.approved_price)}
+frontend/dms/src/pages/deals/NewQuote.jsx:1496:                    {selectedSpecialPriceRequest && (
+frontend/dms/src/pages/deals/NewQuote.jsx:1506:                                selectedSpecialPriceRequest.requested_price,
+frontend/dms/src/pages/deals/NewQuote.jsx:1516:                              AED {formatCurrency(selectedApprovedSpecialPrice)}
+frontend/dms/src/pages/deals/NewQuote.jsx:1525:                              {selectedSpecialPriceRequest.expires_at
+frontend/dms/src/pages/deals/NewQuote.jsx:1527:                                    selectedSpecialPriceRequest.expires_at,
+frontend/dms/src/pages/deals/NewQuote.jsx:1538:                    No approved special price is available for this vehicle.
+frontend/dms/src/pages/deals/NewQuote.jsx:1545:                      Enquire Master for Special Price
+frontend/dms/src/pages/deals/NewQuote.jsx:1550:                      its inventory asking price.
+frontend/dms/src/pages/deals/NewQuote.jsx:1556:                          Current Asked Price
+frontend/dms/src/pages/deals/NewQuote.jsx:1560:                          AED {formatCurrency(selectedCar.asking_price)}
+frontend/dms/src/pages/deals/NewQuote.jsx:1566:                          Least Selling Price
+frontend/dms/src/pages/deals/NewQuote.jsx:1570:                          AED {formatCurrency(selectedCar.least_selling_price)}
+frontend/dms/src/pages/deals/NewQuote.jsx:1577:                        Requested Price
+frontend/dms/src/pages/deals/NewQuote.jsx:1584:                        value={specialPriceRequested}
+frontend/dms/src/pages/deals/NewQuote.jsx:1586:                          setSpecialPriceRequested(event.target.value)
+frontend/dms/src/pages/deals/NewQuote.jsx:1588:                        placeholder="Enter requested price"
+frontend/dms/src/pages/deals/NewQuote.jsx:1595:                      onClick={handleSpecialPriceRequest}
+frontend/dms/src/pages/deals/NewQuote.jsx:1596:                      disabled={requestingSpecialPrice || !selectedCarId}
+frontend/dms/src/pages/deals/NewQuote.jsx:1599:                      {requestingSpecialPrice ? "Sending..." : "Enquire Master"}
+frontend/dms/src/pages/deals/NewQuote.jsx:1752:                          No active insurance band covers this vehicle price.
+frontend/dms/src/pages/deals/NewQuote.jsx:1849:                          Vehicle Price
+frontend/dms/src/pages/deals/NewQuote.jsx:1852:                          {formatCurrency(stockCalculation.vehicle_price)}
+frontend/dms/src/pages/deals/NewQuote.jsx:1867:                          Price After VAT
+frontend/dms/src/pages/deals/NewQuote.jsx:1870:                          {formatCurrency(stockPriceAfterVat)}
+frontend/dms/src/pages/deals/NewQuote.jsx:1927:                    Select a vehicle and enter the price to calculate the
+frontend/dms/src/pages/deals/NewQuote.jsx:1973:                      {formatCurrency(emi.price ?? emi.vehicle_price)}
+frontend/dms/src/pages/deals/NewQuote.jsx:2076:                {/* Special Price */}
+frontend/dms/src/pages/deals/NewQuote.jsx:2080:                      Special Price
+frontend/dms/src/pages/deals/NewQuote.jsx:2084:                      Use an approved transaction-specific special price for
+frontend/dms/src/pages/deals/NewQuote.jsx:2090:                    {loadingSpecialPrices ? (
+frontend/dms/src/pages/deals/NewQuote.jsx:2092:                        Loading approved special prices...
+frontend/dms/src/pages/deals/NewQuote.jsx:2094:                    ) : usableSpecialPriceRequests.length === 0 ? (
+frontend/dms/src/pages/deals/NewQuote.jsx:2096:                        No approved special price is available for this vehicle.
+frontend/dms/src/pages/deals/NewQuote.jsx:2101:                          Approved Special Price
+frontend/dms/src/pages/deals/NewQuote.jsx:2105:                          value={selectedSpecialPriceRequestId}
+frontend/dms/src/pages/deals/NewQuote.jsx:2107:                            setSelectedSpecialPriceRequestId(event.target.value)
+frontend/dms/src/pages/deals/NewQuote.jsx:2111:                          <option value="">Use saved EMI price</option>
+frontend/dms/src/pages/deals/NewQuote.jsx:2113:                          {usableSpecialPriceRequests.map((request) => (
+frontend/dms/src/pages/deals/NewQuote.jsx:2116:                              {formatCurrency(request.approved_price)}
+frontend/dms/src/pages/deals/NewQuote.jsx:2121:                        {selectedSpecialPriceRequest && (
+frontend/dms/src/pages/deals/NewQuote.jsx:2131:                                    selectedSpecialPriceRequest.requested_price,
+frontend/dms/src/pages/deals/NewQuote.jsx:2142:                                  {formatCurrency(selectedApprovedSpecialPrice)}
+frontend/dms/src/pages/deals/NewQuote.jsx:2151:                                  {selectedSpecialPriceRequest.expires_at
+frontend/dms/src/pages/deals/NewQuote.jsx:2153:                                        selectedSpecialPriceRequest.expires_at,
+frontend/dms/src/pages/deals/NewQuote.jsx:2182:                        Vehicle Price
+frontend/dms/src/pages/deals/NewQuote.jsx:2186:                        {formatCurrency(financePrice)}
+frontend/dms/src/pages/deals/NewQuote.jsx:2328:                        Price
+frontend/dms/src/pages/deals/NewQuote.jsx:2332:                        {formatCurrency(financePrice)}
+frontend/dms/src/components/printing/templates/QuotePrintTemplate.jsx:114:  const vehiclePrice = Number(quote.price || 0);
+frontend/dms/src/components/printing/templates/QuotePrintTemplate.jsx:115:  const downPayment = Number(quote.down_payment || 0);
+frontend/dms/src/components/printing/templates/QuotePrintTemplate.jsx:116:  const extraDownPayment = Number(quote.extra_down_payment || 0);
+frontend/dms/src/components/printing/templates/QuotePrintTemplate.jsx:119:   * Quote price is the backend-controlled commercial amount.
+frontend/dms/src/components/printing/templates/QuotePrintTemplate.jsx:120:   * Do not add VAT again to quote.price.
+frontend/dms/src/components/printing/templates/QuotePrintTemplate.jsx:123:   * Total = Quote Price - Advance Amount - Extra Down Payment
+frontend/dms/src/components/printing/templates/QuotePrintTemplate.jsx:126:   * Total = Quote Price - Down Payment - Extra Down Payment
+frontend/dms/src/components/printing/templates/QuotePrintTemplate.jsx:133:  const totalAmount = vehiclePrice - downPayment - extraDownPayment;
+frontend/dms/src/components/printing/templates/QuotePrintTemplate.jsx:214:                  <th>Vehicle Price</th>
+frontend/dms/src/components/printing/templates/QuotePrintTemplate.jsx:215:                  <td>{formatCurrency(vehiclePrice)}</td>
+frontend/dms/src/components/printing/templates/QuotePrintTemplate.jsx:229:                <th>Vehicle Price (Inclusive of VAT)</th>
+frontend/dms/src/components/printing/templates/QuotePrintTemplate.jsx:230:                <td>{formatCurrency(vehiclePrice)}</td>
+frontend/dms/src/components/printing/templates/QuotePrintTemplate.jsx:251:            {hasAmount(quote.extra_down_payment) && (

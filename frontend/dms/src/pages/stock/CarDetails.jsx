@@ -8,6 +8,7 @@ import {
   uploadVehicleDocument,
   deleteVehicleDocument,
   archiveVehicleDocument,
+  downloadVehicleDocument,
   updateCar,
   deleteImage,
   reorderImages,
@@ -32,6 +33,7 @@ function CarDetails() {
   const [documentUploading, setDocumentUploading] = useState(false);
   const [documentUploadError, setDocumentUploadError] = useState("");
   const [documentDeletingId, setDocumentDeletingId] = useState(null);
+  const [documentDownloadingId, setDocumentDownloadingId] = useState(null);
   const [draggedImageId, setDraggedImageId] = useState(null);
   const [selectedImageIds, setSelectedImageIds] = useState([]);
   const [brokenImageIds, setBrokenImageIds] = useState([]);
@@ -390,6 +392,45 @@ function CarDetails() {
       console.error("ARCHIVE VEHICLE DOCUMENT FAILED:", error);
 
       toast.error(error?.message || "Unable to archive vehicle document.");
+    }
+  }
+
+  async function handleDownloadVehicleDocument(vehicleDocument) {
+    if (!vehicleDocument?.id || documentDownloadingId === vehicleDocument.id) {
+      return;
+    }
+
+    setDocumentDownloadingId(vehicleDocument.id);
+
+    try {
+      const blob = await downloadVehicleDocument(vehicleDocument.id);
+
+      if (!(blob instanceof Blob)) {
+        throw new Error("The server did not return a valid document file.");
+      }
+
+      const downloadUrl = window.URL.createObjectURL(blob);
+      const anchor = window.document.createElement("a");
+
+      anchor.href = downloadUrl;
+      anchor.download = vehicleDocument.original_filename || "vehicle-document";
+      anchor.style.display = "none";
+
+      window.document.body.appendChild(anchor);
+      anchor.click();
+      anchor.remove();
+
+      window.setTimeout(() => {
+        window.URL.revokeObjectURL(downloadUrl);
+      }, 1000);
+
+      toast.success("Vehicle document download started.");
+    } catch (error) {
+      console.error("DOWNLOAD VEHICLE DOCUMENT FAILED:", error);
+
+      toast.error(error?.message || "Unable to download vehicle document.");
+    } finally {
+      setDocumentDownloadingId(null);
     }
   }
 
@@ -821,6 +862,19 @@ function CarDetails() {
                             Unavailable
                           </span>
                         )}
+
+                        <button
+                          type="button"
+                          onClick={() =>
+                            handleDownloadVehicleDocument(document)
+                          }
+                          disabled={documentDownloadingId === document.id}
+                          className="rounded-xl border border-slate-200 bg-white px-3 py-1.5 text-xs font-semibold text-slate-700 transition hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-50"
+                        >
+                          {documentDownloadingId === document.id
+                            ? "Downloading..."
+                            : "Download"}
+                        </button>
 
                         {user?.role === "MASTER" && !document.is_archived && (
                           <button

@@ -32,7 +32,6 @@ export async function getRtaDocuments(rtaRecordId) {
 export async function uploadRtaDocument(rtaRecordId, file, documentType) {
   const formData = new FormData();
 
-  formData.append("rta_record", String(rtaRecordId));
   formData.append("document_type", documentType);
   formData.append("file", file);
 

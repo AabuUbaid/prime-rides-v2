@@ -1,3 +1,4 @@
+from datetime import timedelta
 from decimal import Decimal
 
 from django.contrib.auth import get_user_model
@@ -607,14 +608,6 @@ class QuoteDetailSerializer(serializers.ModelSerializer):
         read_only_fields = fields
 
 
-# =========================================================
-# QUOTE PRINT
-# =========================================================
-
-# =========================================================
-# QUOTE PRINT
-# =========================================================
-
 class QuotePrintSerializer(serializers.ModelSerializer):
 
     customer_documents = CustomerDocumentSerializer(
@@ -628,6 +621,10 @@ class QuotePrintSerializer(serializers.ModelSerializer):
         read_only=True,
     )
 
+    validity_days = serializers.SerializerMethodField()
+    valid_until = serializers.SerializerMethodField()
+    finance_amount = serializers.SerializerMethodField()
+
     class Meta:
         model = Quote
 
@@ -635,10 +632,13 @@ class QuotePrintSerializer(serializers.ModelSerializer):
             "quote_number",
             "created_at",
 
+            # Customer
+            "customer_id",
             "customer_name",
             "customer_mobile",
             "customer_documents",
 
+            # Historical vehicle snapshot
             "vehicle_stock_id",
             "vehicle_make",
             "vehicle_model",
@@ -649,6 +649,7 @@ class QuotePrintSerializer(serializers.ModelSerializer):
             "vehicle_chassis_number",
             "vehicle_engine_number",
 
+            # Quote financial information
             "price",
             "payment_method",
             "vat_enabled",
@@ -661,12 +662,43 @@ class QuotePrintSerializer(serializers.ModelSerializer):
             "emi_bank_name",
             "emi_vat_enabled",
             "emi_vat_amount",
+            "emi_finance_amount",
+
+            # Print business rules
+            "validity_days",
+            "valid_until",
+            "finance_amount",
 
             # Internal Quote expenses
             "expenses",
         )
 
         read_only_fields = fields
+
+    def get_validity_days(self, instance):
+        if instance.payment_method == Quote.PaymentMethod.CASH:
+            return 7
+
+        if instance.payment_method == Quote.PaymentMethod.FINANCE:
+            return 30
+
+        return None
+
+    def get_valid_until(self, instance):
+        validity_days = self.get_validity_days(instance)
+
+        if validity_days is None or not instance.created_at:
+            return None
+
+        return instance.created_at.date() + timedelta(
+            days=validity_days
+        )
+
+    def get_finance_amount(self, instance):
+        if instance.payment_method != Quote.PaymentMethod.FINANCE:
+            return None
+
+        return instance.emi_finance_amount
 
     def to_representation(self, instance):
         data = super().to_representation(instance)
@@ -676,6 +708,7 @@ class QuotePrintSerializer(serializers.ModelSerializer):
             "date": data["created_at"],
 
             "customer": {
+                "id": data["customer_id"],
                 "name": data["customer_name"],
                 "mobile": data["customer_mobile"],
                 "documents": data["customer_documents"],
@@ -695,10 +728,12 @@ class QuotePrintSerializer(serializers.ModelSerializer):
 
             "price": data["price"],
             "payment_method": data["payment_method"],
+
             "vat": {
                 "enabled": data["vat_enabled"],
                 "amount": data["vat_amount"],
             },
+
             "down_payment": data["down_payment"],
             "extra_down_payment": data["extra_down_payment"],
             "deposit_date": data["deposit_date"],
@@ -706,19 +741,28 @@ class QuotePrintSerializer(serializers.ModelSerializer):
             "finance": {
                 "bank_name": (
                     data["emi_bank_name"]
-                    if data["payment_method"] == Quote.PaymentMethod.FINANCE
+                    if data["payment_method"]
+                    == Quote.PaymentMethod.FINANCE
                     else None
                 ),
                 "vat_enabled": (
                     data["emi_vat_enabled"]
-                    if data["payment_method"] == Quote.PaymentMethod.FINANCE
+                    if data["payment_method"]
+                    == Quote.PaymentMethod.FINANCE
                     else None
                 ),
                 "vat_amount": (
                     data["emi_vat_amount"]
-                    if data["payment_method"] == Quote.PaymentMethod.FINANCE
+                    if data["payment_method"]
+                    == Quote.PaymentMethod.FINANCE
                     else None
                 ),
+                "finance_amount": data["finance_amount"],
+            },
+
+            "validity": {
+                "days": data["validity_days"],
+                "valid_until": data["valid_until"],
             },
 
             "expenses": data["expenses"],

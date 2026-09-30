@@ -8,6 +8,7 @@ function sanitizePrintValue(value, fallback = "") {
 export function printDocument({
   customerName = "Customer",
   documentNumber = "Document",
+  documentTitle = "",
 }) {
   const previousTitle = document.title;
 
@@ -15,7 +16,7 @@ export function printDocument({
 
   const safeDocumentNumber = sanitizePrintValue(documentNumber, "Document");
 
-  document.title = `${safeCustomerName}-${safeDocumentNumber}`;
+  document.title = documentTitle || `${safeCustomerName}-${safeDocumentNumber}`;
 
   const restoreTitle = () => {
     document.title = previousTitle;

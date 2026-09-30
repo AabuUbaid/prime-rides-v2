@@ -1,29 +1,16 @@
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { Link } from "react-router-dom";
-import {
-  Eye,
-  Plus,
-  RefreshCw,
-  UserRound,
-} from "lucide-react";
+import { Eye, Plus, RefreshCw, Upload, UserRound } from "lucide-react";
 import { toast } from "react-toastify";
 
-import { getCustomers } from "../../api/customers";
+import { getCustomers, importCustomers } from "../../api/customers";
 
 function getCustomerName(customer) {
-  return (
-    customer?.customer_name ||
-    customer?.name ||
-    "-"
-  );
+  return customer?.customer_name || customer?.name || "-";
 }
 
 function getCustomerPhone(customer) {
-  return (
-    customer?.phone_number ||
-    customer?.phone ||
-    "-"
-  );
+  return customer?.phone_number || customer?.phone || "-";
 }
 
 function formatDate(value) {
@@ -48,6 +35,10 @@ export default function Customers() {
   const [customers, setCustomers] = useState([]);
   const [loading, setLoading] = useState(true);
 
+  const [selectedImportFile, setSelectedImportFile] = useState(null);
+  const [importing, setImporting] = useState(false);
+  const importFileInputRef = useRef(null);
+
   const loadCustomers = useCallback(async () => {
     try {
       setLoading(true);
@@ -55,33 +46,107 @@ export default function Customers() {
       const response = await getCustomers();
 
       if (!response?.success) {
-        throw new Error(
-          response?.message ||
-            "Unable to load customers."
-        );
+        throw new Error(response?.message || "Unable to load customers.");
       }
 
-      setCustomers(
-        Array.isArray(response.data)
-          ? response.data
-          : []
-      );
+      setCustomers(Array.isArray(response.data) ? response.data : []);
     } catch (error) {
-      console.error(
-        "Failed to load customers:",
-        error
-      );
+      console.error("Failed to load customers:", error);
 
-      toast.error(
-        error?.message ||
-          "Unable to load customers."
-      );
+      toast.error(error?.message || "Unable to load customers.");
 
       setCustomers([]);
     } finally {
       setLoading(false);
     }
   }, []);
+
+  function handleImportFileChange(event) {
+    const file = event.target.files?.[0] || null;
+
+    if (!file) {
+      setSelectedImportFile(null);
+      return;
+    }
+
+    if (!file.name.toLowerCase().endsWith(".csv")) {
+      toast.error("Only CSV files are supported.");
+      event.target.value = "";
+      setSelectedImportFile(null);
+      return;
+    }
+
+    setSelectedImportFile(file);
+  }
+
+  async function handleImportCustomers() {
+    if (!selectedImportFile) {
+      toast.error("Please select a CSV file.");
+      return;
+    }
+
+    try {
+      setImporting(true);
+
+      const formData = new FormData();
+
+      formData.append("file", selectedImportFile);
+
+      const response = await importCustomers(formData);
+
+      if (!response?.success) {
+        throw new Error(response?.message || "Unable to import customers.");
+      }
+
+      const data = response?.data || {};
+
+      const importedCount = Number(data.imported_count || 0);
+
+      const failedCount = Number(data.failed_count || 0);
+
+      const duplicateCount = Number(data.duplicate_count || 0);
+
+      toast.success(
+        `Customer import completed. Imported: ${importedCount}, Failed: ${failedCount}, Duplicates: ${duplicateCount}.`,
+      );
+
+      setSelectedImportFile(null);
+
+      if (importFileInputRef.current) {
+        importFileInputRef.current.value = "";
+      }
+
+      await loadCustomers();
+
+      if (Array.isArray(data.errors) && data.errors.length > 0) {
+        console.warn("Customer CSV import row errors:", data.errors);
+      }
+
+      if (Array.isArray(data.duplicates) && data.duplicates.length > 0) {
+        console.info("Customer CSV import duplicates:", data.duplicates);
+      }
+    } catch (error) {
+      console.error("Customer CSV import failed:", error);
+
+      const backendErrors = error?.cause?.errors;
+
+      if (Array.isArray(backendErrors)) {
+        toast.error(backendErrors.join(" "));
+      } else if (backendErrors && typeof backendErrors === "object") {
+        const messages = Object.values(backendErrors).flat().filter(Boolean);
+
+        toast.error(
+          messages.length
+            ? messages.join(" ")
+            : error?.message || "Unable to import customers.",
+        );
+      } else {
+        toast.error(error?.message || "Unable to import customers.");
+      }
+    } finally {
+      setImporting(false);
+    }
+  }
 
   useEffect(() => {
     loadCustomers();
@@ -110,18 +175,42 @@ export default function Customers() {
           </div>
 
           <div className="flex items-center gap-2">
+            <input
+              ref={importFileInputRef}
+              type="file"
+              accept=".csv,text/csv"
+              onChange={handleImportFileChange}
+              className="hidden"
+            />
+
+            <button
+              type="button"
+              onClick={
+                selectedImportFile
+                  ? handleImportCustomers
+                  : () => {
+                      importFileInputRef.current?.click();
+                    }
+              }
+              disabled={importing || loading}
+              className="inline-flex items-center gap-2 rounded-lg border border-slate-300 bg-white px-4 py-2.5 text-sm font-medium text-slate-700 transition hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-60"
+            >
+              <Upload size={16} />
+
+              {importing
+                ? "Importing..."
+                : selectedImportFile
+                  ? "Import CSV"
+                  : "Import CSV"}
+            </button>
+
             <button
               type="button"
               onClick={loadCustomers}
               disabled={loading}
               className="inline-flex items-center gap-2 rounded-lg border border-slate-300 bg-white px-4 py-2.5 text-sm font-medium text-slate-700 transition hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-60"
             >
-              <RefreshCw
-                size={16}
-                className={
-                  loading ? "animate-spin" : ""
-                }
-              />
+              <RefreshCw size={16} className={loading ? "animate-spin" : ""} />
               Refresh
             </button>
 
@@ -133,6 +222,14 @@ export default function Customers() {
               New Customer
             </Link>
           </div>
+          {selectedImportFile && (
+            <div className="mt-2 text-right text-xs text-slate-500">
+              Selected CSV:{" "}
+              <span className="font-medium text-slate-700">
+                {selectedImportFile.name}
+              </span>
+            </div>
+          )}
         </div>
 
         <div className="overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm">
@@ -141,25 +238,18 @@ export default function Customers() {
               {loading
                 ? "Loading customers..."
                 : `${customers.length} customer${
-                    customers.length === 1
-                      ? ""
-                      : "s"
+                    customers.length === 1 ? "" : "s"
                   }`}
             </div>
           </div>
 
           {loading ? (
             <div className="flex min-h-64 items-center justify-center">
-              <div className="text-sm text-slate-500">
-                Loading customers...
-              </div>
+              <div className="text-sm text-slate-500">Loading customers...</div>
             </div>
           ) : customers.length === 0 ? (
             <div className="flex min-h-64 flex-col items-center justify-center px-6 text-center">
-              <UserRound
-                size={36}
-                className="mb-3 text-slate-300"
-              />
+              <UserRound size={36} className="mb-3 text-slate-300" />
 
               <h2 className="text-base font-semibold text-slate-800">
                 No customers found
@@ -202,10 +292,7 @@ export default function Customers() {
 
                 <tbody className="divide-y divide-slate-100 bg-white">
                   {customers.map((customer) => (
-                    <tr
-                      key={customer.id}
-                      className="hover:bg-slate-50"
-                    >
+                    <tr key={customer.id} className="hover:bg-slate-50">
                       <td className="px-5 py-4">
                         <div className="font-medium text-slate-900">
                           {getCustomerName(customer)}
@@ -217,9 +304,7 @@ export default function Customers() {
                       </td>
 
                       <td className="px-5 py-4 text-sm text-slate-600">
-                        {formatDate(
-                          customer.created_at
-                        )}
+                        {formatDate(customer.created_at)}
                       </td>
 
                       <td className="px-5 py-4 text-right">

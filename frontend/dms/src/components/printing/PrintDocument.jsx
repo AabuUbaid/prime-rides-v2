@@ -3,65 +3,67 @@ export default function PrintDocument({
   documentNumber,
   date,
   status,
+  company = {},
+  showHeader = true,
+  showFooter = true,
   children,
 }) {
+  const companyName = company?.legal_entity_name || "Company Name";
+
+  const companyAddress = company?.showroom_address || "-";
+
+  const companyMobile = company?.main_contact_mobile || "-";
+
   return (
     <div className="print-area">
       <div className="print-document">
-        <header className="print-header">
-          <div>
-            <div className="print-company">
-              PRIME RIDES ELECTRIC CARS TRADING LLC
-            </div>
-
-            <div className="print-document-title">
-              {documentType}
-            </div>
-
-            <div className="print-company-details">
-              Office No-BC 01, Jams Logistic Village, Al Qusais Industrial Area,
-              Dubai, UAE
-              <br />
-              +971 4 503 2201 · sales@primeridesuae.com
-            </div>
-          </div>
-
-          <div className="print-meta">
+        {showHeader && (
+          <header className="print-header">
             <div>
-              <strong>No:</strong>{" "}
-              {documentNumber || "-"}
-            </div>
+              <div className="print-company">{companyName}</div>
 
-            <div>
-              <strong>Date:</strong>{" "}
-              {date || "-"}
-            </div>
+              {documentType ? (
+                <div className="print-document-title">{documentType}</div>
+              ) : null}
 
-            {status ? (
-              <div>
-                <strong>Status:</strong>{" "}
-                {status}
+              <div className="print-company-details">
+                {companyAddress}
+                <br />
+                {companyMobile}
               </div>
-            ) : null}
-          </div>
-        </header>
+            </div>
+
+            <div className="print-meta">
+              <div>
+                <strong>No:</strong> {documentNumber || "-"}
+              </div>
+
+              <div>
+                <strong>Date:</strong> {date || "-"}
+              </div>
+
+              {status ? (
+                <div>
+                  <strong>Status:</strong> {status}
+                </div>
+              ) : null}
+            </div>
+          </header>
+        )}
 
         <main>{children}</main>
 
-        <footer className="print-footer">
-          <div>
-            <strong>
-              Prime Rides Electric Cars Trading LLC
-            </strong>
-          </div>
+        {showFooter && (
+          <footer className="print-footer">
+            <div>
+              <strong>{companyName}</strong>
+            </div>
 
-          <div>
-            Office No-BC 01, Jams Logistic Village, Al Qusais Industrial Area,
-            Dubai, UAE
-          </div>
+            <div>{companyAddress}</div>
 
-          <div>Authorized Document</div>
-        </footer>
+            <div>Authorized Document</div>
+          </footer>
+        )}
       </div>
     </div>
   );

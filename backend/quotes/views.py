@@ -97,7 +97,7 @@ class QuoteDetailView(APIView):
         return quote
 
     def get(self, request, pk):
-        quote = self.get_object(pk)
+        quote = self.get_object(pk, request.user)
 
         return Response(
             {
@@ -292,14 +292,25 @@ class QuoteProceedToCashDealView(APIView):
 class QuotePrintView(APIView):
     permission_classes = [IsAuthenticated]
 
-    def get_object(self, pk):
+    def get_object(self, pk, user=None):
         try:
-            return get_quote(pk)
+            quote = get_quote(pk)
         except Quote.DoesNotExist:
             raise NotFound("Quote not found.")
 
+        if (
+            user is not None
+            and getattr(user, "role", None) == "SALES_STAFF"
+            and quote.salesperson_id != user.id
+        ):
+            raise PermissionDenied(
+                "You do not have permission to print this Quote."
+            )
+
+        return quote
+
     def get(self, request, pk):
-        quote = self.get_object(pk)
+        quote = self.get_object(pk, request.user)
 
         serializer = QuotePrintSerializer(
             quote,

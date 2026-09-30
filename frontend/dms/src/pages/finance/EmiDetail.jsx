@@ -3,12 +3,16 @@ import { Link, useNavigate, useParams } from "react-router-dom";
 import { toast } from "react-toastify";
 
 import { deleteEmi, getEmi } from "../../api/finance";
+import {
+  getCompanies,
+  getCompanyDocuments,
+  downloadCompanyDocument,
+} from "../../api/company";
 import { useAuth } from "../../context/AuthContext";
 
 import { formatAED } from "../../utils/formatters";
 
 import PrintDocument from "../../components/printing/PrintDocument";
-import PrintButton from "../../components/printing/PrintButton";
 import EmiPrintTemplate from "../../components/printing/templates/EmiPrintTemplate";
 
 function getResponseData(response) {
@@ -122,6 +126,18 @@ function EmiDetail() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [deleting, setDeleting] = useState(false);
+  const [printing, setPrinting] = useState(false);
+
+  const [company, setCompany] = useState(null);
+  const [companyLoading, setCompanyLoading] = useState(true);
+
+  const [printAssets, setPrintAssets] = useState({
+    logo: null,
+    sealStamp: null,
+  });
+
+  const [includeSealStamp, setIncludeSealStamp] = useState(false);
+  const [printAssetsLoading, setPrintAssetsLoading] = useState(false);
 
   const isMaster = user?.role === "MASTER";
 
@@ -170,6 +186,51 @@ function EmiDetail() {
       isMounted = false;
     };
   }, [id]);
+
+  useEffect(() => {
+    let cancelled = false;
+
+    async function loadCompany() {
+      try {
+        setCompanyLoading(true);
+
+        const response = await getCompanies();
+        const data = response?.data ?? response;
+
+        if (!cancelled) {
+          setCompany(data && typeof data === "object" ? data : null);
+        }
+      } catch (error) {
+        console.error("Failed to load company information:", error);
+
+        if (!cancelled) {
+          setCompany(null);
+        }
+      } finally {
+        if (!cancelled) {
+          setCompanyLoading(false);
+        }
+      }
+    }
+
+    loadCompany();
+
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  useEffect(() => {
+    return () => {
+      if (printAssets.logo) {
+        URL.revokeObjectURL(printAssets.logo);
+      }
+
+      if (printAssets.sealStamp) {
+        URL.revokeObjectURL(printAssets.sealStamp);
+      }
+    };
+  }, [printAssets.logo, printAssets.sealStamp]);
 
   async function handleDelete() {
     if (!isMaster || deleting) {
@@ -226,7 +287,7 @@ function EmiDetail() {
 
   if (error || !emi) {
     return (
-      <div className="min-h-screen bg-[#f5f6fa]">
+      <div className="emi-detail-page min-h-screen bg-[#f5f6fa]">
         <header className="border-b bg-white">
           <div className="mx-auto flex max-w-7xl items-center justify-between px-6 py-4">
             <div>
@@ -273,8 +334,62 @@ function EmiDetail() {
     .replaceAll("_", " ")
     .replace(/\b\w/g, (character) => character.toUpperCase());
 
+  async function loadEmiPrintAssets() {
+    try {
+      setPrintAssetsLoading(true);
+
+      const response = await getCompanyDocuments();
+
+      const documents = Array.isArray(response?.data)
+        ? response.data
+        : Array.isArray(response)
+          ? response
+          : [];
+
+      const logoDocument = documents.find(
+        (document) => document?.name === "Logo",
+      );
+
+      const sealStampDocument = documents.find(
+        (document) => document?.name === "Seal & Stamp",
+      );
+
+      let logoUrl = null;
+      let sealStampUrl = null;
+
+      if (logoDocument?.id) {
+        const logoBlob = await downloadCompanyDocument(logoDocument.id);
+
+        if (logoBlob instanceof Blob) {
+          logoUrl = URL.createObjectURL(logoBlob);
+        }
+      }
+
+      if (sealStampDocument?.id) {
+        const sealStampBlob = await downloadCompanyDocument(
+          sealStampDocument.id,
+        );
+
+        if (sealStampBlob instanceof Blob) {
+          sealStampUrl = URL.createObjectURL(sealStampBlob);
+        }
+      }
+
+      const assets = {
+        logo: logoUrl,
+        sealStamp: sealStampUrl,
+      };
+
+      setPrintAssets(assets);
+
+      return assets;
+    } finally {
+      setPrintAssetsLoading(false);
+    }
+  }
+
   return (
-    <div className="min-h-screen bg-[#f5f6fa]">
+    <div className="emi-detail-page bg-[#f5f6fa]">
       {/* =====================================================
                 NORMAL SCREEN UI
                 Hidden completely when printing.
@@ -310,12 +425,73 @@ function EmiDetail() {
             </div>
 
             <div className="no-print flex flex-wrap items-center gap-3">
-              <PrintButton
-                customerName={emi?.customer_name}
-                documentNumber={emi?.emi_number}
-                label="Print EMI"
-                disabled={!emi}
-              />
+              <label className="inline-flex cursor-pointer items-center gap-2 rounded-xl border border-slate-200 bg-white px-4 py-2 text-sm font-semibold text-slate-700 shadow-sm">
+                <input
+                  type="checkbox"
+                  checked={includeSealStamp}
+                  onChange={(event) =>
+                    setIncludeSealStamp(event.target.checked)
+                  }
+                  disabled={printing || printAssetsLoading}
+                  className="h-4 w-4 rounded border-slate-300 text-amber-500 focus:ring-amber-400"
+                />
+
+                <span>Add Company Seal &amp; Stamp</span>
+              </label>
+
+              <button
+                type="button"
+                onClick={async () => {
+                  if (companyLoading) {
+                    toast.error("Company information is still loading.");
+                    return;
+                  }
+
+                  if (!company) {
+                    toast.error("Company information could not be loaded.");
+                    return;
+                  }
+
+                  try {
+                    setPrinting(true);
+
+                    const assets = await loadEmiPrintAssets();
+
+                    if (!assets.logo) {
+                      throw new Error(
+                        "Company Logo is not configured. Please upload a Logo in Company Documents.",
+                      );
+                    }
+
+                    if (includeSealStamp && !assets.sealStamp) {
+                      throw new Error(
+                        "Company Seal & Stamp is not configured. Please upload a Seal & Stamp document in Company Documents.",
+                      );
+                    }
+
+                    setPrintAssets(assets);
+
+                    requestAnimationFrame(() => {
+                      requestAnimationFrame(() => {
+                        window.print();
+                      });
+                    });
+                  } catch (error) {
+                    console.error("EMI print failed:", error);
+
+                    toast.error(
+                      error?.message ||
+                        "Unable to prepare the EMI for printing.",
+                    );
+                  } finally {
+                    setPrinting(false);
+                  }
+                }}
+                disabled={!emi || companyLoading || printAssetsLoading}
+                className="rounded-xl bg-slate-900 px-4 py-2 text-sm font-bold text-white transition hover:bg-slate-800 disabled:cursor-not-allowed disabled:opacity-60"
+              >
+                {printAssetsLoading ? "Preparing..." : "Print EMI"}
+              </button>
 
               {isMaster && (
                 <button
@@ -580,8 +756,16 @@ function EmiDetail() {
         documentNumber={emi?.emi_number}
         date={formatDate(emi?.created_at)}
         status={statusLabel}
+        company={company}
+        showHeader={false}
+        showFooter={false}
       >
-        <EmiPrintTemplate emi={emi} />
+        <EmiPrintTemplate
+          emi={emi}
+          company={company}
+          printAssets={printAssets}
+          includeSealStamp={includeSealStamp}
+        />
       </PrintDocument>
     </div>
   );

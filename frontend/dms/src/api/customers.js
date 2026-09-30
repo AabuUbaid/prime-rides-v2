@@ -29,20 +29,21 @@ export function uploadCustomerDocument(id, payload) {
   });
 }
 
-export function deleteCustomerDocument(
-  customerId,
-  documentId
-) {
-  return apiClient(
-    `/customers/${customerId}/documents/${documentId}/`,
-    {
-      method: "DELETE",
-    }
-  );
+export function deleteCustomerDocument(customerId, documentId) {
+  return apiClient(`/customers/${customerId}/documents/${documentId}/`, {
+    method: "DELETE",
+  });
 }
 
 export function deleteCustomer(id) {
   return apiClient(`/customers/${id}/`, {
     method: "DELETE",
+  });
+}
+
+export function importCustomers(payload) {
+  return apiClient("/customers/import/", {
+    method: "POST",
+    body: payload,
   });
 }

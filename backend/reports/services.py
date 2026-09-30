@@ -222,11 +222,12 @@ class ReportService:
         branch_id=None,
     ):
         """
-        Sales are based on Quote records whose status is SOLD.
+        Sales are based on completed Progression records.
 
-        There is no dedicated sold_at field in Quote.
-        Quote.updated_at is therefore used as the existing
-        status-update timestamp for this report.
+        A sale is finalized when the progression reaches
+        COMPLETED, which also marks the resolved vehicle as SOLD.
+        Progression.completed_at is the authoritative completion
+        timestamp for this report.
         """
 
         start_dt, end_dt = cls.datetime_range(
@@ -234,66 +235,163 @@ class ReportService:
             date_to,
         )
 
-        queryset = Quote.objects.filter(
-            status=Quote.Status.SOLD,
-            updated_at__gte=start_dt,
-            updated_at__lt=end_dt,
+        queryset = Progression.objects.filter(
+            status=Progression.Status.COMPLETED,
+            completed_at__gte=start_dt,
+            completed_at__lt=end_dt,
         )
 
         queryset = cls.apply_sales_staff_scope(
             queryset,
             user,
-            ["salesperson"],
+            ["quote__salesperson"],
         )
 
-        queryset = cls.branch_filter(
-            queryset,
-            branch_id,
-            "car__branch_id",
-        )
+        if branch_id not in (None, ""):
+            queryset = queryset.filter(
+                Q(
+                    source_type="finance",
+                    bank_loan__car__branch_id=branch_id,
+                )
+                | Q(
+                    source_type="cash",
+                    cash_deal__car__branch_id=branch_id,
+                )
+            )
 
         summary = queryset.aggregate(
             total_sales=Count("id"),
-            total_sales_value=Sum("price"),
-            average_sale_value=Avg("price"),
+            total_sales_value=Sum("quote__price"),
+            average_sale_value=Avg("quote__price"),
         )
 
         payment_methods = list(
             queryset
-            .values("payment_method")
+            .values("quote__payment_method")
             .annotate(
                 count=Count("id"),
-                total_value=Sum("price"),
+                total_value=Sum("quote__price"),
             )
-            .order_by("payment_method")
+            .order_by("quote__payment_method")
         )
+
+        payment_methods = [
+            {
+                "payment_method": row["quote__payment_method"],
+                "count": row["count"],
+                "total_value": row["total_value"],
+            }
+            for row in payment_methods
+        ]
 
         salespeople = list(
-            queryset
-            .values("salesperson_id")
+            queryset.values(
+                "quote__salesperson_id",
+                "quote__salesperson__first_name",
+                "quote__salesperson__last_name",
+                        )
             .annotate(
                 count=Count("id"),
-                total_value=Sum("price"),
+                total_value=Sum("quote__price"),
             )
             .order_by("-count")
         )
 
-        branches = list(
+        salespeople = [
+            {
+                "salesperson_id": row["quote__salesperson_id"],
+                "salesperson_name": (
+                    " ".join(
+                        part
+                        for part in [
+                            row["quote__salesperson__first_name"],
+                            row["quote__salesperson__last_name"],
+                        ]
+                        if part
+                    )
+                    or None
+                ),
+                "count": row["count"],
+                "total_value": row["total_value"],
+            }
+            for row in salespeople
+        ]
+
+        finance_branches = list(
             queryset
-            .values("car__branch_id")
+            .filter(source_type="finance")
+            .values("bank_loan__car__branch_id")
             .annotate(
                 count=Count("id"),
-                total_value=Sum("price"),
+                total_value=Sum("quote__price"),
             )
-            .order_by("-count")
+        )
+
+        cash_branches = list(
+            queryset
+            .filter(source_type="cash")
+            .values("cash_deal__car__branch_id")
+            .annotate(
+                count=Count("id"),
+                total_value=Sum("quote__price"),
+            )
+        )
+
+        branch_totals = {}
+
+        for row in finance_branches:
+            branch_id_value = row["bank_loan__car__branch_id"]
+
+            entry = branch_totals.setdefault(
+                branch_id_value,
+                {
+                    "count": 0,
+                    "total_value": 0,
+                },
+            )
+
+            entry["count"] += row["count"]
+
+            if row["total_value"] is not None:
+                entry["total_value"] += row["total_value"]
+
+        for row in cash_branches:
+            branch_id_value = row["cash_deal__car__branch_id"]
+
+            entry = branch_totals.setdefault(
+                branch_id_value,
+                {
+                    "count": 0,
+                    "total_value": 0,
+                },
+            )
+
+            entry["count"] += row["count"]
+
+            if row["total_value"] is not None:
+                entry["total_value"] += row["total_value"]
+
+        branches = [
+            {
+                "car__branch_id": branch_id_value,
+                "count": values["count"],
+                "total_value": values["total_value"],
+            }
+            for branch_id_value, values in branch_totals.items()
+        ]
+
+        branches.sort(
+            key=lambda row: row["count"],
+            reverse=True,
         )
 
         return {
             "report": "sales",
-            "date_field": "quote.updated_at",
+            "date_field": "progression.completed_at",
             "date_field_note": (
-                "Quote.updated_at is used because the "
-                "existing Quote model has no dedicated sold_at field."
+                "Progression.completed_at is used because "
+                "the final progression completion represents "
+                "the completed sale."
             ),
             "date_from": date_from,
             "date_to": date_to,
@@ -754,95 +852,170 @@ class ReportService:
     # =====================================================
 
     @classmethod
-    def vehicle_sales_report(
-        cls,
-        *,
-        user,
-        date_from,
-        date_to,
-        branch_id=None,
-    ):
-        """
-        Vehicle sales are derived from SOLD Quotes.
+    def vehicle_sales_report(cls, *, user, date_from, date_to, branch_id=None):
+        start_dt, end_dt = cls.datetime_range(date_from, date_to)
 
-        Quote.updated_at is used because there is no dedicated
-        Car.sold_at field in the existing inventory model.
-        """
-
-        start_dt, end_dt = cls.datetime_range(
-            date_from,
-            date_to,
-        )
-
-        queryset = Quote.objects.filter(
-            status=Quote.Status.SOLD,
-            updated_at__gte=start_dt,
-            updated_at__lt=end_dt,
-            car__isnull=False,
+        queryset = Progression.objects.filter(
+            status=Progression.Status.COMPLETED,
+            completed_at__gte=start_dt,
+            completed_at__lt=end_dt,
         )
 
         queryset = cls.apply_sales_staff_scope(
             queryset,
             user,
-            ["salesperson"],
+            ["quote__salesperson"],
         )
 
-        queryset = cls.branch_filter(
-            queryset,
-            branch_id,
-            "car__branch_id",
-        )
+        if branch_id not in (None, ""):
+            queryset = queryset.filter(
+                Q(
+                    source_type="finance",
+                    bank_loan__car__branch_id=branch_id,
+                )
+                | Q(
+                    source_type="cash",
+                    cash_deal__car__branch_id=branch_id,
+                )
+            )
 
         summary = queryset.aggregate(
             vehicles_sold=Count("id"),
-            total_sales_value=Sum("price"),
-            average_sale_value=Avg("price"),
+            total_sales_value=Sum("quote__price"),
+            average_sale_value=Avg("quote__price"),
         )
 
-        by_branch = list(
-            queryset
-            .values("car__branch_id")
+        payment_methods = list(
+            queryset.values("quote__payment_method")
             .annotate(
                 count=Count("id"),
-                total_value=Sum("price"),
+                total_value=Sum("quote__price"),
+            )
+            .order_by("quote__payment_method")
+        )
+
+        payment_methods = [
+            {
+                "payment_method": row["quote__payment_method"],
+                "count": row["count"],
+                "total_value": row["total_value"],
+            }
+            for row in payment_methods
+        ]
+
+        salespeople = list(
+            queryset.values(
+                "quote__salesperson_id",
+                "quote__salesperson__first_name",
+                "quote__salesperson__last_name",
+            )
+            .annotate(
+                count=Count("id"),
+                total_value=Sum("quote__price"),
             )
             .order_by("-count")
         )
 
-        by_payment_method = list(
-            queryset
-            .values("payment_method")
+        salespeople = [
+            {
+                "salesperson_id": row["quote__salesperson_id"],
+                "salesperson_name": (
+                    " ".join(
+                        part
+                        for part in [
+                            row["quote__salesperson__first_name"],
+                            row["quote__salesperson__last_name"],
+                        ]
+                        if part
+                    )
+                    or None
+                ),
+                "count": row["count"],
+                "total_value": row["total_value"],
+            }
+            for row in salespeople
+        ]
+
+        finance_branches = list(
+            queryset.filter(source_type="finance")
+            .values("bank_loan__car__branch_id")
             .annotate(
                 count=Count("id"),
-                total_value=Sum("price"),
+                total_value=Sum("quote__price"),
             )
-            .order_by("payment_method")
         )
 
-        by_salesperson = list(
-            queryset
-            .values("salesperson_id")
+        cash_branches = list(
+            queryset.filter(source_type="cash")
+            .values("cash_deal__car__branch_id")
             .annotate(
                 count=Count("id"),
-                total_value=Sum("price"),
+                total_value=Sum("quote__price"),
             )
-            .order_by("-count")
+        )
+
+        branch_totals = {}
+
+        for row in finance_branches:
+            branch_id_value = row["bank_loan__car__branch_id"]
+
+            entry = branch_totals.setdefault(
+                branch_id_value,
+                {
+                    "count": 0,
+                    "total_value": 0,
+                },
+            )
+
+            entry["count"] += row["count"]
+
+            if row["total_value"] is not None:
+                entry["total_value"] += row["total_value"]
+
+        for row in cash_branches:
+            branch_id_value = row["cash_deal__car__branch_id"]
+
+            entry = branch_totals.setdefault(
+                branch_id_value,
+                {
+                    "count": 0,
+                    "total_value": 0,
+                },
+            )
+
+            entry["count"] += row["count"]
+
+            if row["total_value"] is not None:
+                entry["total_value"] += row["total_value"]
+
+        branches = [
+            {
+                "car__branch_id": branch_id_value,
+                "count": values["count"],
+                "total_value": values["total_value"],
+            }
+            for branch_id_value, values in branch_totals.items()
+        ]
+
+        branches.sort(
+            key=lambda row: row["count"],
+            reverse=True,
         )
 
         return {
             "report": "vehicle-sales",
-            "date_field": "quote.updated_at",
+            "date_field": "progression.completed_at",
             "date_field_note": (
-                "Quote.updated_at is used because the existing "
-                "inventory model has no dedicated sold_at field."
+                "Progression.completed_at is used because the final "
+                "progression completion represents the completed sale."
             ),
             "date_from": date_from,
             "date_to": date_to,
             "branch_id": branch_id,
             "summary": summary,
-            "by_branch": by_branch,
-            "by_payment_method": by_payment_method,
-            "by_salesperson": by_salesperson,
+            "by_branch": branches,
+            "by_payment_method": payment_methods,
+            "by_salesperson": salespeople,
         }
 
     # =====================================================

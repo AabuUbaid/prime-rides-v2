@@ -9,7 +9,13 @@ import {
   proceedToCashDeal,
   proceedToBankLoan,
 } from "../../api/quotes";
+import {
+  getCompanies,
+  getCompanyDocuments,
+  downloadCompanyDocument,
+} from "../../api/company";
 import { createInsurance } from "../../api/insurance";
+import { printDocument } from "../../utils/print";
 import QuotePrintTemplate from "../../components/printing/templates/QuotePrintTemplate";
 
 const STATUS_LABELS = {
@@ -150,6 +156,9 @@ export default function QuoteDetail() {
 
   const [quote, setQuote] = useState(null);
 
+  const [company, setCompany] = useState(null);
+  const [companyLoading, setCompanyLoading] = useState(true);
+
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
 
@@ -159,6 +168,14 @@ export default function QuoteDetail() {
 
   const [printing, setPrinting] = useState(false);
   const [printQuote, setPrintQuote] = useState(null);
+
+  const [printAssets, setPrintAssets] = useState({
+    logo: null,
+    sealStamp: null,
+  });
+
+  const [includeSealStamp, setIncludeSealStamp] = useState(false);
+  const [printAssetsLoading, setPrintAssetsLoading] = useState(false);
 
   const [editingCommercial, setEditingCommercial] = useState(false);
 
@@ -212,6 +229,51 @@ export default function QuoteDetail() {
       cancelled = true;
     };
   }, [id]);
+
+  useEffect(() => {
+    let cancelled = false;
+
+    async function loadCompany() {
+      try {
+        setCompanyLoading(true);
+
+        const response = await getCompanies();
+
+        const data = response?.data ?? response;
+
+        if (!cancelled) {
+          setCompany(data && typeof data === "object" ? data : null);
+        }
+      } catch (error) {
+        if (!cancelled) {
+          console.error("Failed to load company information:", error);
+          setCompany(null);
+        }
+      } finally {
+        if (!cancelled) {
+          setCompanyLoading(false);
+        }
+      }
+    }
+
+    loadCompany();
+
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  useEffect(() => {
+    return () => {
+      if (printAssets.logo) {
+        URL.revokeObjectURL(printAssets.logo);
+      }
+
+      if (printAssets.sealStamp) {
+        URL.revokeObjectURL(printAssets.sealStamp);
+      }
+    };
+  }, [printAssets.logo, printAssets.sealStamp]);
 
   async function refreshQuote() {
     if (!id) {
@@ -538,6 +600,60 @@ export default function QuoteDetail() {
     }
   }
 
+  async function loadQuotePrintAssets() {
+    try {
+      setPrintAssetsLoading(true);
+
+      const response = await getCompanyDocuments();
+      const documents = Array.isArray(response?.data)
+        ? response.data
+        : Array.isArray(response)
+          ? response
+          : [];
+
+      const logoDocument = documents.find(
+        (document) => document?.name === "Logo",
+      );
+
+      const sealStampDocument = documents.find(
+        (document) => document?.name === "Seal & Stamp",
+      );
+
+      let logoUrl = null;
+      let sealStampUrl = null;
+
+      if (logoDocument?.id) {
+        const logoBlob = await downloadCompanyDocument(logoDocument.id);
+
+        if (logoBlob instanceof Blob) {
+          logoUrl = URL.createObjectURL(logoBlob);
+        }
+      }
+
+      if (sealStampDocument?.id) {
+        const sealStampBlob = await downloadCompanyDocument(
+          sealStampDocument.id,
+        );
+
+        if (sealStampBlob instanceof Blob) {
+          sealStampUrl = URL.createObjectURL(sealStampBlob);
+        }
+      }
+
+      setPrintAssets({
+        logo: logoUrl,
+        sealStamp: sealStampUrl,
+      });
+
+      return {
+        logo: logoUrl,
+        sealStamp: sealStampUrl,
+      };
+    } finally {
+      setPrintAssetsLoading(false);
+    }
+  }
+
   async function handlePrintQuote() {
     if (!id) {
       toast.error("Quote ID is missing.");
@@ -547,20 +663,57 @@ export default function QuoteDetail() {
     try {
       setPrinting(true);
 
+      if (companyLoading) {
+        toast.error("Company information is still loading.");
+        return;
+      }
+
+      if (!company) {
+        toast.error("Company information could not be loaded.");
+        return;
+      }
+
       const response = await getQuotePrint(id);
 
       if (!response?.success || !response?.data) {
         throw new Error("Quote print data could not be loaded.");
       }
 
-      setPrintQuote(response.data);
+      const printData = response.data;
 
-      // Wait for React to render the dedicated print template
+      const assets = await loadQuotePrintAssets();
+
+      if (!assets.logo) {
+        throw new Error(
+          "Company Logo is not configured. Please upload a Logo in Company Documents.",
+        );
+      }
+
+      if (includeSealStamp && !assets.sealStamp) {
+        throw new Error(
+          "Company Seal & Stamp is not configured. Please upload a Seal & Stamp document in Company Documents.",
+        );
+      }
+
+      setPrintQuote(printData);
+      setPrintAssets(assets);
+
       requestAnimationFrame(() => {
-        window.print();
+        requestAnimationFrame(() => {
+          printDocument({
+            customerName: printData?.customer?.name,
+            documentNumber: printData?.quote_number,
+            documentTitle: `${
+              company?.legal_entity_name || "Company"
+            } - Quotation - ${
+              printData?.quote_number || id
+            } - ${printData?.customer?.name || "Customer"}`,
+          });
+        });
       });
     } catch (err) {
       console.error("Quote print failed:", err);
+
       toast.error(
         err?.message || "Unable to prepare the quotation for printing.",
       );
@@ -714,6 +867,18 @@ export default function QuoteDetail() {
               Created {formatDate(quote.created_at)}
             </p>
           </div>
+
+          <label className="no-print inline-flex cursor-pointer items-center gap-2 rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm font-semibold text-slate-700 shadow-sm">
+            <input
+              type="checkbox"
+              checked={includeSealStamp}
+              onChange={(event) => setIncludeSealStamp(event.target.checked)}
+              disabled={printing || printAssetsLoading}
+              className="h-4 w-4 rounded border-slate-300 text-amber-500 focus:ring-amber-400"
+            />
+
+            <span>Add Company Seal &amp; Stamp</span>
+          </label>
 
           <div className="flex flex-wrap gap-2">
             <button
@@ -1234,7 +1399,12 @@ export default function QuoteDetail() {
           </Section>
         </div>
       </div>
-      <QuotePrintTemplate quote={printQuote} />
+      <QuotePrintTemplate
+        quote={printQuote}
+        company={company}
+        printAssets={printAssets}
+        includeSealStamp={includeSealStamp}
+      />
     </div>
   );
 }

@@ -120,6 +120,12 @@ export function bulkDeleteCars(vehicleIds) {
   });
 }
 
+export function deleteAllCars() {
+  return apiClient("/inventory/cars/delete-all/", {
+    method: "DELETE",
+  });
+}
+
 export function bulkImportCars(file) {
   const formData = new FormData();
 
@@ -160,6 +166,13 @@ export function deleteVehicleDocument(documentId) {
 export async function archiveVehicleDocument(documentId) {
   return apiClient(`/inventory/documents/${documentId}/archive/`, {
     method: "POST",
+  });
+}
+
+export function downloadVehicleDocument(documentId) {
+  return apiClient(`/inventory/documents/${documentId}/download/`, {
+    method: "GET",
+    responseType: "blob",
   });
 }
 

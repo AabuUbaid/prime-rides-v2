@@ -64,6 +64,12 @@ import ProgressionDetail from "./pages/progression/ProgressionDetail";
 import Staff from "./pages/staff/Staff";
 import StaffPerformance from "./pages/staff/StaffPerformance";
 
+import Reports from "./pages/reports/Reports";
+
+import Attendance from "./pages/staff/Attendance";
+
+import Payroll from "./pages/staff/Payroll";
+
 import UserAccess from "./pages/admin/UserAccess";
 
 import Leads from "./pages/leads/Leads";
@@ -474,6 +480,30 @@ function App() {
                 <RoleRoute allowedRoles={["MASTER", "ADMIN"]}>
                   <StaffPerformance />
                 </RoleRoute>
+              }
+            />
+            <Route
+              path="/staff/attendance"
+              element={
+                <RoleRoute allowedRoles={["MASTER", "ADMIN"]}>
+                  <Attendance />
+                </RoleRoute>
+              }
+            />
+            <Route
+              path="/staff/payroll"
+              element={
+                <RoleRoute allowedRoles={["MASTER", "ADMIN"]}>
+                  <Payroll />
+                </RoleRoute>
+              }
+            />
+            <Route
+              path="/reports"
+              element={
+                <ProtectedRoute>
+                  <Reports />
+                </ProtectedRoute>
               }
             />
             <Route

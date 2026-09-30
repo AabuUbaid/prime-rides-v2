@@ -8,18 +8,22 @@ function AppShell({ children }) {
   const [mobileOpen, setMobileOpen] = useState(false);
 
   return (
-    <div className="min-h-screen bg-[#f5f6fa]">
-      <Sidebar
-        user={user}
-        onLogout={logout}
-        mobileOpen={mobileOpen}
-        onCloseMobile={() => setMobileOpen(false)}
-      />
+    <div className="print-app-shell-root min-h-screen bg-[#f5f6fa]">
+      <div className="print-app-shell-sidebar">
+        <Sidebar
+          user={user}
+          onLogout={logout}
+          mobileOpen={mobileOpen}
+          onCloseMobile={() => setMobileOpen(false)}
+        />
+      </div>
 
       <div className="min-h-screen lg:pl-[260px]">
-        <Header onOpenMobileMenu={() => setMobileOpen(true)} />
+        <div className="print-app-shell-header">
+          <Header onOpenMobileMenu={() => setMobileOpen(true)} />
+        </div>
 
-        <main className="min-h-[calc(100vh-68px)] bg-[#f5f6fa]">
+        <main className="print-app-shell-main min-h-[calc(100vh-68px)] bg-[#f5f6fa]">
           {children}
         </main>
       </div>

@@ -9,6 +9,16 @@ class Company(models.Model):
         max_length=255,
     )
 
+    trade_license_number = models.CharField(
+        max_length=100,
+        blank=True,
+    )
+
+    trade_license_expiry_date = models.DateField(
+        blank=True,
+        null=True,
+    )
+
     tax_registration_number = models.CharField(
         max_length=100,
         blank=True,
@@ -20,6 +30,21 @@ class Company(models.Model):
 
     main_contact_mobile = models.CharField(
         max_length=30,
+        blank=True,
+    )
+
+    corporate_email = models.EmailField(
+        max_length=254,
+        blank=True,
+    )
+
+    official_phone = models.CharField(
+        max_length=30,
+        blank=True,
+    )
+
+    emirate = models.CharField(
+        max_length=50,
         blank=True,
     )
 

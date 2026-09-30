@@ -6,6 +6,9 @@ from rest_framework import status
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.views import APIView
+import mimetypes
+
+from django.http import FileResponse
 
 
 from accounts.permissions import IsMaster
@@ -23,6 +26,12 @@ class CompanyListCreateView(APIView):
         IsAuthenticated,
         IsMaster,
     ]
+
+    def get_permissions(self):
+        if self.request.method == "GET":
+            return [IsAuthenticated()]
+
+        return super().get_permissions()
 
     @extend_schema(
         responses=CompanySerializer,
@@ -300,6 +309,27 @@ class CompanyDocumentDetailView(APIView):
             document_id,
         )
 
+        if request.query_params.get("download") == "true":
+            if not document.file:
+                raise NotFound("Company document file is not available.")
+
+            try:
+                file_handle = document.file.open("rb")
+            except FileNotFoundError:
+                raise NotFound("Company document file could not be found.")
+
+            content_type = (
+                mimetypes.guess_type(document.file.name)[0]
+                or "application/octet-stream"
+            )
+
+            return FileResponse(
+                file_handle,
+                as_attachment=False,
+                filename=document.file.name.rsplit("/", 1)[-1],
+                content_type=content_type,
+            )
+
         serializer = CompanyDocumentSerializer(document)
 
         return Response(serializer.data)
@@ -308,6 +338,35 @@ class CompanyDocumentDetailView(APIView):
         request=CompanyDocumentSerializer,
         responses=CompanyDocumentSerializer,
     )
+
+    def download(self, request, document_id):
+        company = self.get_company()
+
+        document = self.get_document(
+            company,
+            document_id,
+        )
+
+        if not document.file:
+            raise NotFound("Company document file is not available.")
+
+        try:
+            file_handle = document.file.open("rb")
+        except FileNotFoundError:
+            raise NotFound("Company document file could not be found.")
+
+        content_type = (
+            mimetypes.guess_type(document.file.name)[0]
+            or "application/octet-stream"
+        )
+
+        return FileResponse(
+            file_handle,
+            as_attachment=False,
+            filename=document.file.name.rsplit("/", 1)[-1],
+            content_type=content_type,
+        )
+
     def patch(self, request, document_id):
         company = self.get_company()
 
