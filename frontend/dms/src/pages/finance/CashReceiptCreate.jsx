@@ -96,6 +96,8 @@ function CashReceiptCreate() {
     const presetDirection = searchParams.get("direction");
     const presetCategory = searchParams.get("category");
     const presetPaymentMethod = searchParams.get("payment_method");
+    const presetReference = searchParams.get("reference");
+    const presetDescription = searchParams.get("description");
 
     if (presetCustomerId) {
       setCustomerId(presetCustomerId);
@@ -119,6 +121,14 @@ function CashReceiptCreate() {
 
     if (presetPaymentMethod) {
       setPaymentMethod(presetPaymentMethod);
+    }
+
+    if (presetReference) {
+      setReference(presetReference);
+    }
+
+    if (presetDescription) {
+      setDescription(presetDescription);
     }
   }, [searchParams]);
 

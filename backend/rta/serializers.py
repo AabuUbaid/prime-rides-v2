@@ -1,6 +1,6 @@
 from rest_framework import serializers
 
-from .models import RTARecord, RTADocument
+from .models import RTARecord, RTADocument, RTATemplate
 
 
 class RTARecordSerializer(serializers.ModelSerializer):
@@ -186,7 +186,7 @@ class RTARecordSerializer(serializers.ModelSerializer):
         # -------------------------------------------------
 
         if record_type == RTARecord.RecordType.PURCHASE:
-            # Purchase RTA is created directly from Inventory.
+    # Purchase RTA is created directly from Inventory.
             if quote:
                 raise serializers.ValidationError(
                     {
@@ -197,25 +197,10 @@ class RTARecordSerializer(serializers.ModelSerializer):
                     }
                 )
 
-            supplier_name = attrs.get(
-                "supplier_name",
-                getattr(self.instance, "supplier_name", ""),
-            )
-
-            if not supplier_name:
-                raise serializers.ValidationError(
-                    {
-                        "supplier_name": (
-                            "Supplier name is required for "
-                            "a purchase RTA record."
-                        ),
-                    }
-                )
-
             duplicate_queryset = RTARecord.objects.filter(
                 car=car,
                 record_type=record_type,
-            )
+    )
 
         # -------------------------------------------------
         # SALE
@@ -302,6 +287,175 @@ class RTARecordSerializer(serializers.ModelSerializer):
                     "quote": (
                         "A sale RTA record already exists "
                         "for this quote."
+                    ),
+                }
+            )
+
+        return attrs
+
+
+class RTATemplateSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = RTATemplate
+
+        fields = [
+            "id",
+            "company",
+            "record_type",
+            "content",
+            "is_active",
+            "created_at",
+            "updated_at",
+        ]
+
+        read_only_fields = [
+            "id",
+            "created_at",
+            "updated_at",
+        ]
+
+    ALLOWED_CONTENT_KEYS = {
+        "PURCHASE": {
+            "authority_line_1",
+            "authority_line_2",
+            "greeting",
+            "subject",
+            "paragraph_1",
+            "paragraph_2",
+            "paragraph_3",
+            "closing",
+            "company_label",
+            "trade_license_label",
+            "chassis_label",
+            "vehicle_label",
+            "year_label",
+            "colour_label",
+            "signature_label",
+            "stamp_label",
+            "footer_office_line_1",
+            "footer_office_line_2",
+            "footer_website",
+            "footer_email",
+            "footer_phone_1",
+            "footer_phone_2",
+        },
+        "SALE": {
+            "authority_line_1",
+            "authority_line_2",
+            "authority_line_3",
+            "subject",
+            "first_party_label",
+            "second_party_label",
+            "paragraph_1",
+            "paragraph_2",
+            "closing",
+            "chassis_label",
+            "vehicle_label",
+            "year_label",
+            "colour_label",
+            "signature_label",
+            "stamp_label",
+            "footer_office_line_1",
+            "footer_office_line_2",
+            "footer_website",
+            "footer_email",
+            "footer_phone_1",
+            "footer_phone_2",
+        },
+    }
+
+    def validate(self, attrs):
+        record_type = attrs.get(
+            "record_type",
+            getattr(self.instance, "record_type", None),
+        )
+
+        content = attrs.get(
+            "content",
+            getattr(self.instance, "content", None) or {},
+        )
+
+        if not isinstance(content, dict):
+            raise serializers.ValidationError(
+                {
+                    "content": "Template content must be an object.",
+                }
+            )
+
+        allowed_keys = self.ALLOWED_CONTENT_KEYS.get(
+            record_type,
+            set(),
+        )
+
+        unknown_keys = sorted(
+            set(content.keys()) - allowed_keys
+        )
+
+        if unknown_keys:
+            raise serializers.ValidationError(
+                {
+                    "content": (
+                        "Unsupported template field(s): "
+                        + ", ".join(unknown_keys)
+                    ),
+                }
+            )
+
+        invalid_values = [
+            key
+            for key, value in content.items()
+            if not isinstance(value, str)
+        ]
+
+        if invalid_values:
+            raise serializers.ValidationError(
+                {
+                    "content": (
+                        "Template content values must be "
+                        "strings. Invalid field(s): "
+                        + ", ".join(sorted(invalid_values))
+                    ),
+                }
+            )
+
+        company = attrs.get(
+            "company",
+            getattr(self.instance, "company", None),
+        )
+
+        if not company:
+            raise serializers.ValidationError(
+                {
+                    "company": "Company is required.",
+                }
+            )
+
+        if record_type not in {
+            RTATemplate.RecordType.PURCHASE,
+            RTATemplate.RecordType.SALE,
+        }:
+            raise serializers.ValidationError(
+                {
+                    "record_type": "Invalid RTA template type.",
+                }
+            )
+
+        duplicate_queryset = RTATemplate.objects.filter(
+            company=company,
+            record_type=record_type,
+        )
+
+        if self.instance:
+            duplicate_queryset = duplicate_queryset.exclude(
+                pk=self.instance.pk,
+            )
+
+        if duplicate_queryset.exists():
+            raise serializers.ValidationError(
+                {
+                    "record_type": (
+                        "An RTA template already exists for "
+                        "this company and record type."
                     ),
                 }
             )

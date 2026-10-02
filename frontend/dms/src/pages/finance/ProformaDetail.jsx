@@ -92,6 +92,7 @@ export default function ProformaDetail() {
   const [saving, setSaving] = useState(false);
   const [deleting, setDeleting] = useState(false);
   const [editing, setEditing] = useState(false);
+  const [includeSealStamp, setIncludeSealStamp] = useState(false);
   const [error, setError] = useState("");
 
   async function loadProforma() {
@@ -280,12 +281,30 @@ export default function ProformaDetail() {
             Open Insurance
           </Link>
 
-          <PrintButton
-            customerName={proforma.customer_name}
-            documentNumber={proforma.proforma_number}
-            label="Print Proforma"
-            onClick={() => navigate(`/finance/proformas/${proforma.id}/print`)}
-          />
+          <div className="no-print flex flex-wrap items-center gap-3">
+            <label className="inline-flex cursor-pointer items-center gap-2 rounded-lg border border-gray-200 bg-white px-4 py-2 text-sm font-semibold text-gray-700 shadow-sm">
+              <input
+                type="checkbox"
+                checked={includeSealStamp}
+                onChange={(event) => setIncludeSealStamp(event.target.checked)}
+                className="h-4 w-4 rounded border-gray-300 text-amber-500 focus:ring-amber-400"
+              />
+              <span>Add Company Seal &amp; Stamp</span>
+            </label>
+
+            <PrintButton
+              customerName={proforma.customer_name}
+              documentNumber={proforma.proforma_number}
+              label="Print Proforma"
+              onClick={() =>
+                navigate(
+                  `/finance/proformas/${proforma.id}/print?seal_stamp=${
+                    includeSealStamp ? "1" : "0"
+                  }`,
+                )
+              }
+            />
+          </div>
 
           {!editing && (
             <button
@@ -425,6 +444,8 @@ export default function ProformaDetail() {
                     value={downPayment}
                     onChange={(event) => setDownPayment(event.target.value)}
                   />
+
+                  <DetailRow label="Net Finance" value={proforma.net_finance} />
                 </>
               )}
 
@@ -435,11 +456,7 @@ export default function ProformaDetail() {
                 step="0.01"
                 value={vat}
                 onChange={(event) => setVat(event.target.value)}
-              />
-
-              <DetailRow
-                label="Net Finance"
-                value={isFinance ? proforma.net_finance : "-"}
+                className="w-full rounded-lg border border-gray-300 px-3 py-2.5 text-sm outline-none focus:border-gray-500"
               />
             </div>
           </Section>

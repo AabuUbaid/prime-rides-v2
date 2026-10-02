@@ -163,63 +163,67 @@ class ProgressionSerializer(serializers.ModelSerializer):
 
 
     def get_seller_name(self, obj):
-        salesperson = None
-
-        if obj.bank_loan is not None:
-            salesperson = obj.bank_loan.agent
-
-        elif obj.cash_deal is not None:
-            salesperson = obj.cash_deal.agent
-
-        elif obj.quote is not None:
-            salesperson = obj.quote.salesperson
+    # Quote salesperson is the authoritative salesman
+    # for the final sale attribution.
+        salesperson = (
+            obj.quote.salesperson
+            if obj.quote is not None
+            else None
+        )
 
         if salesperson is None:
             return None
 
-        staff = getattr(
+        staff_profile = getattr(
             salesperson,
             "staff_profile",
             None,
         )
 
-        if staff is not None:
-            return staff.name
+        if staff_profile is not None and staff_profile.name:
+            return staff_profile.name
 
-        full_name = (
-            f"{salesperson.first_name} "
-            f"{salesperson.last_name}"
+        full_name = " ".join(
+            part
+            for part in (
+                getattr(salesperson, "first_name", ""),
+                getattr(salesperson, "last_name", ""),
+            )
+            if part
         ).strip()
 
+        if full_name:
+            return full_name
+
         return (
-            full_name
+            getattr(salesperson, "username", None)
             or getattr(salesperson, "email", None)
-            or getattr(salesperson, "username", None)
         )
 
 
     def get_seller_staff_id(self, obj):
-        salesperson = None
-
-        if obj.bank_loan is not None:
-            salesperson = obj.bank_loan.agent
-
-        elif obj.cash_deal is not None:
-            salesperson = obj.cash_deal.agent
-
-        elif obj.quote is not None:
-            salesperson = obj.quote.salesperson
+        # Staff ID comes from the Staff record linked
+        # to the Quote salesperson's User account.
+        salesperson = (
+            obj.quote.salesperson
+            if obj.quote is not None
+            else None
+        )
 
         if salesperson is None:
             return None
 
-        staff = getattr(
+        staff_profile = getattr(
             salesperson,
             "staff_profile",
             None,
         )
 
-        return staff.id if staff else None
+        return (
+            staff_profile.id
+            if staff_profile is not None
+            else None
+        )
 
 
     def get_bank_name(self, obj):

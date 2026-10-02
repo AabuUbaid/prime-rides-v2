@@ -52,3 +52,35 @@ export async function deleteRtaDocument(documentId) {
     method: "DELETE",
   });
 }
+
+export async function getRtaTemplates(params = {}) {
+  const query = new URLSearchParams();
+
+  Object.entries(params).forEach(([key, value]) => {
+    if (value !== undefined && value !== null && value !== "") {
+      query.set(key, value);
+    }
+  });
+
+  const queryString = query.toString();
+
+  return apiClient(`/rta/templates/${queryString ? `?${queryString}` : ""}`);
+}
+
+export async function getRtaTemplate(templateId) {
+  return apiClient(`/rta/templates/${templateId}/`);
+}
+
+export async function createRtaTemplate(payload) {
+  return apiClient("/rta/templates/", {
+    method: "POST",
+    body: JSON.stringify(payload),
+  });
+}
+
+export async function updateRtaTemplate(templateId, payload) {
+  return apiClient(`/rta/templates/${templateId}/`, {
+    method: "PATCH",
+    body: JSON.stringify(payload),
+  });
+}

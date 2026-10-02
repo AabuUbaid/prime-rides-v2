@@ -30,6 +30,7 @@ function Section({ title, children }) {
 
 export default function DeliveryNoteCreate() {
   const [searchParams] = useSearchParams();
+  const returnTo = searchParams.get("return_to");
   const navigate = useNavigate();
 
   const insuranceId = searchParams.get("insurance");
@@ -109,7 +110,11 @@ export default function DeliveryNoteCreate() {
 
       toast.success("Delivery Note created successfully.");
 
-      if (data?.id) {
+      if (returnTo?.startsWith("/progression/")) {
+        navigate(returnTo, {
+          replace: true,
+        });
+      } else if (data?.id) {
         navigate(`/finance/delivery-notes/${data.id}`);
       } else {
         navigate("/finance/delivery-notes");

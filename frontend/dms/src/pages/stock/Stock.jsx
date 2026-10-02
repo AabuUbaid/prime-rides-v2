@@ -13,6 +13,7 @@ import {
 
 import {
   getCars,
+  getCar,
   getCarBrands,
   getDashboardSummary,
   bulkDeleteCars,
@@ -312,6 +313,42 @@ function Stock() {
     };
   }, [searchQuery, appliedFilters, ordering, page, pageSize, refreshKey]);
 
+  useEffect(() => {
+    if (!printCar) {
+      return;
+    }
+
+    let cancelled = false;
+
+    const handleAfterPrint = () => {
+      setPrintCar(null);
+    };
+
+    window.addEventListener("afterprint", handleAfterPrint, { once: true });
+
+    const animationFrame = window.requestAnimationFrame(() => {
+      if (cancelled) {
+        return;
+      }
+
+      window.requestAnimationFrame(() => {
+        if (cancelled) {
+          return;
+        }
+
+        printInventoryVehicle(printCar);
+      });
+    });
+
+    return () => {
+      cancelled = true;
+
+      window.cancelAnimationFrame(animationFrame);
+
+      window.removeEventListener("afterprint", handleAfterPrint);
+    };
+  }, [printCar]);
+
   function getImageUrl(imagePath) {
     if (!imagePath) return null;
 
@@ -441,11 +478,28 @@ function Stock() {
     }
   }
 
-  function handlePrintVehicle(car) {
-    setPrintCar(car);
-    setTimeout(() => {
-      printInventoryVehicle(car);
-    }, 0);
+  async function handlePrintVehicle(car) {
+    // Remove any previous bulk-print document before starting
+    // an individual vehicle print.
+    setPrintStockConfig(null);
+    setPrintCar(null);
+
+    try {
+      const response = await getCar(car.id);
+
+      const detailedCar = response?.data || response?.car || response;
+
+      const vehicleForPrint =
+        detailedCar && typeof detailedCar === "object"
+          ? { ...car, ...detailedCar }
+          : car;
+
+      setPrintCar(vehicleForPrint);
+    } catch (error) {
+      console.error("Failed to load vehicle details for printing:", error);
+
+      setPrintCar(car);
+    }
   }
 
   function openStockOutputModal() {
@@ -575,6 +629,7 @@ function Stock() {
 
       const restoreTitle = () => {
         document.title = previousTitle;
+        setPrintStockConfig(null);
         window.removeEventListener("afterprint", restoreTitle);
       };
 

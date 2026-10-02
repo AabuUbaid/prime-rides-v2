@@ -20,8 +20,11 @@ import {
   updateCompany,
 } from "../../api/company";
 
+import RtaTemplateManagement from "../rta/RtaTemplateManagement";
+
 const EMPTY_COMPANY_FORM = {
   legal_entity_name: "",
+  legal_entity_name_ar: "",
   trade_license_number: "",
   trade_license_expiry_date: "",
   tax_registration_number: "",
@@ -217,6 +220,7 @@ function CompanyManagement() {
 
     setCompanyForm({
       legal_entity_name: company.legal_entity_name ?? "",
+      legal_entity_name_ar: company.legal_entity_name_ar ?? "",
       trade_license_number: company.trade_license_number ?? "",
       trade_license_expiry_date: company.trade_license_expiry_date ?? "",
       tax_registration_number: company.tax_registration_number ?? "",
@@ -299,6 +303,7 @@ function CompanyManagement() {
 
     const payload = {
       legal_entity_name: companyForm.legal_entity_name.trim(),
+      legal_entity_name_ar: companyForm.legal_entity_name_ar.trim(),
       trade_license_number: companyForm.trade_license_number.trim(),
       trade_license_expiry_date: companyForm.trade_license_expiry_date || null,
       tax_registration_number: companyForm.tax_registration_number.trim(),
@@ -497,6 +502,15 @@ function CompanyManagement() {
                   />
 
                   <Input
+                    id="legal_entity_name_ar"
+                    name="legal_entity_name_ar"
+                    label="Trade License Name (Arabic)"
+                    value={companyForm.legal_entity_name_ar}
+                    onChange={handleCompanyChange}
+                    error={companyFieldErrors.legal_entity_name_ar?.toString()}
+                  />
+
+                  <Input
                     id="trade_license_number"
                     name="trade_license_number"
                     label="Trade License Number"
@@ -674,6 +688,18 @@ function CompanyManagement() {
 
                         <div>
                           <p className="text-[10px] font-bold uppercase tracking-[0.12em] text-slate-400">
+                            Trade License Name (Arabic)
+                          </p>
+                          <p
+                            className="mt-1 text-sm font-semibold text-slate-900"
+                            dir="rtl"
+                          >
+                            {company.legal_entity_name_ar || "-"}
+                          </p>
+                        </div>
+
+                        <div>
+                          <p className="text-[10px] font-bold uppercase tracking-[0.12em] text-slate-400">
                             Trade License Number
                           </p>
                           <p className="mt-1 text-sm font-semibold text-slate-900">
@@ -786,6 +812,10 @@ function CompanyManagement() {
               </div>
             )}
           </Card>
+
+          {companies.length > 0 ? (
+            <RtaTemplateManagement company={companies[0]} />
+          ) : null}
 
           <Card
             title="Company Documents"

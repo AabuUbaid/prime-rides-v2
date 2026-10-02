@@ -3659,11 +3659,35 @@ def create_cash_receipt(
         )
 
     # -----------------------------------------------------
-    # Vehicle default
-    # -----------------------------------------------------
+# Vehicle default
+# -----------------------------------------------------
 
     if car is None:
         car = quote.car
+
+    if (
+        car is None
+        and quote.payment_method == Quote.PaymentMethod.FINANCE
+    ):
+        bank_loan = (
+            BankLoan.objects
+            .filter(
+                quote=quote,
+                status=BankLoan.Status.APPROVED,
+            )
+            .select_related("car")
+            .order_by("-updated_at", "-id")
+            .first()
+        )
+
+        if bank_loan is not None:
+            car = bank_loan.car
+
+    if car is None:
+        emi_sheet = getattr(quote, "emi_sheet", None)
+
+        if emi_sheet is not None:
+            car = emi_sheet.car
 
     # -----------------------------------------------------
     # Validate
@@ -3755,7 +3779,10 @@ def create_cash_receipt(
             quote=quote,
         )
 
-        if cash_deal is None and category == CashReceipt.Category.ADVANCE:
+        if (
+            cash_deal is None
+            and category == CashReceipt.Category.ADVANCE
+        ):
             from progression.services import (
                 sync_progression_for_quote,
             )
@@ -3763,6 +3790,40 @@ def create_cash_receipt(
             sync_progression_for_quote(
                 quote_id=quote.id,
             )
+
+    # -----------------------------------------------------
+    # Finance Bank Loan Approved Amount → Balance Sheet
+    # -----------------------------------------------------
+
+    if (
+        direction == CashReceipt.Direction.CUSTOMER_PAYMENT
+        and category == CashReceipt.Category.OTHER
+        and quote.payment_method == Quote.PaymentMethod.FINANCE
+    ):
+        approved_bank_loan = (
+            BankLoan.objects
+            .filter(
+                quote=quote,
+                status=BankLoan.Status.APPROVED,
+            )
+            .order_by("-updated_at", "-id")
+            .first()
+        )
+
+        if (
+            approved_bank_loan is not None
+            and approved_bank_loan.approved_finance is not None
+            and validated["amount"] ==
+                approved_bank_loan.approved_finance
+        ):
+            if not BalanceSheet.objects.filter(
+                quote_id=quote.id
+            ).exists():
+                create_balance_sheet(
+                    customer=customer,
+                    quote=quote,
+                    created_by=created_by,
+                )
 
     return cash_receipt
 
@@ -3917,10 +3978,36 @@ def create_balance_sheet(
         quote=quote,
     )
 
+    car = quote.car
+
+    if (
+        car is None
+        and quote.payment_method == Quote.PaymentMethod.FINANCE
+    ):
+        bank_loan = (
+            BankLoan.objects
+            .filter(
+                quote=quote,
+                status=BankLoan.Status.APPROVED,
+            )
+            .select_related("car")
+            .order_by("-updated_at", "-id")
+            .first()
+        )
+
+        if bank_loan is not None:
+            car = bank_loan.car
+
+    if car is None:
+        emi_sheet = getattr(quote, "emi_sheet", None)
+
+        if emi_sheet is not None:
+            car = emi_sheet.car
+
     return BalanceSheet.objects.create(
         customer=customer,
         quote=quote,
-        car=quote.car,
+        car=car,
         created_by=created_by,
     )
     

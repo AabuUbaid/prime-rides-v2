@@ -1,8 +1,8 @@
-
 import os
 
 from customers.models import CustomerDocument
 from inventory.models import VehicleDocument
+from finance.models import BankLoan, CashDeal
 
 
 REQUIRED_DOCUMENTS = (
@@ -14,14 +14,7 @@ REQUIRED_DOCUMENTS = (
         "key": "rta_passing",
         "label": "RTA Passing",
     },
-    {
-        "key": "mulkiya",
-        "label": "Mulkiya / Registration Card",
-    },
-    {
-        "key": "rta_submission_form",
-        "label": "RTA Submission Form",
-    },
+    
 )
 
 
@@ -53,6 +46,41 @@ def _build_document(
 def get_registration_documents(*, quote):
     customer = quote.customer
     car = quote.car
+
+    # Quote may not contain the authoritative vehicle directly.
+    # Finance uses the approved Bank Loan vehicle, while Cash
+    # uses the Cash Deal vehicle.
+    if car is None:
+        bank_loan = (
+            BankLoan.objects
+            .filter(
+                quote=quote,
+                status=BankLoan.Status.APPROVED,
+            )
+            .select_related("car")
+            .order_by("-updated_at", "-id")
+            .first()
+        )
+
+        if bank_loan is not None:
+            car = bank_loan.car
+
+    if car is None:
+        cash_deal = (
+            CashDeal.objects
+            .filter(quote=quote)
+            .select_related("car")
+            .order_by("-updated_at", "-id")
+            .first()
+        )
+
+        if cash_deal is not None:
+            car = cash_deal.car
+
+    if car is None:
+        raise ValueError(
+            "Vehicle could not be resolved for this Registration."
+        )
 
     documents = []
 
@@ -140,11 +168,7 @@ def get_registration_documents(*, quote):
     available_documents = []
     missing_documents = []
 
-    customer_categories = {
-        document["document_type"]
-        for document in documents
-        if document["source"] == "customer"
-    }
+    
 
     vehicle_has_possession = any(
         document["source"] in {
@@ -157,12 +181,9 @@ def get_registration_documents(*, quote):
 
     vehicle_document_types = set(
         VehicleDocument.objects.filter(
-            car=quote.car,
+            car=car,
             is_archived=False,
-        ).values_list(
-            "document_type",
-            flat=True,
-        )
+        ).values_list("document_type", flat=True)
     )
 
     availability = {
@@ -175,14 +196,6 @@ def get_registration_documents(*, quote):
         ),
         "rta_passing": (
             VehicleDocument.DocumentType.RTA_PASSING
-            in vehicle_document_types
-        ),
-        "mulkiya": (
-            VehicleDocument.DocumentType.MULKIYA
-            in vehicle_document_types
-        ),
-        "rta_submission_form": (
-            VehicleDocument.DocumentType.RTA_SUBMISSION_FORM
             in vehicle_document_types
         ),
     }

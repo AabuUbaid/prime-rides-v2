@@ -45,11 +45,6 @@ export default function RtaRecordCreate() {
   const [selectedBranchId, setSelectedBranchId] = useState("");
   const [branchLoading, setBranchLoading] = useState(false);
 
-  const [supplierName, setSupplierName] = useState("");
-  const [supplierMobile, setSupplierMobile] = useState("");
-  const [supplierAddress, setSupplierAddress] = useState("");
-  const [supplierTradeLicenseNumber, setSupplierTradeLicenseNumber] =
-    useState("");
   const [rtaReferenceNumber, setRtaReferenceNumber] = useState("");
   const [firstPartySignatoryName, setFirstPartySignatoryName] = useState("");
   const [secondPartySignatoryName, setSecondPartySignatoryName] = useState("");
@@ -83,34 +78,6 @@ export default function RtaRecordCreate() {
     }
   }
 
-  async function handleCompanyChange(event) {
-    const companyId = event.target.value;
-
-    setSelectedCompanyId(companyId);
-    setSelectedBranchId("");
-    setBranches([]);
-
-    if (!companyId) {
-      return;
-    }
-
-    setBranchLoading(true);
-    setError("");
-
-    try {
-      const response = await getBranches(companyId);
-      const data = getResponseData(response);
-
-      setBranches(Array.isArray(data) ? data : []);
-    } catch (e) {
-      setError(
-        e?.message || "Unable to load branches for the selected company.",
-      );
-    } finally {
-      setBranchLoading(false);
-    }
-  }
-
   function handleRecordTypeChange(event) {
     if (routeLocked) {
       return;
@@ -121,10 +88,7 @@ export default function RtaRecordCreate() {
     setRecordType(value);
 
     if (value === "SALE") {
-      setSupplierName("");
-      setSupplierMobile("");
-      setSupplierAddress("");
-      setSupplierTradeLicenseNumber("");
+      // Sale-specific state is handled by the quote selection effect.
     } else {
       setSelectedQuoteId("");
       setSelectedQuote(null);
@@ -157,13 +121,25 @@ export default function RtaRecordCreate() {
 
         const companiesData = getResponseData(companiesResponse);
 
-        setCompanies(
-          Array.isArray(companiesData)
-            ? companiesData
-            : Array.isArray(companiesData?.results)
-              ? companiesData.results
-              : [],
-        );
+        const normalizedCompanies = Array.isArray(companiesData)
+          ? companiesData
+          : Array.isArray(companiesData?.results)
+            ? companiesData.results
+            : Array.isArray(companiesData?.data)
+              ? companiesData.data
+              : companiesData?.id
+                ? [companiesData]
+                : [];
+
+        setCompanies(normalizedCompanies);
+
+        const defaultCompany =
+          normalizedCompanies.find((company) => company?.is_active !== false) ||
+          normalizedCompanies[0];
+
+        if (defaultCompany?.id) {
+          setSelectedCompanyId(String(defaultCompany.id));
+        }
 
         if (recordType === "SALE") {
           const quotesData = getResponseData(quotesResponse);
@@ -203,8 +179,17 @@ export default function RtaRecordCreate() {
         const response = await getCar(carId);
         const data = getResponseData(response);
 
-        setPurchaseCar(data && typeof data === "object" ? data : null);
+        const loadedCar = data && typeof data === "object" ? data : null;
+
+        setPurchaseCar(loadedCar);
+
+        if (loadedCar) {
+          // Supplier is taken directly from the inventory vehicle
+          // when the Purchase RTA is submitted.
+        }
       } catch (e) {
+        setPurchaseCar(null);
+
         setError(e?.message || "Unable to load the inventory vehicle.");
       } finally {
         setPurchaseCarLoading(false);
@@ -259,19 +244,71 @@ export default function RtaRecordCreate() {
     };
   }, [recordType, selectedQuoteId]);
 
-  const selectedCompany = companies.find(
-    (company) => String(company.id) === String(selectedCompanyId),
-  );
-
   const selectedBranch = branches.find(
     (branch) => String(branch.id) === String(selectedBranchId),
   );
 
+  useEffect(() => {
+    if (!selectedCompanyId) {
+      return;
+    }
+
+    let cancelled = false;
+
+    async function loadCompanyBranches() {
+      setBranchLoading(true);
+      setError("");
+
+      try {
+        const response = await getBranches(selectedCompanyId);
+        const data = getResponseData(response);
+
+        if (!cancelled) {
+          const normalizedBranches = Array.isArray(data)
+            ? data
+            : Array.isArray(data?.results)
+              ? data.results
+              : Array.isArray(data?.data)
+                ? data.data
+                : [];
+
+          setBranches(normalizedBranches);
+        }
+      } catch (e) {
+        if (!cancelled) {
+          setBranches([]);
+          setError(
+            e?.message || "Unable to load branches for the selected company.",
+          );
+        }
+      } finally {
+        if (!cancelled) {
+          setBranchLoading(false);
+        }
+      }
+    }
+
+    loadCompanyBranches();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [selectedCompanyId]);
+
   async function handleSubmit(event) {
     event.preventDefault();
 
-    if (!selectedCompanyId) {
-      setError("Please select a company.");
+    const resolvedCompany =
+      companies.find(
+        (company) => String(company.id) === String(selectedCompanyId),
+      ) ||
+      companies.find((company) => company?.is_active !== false) ||
+      companies[0];
+
+    const resolvedCompanyId = resolvedCompany?.id;
+
+    if (!resolvedCompanyId) {
+      setError("Unable to load the company configuration.");
       return;
     }
 
@@ -283,11 +320,6 @@ export default function RtaRecordCreate() {
 
       if (!purchaseCar) {
         setError("Unable to load the inventory vehicle.");
-        return;
-      }
-
-      if (!supplierName.trim()) {
-        setError("Supplier name is required for a purchase RTA.");
         return;
       }
     }
@@ -316,7 +348,7 @@ export default function RtaRecordCreate() {
       const payload = {
         record_type: recordType,
         rta_date: rtaDate,
-        company: selectedCompanyId,
+        company: resolvedCompanyId,
         branch: selectedBranchId || null,
         rta_reference_number: rtaReferenceNumber.trim(),
         first_party_signatory_name: firstPartySignatoryName.trim(),
@@ -326,11 +358,6 @@ export default function RtaRecordCreate() {
 
       if (recordType === "PURCHASE") {
         payload.car = carId;
-        payload.supplier_name = supplierName.trim();
-        payload.supplier_mobile = supplierMobile.trim();
-        payload.supplier_address = supplierAddress.trim();
-        payload.supplier_trade_license_number =
-          supplierTradeLicenseNumber.trim();
       }
 
       if (recordType === "SALE") {
@@ -479,26 +506,6 @@ export default function RtaRecordCreate() {
               )}
 
               <div>
-                <label className="mb-1 block text-sm font-medium">
-                  Company
-                </label>
-
-                <select
-                  value={selectedCompanyId}
-                  onChange={handleCompanyChange}
-                  className="w-full rounded border px-3 py-2"
-                >
-                  <option value="">Select a company</option>
-
-                  {companies.map((company) => (
-                    <option key={company.id} value={company.id}>
-                      {company.name || company.company_name || company.id}
-                    </option>
-                  ))}
-                </select>
-              </div>
-
-              <div>
                 <label className="mb-1 block text-sm font-medium">Branch</label>
 
                 <select
@@ -567,72 +574,6 @@ export default function RtaRecordCreate() {
             )}
           </div>
 
-          {recordType === "PURCHASE" && (
-            <div className="rounded border bg-white p-6">
-              <h2 className="text-lg font-semibold">Purchase Supplier</h2>
-
-              <div className="mt-4 grid gap-4 md:grid-cols-2">
-                <div>
-                  <label className="mb-1 block text-sm font-medium">
-                    Supplier Name
-                  </label>
-
-                  <input
-                    type="text"
-                    value={supplierName}
-                    onChange={(event) => setSupplierName(event.target.value)}
-                    className="w-full rounded border px-3 py-2"
-                    placeholder="Enter supplier name"
-                  />
-                </div>
-
-                <div>
-                  <label className="mb-1 block text-sm font-medium">
-                    Supplier Mobile
-                  </label>
-
-                  <input
-                    type="text"
-                    value={supplierMobile}
-                    onChange={(event) => setSupplierMobile(event.target.value)}
-                    className="w-full rounded border px-3 py-2"
-                    placeholder="Enter supplier mobile"
-                  />
-                </div>
-
-                <div>
-                  <label className="mb-1 block text-sm font-medium">
-                    Trade License Number
-                  </label>
-
-                  <input
-                    type="text"
-                    value={supplierTradeLicenseNumber}
-                    onChange={(event) =>
-                      setSupplierTradeLicenseNumber(event.target.value)
-                    }
-                    className="w-full rounded border px-3 py-2"
-                    placeholder="Enter trade license number"
-                  />
-                </div>
-
-                <div className="md:col-span-2">
-                  <label className="mb-1 block text-sm font-medium">
-                    Supplier Address
-                  </label>
-
-                  <textarea
-                    value={supplierAddress}
-                    onChange={(event) => setSupplierAddress(event.target.value)}
-                    rows={3}
-                    className="w-full rounded border px-3 py-2"
-                    placeholder="Enter supplier address"
-                  />
-                </div>
-              </div>
-            </div>
-          )}
-
           {recordType === "SALE" && (
             <div className="rounded border bg-white p-6">
               <h2 className="text-lg font-semibold">Sale Customer</h2>
@@ -672,7 +613,13 @@ export default function RtaRecordCreate() {
           )}
 
           <div className="rounded border bg-white p-6">
-            <h2 className="text-lg font-semibold">Vehicle Snapshot</h2>
+            <div>
+              <h2 className="text-lg font-semibold">Purchase Vehicle</h2>
+
+              <p className="mt-1 text-sm text-gray-500">
+                Vehicle selected from Add Stock.
+              </p>
+            </div>
 
             {recordType === "PURCHASE" ? (
               purchaseCarLoading ? (
@@ -791,100 +738,90 @@ export default function RtaRecordCreate() {
           </div>
 
           <div className="rounded border bg-white p-6">
-            <h2 className="text-lg font-semibold">Company and Branch</h2>
+            <h2 className="text-lg font-semibold">Branch</h2>
 
-            <div className="mt-4 grid gap-4 md:grid-cols-2">
-              <div>
-                <p className="text-xs text-gray-500">Company</p>
+            <div className="mt-4">
+              <p className="text-xs text-gray-500">Branch</p>
 
-                <p className="mt-1 text-sm font-medium">
-                  {selectedCompany
-                    ? selectedCompany.name ||
-                      selectedCompany.company_name ||
-                      selectedCompany.id
-                    : "—"}
-                </p>
-              </div>
-
-              <div>
-                <p className="text-xs text-gray-500">Branch</p>
-
-                <p className="mt-1 text-sm font-medium">
-                  {selectedBranch
-                    ? selectedBranch.name ||
-                      selectedBranch.branch_name ||
-                      selectedBranch.id
-                    : "—"}
-                </p>
-              </div>
+              <p className="mt-1 text-sm font-medium">
+                {selectedBranch
+                  ? selectedBranch.name ||
+                    selectedBranch.branch_name ||
+                    selectedBranch.id
+                  : "—"}
+              </p>
             </div>
           </div>
 
-          <div className="rounded border bg-white p-6">
-            <h2 className="text-lg font-semibold">RTA Details</h2>
+          {recordType === "SALE" && (
+            <div className="rounded border bg-white p-6">
+              <h2 className="text-lg font-semibold">RTA Details</h2>
 
-            <div className="mt-4 grid gap-4 md:grid-cols-2">
-              <div>
-                <label className="mb-1 block text-sm font-medium">
-                  RTA Reference Number
-                </label>
+              <div className="mt-4 grid gap-4 md:grid-cols-2">
+                <div>
+                  <label className="mb-1 block text-sm font-medium">
+                    RTA Reference Number
+                  </label>
 
-                <input
-                  type="text"
-                  value={rtaReferenceNumber}
-                  onChange={(event) =>
-                    setRtaReferenceNumber(event.target.value)
-                  }
-                  className="w-full rounded border px-3 py-2"
-                  placeholder="Enter RTA reference number"
-                />
-              </div>
+                  <input
+                    type="text"
+                    value={rtaReferenceNumber}
+                    onChange={(event) =>
+                      setRtaReferenceNumber(event.target.value)
+                    }
+                    className="w-full rounded border px-3 py-2"
+                    placeholder="Enter RTA reference number"
+                  />
+                </div>
 
-              <div>
-                <label className="mb-1 block text-sm font-medium">
-                  First Party Signatory Name
-                </label>
+                <div>
+                  <label className="mb-1 block text-sm font-medium">
+                    First Party Signatory Name
+                  </label>
 
-                <input
-                  type="text"
-                  value={firstPartySignatoryName}
-                  onChange={(event) =>
-                    setFirstPartySignatoryName(event.target.value)
-                  }
-                  className="w-full rounded border px-3 py-2"
-                  placeholder="Enter first party signatory name"
-                />
-              </div>
+                  <input
+                    type="text"
+                    value={firstPartySignatoryName}
+                    onChange={(event) =>
+                      setFirstPartySignatoryName(event.target.value)
+                    }
+                    className="w-full rounded border px-3 py-2"
+                    placeholder="Enter first party signatory name"
+                  />
+                </div>
 
-              <div>
-                <label className="mb-1 block text-sm font-medium">
-                  Second Party Signatory Name
-                </label>
+                <div>
+                  <label className="mb-1 block text-sm font-medium">
+                    Second Party Signatory Name
+                  </label>
 
-                <input
-                  type="text"
-                  value={secondPartySignatoryName}
-                  onChange={(event) =>
-                    setSecondPartySignatoryName(event.target.value)
-                  }
-                  className="w-full rounded border px-3 py-2"
-                  placeholder="Enter second party signatory name"
-                />
-              </div>
+                  <input
+                    type="text"
+                    value={secondPartySignatoryName}
+                    onChange={(event) =>
+                      setSecondPartySignatoryName(event.target.value)
+                    }
+                    className="w-full rounded border px-3 py-2"
+                    placeholder="Enter second party signatory name"
+                  />
+                </div>
 
-              <div className="md:col-span-2">
-                <label className="mb-1 block text-sm font-medium">Notes</label>
+                <div className="md:col-span-2">
+                  <label className="mb-1 block text-sm font-medium">
+                    Notes
+                  </label>
 
-                <textarea
-                  value={notes}
-                  onChange={(event) => setNotes(event.target.value)}
-                  rows={4}
-                  className="w-full rounded border px-3 py-2"
-                  placeholder="Enter any RTA notes"
-                />
+                  <textarea
+                    value={notes}
+                    onChange={(event) => setNotes(event.target.value)}
+                    rows={4}
+                    className="w-full rounded border px-3 py-2"
+                    placeholder="Enter any RTA notes"
+                  />
+                </div>
               </div>
             </div>
-          </div>
+          )}
 
           <div className="flex justify-end gap-3">
             <Link to="/rta" className="rounded border px-4 py-2 text-sm">

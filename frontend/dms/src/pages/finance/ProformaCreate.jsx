@@ -3,6 +3,7 @@ import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import { toast } from "react-toastify";
 
 import { getInsurance } from "../../api/insurance";
+import { getBankLoan } from "../../api/bankLoans";
 import { createProforma } from "../../api/proforma";
 
 function DetailRow({ label, value }) {
@@ -30,6 +31,7 @@ function Section({ title, children }) {
 
 export default function ProformaCreate() {
   const [searchParams] = useSearchParams();
+  const returnTo = searchParams.get("return_to");
   const navigate = useNavigate();
 
   const insuranceId = searchParams.get("insurance");
@@ -67,6 +69,27 @@ export default function ProformaCreate() {
             setError(
               "Proforma can only be created after Insurance is approved.",
             );
+            return;
+          }
+
+          if (data?.payment_method === "Finance") {
+            setBankFinancedBy(data?.bank_financed_by ?? "");
+
+            if (data?.bank_loan) {
+              try {
+                const loanResponse = await getBankLoan(data.bank_loan);
+
+                const bankLoan = loanResponse?.data ?? loanResponse;
+
+                setLpo(bankLoan?.bank_reference ?? "");
+              } catch (loanError) {
+                console.error("Failed to load Bank Loan:", loanError);
+
+                setError(
+                  loanError?.message || "Unable to load approved Bank Loan.",
+                );
+              }
+            }
           }
         }
       } catch (err) {
@@ -113,7 +136,11 @@ export default function ProformaCreate() {
 
       toast.success("Proforma created successfully.");
 
-      if (data?.id) {
+      if (returnTo?.startsWith("/progression/")) {
+        navigate(returnTo, {
+          replace: true,
+        });
+      } else if (data?.id) {
         navigate(`/finance/proformas/${data.id}`);
       } else {
         navigate("/finance/proformas");
@@ -218,8 +245,8 @@ export default function ProformaCreate() {
                   <input
                     type="text"
                     value={lpo}
-                    onChange={(event) => setLpo(event.target.value)}
-                    className="w-full rounded-lg border border-gray-300 px-3 py-2.5 text-sm outline-none focus:border-gray-500"
+                    readOnly
+                    className="w-full rounded-lg border border-gray-300 bg-gray-50 px-3 py-2.5 text-sm outline-none"
                   />
                 </div>
               </>

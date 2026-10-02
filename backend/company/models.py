@@ -8,6 +8,11 @@ class Company(models.Model):
     legal_entity_name = models.CharField(
         max_length=255,
     )
+    
+    legal_entity_name_ar = models.CharField(
+    max_length=255,
+    blank=True,
+    )
 
     trade_license_number = models.CharField(
         max_length=100,

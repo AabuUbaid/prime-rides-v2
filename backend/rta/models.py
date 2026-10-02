@@ -321,7 +321,65 @@ class RTARecord(models.Model):
             f"{reference} - "
             f"{vehicle_reference}"
         )
-        
+
+class RTATemplate(models.Model):
+    class RecordType(models.TextChoices):
+        PURCHASE = "PURCHASE", "Purchase"
+        SALE = "SALE", "Sale"
+
+    company = models.ForeignKey(
+        "company.Company",
+        on_delete=models.PROTECT,
+        related_name="rta_templates",
+    )
+
+    record_type = models.CharField(
+        max_length=20,
+        choices=RecordType.choices,
+    )
+
+    # Editable document content.
+    #
+    # This stores only wording/content.
+    # Page geometry, coordinates, fonts, and print layout
+    # remain controlled by the frontend renderer.
+    content = models.JSONField(
+        default=dict,
+        blank=True,
+    )
+
+    is_active = models.BooleanField(
+        default=True,
+    )
+
+    created_at = models.DateTimeField(
+        auto_now_add=True,
+    )
+
+    updated_at = models.DateTimeField(
+        auto_now=True,
+    )
+
+    class Meta:
+        db_table = "rta_templates"
+        ordering = ["company_id", "record_type"]
+        constraints = [
+            models.UniqueConstraint(
+                fields=["company", "record_type"],
+                name="unique_rta_template_per_company_type",
+            ),
+        ]
+        indexes = [
+            models.Index(fields=["company"]),
+            models.Index(fields=["record_type"]),
+            models.Index(fields=["is_active"]),
+        ]
+
+    def __str__(self):
+        return (
+            f"{self.company.legal_entity_name} - "
+            f"{self.record_type} RTA Template"
+        )
         
 class RTADocument(models.Model):
     class DocumentType(models.TextChoices):

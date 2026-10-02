@@ -209,14 +209,19 @@ class RegistrationDocumentsView(APIView):
 
     def get(self, request, pk):
         try:
-            progression = (
-                Progression.objects
-                .select_related("quote")
-                .get(pk=pk)
+            progression = get_progression(
+                pk=pk,
+                user=request.user,
             )
-        except Progression.DoesNotExist:
+        except ValidationError as exc:
             return Response(
-                {"detail": "Progression not found."},
+                {
+                    "detail": (
+                        str(exc.detail)
+                        if hasattr(exc, "detail")
+                        else str(exc)
+                    ),
+                },
                 status=status.HTTP_404_NOT_FOUND,
             )
 

@@ -22,6 +22,10 @@ from finance.models import (
     CashReceipt,
 )
 from quotes.models import Quote
+from rta.models import RTARecord
+from .registration_services import get_registration_documents
+from proforma.models import Proforma
+from delivery_note.models import DeliveryNote
 from insurance.models import Insurance
 from .models import (
     Progression,
@@ -637,12 +641,61 @@ def advance_progression_stage(
     # -------------------------------------------------
 
     elif current_stage == Progression.Stage.REGISTRATION:
+        # -------------------------------------------------
+        # REGISTRATION
+        #
+        # Registration can be completed only after ALL of
+        # the following are true:
+        #
+        # 1. Possession Certificate exists.
+        # 2. RTA Passing exists.
+        # 3. Sale RTA has been saved for this Quote.
+        # 4. Balance Sheet is settled.
+        #
+        # Mulkiya and RTA Submission Form are intentionally
+        # NOT registration gates.
+        # -------------------------------------------------
+
+        registration_documents = get_registration_documents(
+            quote=progression.quote,
+        )
+
+        if not registration_documents[
+            "registration_documents_ready"
+        ]:
+            missing_labels = ", ".join(
+                item["label"]
+                for item in registration_documents[
+                    "missing_documents"
+                ]
+            )
+
+            raise ValidationError(
+                "Registration documents are still missing: "
+                f"{missing_labels}."
+            )
+
+        sale_rta_exists = (
+            RTARecord.objects
+            .filter(
+                quote=progression.quote,
+                record_type=RTARecord.RecordType.SALE,
+            )
+            .exists()
+        )
+
+        if not sale_rta_exists:
+            raise ValidationError(
+                "Sale RTA must be saved before "
+                "Registration can be completed."
+            )
+
         balance_settled = _balance_sheet_is_settled(
             quote=progression.quote,
         )
 
         # ---------------------------------------------
-        # Balance Sheet already settled
+        # Balance Sheet settled
         # ---------------------------------------------
 
         if balance_settled:
@@ -655,7 +708,7 @@ def advance_progression_stage(
         # ---------------------------------------------
 
         else:
-            # Only Master can override.
+            # Only Master can override the Balance Sheet gate.
             if override_balance_gate:
                 if user.role != "MASTER":
                     raise ValidationError(
@@ -726,6 +779,25 @@ def advance_progression_stage(
         # created here. Existing financial sources remain
         # authoritative.
         # -------------------------------------------------
+
+    # -------------------------------------------------
+    # DELIVERY DOCUMENT GATE
+    # -------------------------------------------------
+        if not Proforma.objects.filter(
+            quote=progression.quote
+        ).exists():
+            raise ValidationError(
+                "Proforma must be created before "
+                "Delivery Video can be completed."
+            )
+
+        if not DeliveryNote.objects.filter(
+            quote=progression.quote
+        ).exists():
+            raise ValidationError(
+                "Delivery Note must be created before "
+                "Delivery Video can be completed."
+            )
 
         if progression.source_type == Progression.SourceType.FINANCE:
             if progression.bank_loan is None:

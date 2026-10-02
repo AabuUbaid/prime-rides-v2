@@ -5,8 +5,10 @@ from django.db import transaction
 
 from insurance.models import Insurance
 from quotes.models import QuoteSequence
+from finance.models import BankLoan
 
 from .models import Proforma
+
 
 
 PROFORMA_SEQUENCE_NAME = "proforma"
@@ -122,6 +124,24 @@ def create_proforma(
         net_finance = None
 
     vat = Decimal(vat or "0.00")
+
+    if payment_type == Proforma.PaymentType.FINANCE:
+        bank_loan = (
+            BankLoan.objects
+            .filter(
+                quote=insurance.quote,
+                status=BankLoan.Status.APPROVED,
+            )
+            .order_by("-updated_at", "-id")
+            .first()
+        )
+
+        if bank_loan is None:
+            raise ValidationError(
+                "Approved Bank Loan is required for Finance Proforma."
+            )
+
+        lpo = bank_loan.bank_reference or ""
 
     if vat < Decimal("0.00"):
         raise ValidationError(

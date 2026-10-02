@@ -160,46 +160,21 @@ function BankLoanDetail() {
     loadBanks();
   }, [id]);
 
-  async function saveDecisionStatus() {
+  async function saveStatus() {
     try {
       setSaving(true);
 
       await updateBankLoanStatus(id, decisionStatus);
 
-      await loadLoan();
-      toast.success("Decision status updated.");
-    } catch (err) {
-      toast.error(err?.message || "Failed to update decision status.");
-    } finally {
-      setSaving(false);
-    }
-  }
-
-  async function saveApplicationStatus() {
-    try {
-      setSaving(true);
-
       await updateBankLoanApplicationStatus(id, applicationStatus);
-
-      await loadLoan();
-      toast.success("Application status updated.");
-    } catch (err) {
-      toast.error(err?.message || "Failed to update application status.");
-    } finally {
-      setSaving(false);
-    }
-  }
-
-  async function savePriority() {
-    try {
-      setSaving(true);
 
       await updateBankLoanPriority(id, priority);
 
       await loadLoan();
-      toast.success("Priority updated.");
+
+      toast.success("Status details updated.");
     } catch (err) {
-      toast.error(err?.message || "Failed to update priority.");
+      toast.error(err?.message || "Failed to update status details.");
     } finally {
       setSaving(false);
     }
@@ -209,12 +184,44 @@ function BankLoanDetail() {
     try {
       setSaving(true);
 
-      await updateBankLoanFinance(id, {
+      const previousApprovedFinance = Number(loan?.approved_finance ?? 0);
+
+      const response = await updateBankLoanFinance(id, {
         requested_finance: requestedFinance,
         approved_finance: approvedFinance,
       });
 
+      const updatedLoan = response?.data ?? response;
+
       await loadLoan();
+
+      const savedApprovedFinance = Number(
+        updatedLoan?.approved_finance ?? approvedFinance ?? 0,
+      );
+
+      const savedStatus = updatedLoan?.status ?? loan?.status;
+
+      const isNewApprovedAmount =
+        savedApprovedFinance > 0 &&
+        savedApprovedFinance !== previousApprovedFinance;
+
+      if (savedStatus === "approved" && isNewApprovedAmount) {
+        const params = new URLSearchParams({
+          customer_id: String(updatedLoan?.customer ?? loan?.customer ?? ""),
+          quote_id: String(updatedLoan?.quote ?? loan?.quote ?? ""),
+          amount: String(savedApprovedFinance),
+          direction: "customer_payment",
+          category: "other",
+          payment_method: "bank_transfer",
+          reference: String(updatedLoan?.bank_reference ?? bankReference ?? ""),
+          description: "Bank Loan Approved Amount",
+        });
+
+        navigate(`/finance/cash-receipts/new?${params.toString()}`);
+
+        return;
+      }
+
       toast.success("Finance details updated.");
     } catch (err) {
       toast.error(err?.message || "Failed to update finance details.");
@@ -509,15 +516,6 @@ function BankLoanDetail() {
                     </option>
                   ))}
                 </select>
-
-                <button
-                  type="button"
-                  disabled={saving}
-                  onClick={saveDecisionStatus}
-                  className="mt-2 rounded-md bg-gray-900 px-4 py-2 text-sm font-medium text-white disabled:opacity-50"
-                >
-                  Save
-                </button>
               </div>
 
               <div>
@@ -536,15 +534,6 @@ function BankLoanDetail() {
                     </option>
                   ))}
                 </select>
-
-                <button
-                  type="button"
-                  disabled={saving}
-                  onClick={saveApplicationStatus}
-                  className="mt-2 rounded-md bg-gray-900 px-4 py-2 text-sm font-medium text-white disabled:opacity-50"
-                >
-                  Save
-                </button>
               </div>
 
               <div>
@@ -564,14 +553,16 @@ function BankLoanDetail() {
                   ))}
                 </select>
 
-                <button
-                  type="button"
-                  disabled={saving}
-                  onClick={savePriority}
-                  className="mt-2 rounded-md bg-gray-900 px-4 py-2 text-sm font-medium text-white disabled:opacity-50"
-                >
-                  Save
-                </button>
+                <div className="pt-2">
+                  <button
+                    type="button"
+                    disabled={saving}
+                    onClick={saveStatus}
+                    className="w-full rounded-md bg-gray-900 px-4 py-2.5 text-sm font-medium text-white hover:bg-gray-800 disabled:cursor-not-allowed disabled:opacity-50"
+                  >
+                    {saving ? "Saving..." : "Save Status"}
+                  </button>
+                </div>
               </div>
             </div>
           </section>
@@ -729,7 +720,7 @@ function BankLoanDetail() {
 
             <div>
               <label className="mb-1 block text-sm font-medium text-gray-700">
-                Bank Reference
+                LPO Number
               </label>
 
               <input

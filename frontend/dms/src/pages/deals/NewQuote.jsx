@@ -158,6 +158,8 @@ export default function NewQuote() {
   const [selectedEmi, setSelectedEmi] = useState(null);
 
   const [loadingEmiDetail, setLoadingEmiDetail] = useState(false);
+  const [emiSearch, setEmiSearch] = useState("");
+  const [emiDropdownOpen, setEmiDropdownOpen] = useState(false);
 
   const [customerName, setCustomerName] = useState("");
 
@@ -641,6 +643,18 @@ export default function NewQuote() {
     }
   }, [selectedSpecialPriceRequest, selectedApprovedSpecialPrice, selectedCar]);
 
+  useEffect(() => {
+    const handleDocumentClick = () => {
+      setEmiDropdownOpen(false);
+    };
+
+    document.addEventListener("click", handleDocumentClick);
+
+    return () => {
+      document.removeEventListener("click", handleDocumentClick);
+    };
+  }, []);
+
   const stockVatAmount = stockCalculation?.vat_amount ?? "0";
 
   const stockPriceAfterVat = stockCalculation?.price_after_vat ?? "";
@@ -672,6 +686,29 @@ export default function NewQuote() {
    *
    * and use THAT response as the historical source.
    */
+
+  const filteredEmiSheets = (emiSheets || []).filter((emi) => {
+    const query = emiSearch.trim().toLowerCase();
+
+    if (!query) {
+      return true;
+    }
+
+    const customerName = getCustomerName(emi).toLowerCase();
+    const vehicleName = getEmiVehicleName(emi).toLowerCase();
+    const stockId = String(emi?.vehicle_stock_id || "").toLowerCase();
+    const emiId = String(emi?.id || "").toLowerCase();
+    const price = String(emi?.price ?? emi?.vehicle_price ?? "").toLowerCase();
+
+    return (
+      customerName.includes(query) ||
+      vehicleName.includes(query) ||
+      stockId.includes(query) ||
+      emiId.includes(query) ||
+      price.includes(query)
+    );
+  });
+
   const handleSavedEmiChange = async (event) => {
     const emiId = event.target.value;
 
@@ -1202,7 +1239,10 @@ export default function NewQuote() {
                   Stock Vehicle
                 </label>
 
-                <div className="relative">
+                <div
+                  className="relative"
+                  onClick={(event) => event.stopPropagation()}
+                >
                   <input
                     type="text"
                     value={vehicleSearch}
@@ -1956,24 +1996,117 @@ export default function NewQuote() {
                   Saved EMI Calculation
                 </label>
 
-                <select
-                  value={selectedEmiId}
-                  onChange={handleSavedEmiChange}
-                  disabled={loadingEmiDetail}
-                  className="h-10 w-full rounded-xl border border-slate-200 bg-white px-3 text-sm text-slate-800 outline-none transition placeholder:text-slate-400 focus:border-amber-400 focus:ring-2 focus:ring-amber-400/15 disabled:bg-gray-100"
-                >
-                  <option value="">Select saved EMI</option>
+                <div className="relative">
+                  <input
+                    type="text"
+                    value={
+                      selectedEmi
+                        ? `${getCustomerName(selectedEmi) || getEmiVehicleName(selectedEmi) || `EMI #${selectedEmi.id}`} — ${formatCurrency(
+                            selectedEmi.price ?? selectedEmi.vehicle_price,
+                          )}`
+                        : emiSearch
+                    }
+                    onChange={(event) => {
+                      if (selectedEmi) {
+                        setSelectedEmi(null);
+                        setSelectedEmiId("");
+                        setCustomerName("");
+                        setCustomerMobile("");
+                        setPrice("");
+                        setSelectedSpecialPriceRequestId("");
+                      }
 
-                  {emiSheets.map((emi) => (
-                    <option key={emi.id} value={emi.id}>
-                      {getCustomerName(emi) ||
-                        getEmiVehicleName(emi) ||
-                        `EMI #${emi.id}`}
-                      {" — "}
-                      {formatCurrency(emi.price ?? emi.vehicle_price)}
-                    </option>
-                  ))}
-                </select>
+                      setEmiSearch(event.target.value);
+                      setEmiDropdownOpen(true);
+                    }}
+                    onFocus={() => setEmiDropdownOpen(true)}
+                    disabled={loadingEmiDetail}
+                    placeholder="Search by customer, vehicle, stock ID, EMI ID or price..."
+                    className="h-11 w-full rounded-xl border border-slate-200 bg-white px-3 pr-10 text-sm text-slate-800 outline-none transition placeholder:text-slate-400 focus:border-amber-400 focus:ring-2 focus:ring-amber-400/15 disabled:bg-gray-100"
+                  />
+
+                  {emiSearch && !loadingEmiDetail && (
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setEmiSearch("");
+                        setSelectedEmi(null);
+                        setSelectedEmiId("");
+                        setCustomerName("");
+                        setCustomerMobile("");
+                        setPrice("");
+                        setSelectedSpecialPriceRequestId("");
+                        setEmiDropdownOpen(true);
+                      }}
+                      className="absolute right-3 top-1/2 -translate-y-1/2 text-lg leading-none text-slate-400 hover:text-slate-700"
+                      aria-label="Clear EMI search"
+                    >
+                      ×
+                    </button>
+                  )}
+
+                  {emiDropdownOpen && (
+                    <div className="absolute z-30 mt-2 max-h-80 w-full overflow-y-auto rounded-2xl border border-slate-200 bg-white shadow-xl">
+                      {filteredEmiSheets.length === 0 ? (
+                        <div className="px-4 py-4 text-sm text-slate-500">
+                          No saved EMI calculations found.
+                        </div>
+                      ) : (
+                        filteredEmiSheets.map((emi) => {
+                          const customer = getCustomerName(emi);
+                          const vehicle = getEmiVehicleName(emi);
+                          const stockId = emi?.vehicle_stock_id;
+                          const emiId = emi?.id;
+                          const priceValue =
+                            emi?.price ?? emi?.vehicle_price ?? "";
+
+                          return (
+                            <button
+                              key={emi.id}
+                              type="button"
+                              onClick={() => {
+                                handleSavedEmiChange({
+                                  target: {
+                                    value: String(emi.id),
+                                  },
+                                });
+
+                                setEmiSearch("");
+                                setEmiDropdownOpen(false);
+                              }}
+                              className="block w-full border-b border-slate-100 px-4 py-3 text-left transition last:border-b-0 hover:bg-slate-50"
+                            >
+                              <div className="flex flex-col gap-1 sm:flex-row sm:items-center sm:justify-between">
+                                <div className="min-w-0">
+                                  <p className="truncate text-sm font-semibold text-slate-900">
+                                    {customer || vehicle || `EMI #${emiId}`}
+                                  </p>
+
+                                  {vehicle && customer && (
+                                    <p className="mt-0.5 truncate text-sm text-slate-600">
+                                      {vehicle}
+                                    </p>
+                                  )}
+
+                                  <div className="mt-1 flex flex-wrap gap-x-3 gap-y-1 text-[10px] font-bold uppercase tracking-[0.08em] text-slate-400">
+                                    {stockId && <span>Stock: {stockId}</span>}
+                                    <span>EMI #{emiId}</span>
+                                  </div>
+                                </div>
+
+                                <div className="shrink-0 text-left sm:text-right">
+                                  <p className="font-mono text-sm font-semibold text-slate-900">
+                                    AED {formatCurrency(priceValue)}
+                                  </p>
+                                </div>
+                              </div>
+                            </button>
+                          );
+                        })
+                      )}
+                    </div>
+                  )}
+                </div>
 
                 {loadingEmiDetail && (
                   <div className="mt-3 text-sm text-gray-500">

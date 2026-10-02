@@ -11,6 +11,8 @@ import {
   getRegistrationDocuments,
   downloadRegistrationDocument,
 } from "../../api/progression";
+import { getProformas } from "../../api/proforma";
+import { getDeliveryNotes } from "../../api/deliveryNotes";
 import { useAuth } from "../../context/AuthContext";
 
 const EMIRATES = [
@@ -46,9 +48,11 @@ function getResponseData(response) {
 
   return Array.isArray(body?.data)
     ? body.data
-    : Array.isArray(body)
-      ? body
-      : [];
+    : Array.isArray(body?.results)
+      ? body.results
+      : Array.isArray(body)
+        ? body
+        : [];
 }
 
 /*
@@ -75,7 +79,7 @@ function getResponseData(response) {
  * Therefore this function converts the backend current_stage
  * into the visible completed checklist.
  */
-function getBackendCompletedStages(currentStage) {
+function getBackendCompletedStages(currentStage, insuranceApproved = false) {
   switch (currentStage) {
     case "passing":
     case "dubai_passing":
@@ -93,8 +97,8 @@ function getBackendCompletedStages(currentStage) {
       return {
         evaluation: true,
         passing: true,
+        ...(insuranceApproved ? { insurance: true } : {}),
       };
-
     case "registration":
       return {
         evaluation: true,
@@ -162,6 +166,15 @@ export default function ProgressionDetail() {
   const [downloadingRegistrationDocument, setDownloadingRegistrationDocument] =
     useState("");
 
+  const [deliveryDocumentsLoading, setDeliveryDocumentsLoading] =
+    useState(false);
+
+  const [proformaRecord, setProformaRecord] = useState(null);
+  const [deliveryNoteRecord, setDeliveryNoteRecord] = useState(null);
+
+  const [showDeliveryCompletionModal, setShowDeliveryCompletionModal] =
+    useState(false);
+
   const [showPassingModal, setShowPassingModal] = useState(false);
 
   const [passingChecks, setPassingChecks] = useState({
@@ -180,7 +193,37 @@ export default function ProgressionDetail() {
         remark: d?.remark || "",
       });
 
-      setCheckedStages(getBackendCompletedStages(d?.current_stage));
+      let insuranceApproved = false;
+
+      if (d?.quote) {
+        try {
+          const insuranceResponse = await getInsurances({
+            quote_id: d.quote,
+          });
+
+          const insuranceRecords = getResponseData(insuranceResponse);
+
+          const insurance =
+            insuranceRecords.find(
+              (record) => String(record.quote) === String(d.quote),
+            ) || null;
+
+          setInsuranceRecord(insurance);
+
+          const insuranceStatus = String(
+            insurance?.application_status || insurance?.status || "unknown",
+          ).toLowerCase();
+
+          insuranceApproved =
+            insuranceStatus === "approved" || insuranceStatus === "completed";
+        } catch {
+          setInsuranceRecord(null);
+        }
+      }
+
+      setCheckedStages(
+        getBackendCompletedStages(d?.current_stage, insuranceApproved),
+      );
     } catch (e) {
       toast.error(e?.message || "Unable to load Progression.");
     }
@@ -199,7 +242,18 @@ export default function ProgressionDetail() {
 
       setP(updated);
 
-      setCheckedStages(getBackendCompletedStages(updated?.current_stage));
+      const insuranceStatus = String(
+        insuranceRecord?.application_status ||
+          insuranceRecord?.status ||
+          "unknown",
+      ).toLowerCase();
+
+      setCheckedStages(
+        getBackendCompletedStages(
+          updated?.current_stage,
+          insuranceStatus === "approved" || insuranceStatus === "completed",
+        ),
+      );
 
       toast.success("Progression updated.");
     } catch (e) {
@@ -233,11 +287,42 @@ export default function ProgressionDetail() {
         remark: updated?.remark || "",
       });
 
-      setCheckedStages(getBackendCompletedStages(updated?.current_stage));
+      let insuranceApproved = false;
+
+      if (updated?.quote) {
+        try {
+          const insuranceResponse = await getInsurances({
+            quote_id: updated.quote,
+          });
+
+          const insuranceRecords = getResponseData(insuranceResponse);
+
+          const insurance =
+            insuranceRecords.find(
+              (record) => String(record.quote) === String(updated.quote),
+            ) || null;
+
+          setInsuranceRecord(insurance);
+
+          const insuranceStatus = String(
+            insurance?.application_status || insurance?.status || "unknown",
+          ).toLowerCase();
+
+          insuranceApproved =
+            insuranceStatus === "approved" || insuranceStatus === "completed";
+        } catch {
+          insuranceApproved = false;
+        }
+      }
+
+      setCheckedStages(
+        getBackendCompletedStages(updated?.current_stage, insuranceApproved),
+      );
 
       return updated;
     } catch (e) {
       toast.error(e?.message || "Unable to advance Progression.");
+
       return null;
     } finally {
       setAdvancing(false);
@@ -344,7 +429,13 @@ export default function ProgressionDetail() {
         null;
 
       setInsuranceRecord(insurance);
-      setShowInsuranceModal(true);
+      setShowInsuranceModal(false);
+
+      if (insurance?.id) {
+        navigate(`/finance/insurance/${insurance.id}`);
+      } else {
+        navigate(`/finance/insurance?quote_id=${encodeURIComponent(p.quote)}`);
+      }
     } catch (e) {
       toast.error(e?.message || "Unable to load the customer's Insurance.");
     } finally {
@@ -435,8 +526,44 @@ export default function ProgressionDetail() {
    * Registration
    */
   async function openRegistrationDocuments() {
+    if (!p?.quote) {
+      toast.error("Quote information is missing.");
+      return;
+    }
+
+    if (p.current_stage !== "insurance" && p.current_stage !== "registration") {
+      toast.error("Registration is not available at the current stage.");
+      return;
+    }
+
     try {
       setRegistrationDocumentsLoading(true);
+
+      if (p.current_stage === "insurance") {
+        const insuranceResponse = await getInsurances({
+          quote_id: p.quote,
+        });
+
+        const insuranceRecords = getResponseData(insuranceResponse);
+
+        const insurance =
+          insuranceRecords.find(
+            (record) => String(record.quote) === String(p.quote),
+          ) || null;
+
+        setInsuranceRecord(insurance);
+
+        const insuranceStatus = String(
+          insurance?.application_status || insurance?.status || "unknown",
+        ).toLowerCase();
+
+        if (insuranceStatus !== "approved" && insuranceStatus !== "completed") {
+          toast.error(
+            "Insurance must be approved before Registration can proceed.",
+          );
+          return;
+        }
+      }
 
       const response = await getRegistrationDocuments(id);
 
@@ -537,7 +664,7 @@ export default function ProgressionDetail() {
    * gate again, so this is safe even if the
    * frontend data is stale.
    */
-  async function confirmRegistration() {
+  function continueToRtaSale() {
     if (!balanceSheet) {
       toast.error("Balance Sheet not found.");
       return;
@@ -545,42 +672,86 @@ export default function ProgressionDetail() {
 
     if (balanceSheet.balance_status !== "settled") {
       toast.error(
-        "Balance Sheet is not settled yet. Registration cannot be marked complete.",
+        "Balance Sheet is not settled yet. Complete the Balance Sheet before opening the RTA Sale.",
       );
       return;
     }
 
-    const updated = await advanceStage();
-
-    if (!updated) {
+    if (!p?.quote) {
+      toast.error("Quote information is missing.");
       return;
     }
 
     setShowBalanceModal(false);
 
-    toast.success("Registration completed.");
+    navigate(
+      `/rta/sale/${encodeURIComponent(
+        p.quote,
+      )}?progression_id=${encodeURIComponent(id)}`,
+    );
   }
-
   /*
    * Delivery Video -> Completed
    */
-  async function completeDelivery() {
+  async function openDeliveryCompletionModal() {
     if (p?.current_stage !== "delivery_video") {
       return;
     }
 
-    const confirmed = window.confirm(
-      "Complete the Delivery Video stage and mark this Progression as completed?",
-    );
-
-    if (!confirmed) {
+    if (!p?.quote) {
+      toast.error("Quote information is missing.");
       return;
     }
 
-    const updated = await advanceStage();
+    try {
+      setDeliveryDocumentsLoading(true);
 
-    if (updated) {
-      toast.success("Progression completed successfully.");
+      let insurance = insuranceRecord;
+
+      if (!insurance?.id) {
+        const insuranceResponse = await getInsurances({
+          quote_id: p.quote,
+        });
+
+        const insuranceRecords = getResponseData(insuranceResponse);
+
+        insurance =
+          insuranceRecords.find(
+            (record) => String(record.quote) === String(p.quote),
+          ) || null;
+
+        setInsuranceRecord(insurance);
+      }
+
+      const [proformaResponse, deliveryNoteResponse] = await Promise.all([
+        getProformas({
+          quote_id: p.quote,
+        }),
+        getDeliveryNotes({
+          quote_id: p.quote,
+        }),
+      ]);
+
+      const proformas = getResponseData(proformaResponse);
+
+      const deliveryNotes = getResponseData(deliveryNoteResponse);
+
+      const proforma =
+        proformas.find((record) => String(record.quote) === String(p.quote)) ||
+        null;
+
+      const deliveryNote =
+        deliveryNotes.find(
+          (record) => String(record.quote) === String(p.quote),
+        ) || null;
+
+      setProformaRecord(proforma);
+      setDeliveryNoteRecord(deliveryNote);
+      setShowDeliveryCompletionModal(true);
+    } catch (e) {
+      toast.error(e?.message || "Unable to load Delivery Video requirements.");
+    } finally {
+      setDeliveryDocumentsLoading(false);
     }
   }
 
@@ -649,10 +820,9 @@ export default function ProgressionDetail() {
     }
 
     if (stage === "delivery_video") {
-      await completeDelivery();
+      await openDeliveryCompletionModal();
       return;
     }
-
     if (stage === "completed") {
       return;
     }
@@ -1314,8 +1484,8 @@ export default function ProgressionDetail() {
                   </h2>
 
                   <p className="mt-1 text-sm text-gray-500">
-                    Settle the customer's Balance Sheet before marking
-                    Registration complete.
+                    Settle the customer's Balance Sheet before opening the RTA
+                    Sale.
                   </p>
                 </div>
 
@@ -1422,39 +1592,211 @@ export default function ProgressionDetail() {
                     Open Balance Sheet
                   </button>
 
-                  <label
-                    className={`flex items-center gap-3 rounded-xl border p-4 ${
-                      balanceSheet.balance_status === "settled"
-                        ? "cursor-pointer border-green-200 bg-green-50"
-                        : "cursor-not-allowed border-gray-200 bg-gray-50 opacity-60"
-                    }`}
+                  <button
+                    type="button"
+                    onClick={continueToRtaSale}
+                    disabled={
+                      balanceSheet.balance_status !== "settled" || advancing
+                    }
+                    className="w-full rounded-xl bg-gray-900 px-4 py-3 text-left text-white disabled:cursor-not-allowed disabled:opacity-40"
                   >
-                    <input
-                      type="checkbox"
-                      checked={false}
-                      disabled={
-                        balanceSheet.balance_status !== "settled" || advancing
-                      }
-                      onChange={(e) => {
-                        if (e.target.checked) {
-                          confirmRegistration();
-                        }
-                      }}
-                      className="h-5 w-5 rounded border-gray-300"
-                    />
-
-                    <span>
-                      <span className="block text-sm font-semibold text-gray-900">
-                        Mark Registration Complete
-                      </span>
-
-                      <span className="mt-0.5 block text-xs text-gray-500">
-                        Enabled only when the Balance Sheet is settled.
-                      </span>
+                    <span className="block text-sm font-semibold">
+                      Continue to RTA Sale
                     </span>
-                  </label>
+
+                    <span className="mt-1 block text-xs text-gray-300">
+                      Open the Sale RTA form with the transaction details
+                      pre-filled.
+                    </span>
+                  </button>
                 </>
               )}
+            </div>
+          </div>
+        </div>
+      )}
+      {showDeliveryCompletionModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4">
+          <div className="w-full max-w-lg rounded-2xl bg-white shadow-2xl">
+            <div className="border-b border-gray-100 px-6 py-5">
+              <div className="flex items-start justify-between gap-4">
+                <div>
+                  <h2 className="text-lg font-semibold text-gray-900">
+                    Complete Delivery Video
+                  </h2>
+
+                  <p className="mt-1 text-sm text-gray-500">
+                    Both commercial documents must be created before this
+                    Progression can be completed.
+                  </p>
+                </div>
+
+                <button
+                  type="button"
+                  onClick={() => setShowDeliveryCompletionModal(false)}
+                  className="rounded-lg px-2 py-1 text-gray-400 hover:bg-gray-100 hover:text-gray-700"
+                >
+                  ✕
+                </button>
+              </div>
+            </div>
+
+            <div className="space-y-4 px-6 py-6">
+              <div
+                className={`rounded-xl border p-4 ${
+                  proformaRecord
+                    ? "border-green-200 bg-green-50"
+                    : "border-amber-200 bg-amber-50"
+                }`}
+              >
+                <div className="flex items-center justify-between gap-4">
+                  <div>
+                    <div className="font-medium text-gray-900">Proforma</div>
+
+                    <div
+                      className={`mt-1 text-xs font-medium ${
+                        proformaRecord ? "text-green-700" : "text-amber-700"
+                      }`}
+                    >
+                      {proformaRecord
+                        ? `Created — ${proformaRecord.proforma_number || ""}`
+                        : "Not created"}
+                    </div>
+                  </div>
+
+                  {proformaRecord ? (
+                    <button
+                      type="button"
+                      onClick={() =>
+                        navigate(`/finance/proformas/${proformaRecord.id}`)
+                      }
+                      className="rounded-lg border border-gray-300 px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50"
+                    >
+                      View
+                    </button>
+                  ) : (
+                    <button
+                      type="button"
+                      disabled={!insuranceRecord?.id}
+                      onClick={() =>
+                        navigate(
+                          `/finance/proformas/new?insurance=${encodeURIComponent(
+                            insuranceRecord.id,
+                          )}&return_to=${encodeURIComponent(
+                            `/progression/${id}`,
+                          )}`,
+                        )
+                      }
+                      className="rounded-lg bg-gray-900 px-4 py-2 text-sm font-semibold text-white hover:bg-gray-800 disabled:cursor-not-allowed disabled:opacity-50"
+                    >
+                      Create Proforma
+                    </button>
+                  )}
+                </div>
+              </div>
+
+              <div
+                className={`rounded-xl border p-4 ${
+                  deliveryNoteRecord
+                    ? "border-green-200 bg-green-50"
+                    : "border-amber-200 bg-amber-50"
+                }`}
+              >
+                <div className="flex items-center justify-between gap-4">
+                  <div>
+                    <div className="font-medium text-gray-900">
+                      Delivery Note
+                    </div>
+
+                    <div
+                      className={`mt-1 text-xs font-medium ${
+                        deliveryNoteRecord ? "text-green-700" : "text-amber-700"
+                      }`}
+                    >
+                      {deliveryNoteRecord
+                        ? `Created — ${
+                            deliveryNoteRecord.delivery_note_number || ""
+                          }`
+                        : "Not created"}
+                    </div>
+                  </div>
+
+                  {deliveryNoteRecord ? (
+                    <button
+                      type="button"
+                      onClick={() =>
+                        navigate(
+                          `/finance/delivery-notes/${deliveryNoteRecord.id}`,
+                        )
+                      }
+                      className="rounded-lg border border-gray-300 px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50"
+                    >
+                      View
+                    </button>
+                  ) : (
+                    <button
+                      type="button"
+                      disabled={!insuranceRecord?.id}
+                      onClick={() =>
+                        navigate(
+                          `/finance/delivery-notes/new?insurance=${encodeURIComponent(
+                            insuranceRecord.id,
+                          )}&return_to=${encodeURIComponent(
+                            `/progression/${id}`,
+                          )}`,
+                        )
+                      }
+                      className="rounded-lg bg-gray-900 px-4 py-2 text-sm font-semibold text-white hover:bg-gray-800 disabled:cursor-not-allowed disabled:opacity-50"
+                    >
+                      Create Delivery Note
+                    </button>
+                  )}
+                </div>
+              </div>
+
+              {!proformaRecord || !deliveryNoteRecord ? (
+                <div className="rounded-xl border border-amber-200 bg-amber-50 p-4 text-sm text-amber-800">
+                  Create both Proforma and Delivery Note before completing the
+                  Delivery Video stage.
+                </div>
+              ) : (
+                <div className="rounded-xl border border-green-200 bg-green-50 p-4 text-sm text-green-800">
+                  Both required documents have been created. Delivery Video can
+                  now be completed.
+                </div>
+              )}
+            </div>
+
+            <div className="flex gap-3 border-t border-gray-100 px-6 py-5">
+              <button
+                type="button"
+                onClick={() => setShowDeliveryCompletionModal(false)}
+                className="flex-1 rounded-xl border border-gray-300 px-4 py-3 text-sm font-semibold text-gray-700 hover:bg-gray-50"
+              >
+                Close
+              </button>
+
+              <button
+                type="button"
+                disabled={
+                  advancing ||
+                  deliveryDocumentsLoading ||
+                  !proformaRecord ||
+                  !deliveryNoteRecord
+                }
+                onClick={async () => {
+                  const updated = await advanceStage();
+
+                  if (updated) {
+                    setShowDeliveryCompletionModal(false);
+
+                    toast.success("Delivery Video completed successfully.");
+                  }
+                }}
+                className="flex-1 rounded-xl bg-green-600 px-4 py-3 text-sm font-semibold text-white hover:bg-green-700 disabled:cursor-not-allowed disabled:opacity-40"
+              >
+                {advancing ? "Completing..." : "Complete Delivery Video"}
+              </button>
             </div>
           </div>
         </div>

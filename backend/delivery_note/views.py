@@ -49,6 +49,13 @@ class DeliveryNoteListCreateAPIView(APIView):
                 | Q(vehicle_engine_number__icontains=search)
             )
 
+        quote_id = request.query_params.get("quote_id")
+
+        if quote_id:
+            queryset = queryset.filter(
+                quote_id=quote_id
+            )
+
         paginator = StandardResultsSetPagination()
         page = paginator.paginate_queryset(queryset, request, view=self)
 

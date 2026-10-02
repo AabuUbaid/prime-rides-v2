@@ -232,13 +232,18 @@ export default function QuotePrintTemplate({
 
   const companyWebsite = company?.website || company?.website_url || "";
 
+  const companyAddress = String(company?.showroom_address || "").trim();
+
+  const isLongCompanyAddress =
+    companyAddress.length > 90 || /\n/.test(companyAddress);
+
   return (
     <PrintDocument company={company} showHeader={false} showFooter={false}>
       <style>
         {`
           @page {
             size: A4 portrait;
-            margin: 10mm;
+            margin: 0;
           }
 
           :root {
@@ -251,27 +256,28 @@ export default function QuotePrintTemplate({
           }
 
           .quote-print-page {
+  width: 210mm !important;
+  height: 297mm !important;
+  min-height: 297mm !important;
+  max-height: 297mm !important;
+
+  box-sizing: border-box !important;
+
+  display: flex !important;
+  flex-direction: column !important;
+
+  margin: 0 !important;
+  padding: 10mm !important;
+
+  overflow: hidden !important;
+
+  break-inside: avoid !important;
+  page-break-inside: avoid !important;
+}
+
+          .quote-print-main {
+            flex: 0 0 auto;
             width: 100%;
-            height: 277mm;
-            max-height: 277mm;
-            overflow: hidden;
-            box-sizing: border-box;
-
-            display: flex;
-            flex-direction: column;
-
-            font-family:
-              Arial,
-              Helvetica,
-              sans-serif;
-
-            font-size: 9px;
-            line-height: 1.35;
-            color: var(--text);
-            background: #ffffff;
-
-            -webkit-print-color-adjust: exact;
-            print-color-adjust: exact;
           }
 
           .quote-print-page *,
@@ -707,6 +713,14 @@ export default function QuotePrintTemplate({
            * ======================================================
            */
 
+          .quote-print-bottom {
+            flex-shrink: 0;
+            margin-top: auto;
+            width: 100%;
+            break-inside: avoid;
+            page-break-inside: avoid;
+          }
+
           .quote-terms-stamp {
             display: grid;
             grid-template-columns: 1fr 1fr;
@@ -749,7 +763,7 @@ export default function QuotePrintTemplate({
   justify-content: flex-start;
   min-height: 117px;
   position: relative;
-  top: 8px;
+  top: -64px;
 }
 
           .quote-stamp-image-wrap {
@@ -786,344 +800,636 @@ export default function QuotePrintTemplate({
 
           /*
            * ======================================================
+           * LONG COMPANY ADDRESS COMPRESSION
+           * ======================================================
+           */
+
+        
+
+          
+
+          .quote-print-page--long-address .quote-company-meta {
+            margin-top: 2px;
+            line-height: 1.18;
+          }
+
+          .quote-print-page--long-address .quote-section {
+            margin-top: 7px;
+          }
+
+          .quote-print-page--long-address .quote-reference-cell {
+            min-height: 45px;
+            padding-top: 5px;
+            padding-bottom: 5px;
+          }
+
+          .quote-print-page--long-address .quote-party-name {
+            margin-top: 4px;
+          }
+
+          .quote-print-page--long-address .quote-party-meta {
+            margin-top: 2px;
+            min-height: 12px;
+          }
+
+          .quote-print-page--long-address .quote-section-bar {
+            height: 24px;
+          }
+
+          .quote-print-page--long-address .quote-vehicle-row {
+            min-height: 21px;
+            height: 21px;
+          }
+
+          .quote-print-page--long-address .quote-price-table th {
+            height: 24px;
+          }
+
+          .quote-print-page--long-address .quote-price-table td {
+            height: 22px;
+          }
+
+          .quote-print-page--long-address .quote-total-row td {
+            height: 30px;
+          }
+
+          .quote-print-page--long-address .quote-expense-heading {
+            height: 22px;
+          }
+
+          .quote-print-page--long-address .quote-expense-header {
+            min-height: 20px;
+          }
+
+          .quote-print-page--long-address .quote-expense-row {
+            min-height: 20px;
+          }
+
+          .quote-print-page--long-address .quote-word-row {
+            min-height: 25px;
+          }
+
+          .quote-print-page--long-address .quote-terms-stamp {
+            margin-top: 6px;
+          }
+
+          .quote-print-page--long-address .quote-terms-list {
+            line-height: 1.35;
+            margin-top: 4px;
+          }
+
+          .quote-print-page--long-address .quote-stamp-column {
+            min-height: 96px;
+          }
+            .quote-print-page--long-address .quote-stamp-column {
+  top: -64px;
+}
+
+          .quote-print-page--long-address .quote-stamp-image-wrap {
+            height: 82px;
+          }
+
+          .quote-print-page--long-address .quote-stamp-placeholder,
+          .quote-print-page--long-address .quote-stamp-image {
+            height: 82px;
+          }
+
+          /*
+           * ======================================================
            * FOOTER
            * ======================================================
            */
 
           .quote-footer {
-            margin-top: auto;
+  position: absolute;
 
-            page-break-inside: avoid;
-            break-inside: avoid;
-          }
+  left: 10mm;
+  right: 10mm;
+  bottom: 10mm;
+
+  width: auto;
+  height: 11mm;
+
+  margin: 0;
+  padding: 0;
+
+  display: block;
+
+  overflow: hidden;
+
+  page-break-inside: avoid;
+  break-inside: avoid;
+}
 
           .quote-contact {
-            padding-top: 5px;
+  position: absolute;
 
-            color: var(--grey);
-            font-size: 9pt;
-            line-height: 1.35;
-            text-align: center;
-          }
+  left: 0;
+  right: 0;
+  bottom: 28px;
+
+  width: 100%;
+  height: 12px;
+
+  margin: 0;
+  padding: 0;
+
+  color: var(--grey);
+  font-size: 9pt;
+  line-height: 12px;
+
+  text-align: center;
+  white-space: nowrap;
+}
 
           .quote-thank-you {
-            display: flex;
-            align-items: center;
-            justify-content: center;
+  position: absolute;
 
-            height: 26px;
-            margin-top: 7px;
+  left: 0;
+  right: 0;
+  bottom: 0;
 
-            background: var(--navy);
-            color: #ffffff;
+  width: 100%;
+  height: 26px;
 
-            font-size: 11pt;
-            font-weight: 700;
-            text-align: center;
+  margin: 0;
+  padding: 0;
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  background: var(--navy);
+  color: #ffffff;
+
+  font-size: 11pt;
+  font-weight: 700;
+  line-height: 1;
+
+  text-align: center;
+
+  page-break-inside: avoid;
+  break-inside: avoid;
+}
+
+          @media print {
+            html,
+            body,
+            #root {
+              width: 100% !important;
+              height: auto !important;
+              min-height: 0 !important;
+              margin: 0 !important;
+              padding: 0 !important;
+              background: #ffffff !important;
+            }
+
+            body {
+              font-family: Arial, Helvetica, sans-serif !important;
+              -webkit-print-color-adjust: exact !important;
+              print-color-adjust: exact !important;
+              overflow: visible !important;
+            }
+
+            .print-area {
+              display: block !important;
+              position: static !important;
+              width: 100% !important;
+              height: auto !important;
+              min-height: 0 !important;
+              margin: 0 !important;
+              padding: 0 !important;
+              background: #ffffff !important;
+              overflow: visible !important;
+            }
+
+            .print-document {
+              display: block !important;
+              position: static !important;
+              width: 100% !important;
+              height: auto !important;
+              min-height: 0 !important;
+              max-width: none !important;
+              margin: 0 !important;
+              padding: 0 !important;
+              background: #ffffff !important;
+              border: 0 !important;
+              box-shadow: none !important;
+              overflow: visible !important;
+            }
+
+            .quote-print-page {
+  width: 210mm !important;
+  height: 297mm !important;
+  min-height: 297mm !important;
+  max-height: 297mm !important;
+
+  box-sizing: border-box !important;
+
+  display: flex !important;
+  flex-direction: column !important;
+
+  margin: 0 !important;
+  padding: 10mm !important;
+f
+  overflow: hidden !important;
+
+  break-inside: avoid !important;
+  page-break-inside: avoid !important;
+}
+
+            .quote-print-main {
+              flex: 0 0 auto !important;
+              width: 100% !important;
+            }
+
+            .quote-print-bottom {
+              flex-shrink: 0 !important;
+              break-inside: avoid !important;
+              page-break-inside: avoid !important;
+            }
+
+            @media print {
+  .quote-footer {
+  position: absolute !important;
+
+  left: 10mm !important;
+  right: 10mm !important;
+  bottom: 10mm !important;
+
+  width: auto !important;
+  height: 11mm !important;
+
+  margin: 0 !important;
+  padding: 0 !important;
+
+  display: block !important;
+
+  overflow: hidden !important;
+
+  break-inside: avoid !important;
+  page-break-inside: avoid !important;
+}
+
+.quote-contact {
+  position: absolute !important;
+
+  left: 0 !important;
+  right: 0 !important;
+  bottom: 28px !important;
+
+  width: 100% !important;
+  height: 12px !important;
+
+  margin: 0 !important;
+  padding: 0 !important;
+
+  line-height: 12px !important;
+  white-space: nowrap !important;
+}
+
+.quote-thank-you {
+  position: absolute !important;
+
+  left: 0 !important;
+  right: 0 !important;
+  bottom: 0 !important;
+
+  width: 100% !important;
+  height: 26px !important;
+
+  margin: 0 !important;
+  padding: 0 !important;
+
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+
+  break-inside: avoid !important;
+  page-break-inside: avoid !important;
+}
+
+}
+
+            
+
+            
           }
         `}
       </style>
 
-      <div className="quote-print-page">
-        {/* ======================================================
-            HEADER
-        ====================================================== */}
-        <header className="quote-header">
-          <div className="quote-logo-wrap">
-            {printAssets.logo && (
-              <img src={printAssets.logo} alt="" className="quote-logo" />
-            )}
-          </div>
-
-          <div className="quote-company">
-            <div className="quote-company-name">
-              {company?.legal_entity_name || "-"}
+      <div
+        className={`quote-print-page${
+          isLongCompanyAddress ? " quote-print-page--long-address" : ""
+        }`}
+      >
+        <div className="quote-print-main">
+          {/* ======================================================
+              HEADER
+          ====================================================== */}
+          <header className="quote-header">
+            <div className="quote-logo-wrap">
+              {printAssets.logo && (
+                <img src={printAssets.logo} alt="" className="quote-logo" />
+              )}
             </div>
 
-            <div className="quote-company-meta">
-              {company?.showroom_address || "-"}
+            <div className="quote-company">
+              <div className="quote-company-name">
+                {company?.legal_entity_name || "-"}
+              </div>
+
+              <div className="quote-company-meta">
+                {company?.showroom_address || "-"}
+              </div>
+
+              <div className="quote-company-meta">
+                Tel: {companyPhone || "-"}
+                {companyWebsite ? `  |  ${companyWebsite}` : ""}
+              </div>
             </div>
 
-            <div className="quote-company-meta">
-              Tel: {companyPhone || "-"}
-              {companyWebsite ? `  |  ${companyWebsite}` : ""}
+            <div className="quote-header-right">
+              {company?.corporate_email && <div>{company.corporate_email}</div>}
             </div>
-          </div>
+          </header>
 
-          <div className="quote-header-right">
-            {company?.corporate_email && <div>{company.corporate_email}</div>}
-          </div>
-        </header>
-
-        {/* ======================================================
+          {/* ======================================================
             TITLE BAND
         ====================================================== */}
-        <div className="quote-title-band">
-          <div className="quote-title">{documentType}</div>
+          <div className="quote-title-band">
+            <div className="quote-title">{documentType}</div>
 
-          <div className="quote-title-right">{purchaseType}</div>
-        </div>
+            <div className="quote-title-right">{purchaseType}</div>
+          </div>
 
-        {/* ======================================================
+          {/* ======================================================
             REFERENCE STRIP
         ====================================================== */}
-        <section className="quote-reference-strip">
-          <div className="quote-reference-cell">
-            <div className="quote-reference-label">{documentNumberLabel}</div>
+          <section className="quote-reference-strip">
+            <div className="quote-reference-cell">
+              <div className="quote-reference-label">{documentNumberLabel}</div>
 
-            <div className="quote-reference-value">
-              {quote.quote_number || "-"}
-            </div>
-          </div>
-
-          <div className="quote-reference-cell">
-            <div className="quote-reference-label">DATE</div>
-
-            <div className="quote-reference-value">
-              {formatDate(quote.date)}
-            </div>
-          </div>
-
-          <div className="quote-reference-cell">
-            <div className="quote-reference-label">CUSTOMER ID</div>
-
-            <div className="quote-reference-value">{customer.id ?? "-"}</div>
-          </div>
-
-          <div className="quote-reference-cell">
-            <div className="quote-reference-label">TRN</div>
-
-            <div className="quote-reference-value">
-              {company?.tax_registration_number || ""}
-            </div>
-          </div>
-        </section>
-
-        {/* ======================================================
-            BANK / CUSTOMER
-        ====================================================== */}
-        <section className="quote-section">
-          <div className="quote-party-grid">
-            <div>
-              <div className="quote-party-heading">
-                {isFinance ? "BANK (FINANCED BY)" : "PAYMENT METHOD"}
-              </div>
-
-              <div className="quote-party-name">
-                {isFinance ? finance.bank_name || "-" : "Cash"}
-              </div>
-
-              <div className="quote-party-meta">
-                {isFinance ? bankAddress || "\u00A0" : "\u00A0"}
+              <div className="quote-reference-value">
+                {quote.quote_number || "-"}
               </div>
             </div>
 
-            <div>
-              <div className="quote-party-heading">CUSTOMER</div>
+            <div className="quote-reference-cell">
+              <div className="quote-reference-label">DATE</div>
 
-              <div className="quote-party-name">{customer.name || "-"}</div>
-
-              <div className="quote-party-meta">
-                {customer.mobile ? `Mobile: ${customer.mobile}` : "\u00A0"}
-              </div>
-
-              <div className="quote-party-meta">
-                {customerAddress || "\u00A0"}
+              <div className="quote-reference-value">
+                {formatDate(quote.date)}
               </div>
             </div>
-          </div>
-        </section>
 
-        {/* ======================================================
-            VEHICLE DETAILS
-        ====================================================== */}
-        <section className="quote-section">
-          <div className="quote-section-bar">VEHICLE DETAILS</div>
+            <div className="quote-reference-cell">
+              <div className="quote-reference-label">CUSTOMER ID</div>
 
-          <div className="quote-vehicle-row">
-            <div className="quote-vehicle-label">Make &amp; Model</div>
-
-            <div className="quote-vehicle-value">{vehicleName || "-"}</div>
-
-            <div className="quote-vehicle-label">Year</div>
-
-            <div className="quote-vehicle-value">{vehicle.year ?? "-"}</div>
-          </div>
-
-          <div className="quote-vehicle-row">
-            <div className="quote-vehicle-label">Chassis No.</div>
-
-            <div className="quote-vehicle-value">
-              {vehicle.chassis_number || "-"}
+              <div className="quote-reference-value">{customer.id ?? "-"}</div>
             </div>
 
-            <div className="quote-vehicle-label">Engine No.</div>
+            <div className="quote-reference-cell">
+              <div className="quote-reference-label">TRN</div>
 
-            <div className="quote-vehicle-value">
-              {vehicle.engine_number || "-"}
-            </div>
-          </div>
-
-          <div className="quote-vehicle-row">
-            <div className="quote-vehicle-label">Colour</div>
-
-            <div className="quote-vehicle-value">{vehicle.colour || "-"}</div>
-
-            <div className="quote-vehicle-empty" />
-            <div className="quote-vehicle-empty" />
-          </div>
-        </section>
-
-        {/* ======================================================
-            PRICE TABLE
-        ====================================================== */}
-        <section className="quote-section">
-          <table className="quote-price-table">
-            <thead>
-              <tr>
-                <th>DESCRIPTION</th>
-                <th>RATE</th>
-                <th>AMOUNT (AED)</th>
-              </tr>
-            </thead>
-
-            <tbody>
-              <tr>
-                <td className="quote-price-description">Vehicle Amount</td>
-
-                <td className="quote-price-rate">-</td>
-
-                <td className="quote-price-amount">
-                  {formatAmount(vehicleAmount)}
-                </td>
-              </tr>
-
-              <tr>
-                <td className="quote-price-description">VAT</td>
-
-                <td className="quote-price-rate">{isCash ? "5%" : "-"}</td>
-
-                <td className="quote-price-amount">
-                  {isCash ? formatAmount(cashVatAmount) : "-"}
-                </td>
-              </tr>
-
-              <tr>
-                <td className="quote-price-description">Down Payment</td>
-
-                <td className="quote-price-rate">
-                  {isFinance ? downPaymentRate : "-"}
-                </td>
-
-                <td className="quote-price-amount">
-                  {isFinance ? formatAmount(downPayment) : "-"}
-                </td>
-              </tr>
-
-              <tr className="quote-total-row">
-                <td colSpan="2" className="quote-price-description">
-                  {isFinance ? "NET FINANCE AMOUNT" : "TOTAL PAYABLE"}
-                </td>
-
-                <td className="quote-price-amount">
-                  {isFinance
-                    ? formatAmount(financeAmount)
-                    : formatAmount(cashTotalPayable)}
-                </td>
-              </tr>
-            </tbody>
-          </table>
-        </section>
-
-        {isCash && expenses.length > 0 && (
-          <section className="quote-section quote-expense-summary">
-            <div className="quote-expense-heading">EXPENSE SUMMARY</div>
-
-            <div className="quote-expense-table">
-              <div className="quote-expense-header">
-                <div>EXPENSE</div>
-                <div>STATUS</div>
-                <div>AMOUNT (AED)</div>
+              <div className="quote-reference-value">
+                {company?.tax_registration_number || ""}
               </div>
-
-              {expenses.map((expense) => (
-                <div
-                  key={expense.id ?? `${expense.name}-${expense.actual_amount}`}
-                  className="quote-expense-row"
-                >
-                  <div className="quote-expense-name">
-                    {expense.name || "Expense"}
-                  </div>
-
-                  <div className="quote-expense-status">
-                    {expense.applies === false ? "Not Applied" : "Applied"}
-                  </div>
-
-                  <div className="quote-expense-amount">
-                    {formatAmount(expense.actual_amount)}
-                  </div>
-                </div>
-              ))}
             </div>
           </section>
-        )}
 
-        {/* ======================================================
-            AMOUNT IN WORDS
+          {/* ======================================================
+            BANK / CUSTOMER
         ====================================================== */}
-        <section className="quote-section quote-words">
-          <div className="quote-word-row">
-            <div className="quote-word-label">Vehicle price in words</div>
+          <section className="quote-section">
+            <div className="quote-party-grid">
+              <div>
+                <div className="quote-party-heading">
+                  {isFinance ? "BANK (FINANCED BY)" : "PAYMENT METHOD"}
+                </div>
 
-            <div className="quote-word-value">
-              {amountToWords(vehicleAmount)}
-            </div>
-          </div>
+                <div className="quote-party-name">
+                  {isFinance ? finance.bank_name || "-" : "Cash"}
+                </div>
 
-          {isFinance && (
-            <div className="quote-word-row">
-              <div className="quote-word-label">Net finance in words</div>
+                <div className="quote-party-meta">
+                  {isFinance ? bankAddress || "\u00A0" : "\u00A0"}
+                </div>
+              </div>
 
-              <div className="quote-word-value">
-                {hasValue(financeAmount) ? amountToWords(financeAmount) : "-"}
+              <div>
+                <div className="quote-party-heading">CUSTOMER</div>
+
+                <div className="quote-party-name">{customer.name || "-"}</div>
+
+                <div className="quote-party-meta">
+                  {customer.mobile ? `Mobile: ${customer.mobile}` : "\u00A0"}
+                </div>
+
+                <div className="quote-party-meta">
+                  {customerAddress || "\u00A0"}
+                </div>
               </div>
             </div>
+          </section>
+
+          {/* ======================================================
+            VEHICLE DETAILS
+        ====================================================== */}
+          <section className="quote-section">
+            <div className="quote-section-bar">VEHICLE DETAILS</div>
+
+            <div className="quote-vehicle-row">
+              <div className="quote-vehicle-label">Make &amp; Model</div>
+
+              <div className="quote-vehicle-value">{vehicleName || "-"}</div>
+
+              <div className="quote-vehicle-label">Year</div>
+
+              <div className="quote-vehicle-value">{vehicle.year ?? "-"}</div>
+            </div>
+
+            <div className="quote-vehicle-row">
+              <div className="quote-vehicle-label">Chassis No.</div>
+
+              <div className="quote-vehicle-value">
+                {vehicle.chassis_number || "-"}
+              </div>
+
+              <div className="quote-vehicle-label">Engine No.</div>
+
+              <div className="quote-vehicle-value">
+                {vehicle.engine_number || "-"}
+              </div>
+            </div>
+
+            <div className="quote-vehicle-row">
+              <div className="quote-vehicle-label">Colour</div>
+
+              <div className="quote-vehicle-value">{vehicle.colour || "-"}</div>
+
+              <div className="quote-vehicle-empty" />
+              <div className="quote-vehicle-empty" />
+            </div>
+          </section>
+
+          {/* ======================================================
+            PRICE TABLE
+        ====================================================== */}
+          <section className="quote-section">
+            <table className="quote-price-table">
+              <thead>
+                <tr>
+                  <th>DESCRIPTION</th>
+                  <th>RATE</th>
+                  <th>AMOUNT (AED)</th>
+                </tr>
+              </thead>
+
+              <tbody>
+                <tr>
+                  <td className="quote-price-description">Vehicle Amount</td>
+
+                  <td className="quote-price-rate">-</td>
+
+                  <td className="quote-price-amount">
+                    {formatAmount(vehicleAmount)}
+                  </td>
+                </tr>
+
+                <tr>
+                  <td className="quote-price-description">VAT</td>
+
+                  <td className="quote-price-rate">{isCash ? "5%" : "-"}</td>
+
+                  <td className="quote-price-amount">
+                    {isCash ? formatAmount(cashVatAmount) : "-"}
+                  </td>
+                </tr>
+
+                <tr>
+                  <td className="quote-price-description">Down Payment</td>
+
+                  <td className="quote-price-rate">
+                    {isFinance ? downPaymentRate : "-"}
+                  </td>
+
+                  <td className="quote-price-amount">
+                    {isFinance ? formatAmount(downPayment) : "-"}
+                  </td>
+                </tr>
+
+                <tr className="quote-total-row">
+                  <td colSpan="2" className="quote-price-description">
+                    {isFinance ? "NET FINANCE AMOUNT" : "TOTAL PAYABLE"}
+                  </td>
+
+                  <td className="quote-price-amount">
+                    {isFinance
+                      ? formatAmount(financeAmount)
+                      : formatAmount(cashTotalPayable)}
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </section>
+
+          {isCash && expenses.length > 0 && (
+            <section className="quote-section quote-expense-summary">
+              <div className="quote-expense-heading">EXPENSE SUMMARY</div>
+
+              <div className="quote-expense-table">
+                <div className="quote-expense-header">
+                  <div>EXPENSE</div>
+                  <div>STATUS</div>
+                  <div>AMOUNT (AED)</div>
+                </div>
+
+                {expenses.map((expense) => (
+                  <div
+                    key={
+                      expense.id ?? `${expense.name}-${expense.actual_amount}`
+                    }
+                    className="quote-expense-row"
+                  >
+                    <div className="quote-expense-name">
+                      {expense.name || "Expense"}
+                    </div>
+
+                    <div className="quote-expense-status">
+                      {expense.applies === false ? "Not Applied" : "Applied"}
+                    </div>
+
+                    <div className="quote-expense-amount">
+                      {formatAmount(expense.actual_amount)}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </section>
           )}
-        </section>
+
+          {/* ======================================================
+            AMOUNT IN WORDS
+        ====================================================== */}
+          <section className="quote-section quote-words">
+            <div className="quote-word-row">
+              <div className="quote-word-label">Vehicle price in words</div>
+
+              <div className="quote-word-value">
+                {amountToWords(vehicleAmount)}
+              </div>
+            </div>
+
+            {isFinance && (
+              <div className="quote-word-row">
+                <div className="quote-word-label">Net finance in words</div>
+
+                <div className="quote-word-value">
+                  {hasValue(financeAmount) ? amountToWords(financeAmount) : "-"}
+                </div>
+              </div>
+            )}
+          </section>
+        </div>
 
         {/* ======================================================
             TERMS + STAMP
         ====================================================== */}
-        <section className="quote-terms-stamp">
-          <div>
-            {documentType === "Quotation" && (
-              <>
-                <div className="quote-terms-heading">TERMS &amp; NOTES</div>
+        <section className="quote-print-bottom">
+          <div className="quote-terms-stamp">
+            <div>
+              {documentType === "Quotation" && (
+                <>
+                  <div className="quote-terms-heading">TERMS &amp; NOTES</div>
 
-                <ol className="quote-terms-list">
-                  <li>This quotation is valid for {validityDays} days only.</li>
+                  <ol className="quote-terms-list">
+                    <li>
+                      This quotation is valid for {validityDays} days only.
+                    </li>
 
-                  <li>Any booking fee is non-refundable.</li>
-                </ol>
-              </>
-            )}
-          </div>
-
-          <div className="quote-stamp-column">
-            <div className="quote-stamp-image-wrap">
-              {includeSealStamp && printAssets.sealStamp ? (
-                <img
-                  src={printAssets.sealStamp}
-                  alt=""
-                  className="quote-stamp-image"
-                />
-              ) : (
-                <div className="quote-stamp-placeholder" />
+                    <li>Any booking fee is non-refundable.</li>
+                  </ol>
+                </>
               )}
             </div>
 
-            <div className="quote-stamp-caption">
-              Authorised Signature &amp; Stamp
+            <div className="quote-stamp-column">
+              <div className="quote-stamp-image-wrap">
+                {includeSealStamp && printAssets.sealStamp ? (
+                  <img
+                    src={printAssets.sealStamp}
+                    alt=""
+                    className="quote-stamp-image"
+                  />
+                ) : (
+                  <div className="quote-stamp-placeholder" />
+                )}
+              </div>
+
+              <div className="quote-stamp-caption">
+                Authorised Signature &amp; Stamp
+              </div>
             </div>
           </div>
         </section>

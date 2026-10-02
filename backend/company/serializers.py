@@ -35,6 +35,7 @@ class CompanySerializer(serializers.ModelSerializer):
         fields = [
             "id",
             "legal_entity_name",
+            "legal_entity_name_ar",
             "trade_license_number",
             "trade_license_expiry_date",
             "tax_registration_number",

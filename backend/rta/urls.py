@@ -7,10 +7,23 @@ from .views import (
     RTADocumentDownloadView,
     RTADocumentDeleteView,
     RTAGeneratedDocumentView,
+    RTATemplateListCreateView,
+    RTATemplateDetailView,
 )
 
 
 urlpatterns = [
+    path(
+    "templates/",
+    RTATemplateListCreateView.as_view(),
+    name="rta-template-list-create",
+    ),
+
+    path(
+        "templates/<int:pk>/",
+        RTATemplateDetailView.as_view(),
+        name="rta-template-detail",
+    ),
     path(
         "",
         RTARecordListCreateView.as_view(),

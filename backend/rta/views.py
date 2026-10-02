@@ -13,8 +13,16 @@ from config.pagination import StandardResultsSetPagination
 
 from accounts.permissions import IsMasterOrAdmin
 
-from .models import RTARecord, RTADocument
-from .serializers import RTARecordSerializer, RTADocumentSerializer
+from .models import (
+    RTARecord,
+    RTADocument,
+    RTATemplate,
+)
+from .serializers import (
+    RTARecordSerializer,
+    RTADocumentSerializer,
+    RTATemplateSerializer,
+)
 from .services import (
     create_rta_record,
     build_rta_document_data,
@@ -102,6 +110,68 @@ class RTAMasterUpdateView(generics.RetrieveUpdateAPIView):
         IsAuthenticated,
         IsMasterOrAdmin,
     ]
+
+class RTATemplateListCreateView(generics.ListCreateAPIView):
+    queryset = RTATemplate.objects.select_related(
+        "company",
+    ).order_by(
+        "company_id",
+        "record_type",
+    )
+
+    serializer_class = RTATemplateSerializer
+    permission_classes = [
+        IsAuthenticated,
+        IsMasterOrAdmin,
+    ]
+
+    def get_queryset(self):
+        queryset = super().get_queryset()
+
+        company_id = self.request.query_params.get("company_id")
+        record_type = self.request.query_params.get("record_type")
+        active_only = self.request.query_params.get("active")
+
+        if company_id:
+            queryset = queryset.filter(
+                company_id=company_id,
+            )
+
+        if record_type:
+            queryset = queryset.filter(
+                record_type=record_type,
+            )
+
+        if active_only == "true":
+            queryset = queryset.filter(
+                is_active=True,
+            )
+
+        return queryset
+    
+    def get_permissions(self):
+        if self.request.method == "GET":
+            return [IsAuthenticated()]
+
+        return [IsAuthenticated(), IsMasterOrAdmin()]
+
+
+class RTATemplateDetailView(generics.RetrieveUpdateAPIView):
+    queryset = RTATemplate.objects.select_related(
+        "company",
+    )
+
+    serializer_class = RTATemplateSerializer
+    permission_classes = [
+        IsAuthenticated,
+        IsMasterOrAdmin,
+    ]
+    
+    def get_permissions(self):
+        if self.request.method == "GET":
+            return [IsAuthenticated()]
+
+        return [IsAuthenticated(), IsMasterOrAdmin()]    
 
 class RTADocumentListCreateView(generics.ListCreateAPIView):
     serializer_class = RTADocumentSerializer
