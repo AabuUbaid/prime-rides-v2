@@ -199,79 +199,69 @@ class InventorySelector:
 
     @staticmethod
     def dashboard_summary():
-
         vehicle_stats = Car.objects.aggregate(
-
             total_vehicles=Count("id"),
-
             available=Count(
                 "id",
                 filter=Q(status=Car.Status.AVAILABLE),
             ),
-
             reserved=Count(
                 "id",
                 filter=Q(status=Car.Status.RESERVED),
             ),
-
             sold=Count(
                 "id",
                 filter=Q(status=Car.Status.SOLD),
             ),
-
             upcoming=Count(
                 "id",
                 filter=Q(status=Car.Status.UPCOMING),
             ),
-
             in_house=Count(
                 "id",
                 filter=Q(status=Car.Status.IN_HOUSE),
             ),
-
             in_service=Count(
                 "id",
                 filter=Q(status=Car.Status.IN_SERVICE),
             ),
-
             highlighted_vehicles=Count(
                 "id",
                 filter=Q(highlight_public=True),
             ),
-
             inventory_value=Sum("asking_price"),
+            average_purchase_cost=Avg("purchase_cost"),
+            average_asking_price=Avg("asking_price"),
+        )
 
-            average_purchase_cost=Avg(
-                "purchase_cost",
-            ),
-
-            average_asking_price=Avg(
-                "asking_price",
-            ),
+        latest_vehicles = (
+            Car.objects
+            .order_by("-created_at")[:12]
         )
 
         expense_stats = CarExpense.objects.aggregate(
-
-            total_expenses=Sum(
-                "amount",
-            ),
+            total_expenses=Sum("amount")
         )
 
         return {
-
             **vehicle_stats,
 
-            "inventory_value":
-                vehicle_stats["inventory_value"] or 0,
+            "total_expenses": expense_stats["total_expenses"] or 0,
 
-            "average_purchase_cost":
-                vehicle_stats["average_purchase_cost"] or 0,
-
-            "average_asking_price":
-                vehicle_stats["average_asking_price"] or 0,
-
-            "total_expenses":
-                expense_stats["total_expenses"] or 0,
+            "latest_vehicles": [
+                {
+                    "id": str(car.id),
+                    "stock_id": car.stock_id,
+                    "year": car.year,
+                    "make": car.make,
+                    "model": car.model,
+                    "variant": car.variant,
+                    "status": car.status,
+                    "asking_price": car.asking_price or 0,
+                    "created_at": car.created_at,
+                }
+                for car in latest_vehicles
+            ],
         }
 
     @staticmethod

@@ -486,6 +486,16 @@ class SpecialPriceRequest(models.Model):
         ],
     )
 
+    inventory_purchase_cost = models.DecimalField(
+        max_digits=12,
+        decimal_places=2,
+        null=True,
+        blank=True,
+        validators=[
+            MinValueValidator(0),
+        ],
+    )
+
     inventory_vehicle_expenses = models.DecimalField(
         max_digits=12,
         decimal_places=2,

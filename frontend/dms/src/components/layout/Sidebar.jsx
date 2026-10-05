@@ -1,4 +1,5 @@
 import {
+  BadgeCheck,
   Banknote,
   BarChart3,
   BriefcaseBusiness,
@@ -147,6 +148,11 @@ function Sidebar({ user, onLogout, mobileOpen, onCloseMobile }) {
           label: "Delivery Notes",
           path: "/finance/delivery-notes",
           icon: ClipboardList,
+        },
+        {
+          label: "RTA",
+          path: "/rta",
+          icon: BadgeCheck,
         },
       ],
     },

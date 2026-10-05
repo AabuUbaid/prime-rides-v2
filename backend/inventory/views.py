@@ -1286,6 +1286,7 @@ class SpecialPriceRequestListAPIView(APIView):
                     item.pop("approved_by", None)
                     item.pop("approved_by_name", None)
                     item.pop("approved_at", None)
+                    item.pop("inventory_purchase_cost", None)
 
             data.append(item)
 

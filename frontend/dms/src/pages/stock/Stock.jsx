@@ -1477,7 +1477,7 @@ function Stock() {
         </div>
 
         {/* Desktop table */}
-        <div className="hidden overflow-x-auto lg:block">
+        <div className="hidden overflow-x-auto xl:block">
           <div className="min-w-[1050px]">
             {/* Header */}
             <div className="grid grid-cols-[36px_minmax(220px,1.7fr)_70px_110px_100px_75px_105px_130px_150px] items-center border-b border-slate-200 bg-slate-50/80 px-4 py-3 text-[10px] font-bold uppercase tracking-[0.12em] text-slate-400">
@@ -1712,7 +1712,7 @@ function Stock() {
         </div>
 
         {/* Mobile / tablet list */}
-        <div className="lg:hidden">
+        <div className="xl:hidden">
           {cars.length > 0 ? (
             <div className="divide-y divide-slate-100">
               {cars.map((car) => {
@@ -1732,7 +1732,7 @@ function Stock() {
                     key={car.id}
                     className="p-4 transition hover:bg-slate-50"
                   >
-                    <div className="flex items-start gap-3">
+                    <div className="flex items-start gap-2.5 sm:gap-3">
                       {isMaster && (
                         <input
                           type="checkbox"
@@ -1748,7 +1748,7 @@ function Stock() {
                         />
                       )}
 
-                      <div className="relative h-16 w-24 shrink-0 overflow-hidden rounded-xl bg-slate-100">
+                      <div className="relative h-16 w-[88px] shrink-0 overflow-hidden rounded-xl bg-slate-100 sm:h-16 sm:w-24">
                         {imageUrl ? (
                           <img
                             src={imageUrl}
@@ -1801,7 +1801,7 @@ function Stock() {
                           </StatusBadge>
                         </div>
 
-                        <div className="mt-3 flex items-center justify-between gap-3">
+                        <div className="mt-3 flex flex-col gap-3 min-[420px]:flex-row min-[420px]:items-center min-[420px]:justify-between">
                           <span className="text-sm font-bold text-slate-900">
                             {car.status === "booked"
                               ? "-"
@@ -1810,7 +1810,7 @@ function Stock() {
                                 : "-"}
                           </span>
 
-                          <div className="flex items-center gap-1">
+                          <div className="flex flex-wrap items-center gap-1">
                             <Button
                               type="button"
                               variant="ghost"
@@ -1951,53 +1951,60 @@ function Stock() {
       </div>
 
       {showStockOutputModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/45 p-4 backdrop-blur-sm">
-          <div className="w-full max-w-2xl overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-2xl">
-            <div className="flex items-center justify-between border-b border-slate-200 px-5 py-4">
-              <div>
-                <h2 className="text-lg font-semibold text-slate-900">
-                  Customize Stock Output
-                </h2>
+        <div className="fixed inset-0 z-50 flex items-start justify-center overflow-y-auto bg-slate-950/45 p-2 backdrop-blur-sm sm:items-center sm:p-4">
+          <div className="my-2 flex max-h-[calc(100dvh-1rem)] w-full max-w-2xl flex-col overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-2xl sm:my-4 sm:max-h-[calc(100dvh-2rem)]">
+            {/* Header */}
+            <div className="shrink-0 border-b border-slate-200 px-4 py-4 sm:px-5">
+              <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+                <div className="min-w-0">
+                  <h2 className="text-lg font-semibold text-slate-900">
+                    Customize Stock Output
+                  </h2>
 
-                <p className="mt-1 text-sm text-slate-500">
-                  Select the fields to include in the stock print/share output.
-                </p>
-              </div>
+                  <p className="mt-1 text-sm leading-5 text-slate-500">
+                    Select the fields to include in the stock print/share
+                    output.
+                  </p>
+                </div>
 
-              <div className="flex items-center gap-2">
-                <button
-                  type="button"
-                  onClick={() => setShowStockOutputModal(false)}
-                  className="rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm font-semibold text-slate-700 transition hover:bg-slate-50"
-                >
-                  Cancel
-                </button>
+                {/* Header Actions */}
+                <div className="flex w-full flex-col gap-2 sm:w-auto sm:flex-row">
+                  <button
+                    type="button"
+                    onClick={() => setShowStockOutputModal(false)}
+                    className="w-full rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm font-semibold text-slate-700 transition hover:bg-slate-50 sm:w-auto"
+                  >
+                    Cancel
+                  </button>
 
-                <button
-                  type="button"
-                  onClick={handleGenerateStockPrint}
-                  disabled={
-                    selectedStockOutputFields.length === 0 || printingStock
-                  }
-                  className="rounded-xl bg-slate-900 px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-slate-800 disabled:cursor-not-allowed disabled:opacity-50"
-                >
-                  <Printer size={16} className="mr-2 inline-block" />
-                  {printingStock ? "Preparing..." : "Generate & Print"}
-                </button>
+                  <button
+                    type="button"
+                    onClick={handleGenerateStockPrint}
+                    disabled={
+                      selectedStockOutputFields.length === 0 || printingStock
+                    }
+                    className="w-full rounded-xl bg-slate-900 px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-slate-800 disabled:cursor-not-allowed disabled:opacity-50 sm:w-auto"
+                  >
+                    <Printer size={16} className="mr-2 inline-block" />
+                    {printingStock ? "Preparing..." : "Generate & Print"}
+                  </button>
+                </div>
               </div>
             </div>
 
-            <div className="p-5">
-              <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
+            {/* Scrollable Content */}
+            <div className="min-h-0 flex-1 overflow-y-auto p-4 sm:p-5">
+              {/* Available Fields Header */}
+              <div className="mb-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
                 <p className="text-xs font-semibold uppercase tracking-[0.08em] text-slate-500">
                   Available Fields
                 </p>
 
-                <div className="flex items-center gap-2">
+                <div className="flex w-full gap-2 sm:w-auto">
                   <button
                     type="button"
                     onClick={selectAllStockOutputFields}
-                    className="rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-xs font-semibold text-slate-700 hover:bg-slate-50"
+                    className="flex-1 rounded-lg border border-slate-200 bg-white px-3 py-2 text-xs font-semibold text-slate-700 hover:bg-slate-50 sm:flex-none"
                   >
                     Select All
                   </button>
@@ -2005,30 +2012,31 @@ function Stock() {
                   <button
                     type="button"
                     onClick={clearAllStockOutputFields}
-                    className="rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-xs font-semibold text-slate-700 hover:bg-slate-50"
+                    className="flex-1 rounded-lg border border-slate-200 bg-white px-3 py-2 text-xs font-semibold text-slate-700 hover:bg-slate-50 sm:flex-none"
                   >
                     Clear All
                   </button>
                 </div>
               </div>
 
-              <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
+              {/* Fields */}
+              <div className="grid grid-cols-2 gap-2">
                 {stockOutputFields.map((field) => {
                   const checked = selectedStockOutputFields.includes(field.key);
 
                   return (
                     <label
                       key={field.key}
-                      className="flex cursor-pointer items-center gap-3 rounded-xl border border-slate-200 bg-slate-50 px-3 py-3 transition hover:bg-slate-100"
+                      className="flex min-w-0 cursor-pointer items-center gap-3 rounded-xl border border-slate-200 bg-slate-50 px-3 py-3 transition hover:bg-slate-100"
                     >
                       <input
                         type="checkbox"
                         checked={checked}
                         onChange={() => toggleStockOutputField(field.key)}
-                        className="h-4 w-4 rounded border-slate-300 text-amber-500 focus:ring-amber-400"
+                        className="h-4 w-4 shrink-0 rounded border-slate-300 text-amber-500 focus:ring-amber-400"
                       />
 
-                      <span className="text-sm font-medium text-slate-700">
+                      <span className="min-w-0 break-words text-sm font-medium text-slate-700">
                         {field.label}
                       </span>
                     </label>
@@ -2042,7 +2050,8 @@ function Stock() {
                 </div>
               )}
 
-              <div className="mt-5 flex items-center justify-between border-t border-slate-200 pt-4">
+              {/* Footer */}
+              <div className="mt-5 flex flex-col gap-3 border-t border-slate-200 pt-4 sm:flex-row sm:items-center sm:justify-between">
                 <p className="text-xs text-slate-500">
                   {selectedStockOutputFields.length} of{" "}
                   {stockOutputFields.length} fields selected
@@ -2051,7 +2060,7 @@ function Stock() {
                 <button
                   type="button"
                   onClick={() => setShowStockOutputModal(false)}
-                  className="rounded-xl bg-slate-900 px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-slate-800"
+                  className="w-full rounded-xl bg-slate-900 px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-slate-800 sm:w-auto"
                 >
                   Close
                 </button>

@@ -1967,7 +1967,7 @@ export default function NewQuote() {
         {source === SOURCE_SAVED_EMI && (
           <>
             {/* Saved EMI selector */}
-            <section className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-[0_2px_8px_rgba(15,23,42,0.04)]">
+            <section className="overflow-visible rounded-2xl border border-slate-200 bg-white shadow-[0_2px_8px_rgba(15,23,42,0.04)]">
               <div className="border-b border-slate-100 px-5 py-4">
                 <h2 className="text-sm font-mono tracking-tight text-slate-900">
                   Saved EMI
@@ -1978,13 +1978,15 @@ export default function NewQuote() {
                   quotation.
                 </p>
               </div>
-
               <div className="p-5">
                 <label className="mb-1.5 block text-[11px] font-mono uppercase tracking-[0.08em] text-slate-500">
                   Saved EMI Calculation
                 </label>
 
-                <div className="relative">
+                <div
+                  className="relative z-40"
+                  onClick={(event) => event.stopPropagation()}
+                >
                   <input
                     type="text"
                     value={
@@ -2034,7 +2036,7 @@ export default function NewQuote() {
                   )}
 
                   {emiDropdownOpen && (
-                    <div className="absolute z-30 mt-2 max-h-80 w-full overflow-y-auto rounded-2xl border border-slate-200 bg-white shadow-xl">
+                    <div className="absolute left-0 right-0 z-[60] mt-2 max-h-[60vh] overflow-y-auto rounded-2xl border border-slate-200 bg-white shadow-2xl sm:max-h-80">
                       {filteredEmiSheets.length === 0 ? (
                         <div className="px-4 py-4 text-sm text-slate-500">
                           No saved EMI calculations found.
@@ -2064,7 +2066,7 @@ export default function NewQuote() {
                               }}
                               className="block w-full border-b border-slate-100 px-4 py-3 text-left transition last:border-b-0 hover:bg-slate-50"
                             >
-                              <div className="flex flex-col gap-1 sm:flex-row sm:items-center sm:justify-between">
+                              <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
                                 <div className="min-w-0">
                                   <p className="truncate text-sm font-semibold text-slate-900">
                                     {customer || vehicle || `EMI #${emiId}`}
@@ -2082,7 +2084,7 @@ export default function NewQuote() {
                                   </div>
                                 </div>
 
-                                <div className="shrink-0 text-left sm:text-right">
+                                <div className="shrink-0 border-t border-slate-100 pt-2 text-left sm:border-t-0 sm:pt-0 sm:text-right">
                                   <p className="font-mono text-sm font-semibold text-slate-900">
                                     AED {formatCurrency(priceValue)}
                                   </p>

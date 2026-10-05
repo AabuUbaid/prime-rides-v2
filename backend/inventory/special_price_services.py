@@ -98,6 +98,7 @@ class SpecialPriceService:
             requested_price=requested_price,
             requested_by=requested_by,
             inventory_asked_price=car.asking_price,
+            inventory_purchase_cost=car.purchase_cost,
             inventory_vehicle_expenses=vehicle_expenses,
             least_selling_price_at_request=(
                 car.least_selling_price

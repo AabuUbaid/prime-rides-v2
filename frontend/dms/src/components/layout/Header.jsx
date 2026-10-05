@@ -120,6 +120,13 @@ function Header({ onOpenMobileMenu }) {
       };
     }
 
+    if (path.startsWith("/rta")) {
+      return {
+        section: "Documents",
+        title: "RTA Records",
+      };
+    }
+
     if (path.startsWith("/progression")) {
       return {
         section: "Operations",

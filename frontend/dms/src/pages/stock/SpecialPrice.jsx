@@ -36,14 +36,8 @@ function formatCurrency(value) {
 }
 
 function getCarLabel(request) {
-  const car = request?.car;
-
-  if (typeof car === "string") {
-    return car;
-  }
-
   return (
-    car?.stock_id ||
+    request?.vehicle_name ||
     request?.car_stock_id ||
     `Vehicle #${request?.car || request?.car_id || "-"}`
   );
@@ -293,7 +287,7 @@ export default function SpecialPrice() {
           </div>
         ) : (
           <div className="overflow-x-auto">
-            <table className="min-w-[980px] w-full border-collapse">
+            <table className="min-w-[1120px] w-full border-collapse">
               <thead>
                 <tr className="border-b border-slate-200 bg-slate-50">
                   <th className="px-5 py-3 text-left text-[10px] font-bold uppercase tracking-[0.08em] text-slate-500">
@@ -338,9 +332,33 @@ export default function SpecialPrice() {
                             {getCarLabel(request)}
                           </p>
 
-                          <p className="mt-0.5 text-[10px] font-medium uppercase tracking-wide text-slate-400">
-                            Vehicle
+                          <p className="mt-0.5 truncate text-[10px] font-medium uppercase tracking-wide text-slate-400">
+                            Chassis: {request?.chassis_number || "-"}
                           </p>
+
+                          {isMaster && (
+                            <div className="mt-2 flex flex-wrap gap-x-4 gap-y-1 text-[10px] font-medium text-slate-500">
+                              <span>
+                                Purchase:{" "}
+                                <span className="font-semibold text-slate-700">
+                                  AED{" "}
+                                  {formatCurrency(
+                                    request?.inventory_purchase_cost,
+                                  )}
+                                </span>
+                              </span>
+
+                              <span>
+                                Expenses:{" "}
+                                <span className="font-semibold text-slate-700">
+                                  AED{" "}
+                                  {formatCurrency(
+                                    request?.inventory_vehicle_expenses,
+                                  )}
+                                </span>
+                              </span>
+                            </div>
+                          )}
                         </div>
                       </div>
                     </td>

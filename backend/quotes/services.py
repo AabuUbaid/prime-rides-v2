@@ -793,6 +793,9 @@ def update_quote(
     # Save Quote only after applying changes
     # -----------------------------------------------------
 
+    if status is not None:
+        quote.status = status
+
     quote.save()
 
     # -----------------------------------------------------
@@ -923,6 +926,12 @@ def proceed_quote_to_bank_loan(
 
     InventoryService.prepare_car_for_booking(
         car=car,
+    )
+
+    from progression.services import sync_progression_for_quote
+
+    sync_progression_for_quote(
+        quote_id=quote.id,
     )
     
     

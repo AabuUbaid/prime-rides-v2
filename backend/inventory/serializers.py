@@ -1205,6 +1205,12 @@ class SpecialPriceRequestSerializer(
         read_only=True,
     )
 
+    vehicle_name = serializers.SerializerMethodField()
+    chassis_number = serializers.CharField(
+        source="car.chassis_number",
+        read_only=True,
+    )
+
     requested_by_name = serializers.SerializerMethodField()
     approved_by_name = serializers.SerializerMethodField()
     used_by_name = serializers.SerializerMethodField()
@@ -1216,6 +1222,8 @@ class SpecialPriceRequestSerializer(
             "id",
             "car",
             "car_stock_id",
+            "vehicle_name",
+            "chassis_number",
 
             "quote",
             "emi_sheet",
@@ -1223,6 +1231,7 @@ class SpecialPriceRequestSerializer(
             "requested_price",
 
             "inventory_asked_price",
+            "inventory_purchase_cost",
             "inventory_vehicle_expenses",
             "least_selling_price_at_request",
 
@@ -1251,6 +1260,22 @@ class SpecialPriceRequestSerializer(
         )
 
         read_only_fields = fields
+
+    def get_vehicle_name(self, obj):
+        car = obj.car
+
+        parts = [
+            str(car.year) if car.year else "",
+            car.make or "",
+            car.model or "",
+            car.variant or "",
+        ]
+
+        return " ".join(
+            part.strip()
+            for part in parts
+            if part and part.strip()
+        )
 
     def get_requested_by_name(self, obj):
         if not obj.requested_by:

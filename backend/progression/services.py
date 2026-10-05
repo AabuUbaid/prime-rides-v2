@@ -124,9 +124,9 @@ def sync_progression_for_quote(*, quote_id):
         .first()
     )
 
-    # -------------------------------------------------
-    # FINANCE
-    # -------------------------------------------------
+   # -------------------------------------------------
+# FINANCE
+# -------------------------------------------------
 
     if quote.payment_method == Quote.PaymentMethod.FINANCE:
         latest_loan = (
@@ -136,24 +136,14 @@ def sync_progression_for_quote(*, quote_id):
             .first()
         )
 
-        approved_loan = (
-            BankLoan.objects
-            .filter(
-                quote=quote,
-                status=BankLoan.Status.APPROVED,
-            )
-            .order_by("-updated_at", "-id")
-            .first()
-        )
-
         # ---------------------------------------------
-        # Approved Bank Loan → Active Progression
+        # Bank Loan exists → Active Progression
         # ---------------------------------------------
 
-        if approved_loan is not None:
+        if latest_loan is not None:
             progression_data = {
                 "source_type": Progression.SourceType.FINANCE,
-                "bank_loan": approved_loan,
+                "bank_loan": latest_loan,
                 "cash_deal": None,
                 "status": Progression.Status.ACTIVE,
             }
@@ -186,31 +176,6 @@ def sync_progression_for_quote(*, quote_id):
                 )
 
             return progression
-
-        # ---------------------------------------------
-        # No Approved Loan → Inactive Progression
-        # ---------------------------------------------
-
-        if progression is not None:
-            update_fields = []
-
-            # Preserve the most recent loan as the
-            # historical/source reference.
-            if latest_loan is not None:
-                progression.bank_loan = latest_loan
-                update_fields.append("bank_loan")
-
-            if progression.status != Progression.Status.COMPLETED:
-                progression.status = Progression.Status.INACTIVE
-                update_fields.append("status")
-
-            if update_fields:
-                progression.save(
-                    update_fields=[
-                        *update_fields,
-                        "updated_at",
-                    ]
-                )
 
         return progression
 
