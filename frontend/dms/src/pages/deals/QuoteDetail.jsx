@@ -679,7 +679,16 @@ export default function QuoteDetail() {
         throw new Error("Quote print data could not be loaded.");
       }
 
-      const printData = response.data;
+      const printData = {
+        ...response.data,
+
+        finance: {
+          ...(response.data.finance || {}),
+          vehicle_amount: quote?.emi_vehicle_price ?? null,
+          vat_amount: quote?.emi_vat_amount ?? null,
+          finance_amount: quote?.emi_finance_amount ?? null,
+        },
+      };
 
       const assets = await loadQuotePrintAssets();
 

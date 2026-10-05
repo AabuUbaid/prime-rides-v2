@@ -175,14 +175,19 @@ def update_customer(
     if customer_type is not None:
         customer.customer_type = customer_type
 
-    if company_name is not None:
-        customer.company_name = company_name
+    if customer.customer_type == Customer.CustomerType.INDIVIDUAL:
+        customer.company_name = ""
+        customer.trn = ""
+        customer.trade_license_number = ""
+    else:
+        if company_name is not None:
+            customer.company_name = company_name
 
-    if trn is not None:
-        customer.trn = trn
+        if trn is not None:
+            customer.trn = trn
 
-    if trade_license_number is not None:
-        customer.trade_license_number = trade_license_number
+        if trade_license_number is not None:
+            customer.trade_license_number = trade_license_number
 
     customer.save()
 
@@ -215,4 +220,9 @@ def delete_customer_document(
     *,
     document,
 ):
+    document_file = document.document
+
     document.delete()
+
+    if document_file:
+        document_file.delete(save=False)

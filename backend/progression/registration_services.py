@@ -168,6 +168,19 @@ def get_registration_documents(*, quote):
     available_documents = []
     missing_documents = []
 
+    required_documents = list(REQUIRED_DOCUMENTS)
+
+    if (
+        customer.customer_type
+        == customer.CustomerType.COMPANY
+    ):
+        required_documents.append(
+            {
+                "key": "company_trade_license",
+                "label": "Company Trade License",
+            }
+        )
+
     
 
     vehicle_has_possession = any(
@@ -198,9 +211,15 @@ def get_registration_documents(*, quote):
             VehicleDocument.DocumentType.RTA_PASSING
             in vehicle_document_types
         ),
+        "company_trade_license": any(
+            document["source"] == "customer"
+            and document["document_type"]
+            == CustomerDocument.Category.COMPANY_TRADE_LICENSE
+            for document in documents
+        ),
     }
  
-    for requirement in REQUIRED_DOCUMENTS:
+    for requirement in required_documents:
         key = requirement["key"]
 
         item = {
@@ -226,7 +245,7 @@ def get_registration_documents(*, quote):
                 "label": requirement["label"],
                 "available": availability[requirement["key"]],
             }
-            for requirement in REQUIRED_DOCUMENTS
+            for requirement in required_documents
         ],
         "available_documents": available_documents,
         "missing_documents": missing_documents,

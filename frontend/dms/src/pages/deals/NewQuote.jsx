@@ -79,14 +79,6 @@ function getEmiVehicleName(emi) {
     .join(" ");
 }
 
-function isReservedVehicle(car) {
-  return (
-    String(car?.status || "")
-      .trim()
-      .toLowerCase() === "reserved"
-  );
-}
-
 function getExpenseType(preset) {
   return preset?.expense_type || preset?.type || "";
 }
@@ -453,12 +445,6 @@ export default function NewQuote() {
         throw new Error("Vehicle details were not returned.");
       }
 
-      if (isReservedVehicle(vehicle)) {
-        throw new Error(
-          "This vehicle is reserved and cannot be used for a new Quote.",
-        );
-      }
-
       setSelectedCar(vehicle);
 
       const vehiclePrice = vehicle.asking_price ?? "";
@@ -602,7 +588,13 @@ export default function NewQuote() {
         const results = getApiData(response);
 
         setVehicleResults(
-          results.filter((vehicle) => !isReservedVehicle(vehicle)),
+          results.filter((vehicle) => {
+            const status = String(vehicle?.status || "")
+              .trim()
+              .toLowerCase();
+
+            return status === "available" || status === "reserved";
+          }),
         );
       } catch (error) {
         if (!cancelled) {
@@ -907,10 +899,6 @@ export default function NewQuote() {
 
     if (!price) {
       return "Price is required.";
-    }
-
-    if (selectedCar && isReservedVehicle(selectedCar)) {
-      return "This vehicle is reserved and cannot be used for a new Quote.";
     }
 
     if (!cashBankId) {

@@ -1432,6 +1432,63 @@ class CashReceiptSerializer(
 
     created_by_name = serializers.SerializerMethodField()
 
+    customer_mobile = serializers.CharField(
+        source="customer.phone_number",
+        read_only=True,
+        allow_null=True,
+    )
+
+    customer_trn = serializers.CharField(
+        source="customer.trn",
+        read_only=True,
+        allow_null=True,
+        allow_blank=True,
+    )
+
+    vehicle_year = serializers.IntegerField(
+        source="quote.vehicle_year",
+        read_only=True,
+        allow_null=True,
+    )
+
+    vehicle_colour = serializers.CharField(
+        source="quote.vehicle_colour",
+        read_only=True,
+        allow_null=True,
+        allow_blank=True,
+    )
+
+    vehicle_chassis_number = serializers.CharField(
+        source="quote.vehicle_chassis_number",
+        read_only=True,
+        allow_blank=True,
+    )
+
+    vehicle_engine_number = serializers.CharField(
+        source="quote.vehicle_engine_number",
+        read_only=True,
+        allow_blank=True,
+    )
+
+    vehicle_price = serializers.DecimalField(
+        source="quote.price",
+        read_only=True,
+        max_digits=12,
+        decimal_places=2,
+        allow_null=True,
+    )
+
+    finance_bank_name = serializers.CharField(
+        source="quote.emi_bank_name",
+        read_only=True,
+        allow_null=True,
+        allow_blank=True,
+    )
+
+    previously_received = serializers.SerializerMethodField()
+
+    balance_due = serializers.SerializerMethodField()
+
     class Meta:
         model = CashReceipt
 
@@ -1476,6 +1533,20 @@ class CashReceiptSerializer(
             # Dates
             "created_at",
             "updated_at",
+
+            "customer_mobile",
+            "customer_trn",
+
+            "vehicle_year",
+            "vehicle_colour",
+            "vehicle_chassis_number",
+            "vehicle_engine_number",
+
+            "vehicle_price",
+            "previously_received",
+            "balance_due",
+
+            "finance_bank_name",
         ]
 
         read_only_fields = fields
@@ -1507,6 +1578,65 @@ class CashReceiptSerializer(
         )
 
         return reversal.id if reversal else None
+
+    def _previously_received(self, obj):
+        if not obj.quote_id:
+            return Decimal("0.00")
+
+        queryset = CashReceipt.objects.filter(
+            quote_id=obj.quote_id,
+            direction=CashReceipt.Direction.CUSTOMER_PAYMENT,
+        )
+
+        if obj.transaction_date is not None:
+            queryset = queryset.filter(
+                Q(transaction_date__lt=obj.transaction_date)
+                |
+                Q(
+                    transaction_date=obj.transaction_date,
+                    created_at__lt=obj.created_at,
+                )
+                |
+                Q(
+                    transaction_date=obj.transaction_date,
+                    created_at=obj.created_at,
+                    id__lt=obj.id,
+                )
+            )
+        else:
+            queryset = queryset.filter(
+                Q(created_at__lt=obj.created_at)
+                |
+                Q(
+                    created_at=obj.created_at,
+                    id__lt=obj.id,
+                )
+            )
+
+        total = queryset.aggregate(
+            total=Sum("amount")
+        ).get("total")
+
+        return total or Decimal("0.00")
+
+    def get_previously_received(self, obj):
+        return self._previously_received(obj)
+
+    def get_balance_due(self, obj):
+        vehicle_price = obj.quote.price if obj.quote_id else None
+
+        if vehicle_price is None:
+            return Decimal("0.00")
+
+        previously_received = self._previously_received(obj)
+
+        balance = (
+            vehicle_price
+            - previously_received
+            - obj.amount
+        )
+
+        return balance
 
 
 # =========================================================

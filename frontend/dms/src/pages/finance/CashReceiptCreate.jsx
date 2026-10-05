@@ -413,7 +413,11 @@ function CashReceiptCreate() {
 
         setCategories(categoryOptions);
 
-        if (categoryOptions.length > 0 && !category) {
+        const presetCategory = searchParams.get("category");
+
+        if (presetCategory) {
+          setCategory(presetCategory);
+        } else if (categoryOptions.length > 0 && !category) {
           setCategory(categoryOptions[0].value);
         }
       } catch (err) {
@@ -798,15 +802,13 @@ function CashReceiptCreate() {
                 ) : balance ? (
                   <>
                     <div className="mt-1 text-xl font-extrabold text-[#172033]">
-                      AED {formatAED(balance.net_difference)}
+                      {formatAED(balance.net_difference)}
                     </div>
 
                     <div className="mt-2 flex flex-wrap gap-x-5 gap-y-2 text-xs text-slate-500">
-                      <span>
-                        Received: AED {formatAED(balance.total_received)}
-                      </span>
+                      <span>Received: {formatAED(balance.total_received)}</span>
 
-                      <span>Spent: AED {formatAED(balance.total_spent)}</span>
+                      <span>Spent:{formatAED(balance.total_spent)}</span>
 
                       <span>Status: {balance.balance_status || "-"}</span>
                     </div>

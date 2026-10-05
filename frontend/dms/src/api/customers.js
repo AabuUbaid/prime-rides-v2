@@ -1,7 +1,17 @@
 import { apiClient } from "./client";
 
-export function getCustomers() {
-  return apiClient("/customers/");
+export function getCustomers(params = {}) {
+  const query = new URLSearchParams();
+
+  Object.entries(params).forEach(([key, value]) => {
+    if (value !== undefined && value !== null && value !== "") {
+      query.append(key, value);
+    }
+  });
+
+  const queryString = query.toString();
+
+  return apiClient(`/customers/${queryString ? `?${queryString}` : ""}`);
 }
 
 export function createCustomer(payload) {

@@ -86,6 +86,10 @@ class Customer(models.Model):
 
 class CustomerDocument(models.Model):
     class Category(models.TextChoices):
+        PASSPORT = (
+            "passport",
+            "Passport",
+        )
         DRIVING_LICENSE = (
             "driving_license",
             "Driving License",
@@ -98,7 +102,10 @@ class CustomerDocument(models.Model):
             "bank_lpo",
             "Bank LPO",
         )
-
+        COMPANY_TRADE_LICENSE = (
+            "company_trade_license",
+            "Company Trade License",
+        )
     customer = models.ForeignKey(
         Customer,
         on_delete=models.CASCADE,

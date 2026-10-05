@@ -223,27 +223,45 @@ export default function ProformaPrintTemplate({
   const bodyRows = [
     { label: "", value: "", amount: "" },
     { label: "", value: "", amount: "" },
-    { label: "Model & Maker", value: vehicleName },
-    { label: "Year", value: proforma.vehicle_year },
+
+    {
+      label: "Model & Maker",
+      value: vehicleName,
+    },
+
+    {
+      label: "Year",
+      value: proforma.vehicle_year,
+    },
+
     {
       label: "Chassis No",
       value: proforma.vehicle_chassis_number,
     },
+
     {
       label: "Engine Number",
       value: proforma.vehicle_engine_number,
     },
+
     {
       label: "Cost Of The Vehicle",
       value: "",
       amount: formatNumber(vehiclePrice),
     },
+
     { label: "", value: "", amount: "" },
-    {
-      label: "Down Payment Amount",
-      value: "",
-      amount: formatNumber(downPayment),
-    },
+
+    ...(isFinance
+      ? [
+          {
+            label: "Down Payment Amount",
+            value: "",
+            amount: formatNumber(downPayment),
+          },
+        ]
+      : []),
+
     { label: "", value: "", amount: "" },
     { label: "", value: "", amount: "" },
     { label: "", value: "", amount: "" },
@@ -645,6 +663,62 @@ export default function ProformaPrintTemplate({
             white-space: nowrap;
           }
 
+          /* -----------------------------------------
+   CASH PROFORMA LAYOUT
+   ----------------------------------------- */
+
+.proforma-print-page.is-cash .proforma-customer-bar {
+  top: 56.3mm;
+}
+
+.proforma-print-page.is-cash .proforma-customer-details {
+  top: 67.35mm;
+}
+
+.proforma-print-page.is-cash .proforma-table-top-rule {
+  top: 80.7mm;
+}
+
+.proforma-print-page.is-cash .proforma-table-header {
+  top: 81.2mm;
+}
+
+.proforma-print-page.is-cash .proforma-body {
+  top: 85.7mm;
+  height: 51.975mm;
+}
+
+.proforma-print-page.is-cash .proforma-body::after {
+  height: 56.475mm;
+}
+
+.proforma-print-page.is-cash .proforma-table-bottom-rule {
+  top: 137.675mm;
+}
+
+/* Cash does not have Net Finance.
+   Vehicle Price occupies that summary area. */
+
+.proforma-print-page.is-cash .proforma-vehicle-label {
+  top: 144.375mm;
+}
+
+.proforma-print-page.is-cash .proforma-vehicle-words {
+  top: 149.575mm;
+}
+
+.proforma-print-page.is-cash .proforma-vehicle-box {
+  top: 147.875mm;
+}
+
+.proforma-print-page.is-cash .proforma-stamp {
+  top: 143.375mm;
+}
+
+.proforma-print-page.is-cash .proforma-footer {
+  top: 170.225mm;
+}
+
           @media print {
             html,
             body,
@@ -695,7 +769,11 @@ export default function ProformaPrintTemplate({
         `}
       </style>
 
-      <div className="proforma-print-page">
+      <div
+        className={`proforma-print-page ${
+          isFinance ? "is-finance" : "is-cash"
+        }`}
+      >
         <div className="proforma-frame">
           <header className="proforma-header">
             {printAssets.logo ? (
@@ -743,15 +821,19 @@ export default function ProformaPrintTemplate({
             </div>
           </div>
 
-          <div className="proforma-bar proforma-bank-bar">
-            BANK (Financed By)
-          </div>
-          <div className="proforma-bank-details">
-            <div>{isFinance ? proforma.bank_financed_by || "-" : "-"}</div>
-            <div>
-              {isFinance ? `LPO No : ${proforma.lpo || "-"}` : "LPO No : -"}
-            </div>
-          </div>
+          {isFinance && (
+            <>
+              <div className="proforma-bar proforma-bank-bar">
+                BANK (Financed By)
+              </div>
+
+              <div className="proforma-bank-details">
+                <div>{proforma.bank_financed_by || "-"}</div>
+
+                <div>LPO No : {proforma.lpo || "-"}</div>
+              </div>
+            </>
+          )}
 
           <div className="proforma-bar proforma-customer-bar">CUSTOMER</div>
           <div className="proforma-customer-details">
@@ -783,15 +865,21 @@ export default function ProformaPrintTemplate({
 
           <div className="proforma-table-bottom-rule" />
 
-          <div className="proforma-total-label">Net Finance Amount</div>
-          <div className="proforma-total-words">
-            {isFinance && netFinance !== null && netFinance !== undefined
-              ? amountToWords(netFinance)
-              : "-"}
-          </div>
-          <div className="proforma-total-box proforma-net-box">
-            {isFinance ? formatNumber(netFinance) : "-"}
-          </div>
+          {isFinance && (
+            <>
+              <div className="proforma-total-label">Net Finance Amount</div>
+
+              <div className="proforma-total-words">
+                {netFinance !== null && netFinance !== undefined
+                  ? amountToWords(netFinance)
+                  : "-"}
+              </div>
+
+              <div className="proforma-total-box proforma-net-box">
+                {formatNumber(netFinance)}
+              </div>
+            </>
+          )}
 
           <div className="proforma-vehicle-label">Vehicle Price</div>
           <div className="proforma-vehicle-words">

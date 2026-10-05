@@ -10,6 +10,9 @@ import {
 
 import { formatAED } from "../../utils/formatters";
 
+import { printDocument } from "../../utils/print";
+import CashReceiptPrintTemplate from "../../components/printing/templates/CashReceiptPrintTemplate";
+
 function parseCashReceiptResponse(response) {
   const body = response?.data ?? response;
 
@@ -61,6 +64,111 @@ function formatDateTime(value) {
     dateStyle: "medium",
     timeStyle: "short",
   }).format(date);
+}
+
+function numberToWords(number) {
+  const value = Number(number || 0);
+
+  if (!Number.isFinite(value)) {
+    return "";
+  }
+
+  const integerPart = Math.floor(value);
+  const decimalPart = Math.round((value - integerPart) * 100);
+
+  const ones = [
+    "",
+    "One",
+    "Two",
+    "Three",
+    "Four",
+    "Five",
+    "Six",
+    "Seven",
+    "Eight",
+    "Nine",
+    "Ten",
+    "Eleven",
+    "Twelve",
+    "Thirteen",
+    "Fourteen",
+    "Fifteen",
+    "Sixteen",
+    "Seventeen",
+    "Eighteen",
+    "Nineteen",
+  ];
+
+  const tens = [
+    "",
+    "",
+    "Twenty",
+    "Thirty",
+    "Forty",
+    "Fifty",
+    "Sixty",
+    "Seventy",
+    "Eighty",
+    "Ninety",
+  ];
+
+  function convertBelowThousand(value) {
+    const parts = [];
+
+    if (value >= 100) {
+      parts.push(`${ones[Math.floor(value / 100)]} Hundred`);
+      value %= 100;
+    }
+
+    if (value >= 20) {
+      parts.push(tens[Math.floor(value / 10)]);
+      value %= 10;
+
+      if (value > 0) {
+        parts[parts.length - 1] += `-${ones[value]}`;
+      }
+    } else if (value > 0) {
+      parts.push(ones[value]);
+    }
+
+    return parts.join(" ");
+  }
+
+  function convertInteger(value) {
+    if (value === 0) {
+      return "Zero";
+    }
+
+    const parts = [];
+
+    const millions = Math.floor(value / 1000000);
+
+    if (millions > 0) {
+      parts.push(`${convertBelowThousand(millions)} Million`);
+      value %= 1000000;
+    }
+
+    const thousands = Math.floor(value / 1000);
+
+    if (thousands > 0) {
+      parts.push(`${convertBelowThousand(thousands)} Thousand`);
+      value %= 1000;
+    }
+
+    if (value > 0) {
+      parts.push(convertBelowThousand(value));
+    }
+
+    return parts.join(" ");
+  }
+
+  let result = `UAE Dirhams ${convertInteger(integerPart)}`;
+
+  if (decimalPart > 0) {
+    result += ` and ${convertInteger(decimalPart)} Fils`;
+  }
+
+  return `${result} Only`;
 }
 
 function CashReceiptDetail() {
@@ -200,7 +308,7 @@ function CashReceiptDetail() {
 
   return (
     <div className="min-h-screen bg-[#f5f6fa] px-4 py-5 sm:px-6 lg:px-8">
-      <div className="mx-auto max-w-6xl">
+      <div className="no-print mx-auto max-w-6xl">
         <div className="mb-6 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
           <div>
             <Link
@@ -229,6 +337,19 @@ function CashReceiptDetail() {
                 Reverse
               </button>
             )}
+
+            <button
+              type="button"
+              onClick={() =>
+                printDocument({
+                  customerName: receipt.customer_name,
+                  documentNumber: receipt.receipt_number,
+                })
+              }
+              className="inline-flex h-10 items-center justify-center rounded-xl bg-[#1F2A6E] px-4 text-sm font-bold text-white transition hover:bg-[#17215A]"
+            >
+              Print
+            </button>
 
             <button
               type="button"
@@ -516,6 +637,7 @@ function CashReceiptDetail() {
           </dl>
         </section>
       </div>
+      <CashReceiptPrintTemplate receipt={receipt} />
     </div>
   );
 }

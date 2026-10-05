@@ -10,6 +10,12 @@ export default function NewCustomer() {
 
   const [customerName, setCustomerName] = useState("");
   const [phoneNumber, setPhoneNumber] = useState("");
+  const [email, setEmail] = useState("");
+  const [customerType, setCustomerType] = useState("INDIVIDUAL");
+
+  const [companyName, setCompanyName] = useState("");
+  const [trn, setTrn] = useState("");
+  const [tradeLicenseNumber, setTradeLicenseNumber] = useState("");
   const [saving, setSaving] = useState(false);
 
   async function handleSubmit(event) {
@@ -31,34 +37,25 @@ export default function NewCustomer() {
       const response = await createCustomer({
         customer_name: customerName.trim(),
         phone_number: phoneNumber.trim(),
+        email: email.trim(),
+        customer_type: customerType,
+        company_name: customerType === "COMPANY" ? companyName.trim() : "",
+        trn: customerType === "COMPANY" ? trn.trim() : "",
+        trade_license_number:
+          customerType === "COMPANY" ? tradeLicenseNumber.trim() : "",
       });
 
       if (!response?.success || !response?.data) {
-        throw new Error(
-          response?.message ||
-            "Unable to create customer."
-        );
+        throw new Error(response?.message || "Unable to create customer.");
       }
 
-      toast.success(
-        response.message ||
-          "Customer created successfully."
-      );
+      toast.success(response.message || "Customer created successfully.");
 
-      navigate(
-        `/customers/${response.data.id}`,
-        { replace: true }
-      );
+      navigate(`/customers/${response.data.id}`, { replace: true });
     } catch (error) {
-      console.error(
-        "Customer creation failed:",
-        error
-      );
+      console.error("Customer creation failed:", error);
 
-      toast.error(
-        error?.message ||
-          "Unable to create customer."
-      );
+      toast.error(error?.message || "Unable to create customer.");
     } finally {
       setSaving(false);
     }
@@ -108,9 +105,7 @@ export default function NewCustomer() {
                 id="customer-name"
                 type="text"
                 value={customerName}
-                onChange={(event) =>
-                  setCustomerName(event.target.value)
-                }
+                onChange={(event) => setCustomerName(event.target.value)}
                 placeholder="Enter customer name"
                 className="w-full rounded-lg border border-slate-300 bg-white px-3 py-2.5 text-sm text-slate-900 outline-none transition placeholder:text-slate-400 focus:border-slate-500 focus:ring-2 focus:ring-slate-200"
                 disabled={saving}
@@ -129,14 +124,114 @@ export default function NewCustomer() {
                 id="customer-phone"
                 type="tel"
                 value={phoneNumber}
-                onChange={(event) =>
-                  setPhoneNumber(event.target.value)
-                }
+                onChange={(event) => setPhoneNumber(event.target.value)}
                 placeholder="Enter phone number"
                 className="w-full rounded-lg border border-slate-300 bg-white px-3 py-2.5 text-sm text-slate-900 outline-none transition placeholder:text-slate-400 focus:border-slate-500 focus:ring-2 focus:ring-slate-200"
                 disabled={saving}
               />
             </div>
+
+            <div>
+              <label
+                htmlFor="customer-email"
+                className="mb-2 block text-sm font-medium text-slate-700"
+              >
+                Email
+              </label>
+
+              <input
+                id="customer-email"
+                type="email"
+                value={email}
+                onChange={(event) => setEmail(event.target.value)}
+                placeholder="customer@example.com"
+                className="w-full rounded-lg border border-slate-300 bg-white px-3 py-2.5 text-sm text-slate-900 outline-none focus:border-slate-500 focus:ring-2 focus:ring-slate-200"
+                disabled={saving}
+              />
+            </div>
+
+            <div>
+              <label
+                htmlFor="customer-type"
+                className="mb-2 block text-sm font-medium text-slate-700"
+              >
+                Customer Type
+              </label>
+
+              <select
+                id="customer-type"
+                value={customerType}
+                onChange={(event) => setCustomerType(event.target.value)}
+                className="w-full rounded-lg border border-slate-300 bg-white px-3 py-2.5 text-sm text-slate-900 outline-none focus:border-slate-500 focus:ring-2 focus:ring-slate-200"
+                disabled={saving}
+              >
+                <option value="INDIVIDUAL">Individual</option>
+
+                <option value="COMPANY">Company</option>
+              </select>
+            </div>
+            {customerType === "COMPANY" && (
+              <>
+                <div>
+                  <label
+                    htmlFor="company-name"
+                    className="mb-2 block text-sm font-medium text-slate-700"
+                  >
+                    Company Name
+                  </label>
+
+                  <input
+                    id="company-name"
+                    type="text"
+                    value={companyName}
+                    onChange={(event) => setCompanyName(event.target.value)}
+                    placeholder="Enter company name"
+                    className="w-full rounded-lg border border-slate-300 bg-white px-3 py-2.5 text-sm text-slate-900 outline-none focus:border-slate-500 focus:ring-2 focus:ring-slate-200"
+                    disabled={saving}
+                  />
+                </div>
+
+                <div>
+                  <label
+                    htmlFor="trn"
+                    className="mb-2 block text-sm font-medium text-slate-700"
+                  >
+                    TRN
+                  </label>
+
+                  <input
+                    id="trn"
+                    type="text"
+                    value={trn}
+                    onChange={(event) => setTrn(event.target.value)}
+                    placeholder="Enter TRN"
+                    className="w-full rounded-lg border border-slate-300 bg-white px-3 py-2.5 text-sm text-slate-900 outline-none focus:border-slate-500 focus:ring-2 focus:ring-slate-200"
+                    disabled={saving}
+                  />
+                </div>
+
+                <div>
+                  <label
+                    htmlFor="trade-license-number"
+                    className="mb-2 block text-sm font-medium text-slate-700"
+                  >
+                    Trade License Number
+                  </label>
+
+                  <input
+                    id="trade-license-number"
+                    type="text"
+                    value={tradeLicenseNumber}
+                    onChange={(event) =>
+                      setTradeLicenseNumber(event.target.value)
+                    }
+                    placeholder="Enter trade license number"
+                    className="w-full rounded-lg border border-slate-300 bg-white px-3 py-2.5 text-sm text-slate-900 outline-none focus:border-slate-500 focus:ring-2 focus:ring-slate-200"
+                    disabled={saving}
+                  />
+                </div>
+              </>
+            )}
           </div>
 
           <div className="flex items-center justify-end gap-3 border-t border-slate-200 bg-slate-50 px-6 py-4">
@@ -154,9 +249,7 @@ export default function NewCustomer() {
             >
               <Save size={16} />
 
-              {saving
-                ? "Creating..."
-                : "Create Customer"}
+              {saving ? "Creating..." : "Create Customer"}
             </button>
           </div>
         </form>

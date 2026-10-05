@@ -85,6 +85,12 @@ export default function Quotes() {
   const [refreshing, setRefreshing] = useState(false);
   const [error, setError] = useState("");
 
+  const [page, setPage] = useState(1);
+  const [pageSize] = useState(20);
+  const [totalCount, setTotalCount] = useState(0);
+  const [hasNextPage, setHasNextPage] = useState(false);
+  const [hasPreviousPage, setHasPreviousPage] = useState(false);
+
   const searchTimerRef = useRef(null);
 
   const loadQuotes = useCallback(
@@ -101,11 +107,23 @@ export default function Quotes() {
         const response = await getQuotes({
           status,
           search,
+          page,
+          page_size: pageSize,
         });
 
-        const data = Array.isArray(response?.data) ? response.data : [];
+        const data = response?.data ?? response;
 
-        setQuotes(data);
+        if (Array.isArray(data)) {
+          setQuotes(data);
+          setTotalCount(data.length);
+          setHasNextPage(false);
+          setHasPreviousPage(false);
+        } else {
+          setQuotes(Array.isArray(data?.results) ? data.results : []);
+          setTotalCount(Number(data?.count ?? 0));
+          setHasNextPage(Boolean(data?.next));
+          setHasPreviousPage(Boolean(data?.previous));
+        }
       } catch (err) {
         setQuotes([]);
 
@@ -115,49 +133,12 @@ export default function Quotes() {
         setRefreshing(false);
       }
     },
-    [search, status],
+    [search, status, page, pageSize],
   );
 
   useEffect(() => {
-    let cancelled = false;
-
-    async function loadInitialQuotes() {
-      try {
-        setLoading(true);
-        setError("");
-
-        const response = await getQuotes({
-          status,
-          search,
-        });
-
-        if (cancelled) {
-          return;
-        }
-
-        const data = Array.isArray(response?.data) ? response.data : [];
-
-        setQuotes(data);
-      } catch (err) {
-        if (cancelled) {
-          return;
-        }
-
-        setQuotes([]);
-        setError(err?.message || "Unable to load quotes. Please try again.");
-      } finally {
-        if (!cancelled) {
-          setLoading(false);
-        }
-      }
-    }
-
-    loadInitialQuotes();
-
-    return () => {
-      cancelled = true;
-    };
-  }, [search, status]);
+    loadQuotes();
+  }, [loadQuotes]);
 
   useEffect(() => {
     return () => {
@@ -178,6 +159,7 @@ export default function Quotes() {
 
     searchTimerRef.current = setTimeout(() => {
       setSearch(value.trim());
+      setPage(1);
     }, 400);
   };
 
@@ -187,6 +169,7 @@ export default function Quotes() {
     }
 
     setStatus(nextStatus);
+    setPage(1);
   };
 
   const handleRefresh = () => {
@@ -451,6 +434,31 @@ export default function Quotes() {
           Showing {quotes.length} {quotes.length === 1 ? "record" : "records"}.
         </div>
       )}
+
+      <div className="flex items-center justify-between mt-4">
+        <button
+          type="button"
+          disabled={!hasPreviousPage}
+          onClick={() => setPage((current) => Math.max(1, current - 1))}
+          className="px-4 py-2 border rounded disabled:opacity-50"
+        >
+          Previous
+        </button>
+
+        <span className="text-sm">
+          Page {page}
+          {totalCount > 0 && <> · {totalCount} total</>}
+        </span>
+
+        <button
+          type="button"
+          disabled={!hasNextPage}
+          onClick={() => setPage((current) => current + 1)}
+          className="px-4 py-2 border rounded disabled:opacity-50"
+        >
+          Next
+        </button>
+      </div>
     </div>
   );
 }

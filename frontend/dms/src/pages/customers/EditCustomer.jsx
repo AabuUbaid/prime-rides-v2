@@ -1,20 +1,9 @@
 import { useEffect, useState } from "react";
-import {
-  ArrowLeft,
-  Save,
-  UserRound,
-} from "lucide-react";
-import {
-  Link,
-  useNavigate,
-  useParams,
-} from "react-router-dom";
+import { ArrowLeft, Save, UserRound } from "lucide-react";
+import { Link, useNavigate, useParams } from "react-router-dom";
 import { toast } from "react-toastify";
 
-import {
-  getCustomer,
-  updateCustomer,
-} from "../../api/customers";
+import { getCustomer, updateCustomer } from "../../api/customers";
 
 export default function EditCustomer() {
   const { id } = useParams();
@@ -22,6 +11,12 @@ export default function EditCustomer() {
 
   const [customerName, setCustomerName] = useState("");
   const [phoneNumber, setPhoneNumber] = useState("");
+
+  const [email, setEmail] = useState("");
+  const [customerType, setCustomerType] = useState("INDIVIDUAL");
+  const [companyName, setCompanyName] = useState("");
+  const [trn, setTrn] = useState("");
+  const [tradeLicenseNumber, setTradeLicenseNumber] = useState("");
 
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -42,34 +37,30 @@ export default function EditCustomer() {
         const response = await getCustomer(id);
 
         if (!response?.success || !response?.data) {
-          throw new Error(
-            response?.message ||
-              "Unable to load customer."
-          );
+          throw new Error(response?.message || "Unable to load customer.");
         }
 
         if (cancelled) {
           return;
         }
 
-        setCustomerName(
-          response.data.customer_name || ""
-        );
+        setCustomerName(response.data.customer_name || "");
 
-        setPhoneNumber(
-          response.data.phone_number || ""
-        );
+        setPhoneNumber(response.data.phone_number || "");
+        setEmail(response.data.email || "");
+
+        setCustomerType(response.data.customer_type || "INDIVIDUAL");
+
+        setCompanyName(response.data.company_name || "");
+
+        setTrn(response.data.trn || "");
+
+        setTradeLicenseNumber(response.data.trade_license_number || "");
       } catch (error) {
-        console.error(
-          "Failed to load customer:",
-          error
-        );
+        console.error("Failed to load customer:", error);
 
         if (!cancelled) {
-          toast.error(
-            error?.message ||
-              "Unable to load customer."
-          );
+          toast.error(error?.message || "Unable to load customer.");
         }
       } finally {
         if (!cancelled) {
@@ -104,60 +95,45 @@ export default function EditCustomer() {
       const response = await updateCustomer(id, {
         customer_name: customerName.trim(),
         phone_number: phoneNumber.trim(),
+        email: email.trim(),
+        customer_type: customerType,
+        company_name: customerType === "COMPANY" ? companyName.trim() : "",
+        trn: customerType === "COMPANY" ? trn.trim() : "",
+        trade_license_number:
+          customerType === "COMPANY" ? tradeLicenseNumber.trim() : "",
       });
 
       if (!response?.success || !response?.data) {
-        throw new Error(
-          response?.message ||
-            "Unable to update customer."
-        );
+        throw new Error(response?.message || "Unable to update customer.");
       }
 
-      toast.success(
-        response.message ||
-          "Customer updated successfully."
-      );
+      toast.success(response.message || "Customer updated successfully.");
 
       navigate(`/customers/${id}`, {
         replace: true,
       });
     } catch (error) {
-      console.error(
-        "Customer update failed:",
-        error
-      );
+      console.error("Customer update failed:", error);
 
       /*
        * Keep backend validation details visible
        * when duplicate phone numbers or other
        * serializer validation occurs.
        */
-      const backendErrors =
-        error?.cause?.errors;
+      const backendErrors = error?.cause?.errors;
 
       if (Array.isArray(backendErrors)) {
         toast.error(backendErrors.join(" "));
-      } else if (
-        backendErrors &&
-        typeof backendErrors === "object"
-      ) {
-        const messages = Object.values(
-          backendErrors
-        )
-          .flat()
-          .filter(Boolean);
+      } else if (backendErrors && typeof backendErrors === "object") {
+        const messages = Object.values(backendErrors).flat().filter(Boolean);
 
         toast.error(
           messages.length
             ? messages.join(" ")
-            : error?.message ||
-                "Unable to update customer."
+            : error?.message || "Unable to update customer.",
         );
       } else {
-        toast.error(
-          error?.message ||
-            "Unable to update customer."
-        );
+        toast.error(error?.message || "Unable to update customer.");
       }
     } finally {
       setSaving(false);
@@ -168,9 +144,7 @@ export default function EditCustomer() {
     return (
       <div className="min-h-screen bg-slate-50 px-4 py-10">
         <div className="mx-auto flex min-h-64 max-w-3xl items-center justify-center">
-          <div className="text-sm text-slate-500">
-            Loading customer...
-          </div>
+          <div className="text-sm text-slate-500">Loading customer...</div>
         </div>
       </div>
     );
@@ -190,10 +164,7 @@ export default function EditCustomer() {
 
           <div>
             <div className="flex items-center gap-2">
-              <UserRound
-                size={20}
-                className="text-slate-700"
-              />
+              <UserRound size={20} className="text-slate-700" />
 
               <h1 className="text-2xl font-semibold text-slate-900">
                 Edit Customer
@@ -223,9 +194,7 @@ export default function EditCustomer() {
                 id="edit-customer-name"
                 type="text"
                 value={customerName}
-                onChange={(event) =>
-                  setCustomerName(event.target.value)
-                }
+                onChange={(event) => setCustomerName(event.target.value)}
                 className="w-full rounded-lg border border-slate-300 bg-white px-3 py-2.5 text-sm text-slate-900 outline-none transition focus:border-slate-500 focus:ring-2 focus:ring-slate-200"
                 disabled={saving}
               />
@@ -243,14 +212,114 @@ export default function EditCustomer() {
                 id="edit-customer-phone"
                 type="tel"
                 value={phoneNumber}
-                onChange={(event) =>
-                  setPhoneNumber(event.target.value)
-                }
+                onChange={(event) => setPhoneNumber(event.target.value)}
                 className="w-full rounded-lg border border-slate-300 bg-white px-3 py-2.5 text-sm text-slate-900 outline-none transition focus:border-slate-500 focus:ring-2 focus:ring-slate-200"
                 disabled={saving}
               />
             </div>
           </div>
+
+          <div>
+            <label
+              htmlFor="edit-customer-email"
+              className="mb-2 block text-sm font-medium text-slate-700"
+            >
+              Email
+            </label>
+
+            <input
+              id="edit-customer-email"
+              type="email"
+              value={email}
+              onChange={(event) => setEmail(event.target.value)}
+              placeholder="customer@example.com"
+              className="w-full rounded-lg border border-slate-300 bg-white px-3 py-2.5 text-sm text-slate-900 outline-none focus:border-slate-500 focus:ring-2 focus:ring-slate-200"
+              disabled={saving}
+            />
+          </div>
+
+          <div>
+            <label
+              htmlFor="edit-customer-type"
+              className="mb-2 block text-sm font-medium text-slate-700"
+            >
+              Customer Type
+            </label>
+
+            <select
+              id="edit-customer-type"
+              value={customerType}
+              onChange={(event) => setCustomerType(event.target.value)}
+              className="w-full rounded-lg border border-slate-300 bg-white px-3 py-2.5 text-sm text-slate-900 outline-none focus:border-slate-500 focus:ring-2 focus:ring-slate-200"
+              disabled={saving}
+            >
+              <option value="INDIVIDUAL">Individual</option>
+              <option value="COMPANY">Company</option>
+            </select>
+          </div>
+
+          {customerType === "COMPANY" && (
+            <>
+              <div>
+                <label
+                  htmlFor="edit-company-name"
+                  className="mb-2 block text-sm font-medium text-slate-700"
+                >
+                  Company Name
+                </label>
+
+                <input
+                  id="edit-company-name"
+                  type="text"
+                  value={companyName}
+                  onChange={(event) => setCompanyName(event.target.value)}
+                  placeholder="Enter company name"
+                  className="w-full rounded-lg border border-slate-300 bg-white px-3 py-2.5 text-sm text-slate-900 outline-none focus:border-slate-500 focus:ring-2 focus:ring-slate-200"
+                  disabled={saving}
+                />
+              </div>
+
+              <div>
+                <label
+                  htmlFor="edit-trn"
+                  className="mb-2 block text-sm font-medium text-slate-700"
+                >
+                  TRN
+                </label>
+
+                <input
+                  id="edit-trn"
+                  type="text"
+                  value={trn}
+                  onChange={(event) => setTrn(event.target.value)}
+                  placeholder="Enter TRN"
+                  className="w-full rounded-lg border border-slate-300 bg-white px-3 py-2.5 text-sm text-slate-900 outline-none focus:border-slate-500 focus:ring-2 focus:ring-slate-200"
+                  disabled={saving}
+                />
+              </div>
+
+              <div>
+                <label
+                  htmlFor="edit-trade-license-number"
+                  className="mb-2 block text-sm font-medium text-slate-700"
+                >
+                  Trade License Number
+                </label>
+
+                <input
+                  id="edit-trade-license-number"
+                  type="text"
+                  value={tradeLicenseNumber}
+                  onChange={(event) =>
+                    setTradeLicenseNumber(event.target.value)
+                  }
+                  placeholder="Enter trade license number"
+                  className="w-full rounded-lg border border-slate-300 bg-white px-3 py-2.5 text-sm text-slate-900 outline-none focus:border-slate-500 focus:ring-2 focus:ring-slate-200"
+                  disabled={saving}
+                />
+              </div>
+            </>
+          )}
 
           <div className="flex items-center justify-end gap-3 border-t border-slate-200 bg-slate-50 px-6 py-4">
             <Link
@@ -267,9 +336,7 @@ export default function EditCustomer() {
             >
               <Save size={16} />
 
-              {saving
-                ? "Saving..."
-                : "Save Changes"}
+              {saving ? "Saving..." : "Save Changes"}
             </button>
           </div>
         </form>

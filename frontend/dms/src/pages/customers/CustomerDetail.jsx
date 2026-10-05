@@ -21,12 +21,18 @@ import {
 } from "../../api/customers";
 
 const DOCUMENT_LABELS = {
+  passport: "Passport",
   driving_license: "Driving License",
   emirates_id: "Emirates ID",
   bank_lpo: "Bank LPO",
+  company_trade_license: "Company Trade License",
 };
 
 const DOCUMENT_CATEGORIES = [
+  {
+    value: "passport",
+    label: "Passport",
+  },
   {
     value: "driving_license",
     label: "Driving License",
@@ -38,6 +44,10 @@ const DOCUMENT_CATEGORIES = [
   {
     value: "bank_lpo",
     label: "Bank LPO",
+  },
+  {
+    value: "company_trade_license",
+    label: "Company Trade License",
   },
 ];
 
@@ -154,6 +164,15 @@ export default function CustomerDetail() {
   useEffect(() => {
     loadCustomer();
   }, [loadCustomer]);
+
+  useEffect(() => {
+    if (
+      customer?.customer_type !== "COMPANY" &&
+      documentCategory === "company_trade_license"
+    ) {
+      setDocumentCategory("passport");
+    }
+  }, [customer, documentCategory]);
 
   function handleFileChange(event) {
     const file = event.target.files?.[0] || null;
@@ -360,45 +379,92 @@ export default function CustomerDetail() {
               </h2>
             </div>
 
-            <div className="grid gap-5 p-5 sm:grid-cols-2 lg:grid-cols-4">
+            <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
               <div>
-                <div className="text-xs font-semibold uppercase tracking-wide text-slate-500">
-                  Name
-                </div>
-
-                <div className="mt-1 text-sm font-medium text-slate-900">
-                  {customer.customer_name || "-"}
-                </div>
+                <p className="text-xs font-medium uppercase tracking-wide text-slate-500">
+                  Customer Name
+                </p>
+                <p className="mt-1 text-sm font-medium text-slate-900">
+                  {customer.customer_name || "—"}
+                </p>
               </div>
 
               <div>
-                <div className="text-xs font-semibold uppercase tracking-wide text-slate-500">
-                  Phone
-                </div>
-
-                <div className="mt-1 text-sm font-medium text-slate-900">
-                  {customer.phone_number || "-"}
-                </div>
+                <p className="text-xs font-medium uppercase tracking-wide text-slate-500">
+                  Phone Number
+                </p>
+                <p className="mt-1 text-sm font-medium text-slate-900">
+                  {customer.phone_number || "—"}
+                </p>
               </div>
 
               <div>
-                <div className="text-xs font-semibold uppercase tracking-wide text-slate-500">
+                <p className="text-xs font-medium uppercase tracking-wide text-slate-500">
+                  Email
+                </p>
+                <p className="mt-1 text-sm font-medium text-slate-900">
+                  {customer.email || "—"}
+                </p>
+              </div>
+
+              <div>
+                <p className="text-xs font-medium uppercase tracking-wide text-slate-500">
+                  Customer Type
+                </p>
+                <p className="mt-1 text-sm font-medium text-slate-900">
+                  {customer.customer_type === "COMPANY"
+                    ? "Company"
+                    : "Individual"}
+                </p>
+              </div>
+
+              {customer.customer_type === "COMPANY" && (
+                <>
+                  <div>
+                    <p className="text-xs font-medium uppercase tracking-wide text-slate-500">
+                      Company Name
+                    </p>
+                    <p className="mt-1 text-sm font-medium text-slate-900">
+                      {customer.company_name || "—"}
+                    </p>
+                  </div>
+
+                  <div>
+                    <p className="text-xs font-medium uppercase tracking-wide text-slate-500">
+                      TRN
+                    </p>
+                    <p className="mt-1 text-sm font-medium text-slate-900">
+                      {customer.trn || "—"}
+                    </p>
+                  </div>
+
+                  <div>
+                    <p className="text-xs font-medium uppercase tracking-wide text-slate-500">
+                      Trade License Number
+                    </p>
+                    <p className="mt-1 text-sm font-medium text-slate-900">
+                      {customer.trade_license_number || "—"}
+                    </p>
+                  </div>
+                </>
+              )}
+
+              <div>
+                <p className="text-xs font-medium uppercase tracking-wide text-slate-500">
                   Created
-                </div>
-
-                <div className="mt-1 text-sm text-slate-700">
+                </p>
+                <p className="mt-1 text-sm font-medium text-slate-900">
                   {formatDate(customer.created_at)}
-                </div>
+                </p>
               </div>
 
               <div>
-                <div className="text-xs font-semibold uppercase tracking-wide text-slate-500">
-                  Updated
-                </div>
-
-                <div className="mt-1 text-sm text-slate-700">
+                <p className="text-xs font-medium uppercase tracking-wide text-slate-500">
+                  Last Updated
+                </p>
+                <p className="mt-1 text-sm font-medium text-slate-900">
                   {formatDate(customer.updated_at)}
-                </div>
+                </p>
               </div>
             </div>
           </section>
@@ -414,7 +480,8 @@ export default function CustomerDetail() {
                   </h2>
 
                   <p className="mt-1 text-xs text-slate-500">
-                    Upload a Driving License, Emirates ID, or Bank LPO.
+                    Upload a Passport, Driving License, Emirates ID, Bank LPO,
+                    or Company Trade License.
                   </p>
                 </div>
               </div>
@@ -439,7 +506,11 @@ export default function CustomerDetail() {
                   disabled={uploading}
                   className="w-full rounded-lg border border-slate-300 bg-white px-3 py-2.5 text-sm text-slate-900 outline-none focus:border-slate-500 focus:ring-2 focus:ring-slate-200"
                 >
-                  {DOCUMENT_CATEGORIES.map((category) => (
+                  {DOCUMENT_CATEGORIES.filter(
+                    (category) =>
+                      category.value !== "company_trade_license" ||
+                      customer.customer_type === "COMPANY",
+                  ).map((category) => (
                     <option key={category.value} value={category.value}>
                       {category.label}
                     </option>

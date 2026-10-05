@@ -278,6 +278,9 @@ class CustomerDocumentListCreateView(
 
         serializer = CustomerDocumentCreateSerializer(
             data=request.data,
+            context={
+                "customer": customer,
+            },
         )
 
         serializer.is_valid(

@@ -36,18 +36,53 @@ class CustomerDocumentCreateSerializer(
             "document",
         )
 
-    def validate_category(
+    def validate(self, attrs):
+        customer = self.context.get("customer")
+
+        if (
+            attrs.get("category")
+            == CustomerDocument.Category.COMPANY_TRADE_LICENSE
+        ):
+            if (
+                customer is None
+                or customer.customer_type != Customer.CustomerType.COMPANY
+            ):
+                raise serializers.ValidationError(
+                    {
+                        "category": (
+                            "Company Trade License can only be uploaded "
+                            "for company customers."
+                        )
+                    }
+                )
+
+        return attrs
+    def validate_document(
         self,
         value,
     ):
-        valid_categories = {
-            choice[0]
-            for choice in CustomerDocument.Category.choices
+        allowed_extensions = {
+            ".pdf",
+            ".jpg",
+            ".jpeg",
+            ".png",
         }
 
-        if value not in valid_categories:
+        name = value.name.lower()
+
+        if not any(
+            name.endswith(extension)
+            for extension in allowed_extensions
+        ):
             raise serializers.ValidationError(
-                "Invalid document category."
+                "Only PDF, JPG, JPEG, and PNG files are supported."
+            )
+
+        max_size = 10 * 1024 * 1024
+
+        if value.size > max_size:
+            raise serializers.ValidationError(
+                "Document size must not exceed 10 MB."
             )
 
         return value

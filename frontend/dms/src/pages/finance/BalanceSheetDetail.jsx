@@ -1,9 +1,10 @@
 import { useEffect, useState } from "react";
-import { Link, useParams } from "react-router-dom";
+import { Link, useNavigate, useParams } from "react-router-dom";
 import { toast } from "react-toastify";
 
 import { useAuth } from "../../context/AuthContext";
 import { deleteBalanceSheet, getBalanceSheet } from "../../api/balanceSheets";
+import { getCashDeal } from "../../api/cashDeals";
 import { formatAED } from "../../utils/formatters";
 
 function formatBalanceStatus(value) {
@@ -60,6 +61,7 @@ function getResponseData(response) {
 
 function BalanceSheetDetail() {
   const { id } = useParams();
+  const navigate = useNavigate();
   const { user } = useAuth();
   const isMaster = user?.role === "MASTER";
 
@@ -161,6 +163,58 @@ function BalanceSheetDetail() {
     }
   }
 
+  async function handleCreateCashReceipt() {
+    const customerId = balanceSheet?.customer;
+    const quoteId = balanceSheet?.quote;
+    const cashDealId = balanceSheet?.cash_deal_id;
+
+    if (!customerId) {
+      toast.error("Customer ID is missing from Balance Sheet.");
+      return;
+    }
+
+    if (!quoteId) {
+      toast.error("Quote ID is missing from Balance Sheet.");
+      return;
+    }
+
+    if (!cashDealId) {
+      toast.error("Cash Deal ID is missing from Balance Sheet.");
+      return;
+    }
+
+    try {
+      const response = await getCashDeal(cashDealId);
+
+      const cashDeal = response?.data?.data ?? response?.data ?? response;
+
+      const amount = Number(cashDeal?.balance_amount || 0);
+
+      if (amount <= 0) {
+        toast.error(
+          "There is no remaining balance available for a Cash Receipt.",
+        );
+        return;
+      }
+
+      navigate(
+        `/finance/cash-receipts/new?customer_id=${encodeURIComponent(
+          customerId,
+        )}&quote_id=${encodeURIComponent(quoteId)}&amount=${encodeURIComponent(
+          amount,
+        )}&direction=customer_payment&category=final_payment&payment_method=cash`,
+      );
+    } catch (error) {
+      console.error("Failed to load Cash Deal:", error);
+
+      toast.error(
+        error?.response?.data?.detail ||
+          error?.response?.data?.message ||
+          "Failed to load Cash Deal balance.",
+      );
+    }
+  }
+
   return (
     <div className="min-h-screen bg-[#f5f6fa]">
       <header className="border-b bg-white">
@@ -202,6 +256,15 @@ function BalanceSheetDetail() {
 
             <div className="flex items-center gap-3">
               <div className="flex items-center gap-2">
+                <button
+                  type="button"
+                  onClick={handleCreateCashReceipt}
+                  disabled={false}
+                  className="rounded-md bg-green-600 px-4 py-2 text-sm font-medium text-white hover:bg-green-700 disabled:cursor-not-allowed disabled:opacity-50"
+                >
+                  Create Cash Receipt
+                </button>
+
                 <Link
                   to={`/finance/balance-sheets/${id}/print`}
                   className="rounded-md bg-gray-900 px-4 py-2 text-sm font-medium text-white hover:bg-gray-800"
@@ -219,7 +282,6 @@ function BalanceSheetDetail() {
                   </button>
                 )}
               </div>
-              f
             </div>
           </div>
         </div>

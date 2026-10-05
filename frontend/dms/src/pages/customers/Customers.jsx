@@ -35,6 +35,14 @@ export default function Customers() {
   const [customers, setCustomers] = useState([]);
   const [loading, setLoading] = useState(true);
 
+  const [search, setSearch] = useState("");
+  const [page, setPage] = useState(1);
+  const [pageSize] = useState(20);
+
+  const [totalCount, setTotalCount] = useState(0);
+  const [hasNextPage, setHasNextPage] = useState(false);
+  const [hasPreviousPage, setHasPreviousPage] = useState(false);
+
   const [selectedImportFile, setSelectedImportFile] = useState(null);
   const [importing, setImporting] = useState(false);
   const importFileInputRef = useRef(null);
@@ -43,13 +51,32 @@ export default function Customers() {
     try {
       setLoading(true);
 
-      const response = await getCustomers();
+      const response = await getCustomers({
+        search,
+        page,
+        page_size: pageSize,
+      });
 
-      if (!response?.success) {
-        throw new Error(response?.message || "Unable to load customers.");
+      if (!response) {
+        throw new Error("Unable to load customers.");
       }
 
-      setCustomers(Array.isArray(response.data) ? response.data : []);
+      const data = response?.data ?? response;
+
+      if (Array.isArray(data)) {
+        setCustomers(data);
+        setTotalCount(data.length);
+        setHasNextPage(false);
+        setHasPreviousPage(false);
+      } else {
+        setCustomers(Array.isArray(data?.results) ? data.results : []);
+
+        setTotalCount(Number(data?.count ?? 0));
+
+        setHasNextPage(Boolean(data?.next));
+
+        setHasPreviousPage(Boolean(data?.previous));
+      }
     } catch (error) {
       console.error("Failed to load customers:", error);
 
@@ -59,7 +86,7 @@ export default function Customers() {
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [search, page, pageSize]);
 
   function handleImportFileChange(event) {
     const file = event.target.files?.[0] || null;
@@ -183,6 +210,17 @@ export default function Customers() {
               className="hidden"
             />
 
+            <input
+              type="search"
+              value={search}
+              onChange={(event) => {
+                setSearch(event.target.value);
+                setPage(1);
+              }}
+              placeholder="Search name, phone or email..."
+              className="w-64 rounded-lg border border-slate-300 bg-white px-3 py-2.5 text-sm text-slate-900 outline-none focus:border-slate-500 focus:ring-2 focus:ring-slate-200"
+            />
+
             <button
               type="button"
               onClick={
@@ -237,9 +275,7 @@ export default function Customers() {
             <div className="text-sm text-slate-500">
               {loading
                 ? "Loading customers..."
-                : `${customers.length} customer${
-                    customers.length === 1 ? "" : "s"
-                  }`}
+                : `${totalCount} customer${totalCount === 1 ? "" : "s"}`}
             </div>
           </div>
 
@@ -324,6 +360,33 @@ export default function Customers() {
           )}
         </div>
       </div>
+      {!loading && totalCount > 0 && (
+        <div className="flex items-center justify-between border-t border-slate-200 px-5 py-4">
+          <button
+            type="button"
+            disabled={!hasPreviousPage}
+            onClick={() => setPage((current) => Math.max(1, current - 1))}
+            className="rounded-lg border border-slate-300 bg-white px-4 py-2 text-sm font-medium text-slate-700 disabled:cursor-not-allowed disabled:opacity-50"
+          >
+            Previous
+          </button>
+
+          <span className="text-sm text-slate-500">
+            Page {page}
+            {" · "}
+            {totalCount} total
+          </span>
+
+          <button
+            type="button"
+            disabled={!hasNextPage}
+            onClick={() => setPage((current) => current + 1)}
+            className="rounded-lg border border-slate-300 bg-white px-4 py-2 text-sm font-medium text-slate-700 disabled:cursor-not-allowed disabled:opacity-50"
+          >
+            Next
+          </button>
+        </div>
+      )}
     </div>
   );
 }

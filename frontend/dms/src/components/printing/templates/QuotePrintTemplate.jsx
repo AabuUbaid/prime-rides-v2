@@ -187,29 +187,41 @@ export default function QuotePrintTemplate({
    * Financial values remain backend-authoritative.
    * No totals are calculated in this component.
    */
-  const vehicleAmount = quote.price;
-  const downPayment = quote.down_payment;
-  const financeAmount = finance.finance_amount;
-
   /*
-   * Preserve any backend-provided down-payment percentage.
-   * Finance requires 20% according to the print specification.
+   * Cash Quote:
+   * quote.price is VAT-inclusive.
+   * Recover the original VAT-exclusive vehicle price,
+   * calculate 5% VAT on that base price, then add
+   * any applied expenses to the final payable amount.
    */
+  const downPayment = Number(quote.down_payment || 0);
+
+  const financeAmount = Number(finance.finance_amount || 0);
+
+  const inclusiveCashPrice = Number(quote.price || 0);
+
+  const cashVehicleAmount = isCash
+    ? inclusiveCashPrice / 1.05
+    : inclusiveCashPrice;
+
+  const cashVatAmount = isCash ? cashVehicleAmount * 0.05 : 0;
+
+  const appliedExpenseTotal = isCash
+    ? expenses.reduce((total, expense) => {
+        if (expense?.applies === false) {
+          return total;
+        }
+
+        return total + Number(expense?.actual_amount || 0);
+      }, 0)
+    : 0;
+
+  const vehicleAmount = isFinance ? inclusiveCashPrice : cashVehicleAmount;
+
   const downPaymentRate = isFinance ? "20%" : "-";
 
-  /*
-   * Cash VAT comes from the existing backend VAT data.
-   * We do not calculate VAT in React.
-   */
-  const cashVatAmount = vat.amount;
-
-  /*
-   * Use an existing backend total when available.
-   * Fall back to the existing quote price rather than
-   * calculating a new total in React.
-   */
   const cashTotalPayable =
-    quote.total_payable ?? quote.total_amount ?? quote.amount ?? vehicleAmount;
+    cashVehicleAmount + cashVatAmount + appliedExpenseTotal;
 
   const validityDays = validity.days ?? (isCash ? 7 : 30);
 
@@ -257,9 +269,9 @@ export default function QuotePrintTemplate({
 
           .quote-print-page {
   width: 210mm !important;
-  height: 297mm !important;
-  min-height: 297mm !important;
-  max-height: 297mm !important;
+  height: 296mm !important;
+  min-height: 296mm !important;
+  max-height: 296mm !important;
 
   box-sizing: border-box !important;
 
@@ -481,12 +493,13 @@ export default function QuotePrintTemplate({
           }
 
           .quote-vehicle-row {
-            display: grid;
-            grid-template-columns: 20% 28% 18% 28%;
+  display: grid;
+  grid-template-columns: 20% 28% 18% 28%;
 
-            min-height: 22px;
-            height: 22px;
-          }
+  min-height: 28px;
+  height: auto;
+  align-items: stretch;
+}
 
           .quote-vehicle-label {
             display: flex;
@@ -1020,9 +1033,9 @@ export default function QuotePrintTemplate({
 
             .quote-print-page {
   width: 210mm !important;
-  height: 297mm !important;
-  min-height: 297mm !important;
-  max-height: 297mm !important;
+  height: 296mm !important;
+  min-height: 296mm !important;
+  max-height: 296mm !important;
 
   box-sizing: border-box !important;
 
@@ -1297,27 +1310,41 @@ f
                   </td>
                 </tr>
 
-                <tr>
-                  <td className="quote-price-description">VAT</td>
+                {isCash && (
+                  <tr>
+                    <td className="quote-price-description">VAT</td>
 
-                  <td className="quote-price-rate">{isCash ? "5%" : "-"}</td>
+                    <td className="quote-price-rate">
+                      {cashVatAmount > 0 ? "5%" : "-"}
+                    </td>
 
-                  <td className="quote-price-amount">
-                    {isCash ? formatAmount(cashVatAmount) : "-"}
-                  </td>
-                </tr>
+                    <td className="quote-price-amount">
+                      {cashVatAmount > 0 ? formatAmount(cashVatAmount) : "-"}
+                    </td>
+                  </tr>
+                )}
 
-                <tr>
-                  <td className="quote-price-description">Down Payment</td>
+                {isCash && appliedExpenseTotal > 0 && (
+                  <tr>
+                    <td className="quote-price-description">Expense</td>
+                    <td className="quote-price-rate">-</td>
+                    <td className="quote-price-amount">
+                      {formatAmount(appliedExpenseTotal)}
+                    </td>
+                  </tr>
+                )}
 
-                  <td className="quote-price-rate">
-                    {isFinance ? downPaymentRate : "-"}
-                  </td>
+                {isFinance && (
+                  <tr>
+                    <td className="quote-price-description">Down Payment</td>
 
-                  <td className="quote-price-amount">
-                    {isFinance ? formatAmount(downPayment) : "-"}
-                  </td>
-                </tr>
+                    <td className="quote-price-rate">{downPaymentRate}</td>
+
+                    <td className="quote-price-amount">
+                      {formatAmount(downPayment)}
+                    </td>
+                  </tr>
+                )}
 
                 <tr className="quote-total-row">
                   <td colSpan="2" className="quote-price-description">

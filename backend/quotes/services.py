@@ -285,18 +285,21 @@ def validate_stock_vehicle_for_quote(
     car,
 ):
     """
-    Prevent creation of a stock Quote for a Reserved vehicle.
-
-    This validation applies only to stock-based Quotes.
-    Saved EMI Quotes may have car=None because Finance supports
-    manual-vehicle EMI sheets.
+    A vehicle can be used to create a Quote only when
+    its current inventory status is AVAILABLE or RESERVED.
     """
     if car is None:
         return
 
-    if car.status == Car.Status.RESERVED:
+    allowed_statuses = {
+        Car.Status.AVAILABLE,
+        Car.Status.RESERVED,
+    }
+
+    if car.status not in allowed_statuses:
         raise ValidationError(
-            "Reserved vehicles cannot be used to create a Quote."
+            "A Quote can only be created for a vehicle "
+            "with Available or Reserved status."
         )
 
 
@@ -620,6 +623,20 @@ def create_quote(
 
     quote.save()
 
+    # -----------------------------------------------------
+# Reserve vehicle when a Cash Quote is created
+# -----------------------------------------------------
+
+    if (
+        source == Quote.Source.STOCK
+        and payment_method == Quote.PaymentMethod.CASH
+        and car is not None
+    ):
+        InventoryService.update_car_status(
+            car=car,
+            new_status=Car.Status.RESERVED,
+        )
+
     if special_price_request is not None:
         SpecialPriceService.bind_to_transaction(
             special_request=special_price_request,
@@ -678,50 +695,82 @@ def update_quote(
             status,
         )
 
+                # -------------------------------------------------
+        # Resolve the actual inventory vehicle
+        # -------------------------------------------------
         car = quote.car
 
-        if car is not None:
-
-            # -------------------------------------------------
-            # Quote → Booked
-            # -------------------------------------------------
-            if status == Quote.Status.BOOKED:
-                InventoryService.prepare_car_for_booking(
-                    car=car,
+        # Finance / Saved EMI Quotes do not store car directly.
+        # Resolve the vehicle using the historical stock ID.
+        if car is None and quote.vehicle_stock_id:
+            car = (
+                Car.objects
+                .select_for_update()
+                .filter(
+                    stock_id=quote.vehicle_stock_id,
                 )
+                .first()
+            )
 
-            # -------------------------------------------------
-            # Quote → Sold
-            # -------------------------------------------------
-            elif status == Quote.Status.SOLD:
-                if car.status != Car.Status.BOOKED:
-                    InventoryService.prepare_car_for_booking(
-                        car=car,
-                    )
+        if car is None:
+            raise ValidationError(
+                "The vehicle associated with this Quote could not be found."
+            )
 
-                if car.status == Car.Status.BOOKED:
-                    InventoryService.update_car_status(
-                        car=car,
-                        new_status=Car.Status.SOLD,
-                    )
+        # -------------------------------------------------
+        # Quote → Booked
+        # -------------------------------------------------
+        if status == Quote.Status.BOOKED:
 
-            # -------------------------------------------------
-            # Quote → Cancelled
-            # -------------------------------------------------
-            elif status == Quote.Status.CANCELLED:
-                if car.status == Car.Status.BOOKED:
+            if quote.payment_method == Quote.PaymentMethod.FINANCE:
+                # Finance booking keeps the vehicle RESERVED.
+                if car.status == Car.Status.AVAILABLE:
                     InventoryService.update_car_status(
                         car=car,
                         new_status=Car.Status.RESERVED,
                     )
 
-                if car.status == Car.Status.RESERVED:
-                    InventoryService.update_car_status(
+            elif quote.payment_method == Quote.PaymentMethod.CASH:
+                # Cash booking moves the vehicle to BOOKED.
+                if car.status != Car.Status.BOOKED:
+                    InventoryService.prepare_car_for_booking(
                         car=car,
-                        new_status=Car.Status.AVAILABLE,
                     )
 
-        quote.status = status
+        # -------------------------------------------------
+        # Quote → Sold
+        # -------------------------------------------------
+        elif status == Quote.Status.SOLD:
+
+            # Inventory progression must remain:
+            # AVAILABLE → RESERVED → BOOKED → SOLD
+            if car.status != Car.Status.BOOKED:
+                InventoryService.prepare_car_for_booking(
+                    car=car,
+                )
+
+            if car.status == Car.Status.BOOKED:
+                InventoryService.update_car_status(
+                    car=car,
+                    new_status=Car.Status.SOLD,
+                )
+
+        # -------------------------------------------------
+        # Quote → Cancelled
+        # -------------------------------------------------
+        elif status == Quote.Status.CANCELLED:
+
+            if car.status == Car.Status.BOOKED:
+                InventoryService.update_car_status(
+                    car=car,
+                    new_status=Car.Status.RESERVED,
+                )
+
+            if car.status == Car.Status.RESERVED:
+                InventoryService.update_car_status(
+                    car=car,
+                    new_status=Car.Status.AVAILABLE,
+                )
 
     # -----------------------------------------------------
     # Salesperson

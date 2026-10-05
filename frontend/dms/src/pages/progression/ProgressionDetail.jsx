@@ -3,7 +3,7 @@ import { Link, useNavigate, useParams } from "react-router-dom";
 import { toast } from "react-toastify";
 
 import { getBalanceSheets } from "../../api/balanceSheets";
-import { getInsurances } from "../../api/insurance";
+import { getInsurances, createInsurance } from "../../api/insurance";
 import {
   advanceProgression,
   getProgression,
@@ -431,13 +431,43 @@ export default function ProgressionDetail() {
       setInsuranceRecord(insurance);
       setShowInsuranceModal(false);
 
+      // -------------------------------------------------
+      // Existing Insurance
+      // -------------------------------------------------
       if (insurance?.id) {
         navigate(`/finance/insurance/${insurance.id}`);
-      } else {
-        navigate(`/finance/insurance?quote_id=${encodeURIComponent(p.quote)}`);
+        return;
       }
+
+      // -------------------------------------------------
+      // Insurance does not exist yet
+      // Create it directly from this Quote
+      // -------------------------------------------------
+      const createResponse = await createInsurance(p.quote);
+
+      if (createResponse?.success === false) {
+        throw new Error(
+          createResponse.message || "Unable to create Insurance.",
+        );
+      }
+
+      const createdInsurance = createResponse?.data ?? createResponse;
+
+      const insuranceId = createdInsurance?.id;
+
+      if (!insuranceId) {
+        throw new Error(
+          "Insurance was created but no Insurance ID was returned.",
+        );
+      }
+
+      setInsuranceRecord(createdInsurance);
+
+      toast.success("Insurance created successfully.");
+
+      navigate(`/finance/insurance/${insuranceId}`);
     } catch (e) {
-      toast.error(e?.message || "Unable to load the customer's Insurance.");
+      toast.error(e?.message || "Unable to open the customer's Insurance.");
     } finally {
       setInsuranceLoading(false);
     }
@@ -1307,6 +1337,12 @@ export default function ProgressionDetail() {
                   <p className="mt-1 text-sm text-gray-500">
                     Required registration documents for this customer and
                     vehicle.
+                  </p>
+                  <p className="mt-1 text-xs text-gray-500">
+                    Possession Certificate and RTA Passing are required for all
+                    customers. Company Trade License is additionally required
+                    for company customers. Passport and other customer documents
+                    are optional.
                   </p>
                 </div>
 

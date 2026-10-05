@@ -244,16 +244,21 @@ class QuoteCreateSerializer(serializers.ModelSerializer):
                 )
 
             # Reserved vehicles are not quoteable.
-            if car.status == Car.Status.RESERVED:
+            # Only AVAILABLE and RESERVED vehicles can be quoted.
+            allowed_statuses = {
+                Car.Status.AVAILABLE,
+                Car.Status.RESERVED,
+            }
+
+            if car.status not in allowed_statuses:
                 raise serializers.ValidationError(
                     {
                         "car_id": (
-                            "Reserved vehicles cannot be "
-                            "used to create a Quote."
+                            "A Quote can only be created for a vehicle "
+                            "with Available or Reserved status."
                         )
                     }
                 )
-
         # -------------------------------------------------
         # SAVED EMI SOURCE
         # -------------------------------------------------

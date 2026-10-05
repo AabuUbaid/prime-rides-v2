@@ -175,7 +175,7 @@ export default function ProformaPrint() {
 
     const timer = window.setTimeout(() => {
       printDocument({
-        customerName: proformfa.customer_name,
+        customerName: proforma.customer_name,
         documentNumber: proforma.proforma_number,
       });
     }, 350);
