@@ -115,6 +115,11 @@ export default function NewQuote() {
   const navigate = useNavigate();
   const { user } = useAuth();
 
+  const isMaster =
+    String(user?.role || "")
+      .trim()
+      .toUpperCase() === "MASTER";
+
   const [source, setSource] = useState(SOURCE_STOCK);
 
   const [specialPriceRequests, setSpecialPriceRequests] = useState([]);
@@ -1478,158 +1483,163 @@ export default function NewQuote() {
             </section>
 
             {/* Special Price */}
-            {/* Special Price */}
-            <section className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-[0_2px_8px_rgba(15,23,42,0.04)]">
-              <div className="border-b border-slate-100 px-5 py-4">
-                <h2 className="text-sm font-mono tracking-tight text-slate-900">
-                  Special Price
-                </h2>
+            {!isMaster && (
+              <section className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-[0_2px_8px_rgba(15,23,42,0.04)]">
+                <div className="border-b border-slate-100 px-5 py-4">
+                  <h2 className="text-sm font-mono tracking-tight text-slate-900">
+                    Special Price
+                  </h2>
 
-                <p className="mt-1 text-[10px] font-bold uppercase tracking-[0.08em] text-slate-400">
-                  Request Master approval for a transaction-specific price below
-                  the vehicle's Least Selling Price.
-                </p>
-              </div>
+                  <p className="mt-1 text-[10px] font-bold uppercase tracking-[0.08em] text-slate-400">
+                    Request Master approval for a transaction-specific price
+                    below the vehicle's Least Selling Price.
+                  </p>
+                </div>
 
-              <div className="p-5 space-y-5">
-                {loadingSpecialPrices ? (
-                  <div className="text-sm text-gray-500">
-                    Loading special price requests...
-                  </div>
-                ) : usableSpecialPriceRequests.length > 0 ? (
-                  <>
-                    <div>
-                      <label className="mb-1.5 block text-[11px] font-mono uppercase tracking-[0.08em] text-slate-500">
-                        Approved Special Price
-                      </label>
+                <div className="p-5 space-y-5">
+                  {loadingSpecialPrices ? (
+                    <div className="text-sm text-gray-500">
+                      Loading special price requests...
+                    </div>
+                  ) : usableSpecialPriceRequests.length > 0 ? (
+                    <>
+                      <div>
+                        <label className="mb-1.5 block text-[11px] font-mono uppercase tracking-[0.08em] text-slate-500">
+                          Approved Special Price
+                        </label>
 
-                      <select
-                        value={selectedSpecialPriceRequestId}
-                        onChange={(event) =>
-                          setSelectedSpecialPriceRequestId(event.target.value)
-                        }
-                        className="h-10 w-full rounded-xl border border-slate-200 bg-white px-3 text-sm text-slate-800 outline-none transition placeholder:text-slate-400 focus:border-amber-400 focus:ring-2 focus:ring-amber-400/15"
+                        <select
+                          value={selectedSpecialPriceRequestId}
+                          onChange={(event) =>
+                            setSelectedSpecialPriceRequestId(event.target.value)
+                          }
+                          className="h-10 w-full rounded-xl border border-slate-200 bg-white px-3 text-sm text-slate-800 outline-none transition placeholder:text-slate-400 focus:border-amber-400 focus:ring-2 focus:ring-amber-400/15"
+                        >
+                          <option value="">Use standard vehicle price</option>
+
+                          {usableSpecialPriceRequests.map((request) => (
+                            <option key={request.id} value={request.id}>
+                              Request #{request.id} — AED{" "}
+                              {formatCurrency(request.approved_price)}
+                            </option>
+                          ))}
+                        </select>
+                      </div>
+
+                      {selectedSpecialPriceRequest && (
+                        <div className="rounded-lg border border-gray-200 bg-gray-50 p-4">
+                          <div className="grid gap-3 sm:grid-cols-3">
+                            <div>
+                              <div className="text-[10px] font-bold uppercase tracking-[0.08em] text-slate-400">
+                                Requested
+                              </div>
+                              <div className="font-mono text-sm font-bold text-slate-900">
+                                AED{" "}
+                                {formatCurrency(
+                                  selectedSpecialPriceRequest.requested_price,
+                                )}
+                              </div>
+                            </div>
+
+                            <div>
+                              <div className="text-[10px] font-bold uppercase tracking-[0.08em] text-slate-400">
+                                Approved
+                              </div>
+                              <div className="font-mono text-sm font-bold text-slate-900">
+                                AED{" "}
+                                {formatCurrency(selectedApprovedSpecialPrice)}
+                              </div>
+                            </div>
+
+                            <div>
+                              <div className="text-[10px] font-bold uppercase tracking-[0.08em] text-slate-400">
+                                Expires
+                              </div>
+                              <div className="font-mono text-sm font-bold text-slate-900">
+                                {selectedSpecialPriceRequest.expires_at
+                                  ? new Date(
+                                      selectedSpecialPriceRequest.expires_at,
+                                    ).toLocaleString()
+                                  : "-"}
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+                      )}
+                    </>
+                  ) : (
+                    <div className="rounded-lg border border-gray-200 bg-gray-50 p-4 text-sm text-gray-500">
+                      No approved special price is available for this vehicle.
+                    </div>
+                  )}
+
+                  {selectedCar && (
+                    <div className="border-t border-gray-200 pt-5">
+                      <h3 className="text-sm font-semibold text-gray-900">
+                        Enquire Master for Special Price
+                      </h3>
+
+                      <p className="mt-1 text-[10px] font-bold uppercase tracking-[0.08em] text-slate-400">
+                        This request is for this vehicle only and does not
+                        change its inventory asking price.
+                      </p>
+
+                      <div className="mt-4 grid gap-4 md:grid-cols-2">
+                        <div>
+                          <label className="mb-1.5 block text-[11px] font-mono uppercase tracking-[0.08em] text-slate-500">
+                            Current Asked Price
+                          </label>
+
+                          <div className="rounded-lg border border-gray-200 bg-gray-50 px-3 py-2.5 text-sm font-medium text-gray-900">
+                            AED {formatCurrency(selectedCar.asking_price)}
+                          </div>
+                        </div>
+
+                        <div>
+                          <label className="mb-1.5 block text-[11px] font-mono uppercase tracking-[0.08em] text-slate-500">
+                            Least Selling Price
+                          </label>
+
+                          <div className="rounded-lg border border-gray-200 bg-gray-50 px-3 py-2.5 text-sm font-medium text-gray-900">
+                            AED{" "}
+                            {formatCurrency(selectedCar.least_selling_price)}
+                          </div>
+                        </div>
+                      </div>
+
+                      <div className="mt-4">
+                        <label className="mb-1.5 block text-[11px] font-mono uppercase tracking-[0.08em] text-slate-500">
+                          Requested Price
+                        </label>
+
+                        <input
+                          type="number"
+                          min="0"
+                          step="0.01"
+                          value={specialPriceRequested}
+                          onChange={(event) =>
+                            setSpecialPriceRequested(event.target.value)
+                          }
+                          placeholder="Enter requested price"
+                          className="w-full rounded-2xl border border-dashed border-slate-300 bg-slate-50 p-4 text-sm text-slate-500"
+                        />
+                      </div>
+
+                      <button
+                        type="button"
+                        onClick={handleSpecialPriceRequest}
+                        disabled={requestingSpecialPrice || !selectedCarId}
+                        className="mt-4 rounded-xl bg-amber-500 px-4 py-2.5 text-sm font-bold text-slate-950 transition hover:bg-amber-400 disabled:cursor-not-allowed disabled:opacity-50"
                       >
-                        <option value="">Use standard vehicle price</option>
-
-                        {usableSpecialPriceRequests.map((request) => (
-                          <option key={request.id} value={request.id}>
-                            Request #{request.id} — AED{" "}
-                            {formatCurrency(request.approved_price)}
-                          </option>
-                        ))}
-                      </select>
+                        {requestingSpecialPrice
+                          ? "Sending..."
+                          : "Enquire Master"}
+                      </button>
                     </div>
-
-                    {selectedSpecialPriceRequest && (
-                      <div className="rounded-lg border border-gray-200 bg-gray-50 p-4">
-                        <div className="grid gap-3 sm:grid-cols-3">
-                          <div>
-                            <div className="text-[10px] font-bold uppercase tracking-[0.08em] text-slate-400">
-                              Requested
-                            </div>
-                            <div className="font-mono text-sm font-bold text-slate-900">
-                              AED{" "}
-                              {formatCurrency(
-                                selectedSpecialPriceRequest.requested_price,
-                              )}
-                            </div>
-                          </div>
-
-                          <div>
-                            <div className="text-[10px] font-bold uppercase tracking-[0.08em] text-slate-400">
-                              Approved
-                            </div>
-                            <div className="font-mono text-sm font-bold text-slate-900">
-                              AED {formatCurrency(selectedApprovedSpecialPrice)}
-                            </div>
-                          </div>
-
-                          <div>
-                            <div className="text-[10px] font-bold uppercase tracking-[0.08em] text-slate-400">
-                              Expires
-                            </div>
-                            <div className="font-mono text-sm font-bold text-slate-900">
-                              {selectedSpecialPriceRequest.expires_at
-                                ? new Date(
-                                    selectedSpecialPriceRequest.expires_at,
-                                  ).toLocaleString()
-                                : "-"}
-                            </div>
-                          </div>
-                        </div>
-                      </div>
-                    )}
-                  </>
-                ) : (
-                  <div className="rounded-lg border border-gray-200 bg-gray-50 p-4 text-sm text-gray-500">
-                    No approved special price is available for this vehicle.
-                  </div>
-                )}
-
-                {selectedCar && (
-                  <div className="border-t border-gray-200 pt-5">
-                    <h3 className="text-sm font-semibold text-gray-900">
-                      Enquire Master for Special Price
-                    </h3>
-
-                    <p className="mt-1 text-[10px] font-bold uppercase tracking-[0.08em] text-slate-400">
-                      This request is for this vehicle only and does not change
-                      its inventory asking price.
-                    </p>
-
-                    <div className="mt-4 grid gap-4 md:grid-cols-2">
-                      <div>
-                        <label className="mb-1.5 block text-[11px] font-mono uppercase tracking-[0.08em] text-slate-500">
-                          Current Asked Price
-                        </label>
-
-                        <div className="rounded-lg border border-gray-200 bg-gray-50 px-3 py-2.5 text-sm font-medium text-gray-900">
-                          AED {formatCurrency(selectedCar.asking_price)}
-                        </div>
-                      </div>
-
-                      <div>
-                        <label className="mb-1.5 block text-[11px] font-mono uppercase tracking-[0.08em] text-slate-500">
-                          Least Selling Price
-                        </label>
-
-                        <div className="rounded-lg border border-gray-200 bg-gray-50 px-3 py-2.5 text-sm font-medium text-gray-900">
-                          AED {formatCurrency(selectedCar.least_selling_price)}
-                        </div>
-                      </div>
-                    </div>
-
-                    <div className="mt-4">
-                      <label className="mb-1.5 block text-[11px] font-mono uppercase tracking-[0.08em] text-slate-500">
-                        Requested Price
-                      </label>
-
-                      <input
-                        type="number"
-                        min="0"
-                        step="0.01"
-                        value={specialPriceRequested}
-                        onChange={(event) =>
-                          setSpecialPriceRequested(event.target.value)
-                        }
-                        placeholder="Enter requested price"
-                        className="w-full rounded-2xl border border-dashed border-slate-300 bg-slate-50 p-4 text-sm text-slate-500"
-                      />
-                    </div>
-
-                    <button
-                      type="button"
-                      onClick={handleSpecialPriceRequest}
-                      disabled={requestingSpecialPrice || !selectedCarId}
-                      className="mt-4 rounded-xl bg-amber-500 px-4 py-2.5 text-sm font-bold text-slate-950 transition hover:bg-amber-400 disabled:cursor-not-allowed disabled:opacity-50"
-                    >
-                      {requestingSpecialPrice ? "Sending..." : "Enquire Master"}
-                    </button>
-                  </div>
-                )}
-              </div>
-            </section>
+                  )}
+                </div>
+              </section>
+            )}
 
             {/* Quote Expenses */}
             <section className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-[0_2px_8px_rgba(15,23,42,0.04)]">

@@ -413,7 +413,7 @@ class EmiExpenseSerializer(
             "amount",
             "created_at",
             "updated_at",
-            
+
         ]
         read_only_fields = [
             "id",
@@ -993,12 +993,12 @@ class EmiSheetSerializer(
             "created_at",
             "updated_at",
 
-            
+
         ]
 
         read_only_fields = fields
-        
-        
+
+
 # =========================================================
 # BANK LOAN RESPONSE
 # =========================================================
@@ -1011,6 +1011,7 @@ class BankLoanSerializer(
     )
 
     agent_name = serializers.SerializerMethodField()
+    finance_receipt_created = serializers.SerializerMethodField()
 
     class Meta:
         model = BankLoan
@@ -1052,8 +1053,9 @@ class BankLoanSerializer(
             "approved_finance",
             "selling_price",
             "evaluation",
-            
-            
+            "finance_receipt_created",
+
+
             "application_number",
             "bank_reference",
             "relationship_manager",
@@ -1089,8 +1091,21 @@ class BankLoanSerializer(
             if part
         ).strip()
 
+    def get_finance_receipt_created(self, obj):
+        from finance.models import CashReceipt
+
+        if not obj.quote_id:
+            return False
+
+        return CashReceipt.objects.filter(
+            quote_id=obj.quote_id,
+            direction=CashReceipt.Direction.CUSTOMER_PAYMENT,
+            category=CashReceipt.Category.OTHER,
+            amount=obj.approved_finance,
+        ).exists()
+
         return full_name or obj.agent.email or obj.agent.username
-    
+
 # =========================================================
 # BANK LOAN CREATE
 # =========================================================
@@ -1110,7 +1125,7 @@ class BankLoanCreateSerializer(
         required=False,
         default=BankLoan.Priority.MEDIUM,
     )
-    
+
 # =========================================================
 # BANK LOAN STATUS UPDATE
 # =========================================================
@@ -1121,7 +1136,7 @@ class BankLoanStatusUpdateSerializer(
     status = serializers.ChoiceField(
         choices=BankLoan.Status.choices,
     )
-    
+
 # =========================================================
 # BANK LOAN FINANCE UPDATE
 # =========================================================
@@ -1151,8 +1166,8 @@ class BankLoanFinanceUpdateSerializer(
             )
 
         return attrs
-    
-    
+
+
 # =========================================================
 # BANK LOAN PRIORITY UPDATE
 # =========================================================
@@ -1163,7 +1178,7 @@ class BankLoanPriorityUpdateSerializer(
     priority = serializers.ChoiceField(
         choices=BankLoan.Priority.choices,
     )
-    
+
 # =========================================================
 # BANK LOAN FOLLOW-UP
 # =========================================================
@@ -1212,7 +1227,7 @@ class BankLoanFollowUpSerializer(
             or getattr(obj.created_by, "email", None)
             or getattr(obj.created_by, "username", None)
         )
-        
+
 # =========================================================
 # BANK LOAN FOLLOW-UP CREATE
 # =========================================================
@@ -1237,13 +1252,13 @@ class BankLoanFollowUpCreateSerializer(
             )
 
         return value
-    
-    
+
+
 class BankLoanApplicationStatusUpdateSerializer(serializers.Serializer):
     application_status = serializers.ChoiceField(
         choices=BankLoan.ApplicationStatus.choices
     )
-    
+
 class BankLoanApplicationInfoUpdateSerializer(
     serializers.ModelSerializer
 ):
@@ -1281,7 +1296,7 @@ class BankLoanApplicationInfoUpdateSerializer(
             )
 
         return attrs
-    
+
 # =========================================================
 # CASH DEAL RESPONSE
 # =========================================================
@@ -1352,7 +1367,7 @@ class CashDealSerializer(
         ).strip()
 
         return full_name or obj.agent.email
-        
+
 # =========================================================
 # CASH DEAL CREATE
 # =========================================================
@@ -1361,8 +1376,8 @@ class CashDealCreateSerializer(
     serializers.Serializer
 ):
     quote_id = serializers.IntegerField()
-    
-    
+
+
 # =========================================================
 # CASH DEAL UPDATE
 # =========================================================
@@ -1390,8 +1405,8 @@ class CashDealUpdateSerializer(
             )
 
         return attrs
-    
-    
+
+
 # =========================================================
 # CASH RECEIPT RESPONSE
 # =========================================================
@@ -1426,7 +1441,7 @@ class CashReceiptSerializer(
         read_only=True,
         allow_null=True,
     )
-    
+
     is_reversal = serializers.SerializerMethodField()
     reversed_receipt_id = serializers.SerializerMethodField()
 
@@ -1525,10 +1540,10 @@ class CashReceiptSerializer(
             "source",
             "created_by",
             "created_by_name",
-            
+
             "is_reversal",
             "reversed_receipt_id",
-            
+
 
             # Dates
             "created_at",
@@ -1565,7 +1580,7 @@ class CashReceiptSerializer(
             or obj.created_by.email
             or obj.created_by.phone
         )
-        
+
     def get_is_reversal(self, obj):
         return obj.reversal_of_id is not None
 
@@ -1654,7 +1669,7 @@ class CashReceiptCreateSerializer(
         required=False,
         allow_null=True,
     )
-    
+
     quote_expense_id = serializers.IntegerField(
         required=False,
         allow_null=True,
@@ -1706,7 +1721,7 @@ class CashReceiptCreateSerializer(
 
     def validate_reference(self, value):
         return value.strip()
-    
+
     def validate_category(self, value):
         from .services import validate_cash_receipt_category
 
@@ -1762,8 +1777,8 @@ class CashReceiptUpdateSerializer(
             )
 
         return attrs
-    
-    
+
+
 class BalanceSheetSerializer(serializers.ModelSerializer):
     customer_name = serializers.CharField(
         source="customer.customer_name",
@@ -1845,7 +1860,7 @@ class BalanceSheetSerializer(serializers.ModelSerializer):
             "vehicle_year",
             "vehicle_colour",
             "vehicle_chassis_number",
-            
+
             "selling_price",
             "evaluation",
 
@@ -1866,7 +1881,7 @@ class BalanceSheetSerializer(serializers.ModelSerializer):
             "balance_status",
 
             "transactions",
-            
+
             "master_overrides",
 
             "created_by",
@@ -2233,7 +2248,7 @@ class BalanceSheetSerializer(serializers.ModelSerializer):
             or obj.created_by.email
             or obj.created_by.phone
         )
-        
+
     def get_selling_price(self, obj):
         return getattr(
             obj.quote,
@@ -2385,7 +2400,7 @@ class BalanceSheetSerializer(serializers.ModelSerializer):
             receipts,
             many=True,
         ).data
-        
+
     def to_representation(self, instance):
         data = super().to_representation(instance)
 
@@ -2423,7 +2438,7 @@ class BalanceSheetListSerializer(
             ]
 
             read_only_fields = fields
-    
+
 class BalanceSheetCreateSerializer(serializers.Serializer):
     customer_id = serializers.IntegerField(
         required=True,
@@ -2432,7 +2447,7 @@ class BalanceSheetCreateSerializer(serializers.Serializer):
     quote_id = serializers.IntegerField(
         required=True,
     )
-        
+
 class BalanceSheetMasterUpdateSerializer(
     serializers.Serializer
 ):

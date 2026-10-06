@@ -83,6 +83,7 @@ function BankLoanDetail() {
 
   const [requestedFinance, setRequestedFinance] = useState("");
   const [approvedFinance, setApprovedFinance] = useState("");
+  const financeReceiptCreated = loan?.finance_receipt_created === true;
 
   const [applicationNumber, setApplicationNumber] = useState("");
   const [bankReference, setBankReference] = useState("");
@@ -181,6 +182,13 @@ function BankLoanDetail() {
   }
 
   async function saveFinance() {
+    if (financeReceiptCreated) {
+      toast.error(
+        "Finance cannot be edited because the approved finance Cash Receipt has already been created.",
+      );
+      return;
+    }
+
     try {
       setSaving(true);
 
@@ -208,6 +216,7 @@ function BankLoanDetail() {
       if (savedStatus === "approved" && isNewApprovedAmount) {
         const params = new URLSearchParams({
           customer_id: String(updatedLoan?.customer ?? loan?.customer ?? ""),
+          car_id: String(updatedLoan?.car ?? loan?.car ?? ""),
           quote_id: String(updatedLoan?.quote ?? loan?.quote ?? ""),
           amount: String(savedApprovedFinance),
           direction: "customer_payment",
@@ -582,6 +591,7 @@ function BankLoanDetail() {
                   type="number"
                   value={requestedFinance}
                   onChange={(event) => setRequestedFinance(event.target.value)}
+                  disabled={financeReceiptCreated}
                   className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm"
                 />
               </div>
@@ -595,18 +605,12 @@ function BankLoanDetail() {
                   type="number"
                   value={approvedFinance}
                   onChange={(event) => setApprovedFinance(event.target.value)}
+                  disabled={financeReceiptCreated}
                   className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm"
                 />
               </div>
 
               <div>
-                <p className="text-xs font-medium uppercase text-gray-500">
-                  Selling Price
-                </p>
-                <p className="mt-1 text-sm font-semibold text-gray-900">
-                  {formatCurrency(loan.selling_price)}
-                </p>
-
                 <p className="mt-3 text-xs font-medium uppercase text-gray-500">
                   Evaluation
                 </p>
@@ -618,7 +622,7 @@ function BankLoanDetail() {
 
             <button
               type="button"
-              disabled={saving}
+              disabled={saving || financeReceiptCreated}
               onClick={saveFinance}
               className="mt-4 rounded-md bg-gray-900 px-4 py-2 text-sm font-medium text-white disabled:opacity-50"
             >

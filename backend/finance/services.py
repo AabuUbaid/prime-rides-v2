@@ -1456,7 +1456,7 @@ def calculate_emi(
     # emi_principal is retained as the historical
     # principal used by the existing model.
     emi_principal = finance_amount
-    
+
     # -----------------------------------------------------
     # Flat-rate interest
     # -----------------------------------------------------
@@ -2627,7 +2627,7 @@ def resolve_selected_fixed_expense(
         "preset": preset,
         "amount": amount,
     }
-    
+
 # =========================================================
 # BANK LOAN SERVICES
 # =========================================================
@@ -2665,7 +2665,7 @@ def validate_bank_loan_status_transition(
             f"Cannot change Bank Loan status from "
             f"{current_status} to {new_status}."
         )
-        
+
 def validate_quote_for_bank_loan(
     *,
     quote,
@@ -2691,7 +2691,7 @@ def validate_quote_for_bank_loan(
         raise DjangoValidationError(
             "The Quote must have an associated Customer."
         )
-        
+
 def validate_bank_for_new_loan(
     *,
     bank_id,
@@ -2825,8 +2825,8 @@ def create_bank_loan_from_quote(
 
     if requested_finance is None:
         requested_finance = emi_sheet.finance_amount
-        
-        
+
+
     if priority is None:
         priority = BankLoan.Priority.MEDIUM
     # -----------------------------------------------------
@@ -2873,7 +2873,7 @@ def create_bank_loan_from_quote(
         requested_finance=requested_finance,
 
         approved_finance=None,
-        
+
         selling_price=quote.price,
         evaluation=(
             quote.emi_sheet.car_value_evaluation
@@ -2927,6 +2927,20 @@ def update_bank_loan_finance(
     requested_finance=None,
     approved_finance=None,
 ):
+    from finance.models import CashReceipt
+
+    finance_receipt_exists = CashReceipt.objects.filter(
+        quote_id=bank_loan.quote_id,
+        direction=CashReceipt.Direction.CUSTOMER_PAYMENT,
+        category=CashReceipt.Category.OTHER,
+        amount=bank_loan.approved_finance,
+    ).exists()
+
+    if finance_receipt_exists:
+        raise DjangoValidationError(
+            "Finance cannot be edited because the approved finance Cash Receipt has already been created."
+        )
+
     effective_requested = bank_loan.requested_finance
     effective_approved = bank_loan.approved_finance
 
@@ -3058,7 +3072,7 @@ def create_bank_loan_with_new_bank(
 
         selling_price=bank_loan.selling_price,
         evaluation=bank_loan.evaluation,
-        
+
         requested_finance=bank_loan.requested_finance,
         approved_finance=None,
 
@@ -3072,7 +3086,7 @@ def create_bank_loan_with_new_bank(
         ),
 
         emi_sheet=bank_loan.emi_sheet,
-        
+
         # New bank = new application
         application_number="",
         bank_reference="",
@@ -3470,7 +3484,26 @@ def validate_cash_receipt_transaction(
     # -----------------------------------------------------
 
     if car is not None:
-        if quote.car_id != car.id:
+        expected_car_id = quote.car_id
+
+        if (
+            expected_car_id is None
+            and quote.payment_method == Quote.PaymentMethod.FINANCE
+        ):
+            bank_loan = (
+                BankLoan.objects
+                .filter(
+                    quote=quote,
+                    status=BankLoan.Status.APPROVED,
+                )
+                .order_by("-updated_at", "-id")
+                .first()
+            )
+
+            if bank_loan is not None:
+                expected_car_id = bank_loan.car_id
+
+        if expected_car_id != car.id:
             raise ValidationError(
                 {
                     "car":
@@ -3617,7 +3650,7 @@ def sync_cash_deal_from_receipts(*, quote):
     return update_cash_deal_financials(
         cash_deal=cash_deal,
         advance_amount=total_received,
-    )   
+    )
 # =========================================================
 # CREATE CASH RECEIPT
 # =========================================================
@@ -3662,9 +3695,6 @@ def create_cash_receipt(
 # Vehicle default
 # -----------------------------------------------------
 
-    if car is None:
-        car = quote.car
-
     if (
         car is None
         and quote.payment_method == Quote.PaymentMethod.FINANCE
@@ -3684,11 +3714,12 @@ def create_cash_receipt(
             car = bank_loan.car
 
     if car is None:
-        emi_sheet = getattr(quote, "emi_sheet", None)
+        car = quote.car
 
+    if car is None:
+        emi_sheet = getattr(quote, "emi_sheet", None)
         if emi_sheet is not None:
             car = emi_sheet.car
-
     # -----------------------------------------------------
     # Validate
     # -----------------------------------------------------
@@ -3711,7 +3742,7 @@ def create_cash_receipt(
 
     receipt_number = generate_cash_receipt_number()
     category = validate_cash_receipt_category(category)
-    
+
     if quote_expense and emi_expense:
         raise ValidationError(
             "Only one expense context can be linked to a cash receipt."
@@ -4010,7 +4041,7 @@ def create_balance_sheet(
         car=car,
         created_by=created_by,
     )
-    
+
 @transaction.atomic
 def update_balance_sheet_as_master(
     *,

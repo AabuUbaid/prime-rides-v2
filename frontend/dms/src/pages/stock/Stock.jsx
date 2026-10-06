@@ -683,7 +683,13 @@ function Stock() {
       }
     } catch (error) {
       console.error("Bulk vehicle deletion failed:", error);
-      alert("Failed to delete selected vehicles.");
+
+      const backendMessage =
+        error?.cause?.message ||
+        error?.message ||
+        "Failed to delete selected vehicles.";
+
+      alert(backendMessage);
     }
   }
 

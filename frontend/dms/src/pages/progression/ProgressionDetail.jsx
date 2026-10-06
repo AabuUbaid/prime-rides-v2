@@ -4,6 +4,7 @@ import { toast } from "react-toastify";
 
 import { getBalanceSheets } from "../../api/balanceSheets";
 import { getInsurances, createInsurance } from "../../api/insurance";
+import { getRtaRecords } from "../../api/rta";
 import {
   advanceProgression,
   getProgression,
@@ -156,6 +157,8 @@ export default function ProgressionDetail() {
   const [balanceLoading, setBalanceLoading] = useState(false);
   const [balanceSheet, setBalanceSheet] = useState(null);
   const [showBalanceModal, setShowBalanceModal] = useState(false);
+
+  const [saleRtaRecord, setSaleRtaRecord] = useState(null);
 
   const [registrationDocumentsLoading, setRegistrationDocumentsLoading] =
     useState(false);
@@ -617,15 +620,24 @@ export default function ProgressionDetail() {
     try {
       setBalanceLoading(true);
 
-      const response = await getBalanceSheets({
-        quote_id: p.quote,
-      });
+      const [balanceResponse, rtaResponse] = await Promise.all([
+        getBalanceSheets({
+          quote_id: p.quote,
+        }),
+        getRtaRecords({
+          quote_id: p.quote,
+          record_type: "SALE",
+        }),
+      ]);
 
-      const records = getResponseData(response);
+      const balanceRecords = getResponseData(balanceResponse);
+      const rtaRecords = getResponseData(rtaResponse);
 
-      const sheet = records[0] || null;
+      const sheet = balanceRecords[0] || null;
+      const saleRta = rtaRecords[0] || null;
 
       setBalanceSheet(sheet);
+      setSaleRtaRecord(saleRta);
       setShowBalanceModal(true);
     } catch (e) {
       toast.error(e?.message || "Unable to load the Balance Sheet.");
@@ -719,6 +731,20 @@ export default function ProgressionDetail() {
         p.quote,
       )}?progression_id=${encodeURIComponent(id)}`,
     );
+  }
+
+  async function markRegistrationCompleted() {
+    if (!saleRtaRecord?.id) {
+      toast.error("Sale RTA record not found.");
+      return;
+    }
+
+    const updated = await advanceStage();
+
+    if (updated) {
+      setShowBalanceModal(false);
+      toast.success("Registration completed.");
+    }
   }
   /*
    * Delivery Video -> Completed
@@ -1628,23 +1654,45 @@ export default function ProgressionDetail() {
                     Open Balance Sheet
                   </button>
 
-                  <button
-                    type="button"
-                    onClick={continueToRtaSale}
-                    disabled={
-                      balanceSheet.balance_status !== "settled" || advancing
-                    }
-                    className="w-full rounded-xl bg-gray-900 px-4 py-3 text-left text-white disabled:cursor-not-allowed disabled:opacity-40"
-                  >
-                    <span className="block text-sm font-semibold">
-                      Continue to RTA Sale
-                    </span>
+                  {saleRtaRecord ? (
+                    <button
+                      type="button"
+                      onClick={markRegistrationCompleted}
+                      disabled={
+                        balanceSheet.balance_status !== "settled" || advancing
+                      }
+                      className="w-full rounded-xl bg-green-700 px-4 py-3 text-left text-white disabled:cursor-not-allowed disabled:opacity-40"
+                    >
+                      <span className="block text-sm font-semibold">
+                        {advancing
+                          ? "Marking Registration Completed..."
+                          : "Mark Registration Completed"}
+                      </span>
 
-                    <span className="mt-1 block text-xs text-gray-300">
-                      Open the Sale RTA form with the transaction details
-                      pre-filled.
-                    </span>
-                  </button>
+                      <span className="mt-1 block text-xs text-green-100">
+                        Sale RTA already exists. Complete the Registration stage
+                        for this progression.
+                      </span>
+                    </button>
+                  ) : (
+                    <button
+                      type="button"
+                      onClick={continueToRtaSale}
+                      disabled={
+                        balanceSheet.balance_status !== "settled" || advancing
+                      }
+                      className="w-full rounded-xl bg-gray-900 px-4 py-3 text-left text-white disabled:cursor-not-allowed disabled:opacity-40"
+                    >
+                      <span className="block text-sm font-semibold">
+                        Continue to RTA Sale
+                      </span>
+
+                      <span className="mt-1 block text-xs text-gray-300">
+                        Open the Sale RTA form with the transaction details
+                        pre-filled.
+                      </span>
+                    </button>
+                  )}
                 </>
               )}
             </div>

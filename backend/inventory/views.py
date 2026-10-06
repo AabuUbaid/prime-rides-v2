@@ -352,9 +352,22 @@ class CarDetailAPIView(APIView):
             car_id,
         )
 
-        InventoryService.delete_car(
-            car,
-        )
+        try:
+            InventoryService.delete_car(
+                car,
+            )
+        except ProtectedError:
+            return Response(
+                {
+                    "success": False,
+                    "message": (
+                        "Vehicle deletion was blocked because "
+                        "the vehicle is referenced by existing "
+                        "business records."
+                    ),
+                },
+                status=status.HTTP_409_CONFLICT,
+            )
 
         return Response(
             {
@@ -1029,7 +1042,7 @@ class BulkImageDeleteAPIView(APIView):
 
 class BulkVehicleDeleteAPIView(APIView):
 
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsAuthenticated, IsMaster]
 
     def delete(
         self,
@@ -1062,9 +1075,22 @@ class BulkVehicleDeleteAPIView(APIView):
                 }
             )
 
-        deleted = InventoryService.bulk_delete_vehicles(
-            cars,
-        )
+        try:
+            deleted = InventoryService.bulk_delete_vehicles(
+                cars,
+            )
+        except ProtectedError:
+            return Response(
+                {
+                    "success": False,
+                    "message": (
+                        "Vehicle deletion was blocked because "
+                        "one or more selected vehicles are referenced "
+                        "by existing business records."
+                    ),
+                },
+                status=status.HTTP_409_CONFLICT,
+            )
 
         return Response(
             {

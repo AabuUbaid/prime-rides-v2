@@ -50,8 +50,21 @@ export default function UserAccess() {
       if (editing) {
         const p = { ...form };
         delete p.password;
+
+        if (p.role === "MASTER") {
+          delete p.staff_id;
+        }
+
         await updateUserAccess(editing, p);
-      } else await createUserAccess(form);
+      } else {
+        const p = { ...form };
+
+        if (p.role === "MASTER") {
+          delete p.staff_id;
+        }
+
+        await createUserAccess(p);
+      }
       toast.success(editing ? "User updated" : "User created");
       setEditing(null);
       setForm(EMPTY);

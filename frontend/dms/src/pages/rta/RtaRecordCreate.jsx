@@ -2,9 +2,10 @@ import { useEffect, useState } from "react";
 import { Link, useNavigate, useParams } from "react-router-dom";
 
 import { getQuote, getQuotes } from "../../api/quotes";
-import { getCar } from "../../api/inventory";
+import { getCar, getCars } from "../../api/inventory";
 
 import { createRtaRecord } from "../../api/rta";
+import { advanceProgression } from "../../api/progression";
 import { getBranches, getCompanies } from "../../api/company";
 
 function getResponseData(response) {
@@ -22,6 +23,8 @@ function getTodayDate() {
 export default function RtaRecordCreate() {
   const navigate = useNavigate();
   const { carId, quoteId } = useParams();
+  const searchParams = new URLSearchParams(window.location.search);
+  const progressionId = searchParams.get("progression_id");
   const purchaseRoute = Boolean(carId);
   const saleRoute = Boolean(quoteId);
   const routeLocked = purchaseRoute || saleRoute;
@@ -37,6 +40,9 @@ export default function RtaRecordCreate() {
 
   const [purchaseCar, setPurchaseCar] = useState(null);
   const [purchaseCarLoading, setPurchaseCarLoading] = useState(true);
+
+  const [purchaseVehicles, setPurchaseVehicles] = useState([]);
+  const [selectedPurchaseCarId, setSelectedPurchaseCarId] = useState("");
 
   const [companies, setCompanies] = useState([]);
   const [selectedCompanyId, setSelectedCompanyId] = useState("");
@@ -165,39 +171,75 @@ export default function RtaRecordCreate() {
   }, [recordType]);
 
   useEffect(() => {
-    if (!purchaseRoute) {
+    if (recordType !== "PURCHASE") {
+      setPurchaseVehicles([]);
+      setSelectedPurchaseCarId("");
       setPurchaseCar(null);
       setPurchaseCarLoading(false);
       return;
     }
 
-    async function loadPurchaseVehicle() {
+    let cancelled = false;
+
+    async function loadPurchaseVehicles() {
       setPurchaseCarLoading(true);
       setError("");
 
       try {
-        const response = await getCar(carId);
+        if (purchaseRoute) {
+          const response = await getCar(carId);
+          const data = getResponseData(response);
+
+          const loadedCar = data && typeof data === "object" ? data : null;
+
+          if (!cancelled) {
+            setPurchaseVehicles(loadedCar ? [loadedCar] : []);
+            setSelectedPurchaseCarId(loadedCar?.id ? String(loadedCar.id) : "");
+            setPurchaseCar(loadedCar);
+          }
+
+          return;
+        }
+
+        const response = await getCars({
+          page_size: 100,
+        });
+
         const data = getResponseData(response);
 
-        const loadedCar = data && typeof data === "object" ? data : null;
+        const vehicles = Array.isArray(data)
+          ? data
+          : Array.isArray(data?.results)
+            ? data.results
+            : Array.isArray(data?.data)
+              ? data.data
+              : [];
 
-        setPurchaseCar(loadedCar);
-
-        if (loadedCar) {
-          // Supplier is taken directly from the inventory vehicle
-          // when the Purchase RTA is submitted.
+        if (!cancelled) {
+          setPurchaseVehicles(vehicles);
+          setSelectedPurchaseCarId("");
+          setPurchaseCar(null);
         }
       } catch (e) {
-        setPurchaseCar(null);
-
-        setError(e?.message || "Unable to load the inventory vehicle.");
+        if (!cancelled) {
+          setPurchaseVehicles([]);
+          setSelectedPurchaseCarId("");
+          setPurchaseCar(null);
+          setError(e?.message || "Unable to load inventory vehicles.");
+        }
       } finally {
-        setPurchaseCarLoading(false);
+        if (!cancelled) {
+          setPurchaseCarLoading(false);
+        }
       }
     }
 
-    loadPurchaseVehicle();
-  }, [carId, purchaseRoute]);
+    loadPurchaseVehicles();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [recordType, carId, purchaseRoute]);
 
   useEffect(() => {
     if (!saleRoute) {
@@ -295,6 +337,25 @@ export default function RtaRecordCreate() {
     };
   }, [selectedCompanyId]);
 
+  function handlePurchaseVehicleChange(event) {
+    const value = event.target.value;
+
+    setSelectedPurchaseCarId(value);
+    setError("");
+
+    if (!value) {
+      setPurchaseCar(null);
+      return;
+    }
+
+    const selectedVehicle =
+      purchaseVehicles.find(
+        (vehicle) => String(vehicle.id) === String(value),
+      ) || null;
+
+    setPurchaseCar(selectedVehicle);
+  }
+
   async function handleSubmit(event) {
     event.preventDefault();
 
@@ -313,13 +374,13 @@ export default function RtaRecordCreate() {
     }
 
     if (recordType === "PURCHASE") {
-      if (!carId) {
-        setError("A purchase RTA must be linked to an inventory vehicle.");
+      if (!selectedPurchaseCarId) {
+        setError("Please select an inventory vehicle.");
         return;
       }
 
       if (!purchaseCar) {
-        setError("Unable to load the inventory vehicle.");
+        setError("Unable to load the selected inventory vehicle.");
         return;
       }
     }
@@ -357,7 +418,7 @@ export default function RtaRecordCreate() {
       };
 
       if (recordType === "PURCHASE") {
-        payload.car = carId;
+        payload.car = selectedPurchaseCarId;
       }
 
       if (recordType === "SALE") {
@@ -372,6 +433,14 @@ export default function RtaRecordCreate() {
       if (!createdRecord?.id) {
         throw new Error("The server returned an invalid RTA record response.");
       }
+
+      if (recordType === "SALE" && progressionId) {
+        await advanceProgression(progressionId);
+        navigate(`/progression/${progressionId}`);
+        return;
+      }
+
+      navigate(`/rta/${createdRecord.id}`);
 
       navigate(`/rta/${createdRecord.id}`);
     } catch (e) {
@@ -470,38 +539,33 @@ export default function RtaRecordCreate() {
                     Purchase Vehicle
                   </label>
 
-                  <div className="rounded border bg-gray-50 px-3 py-2 text-sm">
-                    {purchaseCarLoading ? (
-                      "Loading vehicle..."
-                    ) : purchaseCar ? (
-                      <div className="space-y-1">
-                        <div className="font-medium">
-                          {purchaseCar.stock_id ||
-                            purchaseCar.vehicle_stock_id ||
-                            purchaseCar.id ||
-                            "—"}
-                        </div>
-                        <div>
-                          {purchaseCar.make || purchaseCar.vehicle_make || "—"}{" "}
-                          {purchaseCar.model || purchaseCar.vehicle_model || ""}
-                          {purchaseCar.variant || purchaseCar.vehicle_variant
-                            ? ` • ${
-                                purchaseCar.variant ||
-                                purchaseCar.vehicle_variant
-                              }`
-                            : ""}
-                        </div>
-                        <div className="text-xs text-gray-500">
-                          Chassis:{" "}
-                          {purchaseCar.chassis_number ||
-                            purchaseCar.vehicle_chassis_number ||
-                            "—"}
-                        </div>
-                      </div>
-                    ) : (
-                      "Vehicle not found"
-                    )}
-                  </div>
+                  <select
+                    value={selectedPurchaseCarId}
+                    onChange={handlePurchaseVehicleChange}
+                    disabled={purchaseCarLoading || purchaseRoute}
+                    className="w-full rounded border px-3 py-2 disabled:bg-gray-100"
+                  >
+                    <option value="">
+                      {purchaseCarLoading
+                        ? "Loading inventory..."
+                        : "Select inventory vehicle"}
+                    </option>
+
+                    {purchaseVehicles.map((vehicle) => (
+                      <option key={vehicle.id} value={vehicle.id}>
+                        {vehicle.stock_id || vehicle.id}
+                        {" — "}
+                        {vehicle.make || ""} {vehicle.model || ""}
+                        {vehicle.variant ? ` • ${vehicle.variant}` : ""}
+                      </option>
+                    ))}
+                  </select>
+
+                  {!purchaseCarLoading && !purchaseVehicles.length && (
+                    <p className="mt-2 text-xs text-gray-500">
+                      No inventory vehicles are currently available.
+                    </p>
+                  )}
                 </div>
               )}
 

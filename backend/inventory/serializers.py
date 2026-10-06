@@ -418,6 +418,7 @@ class CarListSerializer(
             "vehicle_type",
             "actual_mileage",
             "service_location",
+            "chassis_number",
             "purchase_cost",
             "supplier",
             "expenses_total",

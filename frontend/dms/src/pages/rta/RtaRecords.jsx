@@ -28,7 +28,18 @@ export default function RtaRecords() {
 
       const response = await getRtaRecords();
 
-      setItems(Array.isArray(response) ? response : []);
+      const data =
+        response && Object.prototype.hasOwnProperty.call(response, "data")
+          ? response.data
+          : response;
+
+      const records = Array.isArray(data)
+        ? data
+        : Array.isArray(data?.results)
+          ? data.results
+          : [];
+
+      setItems(records);
     } catch (e) {
       setError(e?.message || "Unable to load RTA records.");
     } finally {
@@ -54,14 +65,23 @@ export default function RtaRecords() {
             </p>
           </div>
 
-          <button
-            type="button"
-            onClick={load}
-            disabled={loading}
-            className="rounded-lg border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-60"
-          >
-            {loading ? "Refreshing..." : "Refresh"}
-          </button>
+          <div className="flex flex-wrap gap-2">
+            <Link
+              to="/rta/new"
+              className="rounded-lg bg-gray-900 px-4 py-2 text-sm font-medium text-white hover:bg-gray-800"
+            >
+              + Create RTA
+            </Link>
+
+            <button
+              type="button"
+              onClick={load}
+              disabled={loading}
+              className="rounded-lg border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-60"
+            >
+              {loading ? "Refreshing..." : "Refresh"}
+            </button>
+          </div>
         </div>
 
         {error && (
