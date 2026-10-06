@@ -29,12 +29,24 @@ SECRET_KEY = config("SECRET_KEY")
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = config("DEBUG", default=True, cast=bool)
 
+SECURE_PROXY_SSL_HEADER = ("HTTP_X_FORWARDED_PROTO", "https")
+
+if not DEBUG:
+    SECURE_SSL_REDIRECT = True
+    SESSION_COOKIE_SECURE = True
+    CSRF_COOKIE_SECURE = True
+
+    SECURE_HSTS_SECONDS = 31536000
+    SECURE_HSTS_INCLUDE_SUBDOMAINS = False
+    SECURE_HSTS_PRELOAD = False
+
 ALLOWED_HOSTS = [
     "127.0.0.1",
     "localhost",
     "172.28.5.226",
     "192.168.0.148",
     "dms.primerides.ae",
+    "api.primerides.ae",
     "prime-rides-v2-r5v1.onrender.com",
     "prime-rides-v2-bak2.onrender.com",
 ]
@@ -206,6 +218,7 @@ CORS_ALLOWED_ORIGINS = [
     "http://192.168.0.180:5173",
     "http://192.168.0.179:5173",
     "https://dms.primerides.ae",
+    "https://app.primerides.ae",
     "https://prime-rides-v2-r5v1.onrender.com"
 ]
 
