@@ -1963,6 +1963,7 @@ class BalanceSheetSerializer(serializers.ModelSerializer):
             "_balance_sheet_receipt_totals",
             None,
         )
+
         if cached_totals is not None:
             return cached_totals
 
@@ -1971,46 +1972,56 @@ class BalanceSheetSerializer(serializers.ModelSerializer):
             "_balance_sheet_receipts",
             None,
         )
-        if receipts is not None:
-            totals = {
-                "received": sum(
-                    (
-                        receipt.amount
-                        for receipt in receipts
-                        if receipt.direction
-                        == CashReceipt.Direction.CUSTOMER_PAYMENT
-                    ),
-                    Decimal("0.00"),
-                ),
-                "spent": sum(
-                    (
-                        receipt.amount
-                        for receipt in receipts
-                        if receipt.direction
-                        == CashReceipt.Direction.COMPANY_ON_BEHALF
-                    ),
-                    Decimal("0.00"),
-                ),
-            }
-        else:
-            totals = CashReceipt.objects.filter(
-                quote_id=obj.quote_id,
-            ).aggregate(
-                received=Sum(
-                    "amount",
-                    filter=Q(
-                        direction=CashReceipt.Direction.CUSTOMER_PAYMENT,
-                    ),
-                ),
-                spent=Sum(
-                    "amount",
-                    filter=Q(
-                        direction=CashReceipt.Direction.COMPANY_ON_BEHALF,
-                    ),
-                ),
+
+        if receipts is None:
+            receipts = (
+                CashReceipt.objects
+                .filter(
+                    quote_id=obj.quote_id,
+                )
+                .select_related(
+                    "reversal_of",
+                )
             )
 
+        received = Decimal("0.00")
+        spent = Decimal("0.00")
+
+        for receipt in receipts:
+            amount = receipt.amount
+
+            if receipt.reversal_of_id:
+                original = receipt.reversal_of
+
+                if original.direction == (
+                    CashReceipt.Direction.CUSTOMER_PAYMENT
+                ):
+                    received -= amount
+
+                elif original.direction == (
+                    CashReceipt.Direction.COMPANY_ON_BEHALF
+                ):
+                    spent -= amount
+
+                continue
+
+            if receipt.direction == (
+                CashReceipt.Direction.CUSTOMER_PAYMENT
+            ):
+                received += amount
+
+            elif receipt.direction == (
+                CashReceipt.Direction.COMPANY_ON_BEHALF
+            ):
+                spent += amount
+
+        totals = {
+            "received": received,
+            "spent": spent,
+        }
+
         obj._balance_sheet_receipt_totals = totals
+
         return totals
 
     def _get_company_receipts(self, obj):

@@ -3633,19 +3633,34 @@ def sync_cash_deal_from_receipts(*, quote):
     if cash_deal is None:
         return None
 
-    total_received = (
+    receipts = (
         CashReceipt.objects
         .filter(
             quote_id=quote.id,
-            direction=CashReceipt.Direction.CUSTOMER_PAYMENT,
             category__in=CASH_DEAL_PAYMENT_CATEGORIES,
         )
-        .aggregate(
-            total=Sum("amount"),
+        .select_related(
+            "reversal_of",
         )
-        .get("total")
-        or ZERO
     )
+
+    total_received = ZERO
+
+    for receipt in receipts:
+        if receipt.reversal_of_id:
+            original = receipt.reversal_of
+
+            if original.direction == (
+                CashReceipt.Direction.CUSTOMER_PAYMENT
+            ):
+                total_received -= receipt.amount
+
+            continue
+
+        if receipt.direction == (
+            CashReceipt.Direction.CUSTOMER_PAYMENT
+        ):
+            total_received += receipt.amount
 
     return update_cash_deal_financials(
         cash_deal=cash_deal,
@@ -3940,6 +3955,11 @@ def reverse_cash_receipt(
             "updated_at",
         ]
     )
+
+    if receipt.quote_id:
+        sync_cash_deal_from_receipts(
+            quote=receipt.quote,
+        )
 
     return reversal
 # =========================================================

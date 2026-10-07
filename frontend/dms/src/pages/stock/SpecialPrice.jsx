@@ -9,6 +9,8 @@ import {
   getSpecialPriceRequests,
 } from "../../api/specialPrice";
 
+import { getCars } from "../../api/inventory";
+
 import Button from "../../components/ui/Button";
 import Card from "../../components/ui/Card";
 import Input from "../../components/ui/Input";
@@ -50,7 +52,11 @@ export default function SpecialPrice() {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
 
-  const [carId, setCarId] = useState("");
+  const [vehicleSearch, setVehicleSearch] = useState("");
+  const [vehicleResults, setVehicleResults] = useState([]);
+  const [selectedVehicle, setSelectedVehicle] = useState(null);
+  const [vehicleSearching, setVehicleSearching] = useState(false);
+
   const [requestedPrice, setRequestedPrice] = useState("");
 
   const [approvedPrices, setApprovedPrices] = useState({});
@@ -75,14 +81,72 @@ export default function SpecialPrice() {
   }
 
   useEffect(() => {
+    let active = true;
+
+    async function searchVehicles() {
+      const search = vehicleSearch.trim();
+
+      if (!search) {
+        setVehicleResults([]);
+        setVehicleSearching(false);
+        return;
+      }
+
+      try {
+        setVehicleSearching(true);
+
+        const response = await getCars({
+          search,
+          page: 1,
+          page_size: 20,
+        });
+
+        if (!active) {
+          return;
+        }
+
+        const body = response?.data ?? response;
+
+        const results = Array.isArray(body?.data)
+          ? body.data
+          : Array.isArray(body?.results)
+            ? body.results
+            : Array.isArray(body)
+              ? body
+              : [];
+
+        setVehicleResults(results);
+      } catch (err) {
+        if (!active) {
+          return;
+        }
+
+        console.error("Failed to search vehicles:", err);
+        setVehicleResults([]);
+      } finally {
+        if (active) {
+          setVehicleSearching(false);
+        }
+      }
+    }
+
+    const timer = window.setTimeout(searchVehicles, 300);
+
+    return () => {
+      active = false;
+      window.clearTimeout(timer);
+    };
+  }, [vehicleSearch]);
+
+  useEffect(() => {
     loadRequests();
   }, []);
 
   async function handleCreateRequest(event) {
     event.preventDefault();
 
-    if (!carId) {
-      toast.error("Car ID is required.");
+    if (!selectedVehicle?.id) {
+      toast.error("Please select a vehicle.");
       return;
     }
 
@@ -95,13 +159,15 @@ export default function SpecialPrice() {
       setSaving(true);
 
       await createSpecialPriceRequest({
-        car_id: Number(carId),
+        car_id: selectedVehicle.id,
         requested_price: requestedPrice,
       });
 
       toast.success("Special price request created.");
 
-      setCarId("");
+      setVehicleSearch("");
+      setVehicleResults([]);
+      setSelectedVehicle(null);
       setRequestedPrice("");
 
       await loadRequests();
@@ -112,6 +178,16 @@ export default function SpecialPrice() {
     } finally {
       setSaving(false);
     }
+  }
+
+  function selectVehicle(vehicle) {
+    setSelectedVehicle(vehicle);
+    setVehicleResults([]);
+    setVehicleSearch(
+      [vehicle?.stock_id, vehicle?.make, vehicle?.model, vehicle?.variant]
+        .filter(Boolean)
+        .join(" • "),
+    );
   }
 
   async function handleDecision(requestId, action) {
@@ -208,15 +284,106 @@ export default function SpecialPrice() {
             onSubmit={handleCreateRequest}
             className="grid grid-cols-1 gap-4 lg:grid-cols-[1fr_1fr_auto]"
           >
-            <Input
-              id="special-price-car-id"
-              label="Car ID"
-              type="number"
-              min="1"
-              value={carId}
-              onChange={(event) => setCarId(event.target.value)}
-              placeholder="Vehicle ID"
-            />
+            <div className="relative">
+              <Input
+                id="special-price-vehicle-search"
+                label="Vehicle"
+                type="text"
+                value={vehicleSearch}
+                onChange={(event) => {
+                  setVehicleSearch(event.target.value);
+                  setSelectedVehicle(null);
+                }}
+                placeholder="Search stock ID, make, model, chassis, engine..."
+              />
+
+              {vehicleSearching && (
+                <div className="absolute right-3 top-[38px] text-xs text-slate-400">
+                  Searching...
+                </div>
+              )}
+
+              {!selectedVehicle &&
+                !vehicleSearching &&
+                vehicleSearch.trim() &&
+                vehicleResults.length > 0 && (
+                  <div className="absolute z-50 mt-1 max-h-72 w-full overflow-y-auto rounded-xl border border-slate-200 bg-white shadow-lg">
+                    {vehicleResults.map((vehicle) => (
+                      <button
+                        key={vehicle.id}
+                        type="button"
+                        onClick={() => selectVehicle(vehicle)}
+                        className="block w-full border-b border-slate-100 px-4 py-3 text-left last:border-b-0 hover:bg-slate-50"
+                      >
+                        <div className="font-semibold text-slate-900">
+                          {vehicle.stock_id || "-"}
+                        </div>
+
+                        <div className="mt-1 text-sm text-slate-700">
+                          {[
+                            vehicle.year,
+                            vehicle.make,
+                            vehicle.model,
+                            vehicle.variant,
+                          ]
+                            .filter(Boolean)
+                            .join(" ")}
+                        </div>
+
+                        <div className="mt-1 text-xs text-slate-400">
+                          {[
+                            vehicle.colour && `Colour: ${vehicle.colour}`,
+                            vehicle.chassis_number &&
+                              `Chassis: ${vehicle.chassis_number}`,
+                            vehicle.engine_number &&
+                              `Engine: ${vehicle.engine_number}`,
+                          ]
+                            .filter(Boolean)
+                            .join(" • ")}
+                        </div>
+                      </button>
+                    ))}
+                  </div>
+                )}
+
+              {!selectedVehicle &&
+                !vehicleSearching &&
+                vehicleSearch.trim() &&
+                vehicleResults.length === 0 && (
+                  <div className="absolute z-50 mt-1 w-full rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-500 shadow-lg">
+                    No matching vehicles found.
+                  </div>
+                )}
+            </div>
+
+            {selectedVehicle && (
+              <div className="rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-3">
+                <p className="text-xs font-bold uppercase tracking-wide text-emerald-700">
+                  Selected Vehicle
+                </p>
+
+                <p className="mt-1 font-semibold text-slate-900">
+                  {selectedVehicle.stock_id || "-"}
+                </p>
+
+                <p className="text-sm text-slate-700">
+                  {[
+                    selectedVehicle.year,
+                    selectedVehicle.make,
+                    selectedVehicle.model,
+                    selectedVehicle.variant,
+                  ]
+                    .filter(Boolean)
+                    .join(" ")}
+                </p>
+
+                {selectedVehicle.chassis_number && (
+                  <p className="mt-1 text-xs text-slate-500">
+                    Chassis: {selectedVehicle.chassis_number}
+                  </p>
+                )}
+              </div>
+            )}
 
             <Input
               id="special-price-requested-price"

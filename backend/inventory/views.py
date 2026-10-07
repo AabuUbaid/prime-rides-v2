@@ -7,7 +7,7 @@ from rest_framework.parsers import (
     FormParser,
 )
 from rest_framework.exceptions import ValidationError
-from accounts.permissions import IsMaster
+from accounts.permissions import IsMaster, IsMasterOrAdmin
 from django.http import QueryDict
 from datetime import timedelta
 from django.db.models.deletion import ProtectedError
@@ -49,12 +49,14 @@ from .services import InventoryService
 
 class CarAPIView(APIView):
 
-    permission_classes = [IsAuthenticated]
-
-    parser_classes = (
-        MultiPartParser,
-        FormParser,
-    )
+    def get_permissions(self):
+        if self.request.method == "POST":
+            return [IsAuthenticated(), IsMasterOrAdmin()]
+        return [IsAuthenticated()]
+        parser_classes = (
+            MultiPartParser,
+            FormParser,
+        )
 
     def get(self, request):
 
@@ -196,7 +198,10 @@ class CarBrandListAPIView(APIView):
 
 class CarDetailAPIView(APIView):
 
-    permission_classes = [IsAuthenticated]
+    def get_permissions(self):
+        if self.request.method in {"PUT", "PATCH", "DELETE"}:
+            return [IsAuthenticated(), IsMasterOrAdmin()]
+        return [IsAuthenticated()]
 
     parser_classes = (
         MultiPartParser,
@@ -421,7 +426,7 @@ class DeleteAllInventoryCarsAPIView(APIView):
         )
 class CarImageCoverAPIView(APIView):
 
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsAuthenticated, IsMasterOrAdmin]
 
     def patch(
         self,
@@ -566,8 +571,8 @@ class CarExpenseDetailAPIView(APIView):
             }
         )
 class VehicleDocumentAPIView(APIView):
-    permission_classes = [IsAuthenticated]
-
+    permission_classes = [IsAuthenticated, IsMasterOrAdmin]
+    
     parser_classes = (
         MultiPartParser,
         FormParser,
@@ -660,8 +665,8 @@ class VehicleDocumentAPIView(APIView):
         )
 
 class VehicleDocumentDownloadAPIView(APIView):
-    permission_classes = [IsAuthenticated]
-
+    permission_classes = [IsAuthenticated, IsMasterOrAdmin]
+    
     def get(self, request, document_id):
         try:
             document = VehicleDocument.objects.select_related("car").get(
@@ -719,7 +724,7 @@ class VehicleDocumentDownloadAPIView(APIView):
         return response
 
 class VehicleDocumentDeleteAPIView(APIView):
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsAuthenticated, IsMasterOrAdmin]
 
     @staticmethod
     def _sync_legacy_possession_certificate(car):
@@ -840,7 +845,7 @@ class VehicleDocumentDeleteAPIView(APIView):
         )
         
 class VehicleDocumentArchiveAPIView(APIView):
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsAuthenticated, IsMaster]
 
     def post(self, request, document_id):
         document = get_object_or_404(
@@ -906,7 +911,7 @@ class VehicleDocumentArchiveAPIView(APIView):
 
 class CarImageAPIView(APIView):
 
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsAuthenticated, IsMasterOrAdmin]
 
     def delete(
         self,
@@ -951,7 +956,7 @@ class DashboardAPIView(APIView):
 
 class CarImageReorderAPIView(APIView):
 
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsAuthenticated, IsMasterOrAdmin]
 
     def patch(
         self,
@@ -993,7 +998,7 @@ class CarImageReorderAPIView(APIView):
 
 class BulkImageDeleteAPIView(APIView):
 
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsAuthenticated, IsMasterOrAdmin]
 
     def post(
         self,
@@ -1103,8 +1108,8 @@ class BulkVehicleDeleteAPIView(APIView):
 
 class BulkVehicleImportAPIView(APIView):
 
-    permission_classes = [IsAuthenticated]
-
+    permission_classes = [IsAuthenticated, IsMasterOrAdmin]
+    
     def post(
         self,
         request,

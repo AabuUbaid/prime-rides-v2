@@ -4,7 +4,6 @@ import { toast } from "react-toastify";
 
 import { useAuth } from "../../context/AuthContext";
 import { deleteBalanceSheet, getBalanceSheet } from "../../api/balanceSheets";
-import { getCashDeal } from "../../api/cashDeals";
 import { formatAED } from "../../utils/formatters";
 
 function formatBalanceStatus(value) {
@@ -166,7 +165,6 @@ function BalanceSheetDetail() {
   async function handleCreateCashReceipt() {
     const customerId = balanceSheet?.customer;
     const quoteId = balanceSheet?.quote;
-    const cashDealId = balanceSheet?.cash_deal_id;
 
     if (!customerId) {
       toast.error("Customer ID is missing from Balance Sheet.");
@@ -178,41 +176,26 @@ function BalanceSheetDetail() {
       return;
     }
 
-    if (!cashDealId) {
-      toast.error("Cash Deal ID is missing from Balance Sheet.");
+    const totalReceived = Number(balanceSheet?.total_received || 0);
+
+    const totalSpent = Number(balanceSheet?.total_spent || 0);
+
+    const amount = totalSpent - totalReceived;
+
+    if (amount <= 0) {
+      toast.error(
+        "There is no remaining balance available for a Cash Receipt.",
+      );
       return;
     }
 
-    try {
-      const response = await getCashDeal(cashDealId);
-
-      const cashDeal = response?.data?.data ?? response?.data ?? response;
-
-      const amount = Number(cashDeal?.balance_amount || 0);
-
-      if (amount <= 0) {
-        toast.error(
-          "There is no remaining balance available for a Cash Receipt.",
-        );
-        return;
-      }
-
-      navigate(
-        `/finance/cash-receipts/new?customer_id=${encodeURIComponent(
-          customerId,
-        )}&quote_id=${encodeURIComponent(quoteId)}&amount=${encodeURIComponent(
-          amount,
-        )}&direction=customer_payment&category=final_payment&payment_method=cash`,
-      );
-    } catch (error) {
-      console.error("Failed to load Cash Deal:", error);
-
-      toast.error(
-        error?.response?.data?.detail ||
-          error?.response?.data?.message ||
-          "Failed to load Cash Deal balance.",
-      );
-    }
+    navigate(
+      `/finance/cash-receipts/new?customer_id=${encodeURIComponent(
+        customerId,
+      )}&quote_id=${encodeURIComponent(quoteId)}&amount=${encodeURIComponent(
+        amount,
+      )}&direction=customer_payment&category=final_payment&payment_method=cash`,
+    );
   }
 
   return (

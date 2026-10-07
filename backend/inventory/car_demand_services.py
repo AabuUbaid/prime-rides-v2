@@ -48,9 +48,4 @@ class CarDemandMatchingService:
                 asking_price__lte=demand.budget,
             )
 
-        if demand.colour:
-            queryset = queryset.filter(
-                colour__icontains=demand.colour.strip(),
-            )
-
         return queryset.order_by("-created_at")

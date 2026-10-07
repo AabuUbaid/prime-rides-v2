@@ -91,6 +91,7 @@ def _balance_sheet_queryset():
     receipt_queryset = CashReceipt.objects.select_related(
         "customer",
         "created_by",
+        "reversal_of",
     ).order_by(
         "transaction_date",
         "created_at",
@@ -1837,17 +1838,23 @@ class CashReceiptListCreateView(APIView):
         page = paginator.paginate_queryset(queryset, request, view=self)
         serializer = CashReceiptSerializer(page, many=True)
 
-        total_received = (
-            queryset
-            .filter(
-                direction=CashReceipt.Direction.CUSTOMER_PAYMENT,
-            )
-            .aggregate(
-                total=Sum("amount")
-            )
-            .get("total")
-            or 0
-        )
+        total_received = Decimal("0.00")
+
+        for receipt in queryset.select_related("reversal_of"):
+            if receipt.reversal_of_id:
+                original = receipt.reversal_of
+
+                if original.direction == (
+                    CashReceipt.Direction.CUSTOMER_PAYMENT
+                ):
+                    total_received -= receipt.amount
+
+                continue
+
+            if receipt.direction == (
+                CashReceipt.Direction.CUSTOMER_PAYMENT
+            ):
+                total_received += receipt.amount
 
         response = paginator.get_paginated_response(serializer.data)
         response.data["summary"] = {

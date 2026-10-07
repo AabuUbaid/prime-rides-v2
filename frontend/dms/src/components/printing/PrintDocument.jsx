@@ -9,62 +9,103 @@ export default function PrintDocument({
   children,
 }) {
   const companyName = company?.legal_entity_name || "Company Name";
-
   const companyAddress = company?.showroom_address || "-";
-
   const companyMobile = company?.main_contact_mobile || "-";
 
   return (
-    <div className="print-area">
-      <div className="print-document">
-        {showHeader && (
-          <header className="print-header">
-            <div>
-              <div className="print-company">{companyName}</div>
+    <>
+      <style>
+        {`
+          @media print {
+  html,
+  body {
+    margin: 0 !important;
+    padding: 0 !important;
+    width: 100% !important;
+    min-height: 0 !important;
+    background: #ffffff !important;
+  }
 
-              {documentType ? (
-                <div className="print-document-title">{documentType}</div>
-              ) : null}
+  body * {
+    visibility: hidden !important;
+  }
 
-              <div className="print-company-details">
-                {companyAddress}
-                <br />
-                {companyMobile}
-              </div>
-            </div>
+  .print-area,
+  .print-area * {
+    visibility: visible !important;
+  }
 
-            <div className="print-meta">
+  .print-area {
+    position: absolute !important;
+    left: 0 !important;
+    top: 0 !important;
+    width: 100% !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    background: #ffffff !important;
+  }
+
+  .print-document {
+    width: 100% !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    background: #ffffff !important;
+  }
+}
+        `}
+      </style>
+
+      <div className="print-area">
+        <div className="print-document">
+          {showHeader && (
+            <header className="print-header">
               <div>
-                <strong>No:</strong> {documentNumber || "-"}
-              </div>
+                <div className="print-company">{companyName}</div>
 
-              <div>
-                <strong>Date:</strong> {date || "-"}
-              </div>
+                {documentType ? (
+                  <div className="print-document-title">{documentType}</div>
+                ) : null}
 
-              {status ? (
-                <div>
-                  <strong>Status:</strong> {status}
+                <div className="print-company-details">
+                  {companyAddress}
+                  <br />
+                  {companyMobile}
                 </div>
-              ) : null}
-            </div>
-          </header>
-        )}
+              </div>
 
-        <main>{children}</main>
+              <div className="print-meta">
+                <div>
+                  <strong>No:</strong> {documentNumber || "-"}
+                </div>
 
-        {showFooter && (
-          <footer className="print-footer">
-            <div>
-              <strong>{companyName}</strong>
-            </div>
+                <div>
+                  <strong>Date:</strong> {date || "-"}
+                </div>
 
-            <div>{companyAddress}</div>
+                {status ? (
+                  <div>
+                    <strong>Status:</strong> {status}
+                  </div>
+                ) : null}
+              </div>
+            </header>
+          )}
 
-            <div>Authorized Document</div>
-          </footer>
-        )}
+          <main>{children}</main>
+
+          {showFooter && (
+            <footer className="print-footer">
+              <div>
+                <strong>{companyName}</strong>
+              </div>
+
+              <div>{companyAddress}</div>
+
+              <div>Authorized Document</div>
+            </footer>
+          )}
+        </div>
       </div>
-    </div>
+    </>
   );
 }

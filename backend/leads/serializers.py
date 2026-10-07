@@ -86,7 +86,6 @@ class LeadSerializer(serializers.ModelSerializer):
             "brand",
             "mode_of_payment",
             "salary",
-            "date_of_birth",
             "lead_from",
             "last_activity_at",
             "is_high_priority",
@@ -126,7 +125,6 @@ class LeadCreateSerializer(serializers.ModelSerializer):
             "brand",
             "mode_of_payment",
             "salary",
-            "date_of_birth",
             "lead_from",
         )
         read_only_fields = (
@@ -201,7 +199,6 @@ class LeadUpdateSerializer(serializers.ModelSerializer):
             "brand",
             "mode_of_payment",
             "salary",
-            "date_of_birth",
             "lead_from",
         )
 

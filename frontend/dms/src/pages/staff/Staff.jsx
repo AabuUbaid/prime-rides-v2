@@ -121,7 +121,7 @@ export default function Staff() {
                   value={form[k]}
                   onChange={(e) => setForm({ ...form, [k]: e.target.value })}
                   type={
-                    k.includes("date")
+                    k === "join_date" || k === "visa_expiry"
                       ? "date"
                       : k === "base_salary" || k === "leave_balance"
                         ? "number"

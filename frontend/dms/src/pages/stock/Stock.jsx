@@ -457,23 +457,150 @@ function Stock() {
       return;
     }
 
-    const shareText = buildShareText(car, selectedShareOutputFields);
-
     try {
-      if (navigator.share) {
+      const response = await getCar(car.id);
+
+      const detailedCar = response?.data || response?.car || response;
+
+      const vehicleForShare =
+        detailedCar && typeof detailedCar === "object"
+          ? { ...car, ...detailedCar }
+          : car;
+
+      const shareText = buildShareText(
+        vehicleForShare,
+        selectedShareOutputFields,
+      );
+
+      const imageUrls = getShareImages(vehicleForShare);
+
+      if (!imageUrls.length) {
+        if (navigator.share) {
+          await navigator.share({
+            title: `${vehicleForShare.make || ""} ${
+              vehicleForShare.model || ""
+            }`.trim(),
+            text: shareText,
+          });
+          return;
+        }
+
+        await navigator.clipboard.writeText(shareText);
+        window.alert("Vehicle details copied to clipboard.");
+        return;
+      }
+
+      const imageFiles = [];
+
+      for (let index = 0; index < imageUrls.length; index += 1) {
+        const imageUrl = imageUrls[index];
+
+        try {
+          const imageResponse = await fetch(imageUrl);
+
+          if (!imageResponse.ok) {
+            console.warn(
+              `Unable to fetch vehicle image ${index + 1}:`,
+              imageResponse.status,
+            );
+            continue;
+          }
+
+          const blob = await imageResponse.blob();
+
+          const mimeType = blob.type || "image/jpeg";
+
+          const extension =
+            mimeType === "image/png"
+              ? "png"
+              : mimeType === "image/webp"
+                ? "webp"
+                : mimeType === "image/gif"
+                  ? "gif"
+                  : "jpg";
+
+          const fileName = `${vehicleForShare.stock_id || vehicleForShare.id}-image-${String(
+            index + 1,
+          ).padStart(2, "0")}.${extension}`;
+
+          imageFiles.push(
+            new File([blob], fileName, {
+              type: mimeType,
+            }),
+          );
+        } catch (error) {
+          console.warn(`Unable to prepare vehicle image ${index + 1}:`, error);
+        }
+      }
+
+      /*
+       * Preferred path:
+       * Use native multi-file sharing when the current
+       * browser/OS actually supports it.
+       */
+      if (
+        imageFiles.length > 0 &&
+        navigator.share &&
+        navigator.canShare &&
+        navigator.canShare({ files: imageFiles })
+      ) {
+        await navigator.clipboard.writeText(shareText);
+
         await navigator.share({
-          title: `${car.make || ""} ${car.model || ""}`.trim(),
+          title: `${vehicleForShare.make || ""} ${
+            vehicleForShare.model || ""
+          }`.trim(),
           text: shareText,
+          files: imageFiles,
         });
 
         return;
       }
 
+      /*
+       * Desktop fallback:
+       * The current browser/OS cannot send multiple files
+       * through navigator.share(), so prepare everything
+       * locally for Telegram/WhatsApp/etc.
+       */
       await navigator.clipboard.writeText(shareText);
-      window.alert("Vehicle details copied to clipboard.");
+
+      let downloadedCount = 0;
+
+      for (const file of imageFiles) {
+        const downloadUrl = URL.createObjectURL(file);
+        const link = document.createElement("a");
+
+        link.href = downloadUrl;
+        link.download = file.name;
+        link.style.display = "none";
+
+        document.body.appendChild(link);
+        link.click();
+        link.remove();
+
+        URL.revokeObjectURL(downloadUrl);
+
+        downloadedCount += 1;
+
+        // Small delay helps browsers handle multiple downloads.
+        await new Promise((resolve) => setTimeout(resolve, 250));
+      }
+
+      window.alert(
+        `${downloadedCount} vehicle image${
+          downloadedCount === 1 ? "" : "s"
+        } prepared for sharing.\n\n` +
+          "Vehicle details have been copied to your clipboard.\n\n" +
+          "You can now attach all the downloaded images in Telegram.",
+      );
     } catch (error) {
       if (error?.name !== "AbortError") {
         console.error("Vehicle sharing failed:", error);
+
+        window.alert(
+          error?.message || "Unable to prepare the vehicle for sharing.",
+        );
       }
     }
   }
@@ -771,6 +898,17 @@ function Stock() {
     }
   }
 
+  function handleDownloadSampleCsv() {
+    const link = document.createElement("a");
+
+    link.href = "/prime_rides_bulk_import_correct.csv";
+    link.download = "prime_rides_bulk_import_correct.csv";
+
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  }
+
   function handleFilterChange(event) {
     const { name, value } = event.target;
 
@@ -855,7 +993,36 @@ function Stock() {
   }
 
   return (
-    <div className="mx-auto w-full max-w-[1600px] px-4 py-6 sm:px-6 lg:px-8">
+    <div
+      className={`mx-auto w-full max-w-[1600px] px-4 py-6 sm:px-6 lg:px-8 ${
+        printStockConfig ? "stock-printing" : ""
+      }`}
+    >
+      {printStockConfig && (
+        <style>
+          {`
+      @media print {
+        .stock-printing > *:not(.inventory-stock-print-wrapper) {
+          display: none !important;
+        }
+
+        .stock-printing {
+          width: 100% !important;
+          max-width: none !important;
+          margin: 0 !important;
+          padding: 0 !important;
+        }
+
+        .stock-printing .inventory-stock-print-wrapper {
+          display: block !important;
+          width: 100% !important;
+          margin: 0 !important;
+          padding: 0 !important;
+        }
+      }
+    `}
+        </style>
+      )}
       <div className="mb-6">
         <div className="flex flex-col gap-5 xl:flex-row xl:items-end xl:justify-between">
           <div>
@@ -993,7 +1160,6 @@ function Stock() {
           </Button>
         </div>
       </div>
-
       {importResult && (
         <div
           className={[
@@ -1095,7 +1261,6 @@ function Stock() {
           </div>
         </div>
       )}
-
       {isMaster && selectedCars.length > 0 && (
         <div className="mb-5 flex flex-wrap items-center gap-3 rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3 shadow-sm">
           <span className="text-sm font-medium text-slate-700">
@@ -1113,7 +1278,6 @@ function Stock() {
           </Button>
         </div>
       )}
-
       {/* Filters */}
       <div className="mb-6">
         {showFilters && (
@@ -1404,7 +1568,6 @@ function Stock() {
           </div>
         )}
       </div>
-
       {/* Inventory list */}
       <div className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
         {/* List toolbar */}
@@ -1879,16 +2042,15 @@ function Stock() {
           )}
         </div>
       </div>
-
       {/* Pagination */}
       <div className="mt-5 flex flex-col gap-4 rounded-2xl border border-slate-200 bg-white px-4 py-4 shadow-sm sm:flex-row sm:items-center sm:justify-between">
         {/* Result count */}
         <div className="text-xs text-slate-500">
           Showing
           <span className="font-medium text-gray-900">
-            {startItem}-{endItem}
+            {` ${startItem} - ${endItem} `}
           </span>
-          of <span className="font-semibold text-slate-800">{totalCount}</span>{" "}
+          of <span className="font-semibold text-slate-800">{totalCount}</span>
           vehicles
         </div>
         {/* Pagination controls */}
@@ -1955,7 +2117,6 @@ function Stock() {
           </div>
         )}
       </div>
-
       {showStockOutputModal && (
         <div className="fixed inset-0 z-50 flex items-start justify-center overflow-y-auto bg-slate-950/45 p-2 backdrop-blur-sm sm:items-center sm:p-4">
           <div className="my-2 flex max-h-[calc(100dvh-1rem)] w-full max-w-2xl flex-col overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-2xl sm:my-4 sm:max-h-[calc(100dvh-2rem)]">
@@ -2075,7 +2236,6 @@ function Stock() {
           </div>
         </div>
       )}
-
       {shareCar && (
         <div className="fixed inset-0 z-50 flex items-start justify-center overflow-y-auto bg-slate-950/45 p-3 backdrop-blur-sm sm:items-center sm:p-4">
           <div className="my-3 flex max-h-[calc(100dvh-1.5rem)] w-full max-w-2xl flex-col overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-2xl sm:my-4 sm:max-h-[calc(100dvh-2rem)]">
@@ -2250,7 +2410,7 @@ function Stock() {
                       className="sticky bottom-0 flex w-full items-center justify-center gap-2 rounded-xl bg-gray-900 px-4 py-3 text-sm font-semibold text-white shadow-lg transition hover:bg-gray-800 disabled:cursor-not-allowed disabled:opacity-50 sm:static"
                     >
                       <Share2Icon size={18} />
-                      Share Vehicle
+                      Prepare & Share Vehicle
                     </button>
                   </div>
                 </>
@@ -2259,7 +2419,6 @@ function Stock() {
           </div>
         </div>
       )}
-
       {showImportModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/45 p-4 backdrop-blur-sm">
           <div className="w-full max-w-lg rounded-lg bg-white p-6 shadow-xl">
@@ -2292,6 +2451,14 @@ function Stock() {
               className="block w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-sm"
             />
 
+            <button
+              type="button"
+              onClick={handleDownloadSampleCsv}
+              className="text-sm font-medium text-blue-600 hover:text-blue-700 hover:underline"
+            >
+              Download Sample CSV
+            </button>
+
             {selectedImportFile && (
               <p className="mt-3 text-sm text-gray-600">
                 Selected: {selectedImportFile.name}
@@ -2299,16 +2466,6 @@ function Stock() {
             )}
 
             <div className="mt-6 flex justify-end gap-3">
-              <Button
-                type="button"
-                variant="primary"
-                loading={importing}
-                onClick={handleBulkImport}
-                disabled={!selectedImportFile}
-              >
-                {importing ? "Importing..." : "Import"}
-              </Button>
-
               <Button
                 type="button"
                 variant="primary"
@@ -2327,7 +2484,6 @@ function Stock() {
           <InventoryVehiclePrintTemplate car={printCar} />
         </div>
       )}
-
       {printStockConfig && (
         <div className="inventory-stock-print-wrapper">
           <InventoryStockPrintTemplate

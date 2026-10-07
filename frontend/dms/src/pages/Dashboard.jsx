@@ -754,10 +754,14 @@ export default function Dashboard() {
     year: "numeric",
   }).format(new Date());
 
-  const currentMonthSales = quotes.filter(
-    (quote) =>
-      normalizeStatus(quote?.status) === "sold" &&
-      getMonthKey(getQuoteDate(quote)) === currentMonthKey,
+  const currentMonthSales = progressions.filter(
+    (progression) =>
+      normalizeStatus(progression?.status) === "completed" &&
+      getMonthKey(
+        progression?.completed_at ||
+          progression?.updated_at ||
+          progression?.created_at,
+      ) === currentMonthKey,
   );
 
   const currentMonthDeals = quotes.filter(
@@ -779,8 +783,7 @@ export default function Dashboard() {
   );
 
   const currentMonthSalesValue = currentMonthSales.reduce(
-    (total, quote) => total + getQuoteAmount(quote),
-
+    (total, progression) => total + numberValue(progression?.selling_price),
     0,
   );
 
@@ -808,11 +811,14 @@ export default function Dashboard() {
 
   \======================================================= */
 
-  const totalSalesValue = quotes
-
-    .filter((quote) => normalizeStatus(quote?.status) === "sold")
-
-    .reduce((total, quote) => total + getQuoteAmount(quote), 0);
+  const totalSalesValue = progressions
+    .filter(
+      (progression) => normalizeStatus(progression?.status) === "completed",
+    )
+    .reduce(
+      (total, progression) => total + numberValue(progression?.selling_price),
+      0,
+    );
 
   const totalReceipts = receipts
 
@@ -947,25 +953,22 @@ export default function Dashboard() {
   const staffPerformance = useMemo(() => {
     const map = new Map();
 
-    quotes
+    progressions
+      .filter(
+        (progression) => normalizeStatus(progression?.status) === "completed",
+      )
+      .forEach((progression) => {
+        const staffId = progression?.seller_staff_id;
 
-      .filter((quote) => normalizeStatus(quote?.status) === "sold")
+        if (!staffId) return;
 
-      .forEach((quote) => {
-        const id = getSalespersonId(quote);
-
-        if (!id) return;
-
-        const key = String(id);
+        const key = String(staffId);
 
         if (!map.has(key)) {
           map.set(key, {
             id: key,
-
-            name: getSalespersonName(quote),
-
+            name: progression?.seller_name || "Unknown Staff",
             sales: 0,
-
             value: 0,
           });
         }
@@ -973,8 +976,7 @@ export default function Dashboard() {
         const row = map.get(key);
 
         row.sales += 1;
-
-        row.value += getQuoteAmount(quote);
+        row.value += Number(progression?.selling_price || 0);
       });
 
     staff.forEach((member) => {
@@ -990,7 +992,6 @@ export default function Dashboard() {
     });
 
     return [...map.values()]
-
       .sort((a, b) => {
         if (b.sales !== a.sales) {
           return b.sales - a.sales;
@@ -998,15 +999,32 @@ export default function Dashboard() {
 
         return b.value - a.value;
       })
-
       .slice(0, 5);
-  }, [quotes, staff]);
+  }, [progressions, staff]);
 
   const maxStaffSales = Math.max(
     ...staffPerformance.map((item) => item.sales),
 
     1,
   );
+
+  const completedSales = useMemo(() => {
+    return progressions
+      .filter(
+        (progression) => normalizeStatus(progression?.status) === "completed",
+      )
+      .sort((a, b) => {
+        const dateA = new Date(
+          a?.completed_at || a?.updated_at || a?.created_at || 0,
+        ).getTime();
+
+        const dateB = new Date(
+          b?.completed_at || b?.updated_at || b?.created_at || 0,
+        ).getTime();
+
+        return dateB - dateA;
+      });
+  }, [progressions]);
 
   /* =======================================================
 
@@ -1209,6 +1227,13 @@ export default function Dashboard() {
             icon={ShieldCheck}
             accent="rose"
           />
+
+          <KPICard
+            label="Upcoming"
+            value={formatNumber(inventoryStats.upcoming)}
+            icon={Clock3}
+            accent="slate"
+          />
         </section>
 
         {/* =================================================
@@ -1313,6 +1338,12 @@ export default function Dashboard() {
                       value: inventoryStats.inHouse,
                       dot: "bg-cyan-500",
                       bg: "bg-cyan-50",
+                    },
+                    {
+                      label: "Upcoming",
+                      value: inventoryStats.upcoming,
+                      dot: "bg-slate-500",
+                      bg: "bg-slate-100",
                     },
                   ].map((item) => (
                     <div
@@ -1561,6 +1592,100 @@ export default function Dashboard() {
                 </div>
               )}
             </div>
+          </div>
+        </section>
+
+        <section className="mt-8 rounded-3xl border border-slate-200 bg-white shadow-sm">
+          <div className="flex items-center justify-between border-b border-slate-100 px-5 py-4">
+            <div>
+              <h2 className="text-sm font-black text-slate-900">
+                Sales Records
+              </h2>
+
+              <p className="mt-1 text-xs text-slate-400">
+                Recently completed vehicle sales
+              </p>
+            </div>
+
+            <Link
+              to="/progression"
+              className="text-xs font-bold text-slate-600 hover:text-slate-900"
+            >
+              View All
+            </Link>
+          </div>
+
+          <div className="overflow-x-auto">
+            <table className="min-w-full text-left">
+              <thead>
+                <tr className="border-b border-slate-100 text-[10px] font-black uppercase tracking-wider text-slate-400">
+                  <th className="px-5 py-3">Date</th>
+                  <th className="px-5 py-3">Vehicle</th>
+                  <th className="px-5 py-3">Customer</th>
+                  <th className="px-5 py-3">Salesperson</th>
+                  <th className="px-5 py-3">Payment</th>
+                  <th className="px-5 py-3 text-right">Sale Value</th>
+                </tr>
+              </thead>
+
+              <tbody>
+                {completedSales.slice(0, 5).map((sale) => (
+                  <tr
+                    key={sale.id}
+                    className="border-b border-slate-50 last:border-0"
+                  >
+                    <td className="px-5 py-4 text-xs font-medium text-slate-500">
+                      {formatDate(
+                        sale.completed_at || sale.updated_at || sale.created_at,
+                      )}
+                    </td>
+
+                    <td className="px-5 py-4">
+                      <p className="text-xs font-black text-slate-800">
+                        {sale.vehicle_stock_id || "—"}
+                      </p>
+
+                      <p className="mt-0.5 text-[11px] text-slate-400">
+                        {[sale.vehicle_make, sale.vehicle_model]
+                          .filter(Boolean)
+                          .join(" ") || "Vehicle"}
+                      </p>
+                    </td>
+
+                    <td className="px-5 py-4 text-xs font-semibold text-slate-700">
+                      {sale.customer_name || "—"}
+                    </td>
+
+                    <td className="px-5 py-4 text-xs text-slate-600">
+                      {sale.seller_name || "—"}
+                    </td>
+
+                    <td className="px-5 py-4 text-xs text-slate-500">
+                      {sale.payment_method || "—"}
+                    </td>
+
+                    <td className="px-5 py-4 text-right text-xs font-black text-slate-900">
+                      AED{" "}
+                      {Number(sale.selling_price || 0).toLocaleString("en-AE", {
+                        minimumFractionDigits: 2,
+                        maximumFractionDigits: 2,
+                      })}
+                    </td>
+                  </tr>
+                ))}
+
+                {completedSales.length === 0 && (
+                  <tr>
+                    <td
+                      colSpan={6}
+                      className="px-5 py-10 text-center text-xs text-slate-400"
+                    >
+                      No completed sales yet.
+                    </td>
+                  </tr>
+                )}
+              </tbody>
+            </table>
           </div>
         </section>
 

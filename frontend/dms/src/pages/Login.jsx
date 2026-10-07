@@ -2,6 +2,7 @@ import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
 import { toast } from "react-toastify";
+import { getApiErrorMessage } from "../utils/errorMessage";
 
 function Login() {
   const [email, setEmail] = useState("");
@@ -25,9 +26,9 @@ function Login() {
 
       navigate("/dashboard", { replace: true });
     } catch (err) {
-      setError(
-        err?.message || err?.cause?.detail || "Invalid email or password.",
-      );
+      const message = getApiErrorMessage(err, "Invalid email or password.");
+
+      setError(message);
     } finally {
       setSubmitting(false);
     }
