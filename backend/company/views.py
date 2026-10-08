@@ -229,6 +229,11 @@ class CompanyDocumentListCreateView(APIView):
         IsMaster,
     ]
 
+    def get_permissions(self):
+        if self.request.method == "GET":
+            return [IsAuthenticated()]
+        return super().get_permissions()
+
     def get_company(self):
         company = Company.objects.first()
 
@@ -282,6 +287,11 @@ class CompanyDocumentDetailView(APIView):
         IsAuthenticated,
         IsMaster,
     ]
+
+    def get_permissions(self):
+        if self.request.method == "GET":
+            return [IsAuthenticated()]
+        return super().get_permissions()
 
     def get_company(self):
         company = Company.objects.first()

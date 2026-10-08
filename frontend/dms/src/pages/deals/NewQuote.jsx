@@ -14,6 +14,8 @@ import {
   getServicePackages,
 } from "../../api/finance";
 
+import { getApiErrorMessage } from "../../utils/errorMessage";
+
 import { useAuth } from "../../context/AuthContext";
 import {
   getSpecialPriceRequests,
@@ -874,7 +876,10 @@ export default function NewQuote() {
       setSpecialPriceRequested("");
       toast.success("Special Price enquiry sent to Master.");
     } catch (err) {
-      const message = err?.message || "Unable to submit Special Price enquiry.";
+      const message = getApiErrorMessage(
+        err,
+        "Unable to submit Special Price enquiry.",
+      );
 
       setError(message);
       toast.error(message);
@@ -1109,7 +1114,7 @@ export default function NewQuote() {
         navigate("/deals");
       }
     } catch (err) {
-      const message = err?.message || "Unable to create quote.";
+      const message = getApiErrorMessage(err, "Unable to create quote.");
 
       setError(message);
       toast.error(message);

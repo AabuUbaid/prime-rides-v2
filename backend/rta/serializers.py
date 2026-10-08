@@ -219,17 +219,7 @@ class RTARecordSerializer(serializers.ModelSerializer):
 
             quote_car = getattr(quote, "car", None)
 
-            if not quote_car:
-                raise serializers.ValidationError(
-                    {
-                        "quote": (
-                            "The selected quote is not "
-                            "associated with a vehicle."
-                        ),
-                    }
-                )
-
-            if quote_car.pk != car.pk:
+            if quote_car and quote_car.pk != car.pk:
                 raise serializers.ValidationError(
                     {
                         "car": (

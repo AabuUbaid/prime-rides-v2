@@ -8,7 +8,15 @@ import {
   reverseCashReceipt,
 } from "../../api/cashReceipts";
 
+import {
+  getCompanies,
+  getCompanyDocuments,
+  downloadCompanyDocument,
+} from "../../api/company";
+
 import { formatAED } from "../../utils/formatters";
+
+import { getApiErrorMessage } from "../../utils/errorMessage";
 
 import { printDocument } from "../../utils/print";
 import CashReceiptPrintTemplate from "../../components/printing/templates/CashReceiptPrintTemplate";
@@ -183,6 +191,12 @@ function CashReceiptDetail() {
   const [description, setDescription] = useState("");
   const [reference, setReference] = useState("");
 
+  const [company, setCompany] = useState(null);
+  const [companyLoading, setCompanyLoading] = useState(true);
+  const [printAssets, setPrintAssets] = useState({
+    sealStamp: null,
+  });
+
   async function loadReceipt() {
     try {
       setLoading(true);
@@ -209,6 +223,38 @@ function CashReceiptDetail() {
     loadReceipt();
   }, [id]);
 
+  useEffect(() => {
+    let cancelled = false;
+
+    async function loadCompany() {
+      try {
+        setCompanyLoading(true);
+
+        const response = await getCompanies();
+        const data = response?.data ?? response;
+
+        if (!cancelled) {
+          setCompany(data && typeof data === "object" ? data : null);
+        }
+      } catch (error) {
+        if (!cancelled) {
+          console.error("Failed to load company information:", error);
+          setCompany(null);
+        }
+      } finally {
+        if (!cancelled) {
+          setCompanyLoading(false);
+        }
+      }
+    }
+
+    loadCompany();
+
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
   async function handleSave(event) {
     event.preventDefault();
 
@@ -228,7 +274,7 @@ function CashReceiptDetail() {
 
       toast.success("Cash Receipt updated successfully.");
     } catch (err) {
-      toast.error(err?.message || "Failed to update Cash Receipt.");
+      toast.error(getApiErrorMessage(err, "Failed to update Cash Receipt."));
     } finally {
       setSaving(false);
     }
@@ -270,7 +316,7 @@ function CashReceiptDetail() {
 
       await loadReceipt();
     } catch (err) {
-      toast.error(err?.message || "Failed to reverse Cash Receipt.");
+      toast.error(getApiErrorMessage(err, "Failed to reverse Cash Receipt."));
     }
   }
 
@@ -340,12 +386,68 @@ function CashReceiptDetail() {
 
             <button
               type="button"
-              onClick={() =>
-                printDocument({
-                  customerName: receipt.customer_name,
-                  documentNumber: receipt.receipt_number,
-                })
-              }
+              onClick={async () => {
+                try {
+                  if (companyLoading) {
+                    toast.error("Company information is still loading.");
+                    return;
+                  }
+
+                  if (!company) {
+                    toast.error("Company information could not be loaded.");
+                    return;
+                  }
+
+                  const response = await getCompanyDocuments();
+
+                  const documents = Array.isArray(response?.data)
+                    ? response.data
+                    : Array.isArray(response)
+                      ? response
+                      : [];
+
+                  const sealStampDocument = documents.find(
+                    (document) => document?.name === "Seal & Stamp",
+                  );
+
+                  let sealStampUrl = null;
+
+                  if (sealStampDocument?.id) {
+                    const sealStampBlob = await downloadCompanyDocument(
+                      sealStampDocument.id,
+                    );
+
+                    if (sealStampBlob instanceof Blob) {
+                      sealStampUrl = URL.createObjectURL(sealStampBlob);
+                    }
+                  }
+
+                  const assets = {
+                    sealStamp: sealStampUrl,
+                  };
+
+                  setPrintAssets(assets);
+
+                  requestAnimationFrame(() => {
+                    requestAnimationFrame(() => {
+                      printDocument({
+                        customerName: receipt.customer_name,
+                        documentNumber: receipt.receipt_number,
+                        documentTitle: `${company?.legal_entity_name || "Company"} - Cash Receipt - ${receipt.receipt_number || receipt.id}`,
+                      });
+                    });
+                  });
+                } catch (err) {
+                  console.error("Cash Receipt print failed:", err);
+
+                  toast.error(
+                    getApiErrorMessage(
+                      err,
+                      "Unable to prepare the Cash Receipt for printing.",
+                    ),
+                  );
+                }
+              }}
               className="inline-flex h-10 items-center justify-center rounded-xl bg-[#1F2A6E] px-4 text-sm font-bold text-white transition hover:bg-[#17215A]"
             >
               Print
@@ -637,7 +739,11 @@ function CashReceiptDetail() {
           </dl>
         </section>
       </div>
-      <CashReceiptPrintTemplate receipt={receipt} />
+      <CashReceiptPrintTemplate
+        receipt={receipt}
+        company={company}
+        printAssets={printAssets}
+      />
     </div>
   );
 }

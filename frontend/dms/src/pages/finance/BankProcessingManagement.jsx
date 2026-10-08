@@ -9,6 +9,7 @@ import {
   getBanks,
   updateBankProcessingConfiguration,
 } from "../../api/finance";
+import { getApiErrorMessage } from "../../utils/errorMessage";
 import { useAuth } from "../../context/AuthContext";
 
 const INITIAL_FORM = {
@@ -51,20 +52,6 @@ function getApiErrors(error) {
   }
 
   return {};
-}
-
-function getApiMessage(error) {
-  const errors = getApiErrors(error);
-
-  if (errors.non_field_errors) {
-    return getFieldError(errors.non_field_errors);
-  }
-
-  if (Array.isArray(errors)) {
-    return errors.join(" ");
-  }
-
-  return error?.cause?.message || error?.message || "Something went wrong.";
 }
 
 function formatCurrency(value) {
@@ -147,7 +134,7 @@ function BankProcessingManagement() {
       setConfigurations([]);
       setBanks([]);
 
-      toast.error(getApiMessage(error));
+      toast.error(getApiErrorMessage(error, "Something went wrong."));
     } finally {
       setLoading(false);
     }
@@ -363,7 +350,7 @@ function BankProcessingManagement() {
         setFieldErrors(errors);
       }
 
-      toast.error(getApiMessage(error));
+      toast.error(getApiErrorMessage(error, "Something went wrong."));
     } finally {
       setSaving(false);
     }
@@ -393,7 +380,9 @@ function BankProcessingManagement() {
     } catch (error) {
       console.error("Failed to update bank processing status:", error);
 
-      toast.error(getApiMessage(error));
+      toast.error(
+        getApiErrorMessage(error, "Failed to update bank processing status."),
+      );
     }
   }
 
@@ -426,7 +415,12 @@ function BankProcessingManagement() {
     } catch (error) {
       console.error("Failed to delete bank processing configuration:", error);
 
-      toast.error(getApiMessage(error));
+      toast.error(
+        getApiErrorMessage(
+          error,
+          "Failed to delete bank processing configuration.",
+        ),
+      );
     }
   }
 

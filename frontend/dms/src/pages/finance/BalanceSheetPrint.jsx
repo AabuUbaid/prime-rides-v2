@@ -5,6 +5,8 @@ import { toast } from "react-toastify";
 import { getBalanceSheet } from "../../api/balanceSheets";
 import BalanceSheetPrintTemplate from "../../components/printing/templates/BalanceSheetPrintTemplate";
 
+import { getApiErrorMessage } from "../../utils/errorMessage";
+
 export default function BalanceSheetPrint() {
   const { id } = useParams();
 
@@ -37,8 +39,10 @@ export default function BalanceSheetPrint() {
         }
       } catch (err) {
         if (!cancelled) {
-          const message =
-            err?.message || "Unable to load Balance Sheet for printing.";
+          const message = getApiErrorMessage(
+            err,
+            "Unable to load Balance Sheet for printing.",
+          );
 
           setError(message);
           toast.error(message);

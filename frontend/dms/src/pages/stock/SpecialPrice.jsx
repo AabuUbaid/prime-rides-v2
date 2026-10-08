@@ -16,6 +16,8 @@ import Card from "../../components/ui/Card";
 import Input from "../../components/ui/Input";
 import StatusBadge from "../../components/ui/StatusBadge";
 
+import { getApiErrorMessage } from "../../utils/errorMessage";
+
 function unwrapData(response) {
   return response?.data ?? response;
 }
@@ -74,7 +76,9 @@ export default function SpecialPrice() {
 
       setRequests(Array.isArray(data) ? data : []);
     } catch (err) {
-      toast.error(err?.message || "Unable to load special price requests.");
+      toast.error(
+        getApiErrorMessage(err, "Unable to load special price requests."),
+      );
     } finally {
       setLoading(false);
     }
@@ -173,7 +177,7 @@ export default function SpecialPrice() {
       await loadRequests();
     } catch (err) {
       toast.error(
-        err?.message || "Unable to create the special price request.",
+        getApiErrorMessage(err, "Unable to create the special price request."),
       );
     } finally {
       setSaving(false);
@@ -232,7 +236,7 @@ export default function SpecialPrice() {
       await loadRequests();
     } catch (err) {
       toast.error(
-        err?.message || "Unable to process the special price request.",
+        getApiErrorMessage(err, "Unable to process the special price request."),
       );
     } finally {
       setSaving(false);

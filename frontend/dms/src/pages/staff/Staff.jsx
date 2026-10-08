@@ -9,6 +9,8 @@ import {
   updateStaff,
 } from "../../api/staff";
 import { useAuth } from "../../context/AuthContext";
+import { getApiErrorMessage } from "../../utils/errorMessage";
+
 const ROLES = [
   "SALES_EXECUTIVE",
   "PROCUREMENT",
@@ -41,7 +43,7 @@ export default function Staff() {
     try {
       setItems(rows(await getStaff()));
     } catch (e) {
-      toast.error(e?.message || "Unable to load staff.");
+      toast.error(getApiErrorMessage(e, "Unable to load staff."));
     }
   }
   useEffect(() => {
@@ -63,7 +65,7 @@ export default function Staff() {
       setShow(false);
       await load();
     } catch (e) {
-      toast.error(e?.message || "Unable to save staff.");
+      toast.error(getApiErrorMessage(e, "Unable to save staff."));
     } finally {
       setSaving(false);
     }
@@ -75,7 +77,7 @@ export default function Staff() {
       toast.success("Staff status updated");
       await load();
     } catch (e) {
-      toast.error(e?.message || "Unable to update status.");
+      toast.error(getApiErrorMessage(e, "Unable to update status."));
     }
   }
   return (

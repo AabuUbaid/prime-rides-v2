@@ -8,6 +8,7 @@ import {
   updateInsuranceRenewalStatus,
   approveInsuranceRenewal,
 } from "../../api/insurance";
+import { getApiErrorMessage } from "../../utils/errorMessage";
 
 function formatDate(value) {
   if (!value) return "-";
@@ -144,7 +145,9 @@ export default function InsuranceDetail() {
       toast.success("Insurance status updated.");
       await loadInsurance();
     } catch (err) {
-      toast.error(err?.message || "Unable to update Insurance status.");
+      toast.error(
+        getApiErrorMessage(err, "Unable to update Insurance status."),
+      );
     } finally {
       setSaving(false);
     }
@@ -159,7 +162,7 @@ export default function InsuranceDetail() {
       toast.success("Insurance renewal started.");
       await loadInsurance();
     } catch (err) {
-      toast.error(err?.message || "Unable to start renewal.");
+      toast.error(getApiErrorMessage(err, "Unable to start renewal."));
     } finally {
       setSaving(false);
     }
@@ -177,7 +180,7 @@ export default function InsuranceDetail() {
       toast.success("Renewal status updated.");
       await loadInsurance();
     } catch (err) {
-      toast.error(err?.message || "Unable to update renewal status.");
+      toast.error(getApiErrorMessage(err, "Unable to update renewal status."));
     } finally {
       setSaving(false);
     }
@@ -185,7 +188,7 @@ export default function InsuranceDetail() {
 
   async function handleRenewalApproval() {
     if (!renewalPolicyNumber || !renewalExpiryDate) {
-      toast.error("New policy number and expiry date are required.");
+      toast.error(getApiErrorMessage(err, "Unable to approve renewal."));
       return;
     }
 
@@ -204,7 +207,7 @@ export default function InsuranceDetail() {
       setRenewalRemark("");
       await loadInsurance();
     } catch (err) {
-      toast.error(err?.message || "Unable to approve renewal.");
+      toast.error(getApiErrorMessage(err, "Unable to approve renewal."));
     } finally {
       setSaving(false);
     }

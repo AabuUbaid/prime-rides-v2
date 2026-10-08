@@ -9,6 +9,8 @@ import {
   updateRtaTemplate,
 } from "../../api/rta";
 
+import { getApiErrorMessage } from "../../utils/errorMessage";
+
 const TEMPLATE_TYPES = {
   PURCHASE: "PURCHASE",
   SALE: "SALE",
@@ -162,7 +164,7 @@ export default function RtaTemplateManagement({ company }) {
 
       setTemplates(normalizeTemplateList(response));
     } catch (error) {
-      toast.error(error?.message || "Unable to load RTA templates.");
+      toast.error(getApiErrorMessage(error, "Unable to load RTA templates."));
       setTemplates([]);
     } finally {
       setLoading(false);
@@ -235,7 +237,7 @@ export default function RtaTemplateManagement({ company }) {
 
       await loadTemplates();
     } catch (error) {
-      toast.error(error?.message || "Unable to save RTA template.");
+      toast.error(getApiErrorMessage(error, "Unable to save RTA template."));
     } finally {
       setSaving(false);
     }

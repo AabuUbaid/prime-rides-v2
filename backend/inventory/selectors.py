@@ -1,4 +1,4 @@
-from .models import (Car, CarImage, CarExpense,)
+from .models import (Car, CarImage, CarExpense, VehicleDocument,)
 from django.shortcuts import get_object_or_404
 from django.db.models import (
     Max,
@@ -9,6 +9,11 @@ from django.db.models import (
     F,
     Value,
     DecimalField,
+    Exists,
+    OuterRef,
+    Case,
+    When,
+    BooleanField,
 )
 from django.db.models.functions import Coalesce
 
@@ -45,6 +50,11 @@ class InventorySelector:
         ordering="-created_at",
     ):
 
+        vehicle_documents = VehicleDocument.objects.filter(
+            car=OuterRef("pk"),
+            is_archived=False,
+        )
+
         queryset = (
             Car.objects
             .annotate(
@@ -55,7 +65,28 @@ class InventorySelector:
                         max_digits=12,
                         decimal_places=2,
                     ),
-                )
+                ),
+                                has_possession_document=Exists(
+                    vehicle_documents.filter(
+                        document_type=VehicleDocument.DocumentType.POSSESSION,
+                    )
+                ),
+
+                has_rta_passing_document=Exists(
+                    vehicle_documents.filter(
+                        document_type=VehicleDocument.DocumentType.RTA_PASSING,
+                    )
+                ),
+
+                has_legacy_possession_certificate=Case(
+                    When(
+                        Q(possession_certificate__isnull=False)
+                        & ~Q(possession_certificate=""),
+                        then=Value(True),
+                    ),
+                    default=Value(False),
+                    output_field=BooleanField(),
+                ),
             )
             .prefetch_related("images")
         )

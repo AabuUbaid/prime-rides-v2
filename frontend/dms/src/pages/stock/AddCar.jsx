@@ -10,6 +10,8 @@ import VehicleDetails from "./components/VehicleDetails";
 import UploadSection from "./components/UploadSection";
 import SubmitSection from "./components/SubmitSection";
 
+import { getApiErrorMessage } from "../../utils/errorMessage";
+
 const initialFormData = {
   year: "",
   make: "",
@@ -112,7 +114,7 @@ function AddCar() {
     } catch (error) {
       console.error(error);
 
-      toast.error(error.message || "Failed to create vehicle.");
+      toast.error(getApiErrorMessage(error, "Failed to create vehicle."));
     } finally {
       setSaving(false);
     }

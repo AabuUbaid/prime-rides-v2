@@ -5,6 +5,8 @@ import { toast } from "react-toastify";
 import { getInsurance } from "../../api/insurance";
 import { createDeliveryNote } from "../../api/deliveryNotes";
 
+import { getApiErrorMessage } from "../../utils/errorMessage";
+
 function DetailRow({ label, value }) {
   return (
     <div className="flex flex-col gap-1 border-b border-gray-100 py-3 last:border-b-0 sm:flex-row sm:items-center sm:justify-between">
@@ -120,7 +122,7 @@ export default function DeliveryNoteCreate() {
         navigate("/finance/delivery-notes");
       }
     } catch (err) {
-      toast.error(err?.message || "Unable to create Delivery Note.");
+      toast.error(getApiErrorMessage(err, "Unable to create Delivery Note."));
     } finally {
       setSaving(false);
     }

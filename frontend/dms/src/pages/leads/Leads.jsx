@@ -4,6 +4,7 @@ import { toast } from "react-toastify";
 import { createLead, getLeads } from "../../api/leads";
 import { getStaff } from "../../api/staff";
 import { useAuth } from "../../context/AuthContext";
+import { getApiErrorMessage } from "../../utils/errorMessage";
 
 const SOURCES = [
   "Direct",
@@ -85,7 +86,7 @@ export default function Leads() {
       setItems(rows(a));
       setStaff(rows(b));
     } catch (e) {
-      toast.error(e?.message || "Unable to load leads.");
+      toast.error(getApiErrorMessage(e, "Unable to load leads."));
     }
   }
 
@@ -119,7 +120,7 @@ export default function Leads() {
 
       await load();
     } catch (e) {
-      toast.error(e?.message || "Unable to create lead.");
+      toast.error(getApiErrorMessage(e, "Unable to create lead."));
     } finally {
       setSaving(false);
     }

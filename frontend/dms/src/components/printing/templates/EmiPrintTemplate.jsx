@@ -1,3 +1,5 @@
+import { formatAED } from "../../../utils/formatters";
+
 function displayValue(value) {
   if (value === null || value === undefined || value === "") {
     return "-";
@@ -7,37 +9,21 @@ function displayValue(value) {
 }
 
 function formatCurrency(value) {
-  if (value === null || value === undefined || value === "") {
-    return "AED 0.00";
-  }
-
-  const numericValue = Number(value);
-
-  if (!Number.isFinite(numericValue)) {
-    return "AED 0.00";
-  }
-
-  return `AED ${numericValue.toLocaleString("en-AE", {
-    minimumFractionDigits: 2,
-    maximumFractionDigits: 2,
-  })}`;
+  return formatAED(value);
 }
 
 function formatAmountWithoutCurrency(value) {
   if (value === null || value === undefined || value === "") {
-    return "0.00";
+    return "0";
   }
 
-  const numericValue = Number(value);
+  const formatted = formatAED(value);
 
-  if (!Number.isFinite(numericValue)) {
-    return "0.00";
+  if (formatted === "-") {
+    return "0";
   }
 
-  return numericValue.toLocaleString("en-AE", {
-    minimumFractionDigits: 2,
-    maximumFractionDigits: 2,
-  });
+  return formatted.replace(/^AED\s*/, "");
 }
 
 function formatPercentage(value) {

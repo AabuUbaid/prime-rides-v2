@@ -9,6 +9,8 @@ import {
   deleteRtaDocument,
 } from "../../api/rta";
 
+import { getApiErrorMessage } from "../../utils/errorMessage";
+
 const RECORD_TYPE_LABELS = {
   PURCHASE: "Purchase",
   SALE: "Sale",
@@ -66,7 +68,7 @@ export default function RtaRecordDetail() {
             : [],
       );
     } catch (e) {
-      toast.error(e?.message || "Unable to load RTA record.");
+      toast.error(getApiErrorMessage(e, "Unable to load RTA record."));
     } finally {
       setLoading(false);
       setDocumentsLoading(false);
@@ -91,7 +93,7 @@ export default function RtaRecordDetail() {
 
       window.URL.revokeObjectURL(url);
     } catch (e) {
-      toast.error(e?.message || "Unable to download RTA document.");
+      toast.error(getApiErrorMessage(e, "Unable to download RTA document."));
     }
   }
 
@@ -111,7 +113,7 @@ export default function RtaRecordDetail() {
 
       await load();
     } catch (e) {
-      toast.error(e?.message || "Unable to delete RTA document.");
+      toast.error(getApiErrorMessage(e, "Unable to delete RTA document."));
     }
   }
 
@@ -154,7 +156,7 @@ export default function RtaRecordDetail() {
 
       await load();
     } catch (e) {
-      toast.error(e?.message || "Unable to upload RTA document.");
+      toast.error(getApiErrorMessage(e, "Unable to upload RTA document."));
     } finally {
       setUploading(false);
     }

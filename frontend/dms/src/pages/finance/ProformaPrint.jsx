@@ -22,7 +22,6 @@ export default function ProformaPrint() {
   const [company, setCompany] = useState(null);
   const [customerId, setCustomerId] = useState(null);
   const [printAssets, setPrintAssets] = useState({
-    logo: null,
     sealStamp: null,
   });
   const [loading, setLoading] = useState(true);
@@ -36,6 +35,7 @@ export default function ProformaPrint() {
       try {
         setLoading(true);
         setError("");
+        setPrintingReady(false);
 
         const [proformaResponse, companyResponse, documentsResponse] =
           await Promise.all([
@@ -64,29 +64,14 @@ export default function ProformaPrint() {
           resolvedCustomerId = quoteData?.customer_id ?? null;
         }
 
-        const logoDocument = documents.find(
-          (document) => document?.name === "Logo",
-        );
         const sealStampDocument = documents.find(
           (document) => document?.name === "Seal & Stamp",
         );
-
-        if (!logoDocument?.id) {
-          throw new Error(
-            "Company Logo is not configured. Please upload a Logo in Company Documents.",
-          );
-        }
 
         if (includeSealStamp && !sealStampDocument?.id) {
           throw new Error(
             "Company Seal & Stamp is not configured. Please upload a Seal & Stamp document in Company Documents.",
           );
-        }
-
-        const logoBlob = await downloadCompanyDocument(logoDocument.id);
-
-        if (!(logoBlob instanceof Blob)) {
-          throw new Error("Unable to load the Company Logo document.");
         }
 
         let sealStampUrl = null;
@@ -106,12 +91,10 @@ export default function ProformaPrint() {
         }
 
         const assets = {
-          logo: URL.createObjectURL(logoBlob),
           sealStamp: sealStampUrl,
         };
 
         if (cancelled) {
-          URL.revokeObjectURL(assets.logo);
           URL.revokeObjectURL(assets.sealStamp);
           return;
         }
@@ -147,19 +130,15 @@ export default function ProformaPrint() {
     return () => {
       cancelled = true;
     };
-  }, [id]);
+  }, [id, includeSealStamp]);
 
   useEffect(() => {
     return () => {
-      if (printAssets.logo) {
-        URL.revokeObjectURL(printAssets.logo);
-      }
-
       if (printAssets.sealStamp) {
         URL.revokeObjectURL(printAssets.sealStamp);
       }
     };
-  }, [printAssets.logo, printAssets.sealStamp]);
+  }, [printAssets.sealStamp]);
 
   useEffect(() => {
     if (!printingReady || !proforma) {
@@ -168,7 +147,9 @@ export default function ProformaPrint() {
 
     const redirectAfterPrint = () => {
       window.removeEventListener("afterprint", redirectAfterPrint);
-      navigate(`/finance/proformas/${proforma.id}`, { replace: true });
+      navigate(`/finance/proformas/${proforma.id}`, {
+        replace: true,
+      });
     };
 
     window.addEventListener("afterprint", redirectAfterPrint);

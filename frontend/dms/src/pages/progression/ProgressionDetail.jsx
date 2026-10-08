@@ -16,6 +16,8 @@ import { getProformas } from "../../api/proforma";
 import { getDeliveryNotes } from "../../api/deliveryNotes";
 import { useAuth } from "../../context/AuthContext";
 
+import { getApiErrorMessage } from "../../utils/errorMessage";
+
 const EMIRATES = [
   "Dubai",
   "Abu Dhabi",
@@ -228,7 +230,7 @@ export default function ProgressionDetail() {
         getBackendCompletedStages(d?.current_stage, insuranceApproved),
       );
     } catch (e) {
-      toast.error(e?.message || "Unable to load Progression.");
+      toast.error(getApiErrorMessage(e, "Unable to load Progression."));
     }
   }
 
@@ -260,7 +262,7 @@ export default function ProgressionDetail() {
 
       toast.success("Progression updated.");
     } catch (e) {
-      toast.error(e?.message || "Unable to update Progression.");
+      toast.error(getApiErrorMessage(e, "Unable to update Progression."));
     } finally {
       setSaving(false);
     }
@@ -324,8 +326,7 @@ export default function ProgressionDetail() {
 
       return updated;
     } catch (e) {
-      toast.error(e?.message || "Unable to advance Progression.");
-
+      toast.error(getApiErrorMessage(e, "Unable to advance Progression."));
       return null;
     } finally {
       setAdvancing(false);
@@ -470,7 +471,9 @@ export default function ProgressionDetail() {
 
       navigate(`/finance/insurance/${insuranceId}`);
     } catch (e) {
-      toast.error(e?.message || "Unable to open the customer's Insurance.");
+      toast.error(
+        getApiErrorMessage(e, "Unable to open the customer's Insurance."),
+      );
     } finally {
       setInsuranceLoading(false);
     }
@@ -604,7 +607,10 @@ export default function ProgressionDetail() {
       setShowRegistrationDocumentsModal(true);
     } catch (e) {
       toast.error(
-        e?.message || "Unable to load the Registration Preparation checklist.",
+        getApiErrorMessage(
+          e,
+          "Unable to load the Registration Preparation checklist.",
+        ),
       );
     } finally {
       setRegistrationDocumentsLoading(false);
@@ -640,7 +646,7 @@ export default function ProgressionDetail() {
       setSaleRtaRecord(saleRta);
       setShowBalanceModal(true);
     } catch (e) {
-      toast.error(e?.message || "Unable to load the Balance Sheet.");
+      toast.error(getApiErrorMessage(e, "Unable to load the Balance Sheet."));
     } finally {
       setBalanceLoading(false);
     }
@@ -693,7 +699,7 @@ export default function ProgressionDetail() {
 
       window.URL.revokeObjectURL(url);
     } catch (e) {
-      toast.error(e?.message || "Unable to download the document.");
+      toast.error(getApiErrorMessage(e, "Unable to download the document."));
     } finally {
       setDownloadingRegistrationDocument("");
     }
@@ -805,7 +811,9 @@ export default function ProgressionDetail() {
       setDeliveryNoteRecord(deliveryNote);
       setShowDeliveryCompletionModal(true);
     } catch (e) {
-      toast.error(e?.message || "Unable to load Delivery Video requirements.");
+      toast.error(
+        getApiErrorMessage(e, "Unable to load Delivery Video requirements."),
+      );
     } finally {
       setDeliveryDocumentsLoading(false);
     }

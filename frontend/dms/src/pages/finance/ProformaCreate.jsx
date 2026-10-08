@@ -6,6 +6,8 @@ import { getInsurance } from "../../api/insurance";
 import { getBankLoan } from "../../api/bankLoans";
 import { createProforma } from "../../api/proforma";
 
+import { getApiErrorMessage } from "../../utils/errorMessage";
+
 function DetailRow({ label, value }) {
   return (
     <div className="flex flex-col gap-1 border-b border-gray-100 py-3 last:border-b-0 sm:flex-row sm:items-center sm:justify-between">
@@ -146,7 +148,7 @@ export default function ProformaCreate() {
         navigate("/finance/proformas");
       }
     } catch (err) {
-      toast.error(err?.message || "Unable to create Proforma.");
+      toast.error(getApiErrorMessage(err, "Unable to create Proforma."));
     } finally {
       setSaving(false);
     }

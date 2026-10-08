@@ -4,6 +4,7 @@ import { Link, useNavigate } from "react-router-dom";
 import { toast } from "react-toastify";
 
 import { createCustomer } from "../../api/customers";
+import { getApiErrorMessage } from "../../utils/errorMessage";
 
 export default function NewCustomer() {
   const navigate = useNavigate();
@@ -55,7 +56,7 @@ export default function NewCustomer() {
     } catch (error) {
       console.error("Customer creation failed:", error);
 
-      toast.error(error?.message || "Unable to create customer.");
+      toast.error(getApiErrorMessage(error, "Unable to create customer."));
     } finally {
       setSaving(false);
     }

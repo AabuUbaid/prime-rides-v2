@@ -8,6 +8,8 @@ import {
   getCustomerBalanceSheetDeals,
 } from "../../api/balanceSheets";
 
+import { getApiErrorMessage } from "../../utils/errorMessage";
+
 function getResponseData(response) {
   const body = response ?? {};
 
@@ -116,7 +118,7 @@ function BalanceSheetCreate() {
     } catch (err) {
       console.error("Failed to create Balance Sheet:", err);
 
-      toast.error(err?.message || "Failed to create Balance Sheet.");
+      toast.error(getApiErrorMessage(err, "Failed to create Balance Sheet."));
     } finally {
       setSubmitting(false);
     }

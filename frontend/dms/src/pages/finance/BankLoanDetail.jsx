@@ -15,6 +15,7 @@ import {
 } from "../../api/bankLoans";
 
 import { getBanks } from "../../api/finance";
+import { getApiErrorMessage } from "../../utils/errorMessage";
 const DECISION_STATUSES = ["pending", "approved", "rejected"];
 
 const APPLICATION_STATUSES = [
@@ -108,7 +109,7 @@ function BankLoanDetail() {
       setBanks(data);
     } catch (err) {
       console.error("Failed to load banks:", err);
-      toast.error(err?.message || "Failed to load banks.");
+      toast.error(getApiErrorMessage(err, "Failed to load banks."));
     } finally {
       setLoadingBanks(false);
     }
@@ -150,7 +151,7 @@ function BankLoanDetail() {
     } catch (err) {
       console.error("Failed to load bank loan:", err);
 
-      setError(err?.message || "Failed to load bank loan.");
+      setError(getApiErrorMessage(err, "Failed to load bank loan."));
     } finally {
       setLoading(false);
     }
@@ -175,7 +176,7 @@ function BankLoanDetail() {
 
       toast.success("Status details updated.");
     } catch (err) {
-      toast.error(err?.message || "Failed to update status details.");
+      toast.error(getApiErrorMessage(err, "Failed to update status details."));
     } finally {
       setSaving(false);
     }
@@ -233,7 +234,7 @@ function BankLoanDetail() {
 
       toast.success("Finance details updated.");
     } catch (err) {
-      toast.error(err?.message || "Failed to update finance details.");
+      toast.error(getApiErrorMessage(err, "Failed to update finance details."));
     } finally {
       setSaving(false);
     }
@@ -257,7 +258,9 @@ function BankLoanDetail() {
       await loadLoan();
       toast.success("Application information updated.");
     } catch (err) {
-      toast.error(err?.message || "Failed to update application information.");
+      toast.error(
+        getApiErrorMessage(err, "Failed to update application information."),
+      );
     } finally {
       setSaving(false);
     }
@@ -305,7 +308,7 @@ function BankLoanDetail() {
       setNewBankId("");
     } catch (err) {
       toast.error(
-        err?.message || "Failed to create bank loan for the new bank.",
+        getApiErrorMessage(err, "Failed to create bank loan for the new bank."),
       );
     } finally {
       setSaving(false);
@@ -334,7 +337,7 @@ function BankLoanDetail() {
       await loadLoan();
       toast.success("Follow-up added.");
     } catch (err) {
-      toast.error(err?.message || "Failed to add follow-up.");
+      toast.error(getApiErrorMessage(err, "Failed to add follow-up."));
     } finally {
       setSaving(false);
     }

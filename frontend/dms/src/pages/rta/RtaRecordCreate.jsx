@@ -6,6 +6,8 @@ import { getCar, getCars } from "../../api/inventory";
 
 import { createRtaRecord } from "../../api/rta";
 import { advanceProgression } from "../../api/progression";
+
+import { getBankLoans } from "../../api/bankLoans";
 import { getBranches, getCompanies } from "../../api/company";
 
 function getResponseData(response) {
@@ -38,6 +40,9 @@ export default function RtaRecordCreate() {
   const [selectedQuote, setSelectedQuote] = useState(null);
   const [quoteLoading, setQuoteLoading] = useState(false);
 
+  const [resolvedSaleCarId, setResolvedSaleCarId] = useState("");
+  const [saleVehicleLoading, setSaleVehicleLoading] = useState(false);
+
   const [purchaseCar, setPurchaseCar] = useState(null);
   const [purchaseCarLoading, setPurchaseCarLoading] = useState(true);
 
@@ -64,6 +69,7 @@ export default function RtaRecordCreate() {
 
     setSelectedQuoteId(quoteId);
     setSelectedQuote(null);
+    setResolvedSaleCarId("");
 
     if (!quoteId) {
       return;
@@ -291,6 +297,89 @@ export default function RtaRecordCreate() {
   );
 
   useEffect(() => {
+    if (recordType !== "SALE" || !selectedQuote) {
+      setResolvedSaleCarId("");
+      setSaleVehicleLoading(false);
+      return;
+    }
+
+    let cancelled = false;
+
+    async function resolveSaleVehicle() {
+      setSaleVehicleLoading(true);
+      setError("");
+
+      try {
+        // Normal stock Quote already has a direct vehicle.
+        if (selectedQuote.car_id) {
+          if (!cancelled) {
+            setResolvedSaleCarId(selectedQuote.car_id);
+          }
+
+          return;
+        }
+
+        // Finance / saved-EMI Quote:
+        // Find the Bank Loan using the Quote number.
+        if (!selectedQuote.quote_number) {
+          throw new Error("The selected Quote has no Quote number.");
+        }
+
+        const response = await getBankLoans({
+          search: selectedQuote.quote_number,
+        });
+
+        const data = getResponseData(response);
+
+        const bankLoans = Array.isArray(data)
+          ? data
+          : Array.isArray(data?.results)
+            ? data.results
+            : Array.isArray(data?.data)
+              ? data.data
+              : [];
+
+        const matchingBankLoan = bankLoans.find(
+          (bankLoan) => String(bankLoan?.quote) === String(selectedQuote.id),
+        );
+
+        if (!matchingBankLoan) {
+          throw new Error(
+            "Unable to find the Bank Loan for the selected Quote.",
+          );
+        }
+
+        if (!matchingBankLoan.car) {
+          throw new Error(
+            "The Bank Loan is not linked to an inventory vehicle.",
+          );
+        }
+
+        if (!cancelled) {
+          setResolvedSaleCarId(matchingBankLoan.car);
+        }
+      } catch (e) {
+        if (!cancelled) {
+          setResolvedSaleCarId("");
+          setError(
+            e?.message || "Unable to resolve the vehicle for the Sale RTA.",
+          );
+        }
+      } finally {
+        if (!cancelled) {
+          setSaleVehicleLoading(false);
+        }
+      }
+    }
+
+    resolveSaleVehicle();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [recordType, selectedQuote]);
+
+  useEffect(() => {
     if (!selectedCompanyId) {
       return;
     }
@@ -391,8 +480,13 @@ export default function RtaRecordCreate() {
         return;
       }
 
-      if (!selectedQuote.car_id) {
-        setError("The selected quote is not linked to a vehicle.");
+      if (saleVehicleLoading) {
+        setError("Please wait while the vehicle is being resolved.");
+        return;
+      }
+
+      if (!resolvedSaleCarId) {
+        setError("Unable to resolve the vehicle for the Sale RTA.");
         return;
       }
 
@@ -423,7 +517,7 @@ export default function RtaRecordCreate() {
 
       if (recordType === "SALE") {
         payload.quote = selectedQuoteId;
-        payload.car = selectedQuote.car_id;
+        payload.car = resolvedSaleCarId;
         payload.customer = selectedQuote.customer_id;
       }
 
@@ -614,7 +708,9 @@ export default function RtaRecordCreate() {
                     <p className="text-xs text-gray-500">Vehicle ID</p>
 
                     <p className="text-sm font-medium">
-                      {selectedQuote.car_id || "—"}
+                      {saleVehicleLoading
+                        ? "Resolving vehicle..."
+                        : resolvedSaleCarId || "—"}
                     </p>
                   </div>
 

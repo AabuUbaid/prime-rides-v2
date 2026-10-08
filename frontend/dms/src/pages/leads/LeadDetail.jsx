@@ -10,6 +10,8 @@ import {
 import { getStaff } from "../../api/staff";
 import { useAuth } from "../../context/AuthContext";
 
+import { getApiErrorMessage } from "../../utils/errorMessage";
+
 const SOURCES = [
   "Direct",
   "Dubizzle",
@@ -67,7 +69,7 @@ export default function LeadDetail() {
             : [],
       );
     } catch (e) {
-      toast.error(e?.message || "Unable to load lead.");
+      toast.error(getApiErrorMessage(e, "Unable to load lead."));
     }
   }
 
@@ -105,7 +107,7 @@ export default function LeadDetail() {
 
       await load();
     } catch (e) {
-      toast.error(e?.message || "Unable to update lead.");
+      toast.error(getApiErrorMessage(e, "Unable to update lead."));
     } finally {
       setSaving(false);
     }
@@ -125,7 +127,7 @@ export default function LeadDetail() {
 
       await load();
     } catch (e) {
-      toast.error(e?.message || "Unable to record activity.");
+      toast.error(getApiErrorMessage(e, "Unable to record activity."));
     }
   }
 
@@ -138,7 +140,7 @@ export default function LeadDetail() {
       await deleteLead(id);
       window.location.href = "/leads";
     } catch (e) {
-      toast.error(e?.message || "Unable to delete lead.");
+      toast.error(getApiErrorMessage(e, "Unable to delete lead."));
     }
   }
 

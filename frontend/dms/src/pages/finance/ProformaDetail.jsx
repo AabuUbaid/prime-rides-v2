@@ -10,6 +10,8 @@ import {
 } from "../../api/proforma";
 import PrintButton from "../../components/printing/PrintButton";
 
+import { getApiErrorMessage } from "../../utils/errorMessage";
+
 function formatDate(value) {
   if (!value) return "-";
 
@@ -180,7 +182,7 @@ export default function ProformaDetail() {
       toast.success("Proforma updated successfully.");
       await loadProforma();
     } catch (err) {
-      toast.error(err?.message || "Unable to update Proforma.");
+      toast.error(getApiErrorMessage(err, "Unable to update Proforma."));
     } finally {
       setSaving(false);
     }
@@ -203,7 +205,7 @@ export default function ProformaDetail() {
       toast.success("Proforma deleted successfully.");
       navigate("/finance/proformas");
     } catch (err) {
-      toast.error(err?.message || "Unable to delete Proforma.");
+      toast.error(getApiErrorMessage(err, "Unable to delete Proforma."));
     } finally {
       setDeleting(false);
     }

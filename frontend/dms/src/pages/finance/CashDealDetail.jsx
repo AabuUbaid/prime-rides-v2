@@ -5,6 +5,7 @@ import { toast } from "react-toastify";
 import { useAuth } from "../../context/AuthContext";
 
 import { getCashDeal, updateCashDeal } from "../../api/cashDeals";
+import { getApiErrorMessage } from "../../utils/errorMessage";
 
 function formatStatus(value) {
   if (!value) {
@@ -143,7 +144,7 @@ function CashDealDetail() {
 
       await loadCashDeal();
     } catch (err) {
-      toast.error(err?.message || "Failed to update Cash Deal.");
+      toast.error(getApiErrorMessage(err, "Failed to update Cash Deal."));
     } finally {
       setSaving(false);
     }

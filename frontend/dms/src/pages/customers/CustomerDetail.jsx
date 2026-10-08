@@ -12,6 +12,7 @@ import { Link, useParams } from "react-router-dom";
 import { toast } from "react-toastify";
 
 import { resolveBackendUrl } from "../../api/url";
+import { getApiErrorMessage } from "../../utils/errorMessage";
 
 import {
   deleteCustomer,
@@ -153,8 +154,7 @@ export default function CustomerDetail() {
     } catch (error) {
       console.error("Failed to load customer:", error);
 
-      toast.error(error?.message || "Unable to load customer.");
-
+      toast.error(getApiErrorMessage(error, "Unable to load customer."));
       setCustomer(null);
     } finally {
       setLoading(false);
@@ -234,7 +234,7 @@ export default function CustomerDetail() {
             : error?.message || "Unable to upload document.",
         );
       } else {
-        toast.error(error?.message || "Unable to upload document.");
+        toast.error(getApiErrorMessage(error, "Unable to upload document."));
       }
     } finally {
       setUploading(false);
@@ -265,7 +265,7 @@ export default function CustomerDetail() {
     } catch (error) {
       console.error("Document deletion failed:", error);
 
-      toast.error(error?.message || "Unable to delete document.");
+      toast.error(getApiErrorMessage(error, "Unable to delete document."));
     } finally {
       setDeletingDocumentId(null);
     }
@@ -295,7 +295,7 @@ export default function CustomerDetail() {
     } catch (error) {
       console.error("Customer deletion failed:", error);
 
-      toast.error(error?.message || "Unable to delete customer.");
+      toast.error(getApiErrorMessage(error, "Unable to delete customer."));
 
       setLoading(false);
     }

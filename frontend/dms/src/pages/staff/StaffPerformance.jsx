@@ -2,6 +2,8 @@ import { useEffect, useState } from "react";
 import { Link, useParams } from "react-router-dom";
 import { toast } from "react-toastify";
 import { getStaffPerformance } from "../../api/staff";
+import { getApiErrorMessage } from "../../utils/errorMessage";
+
 export default function StaffPerformance() {
   const { id } = useParams();
   const [data, setData] = useState(null),
@@ -11,7 +13,7 @@ export default function StaffPerformance() {
       try {
         setData(await getStaffPerformance(id));
       } catch (e) {
-        toast.error(e?.message || "Unable to load performance.");
+        toast.error(getApiErrorMessage(e, "Unable to load performance."));
       } finally {
         setLoading(false);
       }

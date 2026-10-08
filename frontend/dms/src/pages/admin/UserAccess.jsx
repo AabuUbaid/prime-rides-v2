@@ -10,6 +10,7 @@ import {
   updateUserAccess,
 } from "../../api/userAccess";
 import { getStaff } from "../../api/staff";
+import { getApiErrorMessage } from "../../utils/errorMessage";
 const EMPTY = {
   email: "",
   password: "",
@@ -33,7 +34,7 @@ export default function UserAccess() {
       setItems(rows(await getUserAccess()));
       setStaff(rows(await getStaff()));
     } catch (e) {
-      toast.error(e?.message || "Unable to load User Access.");
+      toast.error(getApiErrorMessage(e, "Unable to load User Access."));
     }
   }
   useEffect(() => {
@@ -70,7 +71,7 @@ export default function UserAccess() {
       setForm(EMPTY);
       await load();
     } catch (e) {
-      toast.error(e?.message || "Unable to save user.");
+      toast.error(getApiErrorMessage(e, "Unable to save user."));
     } finally {
       setSaving(false);
     }
@@ -81,7 +82,7 @@ export default function UserAccess() {
       else await activateUserAccess(x.id);
       await load();
     } catch (e) {
-      toast.error(e?.message || "Unable to change user status.");
+      toast.error(getApiErrorMessage(e, "Unable to change user status."));
     }
   }
   async function password(x) {
@@ -91,7 +92,7 @@ export default function UserAccess() {
       await changeUserPassword(x.id, p);
       toast.success("Password changed");
     } catch (e) {
-      toast.error(e?.message || "Unable to change password");
+      toast.error(getApiErrorMessage(e, "Unable to change password"));
     }
   }
 
@@ -229,7 +230,9 @@ export default function UserAccess() {
                                   : user.staff_id || "",
                             });
                           } catch (e) {
-                            toast.error(e?.message || "Unable to load user.");
+                            toast.error(
+                              getApiErrorMessage(e, "Unable to load user."),
+                            );
                           }
                         }}
                         className="mr-3 font-medium"

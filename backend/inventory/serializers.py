@@ -364,6 +364,7 @@ class CarListSerializer(
     expenses_total = serializers.SerializerMethodField()
     total_cost = serializers.SerializerMethodField()
     estimated_margin = serializers.SerializerMethodField()
+    document_status = serializers.SerializerMethodField()
     images = CarImageSerializer(
         many=True,
         read_only=True,
@@ -371,6 +372,48 @@ class CarListSerializer(
     
     stock_age_days = serializers.SerializerMethodField()
     is_aged_90_plus = serializers.SerializerMethodField()
+
+    def get_document_status(self, obj):
+        has_possession = (
+            bool(getattr(obj, "has_possession_document", False))
+            or bool(
+                getattr(
+                    obj,
+                    "has_legacy_possession_certificate",
+                    False,
+                )
+            )
+        )
+
+        has_rta_passing = bool(
+            getattr(
+                obj,
+                "has_rta_passing_document",
+                False,
+            )
+        )
+
+        uploaded = sum(
+            [
+                has_possession,
+                has_rta_passing,
+            ]
+        )
+
+        missing = []
+
+        if not has_possession:
+            missing.append("Possession Certificate")
+
+        if not has_rta_passing:
+            missing.append("RTA Passing")
+
+        return {
+            "required": 2,
+            "uploaded": uploaded,
+            "missing": missing,
+            "ready": uploaded == 2,
+        }
 
     def get_fields(self):
         fields = super().get_fields()
@@ -427,7 +470,7 @@ class CarListSerializer(
             "created_at",
             "stock_age_days",
             "is_aged_90_plus",
-            
+            "document_status",
             "images",
             "vehicle_type",
             "actual_mileage",

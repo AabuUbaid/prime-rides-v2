@@ -13,6 +13,8 @@ import { getBalanceSheets } from "../../api/balanceSheets";
 import { getCustomers } from "../../api/customers";
 import { getQuote } from "../../api/quotes";
 import { getEmi } from "../../api/finance";
+
+import { getApiErrorMessage } from "../../utils/errorMessage";
 import { formatAED } from "../../utils/formatters";
 
 const DIRECTIONS = [
@@ -563,7 +565,7 @@ function CashReceiptCreate() {
     } catch (err) {
       console.error("Failed to create Cash Receipt:", err);
 
-      toast.error(err?.message || "Failed to create Cash Receipt.");
+      toast.error(getApiErrorMessage(err, "Failed to create Cash Receipt."));
     } finally {
       setSaving(false);
     }

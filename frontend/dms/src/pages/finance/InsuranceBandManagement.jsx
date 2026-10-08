@@ -9,6 +9,7 @@ import {
   updateInsuranceBand,
 } from "../../api/finance";
 import { useAuth } from "../../context/AuthContext";
+import { getApiErrorMessage } from "../../utils/errorMessage";
 
 const INITIAL_FORM = {
   name: "",
@@ -43,16 +44,6 @@ function getApiErrors(error) {
   }
 
   return {};
-}
-
-function getApiMessage(error) {
-  const errors = getApiErrors(error);
-
-  if (errors.non_field_errors) {
-    return getFieldError(errors.non_field_errors);
-  }
-
-  return error?.cause?.message || error?.message || "Something went wrong.";
 }
 
 function getResponseData(response) {
@@ -104,7 +95,7 @@ function InsuranceBandManagement() {
       console.error("Failed to load insurance bands:", error);
 
       setBands([]);
-      toast.error(getApiMessage(error));
+      toast.error(getApiErrorMessage(error, "Something went wrong."));
     } finally {
       setLoading(false);
     }
@@ -300,7 +291,7 @@ function InsuranceBandManagement() {
         setFieldErrors(errors);
       }
 
-      toast.error(getApiMessage(error));
+      toast.error(getApiErrorMessage(error, "Something went wrong."));
     } finally {
       setSaving(false);
     }
@@ -334,7 +325,7 @@ function InsuranceBandManagement() {
         setFieldErrors(errors);
       }
 
-      toast.error(getApiMessage(error));
+      toast.error(getApiErrorMessage(error, "Something went wrong."));
     }
   }
 
@@ -362,7 +353,7 @@ function InsuranceBandManagement() {
     } catch (error) {
       console.error("Failed to delete insurance band:", error);
 
-      toast.error(getApiMessage(error));
+      toast.error(getApiErrorMessage(error, "Something went wrong."));
     }
   }
 

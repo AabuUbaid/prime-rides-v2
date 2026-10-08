@@ -10,6 +10,7 @@ import {
 } from "../../api/deliveryNotes";
 
 import PrintButton from "../../components/printing/PrintButton";
+import { getApiErrorMessage } from "../../utils/errorMessage";
 
 function formatDate(value) {
   if (!value) return "-";
@@ -161,7 +162,7 @@ export default function DeliveryNoteDetail() {
       toast.success("Delivery Note updated successfully.");
       await loadDeliveryNote();
     } catch (err) {
-      toast.error(err?.message || "Unable to update Delivery Note.");
+      toast.error(getApiErrorMessage(err, "Unable to update Delivery Note."));
     } finally {
       setSaving(false);
     }
@@ -184,7 +185,7 @@ export default function DeliveryNoteDetail() {
       toast.success("Delivery Note deleted successfully.");
       navigate("/finance/delivery-notes");
     } catch (err) {
-      toast.error(err?.message || "Unable to delete Delivery Note.");
+      toast.error(getApiErrorMessage(err, "Unable to delete Delivery Note."));
     } finally {
       setDeleting(false);
     }

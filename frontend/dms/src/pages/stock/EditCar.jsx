@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { useAuth } from "../../context/AuthContext";
 import { useParams, useNavigate } from "react-router-dom";
 import { toast } from "react-toastify";
 
@@ -10,6 +11,8 @@ import PricingInformation from "./components/PricingInformation";
 import VehicleDetails from "./components/VehicleDetails";
 // import UploadSection from "./components/UploadSection";
 import SubmitSection from "./components/SubmitSection";
+
+import { getApiErrorMessage } from "../../utils/errorMessage";
 
 const initialFormData = {
   year: "",
@@ -47,10 +50,15 @@ const initialFormData = {
 function EditCar() {
   const { id } = useParams();
 
+  const { user } = useAuth();
+
   const [car, setCar] = useState(null);
   const [formData, setFormData] = useState(initialFormData);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
+  const statusLocked = ["booked", "sold"].includes(
+    String(car?.status || "").toLowerCase(),
+  );
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -140,7 +148,7 @@ function EditCar() {
     } catch (error) {
       console.error(error);
 
-      toast.error(error.message || "Failed to update vehicle.");
+      toast.error(getApiErrorMessage(error, "Failed to update vehicle."));
     } finally {
       setSaving(false);
     }
@@ -160,7 +168,7 @@ function EditCar() {
 
       navigate("/stock");
     } catch (error) {
-      toast.error(error.message || "Failed to delete vehicle.");
+      toast.error(getApiErrorMessage(error, "Failed to delete vehicle."));
     }
   };
 
@@ -211,7 +219,7 @@ function EditCar() {
           <VehicleDetails
             formData={formData}
             handleChange={handleChange}
-            hideStatus
+            hideStatus={user?.role !== "MASTER" || statusLocked}
           />
         </div>
 

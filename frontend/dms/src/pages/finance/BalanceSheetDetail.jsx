@@ -5,6 +5,7 @@ import { toast } from "react-toastify";
 import { useAuth } from "../../context/AuthContext";
 import { deleteBalanceSheet, getBalanceSheet } from "../../api/balanceSheets";
 import { formatAED } from "../../utils/formatters";
+import { getApiErrorMessage } from "../../utils/errorMessage";
 
 function formatBalanceStatus(value) {
   if (value === "settled") {
@@ -158,7 +159,7 @@ function BalanceSheetDetail() {
     } catch (err) {
       console.error("Failed to delete Balance Sheet:", err);
 
-      toast.error(err?.message || "Failed to delete Balance Sheet.");
+      toast.error(getApiErrorMessage(err, "Failed to delete Balance Sheet."));
     }
   }
 

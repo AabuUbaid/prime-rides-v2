@@ -21,6 +21,7 @@ import {
 } from "../../api/company";
 
 import RtaTemplateManagement from "../rta/RtaTemplateManagement";
+import { getApiErrorMessage } from "../../utils/errorMessage";
 
 const EMPTY_COMPANY_FORM = {
   legal_entity_name: "",
@@ -87,7 +88,9 @@ function CompanyManagement() {
 
       setBranches(Array.isArray(branchResponse) ? branchResponse : []);
     } catch (error) {
-      toast.error(error?.message || "Unable to load company information.");
+      toast.error(
+        getApiErrorMessage(error, "Unable to load company information."),
+      );
     } finally {
       setLoading(false);
     }
@@ -101,7 +104,9 @@ function CompanyManagement() {
 
       setCompanyDocuments(Array.isArray(response) ? response : []);
     } catch (error) {
-      toast.error(error?.message || "Unable to load company documents.");
+      toast.error(
+        getApiErrorMessage(error, "Unable to load company documents."),
+      );
       setCompanyDocuments([]);
     } finally {
       setDocumentsLoading(false);
@@ -152,7 +157,9 @@ function CompanyManagement() {
 
       await loadCompanyDocuments();
     } catch (error) {
-      toast.error(error?.message || "Unable to upload company document.");
+      toast.error(
+        getApiErrorMessage(error, "Unable to upload company document."),
+      );
     } finally {
       setDocumentSaving(false);
     }
@@ -176,7 +183,9 @@ function CompanyManagement() {
 
       await loadCompanyDocuments();
     } catch (error) {
-      toast.error(error?.message || "Unable to delete company document.");
+      toast.error(
+        getApiErrorMessage(error, "Unable to delete company document."),
+      );
     } finally {
       setDocumentDeletingId(null);
     }
@@ -203,7 +212,9 @@ function CompanyManagement() {
     } catch (error) {
       viewerWindow.close();
 
-      toast.error(error?.message || "Unable to open company document.");
+      toast.error(
+        getApiErrorMessage(error, "Unable to open company document."),
+      );
     }
   }
 
@@ -331,7 +342,9 @@ function CompanyManagement() {
 
       setCompanyFieldErrors(fieldErrors);
 
-      toast.error(error?.message || "Unable to update company profile.");
+      toast.error(
+        getApiErrorMessage(error, "Unable to update company profile."),
+      );
     } finally {
       setCompanySaving(false);
     }
@@ -423,10 +436,12 @@ function CompanyManagement() {
       setBranchFieldErrors(fieldErrors);
 
       toast.error(
-        error?.message ||
-          (editingBranch
+        getApiErrorMessage(
+          error,
+          editingBranch
             ? "Unable to update branch."
-            : "Unable to create branch."),
+            : "Unable to create branch.",
+        ),
       );
     } finally {
       setBranchSaving(false);

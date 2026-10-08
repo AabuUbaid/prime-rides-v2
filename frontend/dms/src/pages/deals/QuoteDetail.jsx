@@ -15,6 +15,7 @@ import {
   downloadCompanyDocument,
 } from "../../api/company";
 import { createInsurance } from "../../api/insurance";
+import { getApiErrorMessage } from "../../utils/errorMessage";
 import { printDocument } from "../../utils/print";
 import QuotePrintTemplate from "../../components/printing/templates/QuotePrintTemplate";
 
@@ -324,7 +325,9 @@ export default function QuoteDetail() {
       setQuote(response?.data || null);
       setEditingCommercial(false);
     } catch (err) {
-      toast.error(err?.message || "Unable to update commercial details.");
+      toast.error(
+        getApiErrorMessage(err, "Unable to update commercial details."),
+      );
     } finally {
       setSaving(false);
     }
@@ -389,7 +392,7 @@ export default function QuoteDetail() {
       setExpenseDrafts([]);
       setEditingExpenses(false);
     } catch (err) {
-      toast.error(err?.message || "Unable to update expenses.");
+      toast.error(getApiErrorMessage(err, "Unable to update expenses."));
     } finally {
       setSaving(false);
     }
@@ -434,7 +437,7 @@ export default function QuoteDetail() {
 
       setQuote(response?.data || null);
     } catch (err) {
-      toast.error(err?.message || "Unable to update quote status.");
+      toast.error(getApiErrorMessage(err, "Unable to update quote status."));
     } finally {
       setSaving(false);
     }
@@ -494,7 +497,7 @@ export default function QuoteDetail() {
 
       await refreshQuote();
     } catch (err) {
-      toast.error(err?.message || "Unable to proceed to Cash Deal.");
+      toast.error(getApiErrorMessage(err, "Unable to proceed to Cash Deal."));
     } finally {
       setSaving(false);
     }
@@ -562,7 +565,7 @@ export default function QuoteDetail() {
 
       await refreshQuote();
     } catch (err) {
-      toast.error(err?.message || "Unable to proceed to Bank Loan.");
+      toast.error(getApiErrorMessage(err, "Unable to proceed to Bank Loan."));
     } finally {
       setSaving(false);
     }
@@ -594,7 +597,7 @@ export default function QuoteDetail() {
       toast.success("Insurance created successfully.");
       window.location.href = `/finance/insurance/${insuranceId}`;
     } catch (err) {
-      toast.error(err?.message || "Unable to create Insurance.");
+      toast.error(getApiErrorMessage(err, "Unable to create Insurance."));
     } finally {
       setSaving(false);
     }
@@ -611,24 +614,11 @@ export default function QuoteDetail() {
           ? response
           : [];
 
-      const logoDocument = documents.find(
-        (document) => document?.name === "Logo",
-      );
-
       const sealStampDocument = documents.find(
         (document) => document?.name === "Seal & Stamp",
       );
 
-      let logoUrl = null;
       let sealStampUrl = null;
-
-      if (logoDocument?.id) {
-        const logoBlob = await downloadCompanyDocument(logoDocument.id);
-
-        if (logoBlob instanceof Blob) {
-          logoUrl = URL.createObjectURL(logoBlob);
-        }
-      }
 
       if (sealStampDocument?.id) {
         const sealStampBlob = await downloadCompanyDocument(
@@ -641,12 +631,12 @@ export default function QuoteDetail() {
       }
 
       setPrintAssets({
-        logo: logoUrl,
+        logo: null,
         sealStamp: sealStampUrl,
       });
 
       return {
-        logo: logoUrl,
+        logo: null,
         sealStamp: sealStampUrl,
       };
     } finally {
@@ -692,12 +682,6 @@ export default function QuoteDetail() {
 
       const assets = await loadQuotePrintAssets();
 
-      if (!assets.logo) {
-        throw new Error(
-          "Company Logo is not configured. Please upload a Logo in Company Documents.",
-        );
-      }
-
       if (includeSealStamp && !assets.sealStamp) {
         throw new Error(
           "Company Seal & Stamp is not configured. Please upload a Seal & Stamp document in Company Documents.",
@@ -724,7 +708,10 @@ export default function QuoteDetail() {
       console.error("Quote print failed:", err);
 
       toast.error(
-        err?.message || "Unable to prepare the quotation for printing.",
+        getApiErrorMessage(
+          err,
+          "Unable to prepare the quotation for printing.",
+        ),
       );
     } finally {
       setPrinting(false);

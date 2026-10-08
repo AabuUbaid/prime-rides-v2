@@ -10,6 +10,8 @@ import {
 } from "../../api/finance";
 import { useAuth } from "../../context/AuthContext";
 
+import { getApiErrorMessage } from "../../utils/errorMessage";
+
 const INITIAL_FORM = {
   name: "",
   description: "",
@@ -50,16 +52,6 @@ function getApiErrors(error) {
   }
 
   return {};
-}
-
-function getApiMessage(error) {
-  const errors = getApiErrors(error);
-
-  if (errors.non_field_errors) {
-    return getFieldError(errors.non_field_errors);
-  }
-
-  return error?.cause?.message || error?.message || "Something went wrong.";
 }
 
 function formatCurrency(value) {
@@ -103,7 +95,7 @@ function ServicePackageManagement() {
       console.error("Failed to load service packages:", error);
 
       setPackages([]);
-      toast.error(getApiMessage(error));
+      toast.error(getApiErrorMessage(error, "Something went wrong."));
     } finally {
       setLoading(false);
     }
@@ -291,7 +283,7 @@ function ServicePackageManagement() {
         setFieldErrors(errors);
       }
 
-      toast.error(getApiMessage(error));
+      toast.error(getApiErrorMessage(error, "Something went wrong."));
     } finally {
       setSaving(false);
     }
@@ -327,7 +319,7 @@ function ServicePackageManagement() {
     } catch (error) {
       console.error("Failed to update service package status:", error);
 
-      toast.error(getApiMessage(error));
+      toast.error(getApiErrorMessage(error, "Something went wrong."));
     }
   }
 
@@ -355,7 +347,7 @@ function ServicePackageManagement() {
     } catch (error) {
       console.error("Failed to delete service package:", error);
 
-      toast.error(getApiMessage(error));
+      toast.error(getApiErrorMessage(error, "Something went wrong."));
     }
   }
 

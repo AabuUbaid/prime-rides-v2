@@ -20,6 +20,8 @@ import ExpenseList from "./components/ExpenseList";
 import ExpenseForm from "./components/ExpenseForm";
 import { createExpense, updateExpense, deleteExpense } from "../../api/expense";
 
+import { getApiErrorMessage } from "../../utils/errorMessage";
+
 function CarDetails() {
   const { user } = useAuth();
   const { id } = useParams();
@@ -161,7 +163,9 @@ function CarDetails() {
     } catch (error) {
       console.error("UPLOAD VEHICLE IMAGES FAILED:", error);
 
-      toast.error(error?.message || "Unable to upload vehicle images.");
+      toast.error(
+        getApiErrorMessage(error, "Unable to upload vehicle images."),
+      );
     } finally {
       setImagesUploading(false);
     }
@@ -360,7 +364,9 @@ function CarDetails() {
     } catch (error) {
       console.error("DELETE VEHICLE DOCUMENT FAILED:", error);
 
-      toast.error(error?.message || "Unable to delete vehicle document.");
+      toast.error(
+        getApiErrorMessage(error, "Unable to delete vehicle document."),
+      );
     } finally {
       setDocumentDeletingId(null);
     }
@@ -397,7 +403,9 @@ function CarDetails() {
     } catch (error) {
       console.error("ARCHIVE VEHICLE DOCUMENT FAILED:", error);
 
-      toast.error(error?.message || "Unable to archive vehicle document.");
+      toast.error(
+        getApiErrorMessage(error, "Unable to archive vehicle document."),
+      );
     }
   }
 
@@ -434,7 +442,9 @@ function CarDetails() {
     } catch (error) {
       console.error("DOWNLOAD VEHICLE DOCUMENT FAILED:", error);
 
-      toast.error(error?.message || "Unable to download vehicle document.");
+      toast.error(
+        getApiErrorMessage(error, "Unable to download vehicle document."),
+      );
     } finally {
       setDocumentDownloadingId(null);
     }

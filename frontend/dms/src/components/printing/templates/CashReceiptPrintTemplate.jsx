@@ -1,3 +1,7 @@
+import PrintDocument from "../PrintDocument";
+
+const CASH_RECEIPT_LOGO = "/prime_rides_logo_gold_trimmed.png";
+
 function displayValue(value, fallback = "-") {
   if (value === null || value === undefined || value === "") {
     return fallback;
@@ -153,7 +157,6 @@ function amountToWords(value) {
   const rounded = Math.round((number + Number.EPSILON) * 100) / 100;
 
   const whole = Math.floor(rounded);
-
   const fils = Math.round((rounded - whole) * 100);
 
   if (fils > 0) {
@@ -165,37 +168,21 @@ function amountToWords(value) {
   return `${numberToWords(whole)} Dirhams Only`;
 }
 
-function ReferenceCell({ label, value }) {
-  return (
-    <div className="cash-receipt-reference-cell">
-      <div className="cash-receipt-ref-label">{label}</div>
+function formatDirection(value) {
+  if (value === "customer_payment") {
+    return "Customer Payment";
+  }
 
-      <div className="cash-receipt-ref-value">{displayValue(value)}</div>
-    </div>
-  );
-}
+  if (value === "company_on_behalf") {
+    return "Company on Behalf";
+  }
 
-function DetailCell({ label, value, labelCell = false }) {
-  return (
-    <div
-      className={
-        labelCell
-          ? "cash-receipt-detail-cell cash-receipt-detail-label-cell"
-          : "cash-receipt-detail-cell"
-      }
-    >
-      {labelCell ? (
-        <div className="cash-receipt-detail-label">{label}</div>
-      ) : (
-        <div className="cash-receipt-detail-value">{displayValue(value)}</div>
-      )}
-    </div>
-  );
+  return value || "-";
 }
 
 export default function CashReceiptPrintTemplate({
   receipt,
-  company = {},
+  company,
   printAssets = {},
 }) {
   if (!receipt) {
@@ -212,1014 +199,915 @@ export default function CashReceiptPrintTemplate({
 
   const customerName = displayValue(receipt.customer_name);
 
-  const amount = receipt.amount;
+  const companyName =
+    company?.legal_entity_name || "Prime Rides Cars Trading LLC";
 
-  /*
-   * IMPORTANT:
-   * These values must come from the backend.
-   * Do NOT calculate balance in React.
-   */
-  const vehiclePrice =
-    receipt.vehicle_price ?? receipt.quote_vehicle_price ?? receipt.quote_price;
+  const companyAddress = String(company?.showroom_address || "").trim();
 
-  const previouslyReceived =
-    receipt.previously_received ??
-    receipt.total_received_before ??
-    receipt.amount_received_before;
+  const companyPhone =
+    company?.official_phone || company?.main_contact_mobile || "";
 
-  const balanceDue = receipt.balance_due ?? receipt.remaining_balance;
+  const companyEmail = company?.corporate_email || "";
+
+  // const vehiclePrice =
+  //   receipt.vehicle_price ?? receipt.quote_vehicle_price ?? receipt.quote_price;
+
+  // const previouslyReceived =
+  //   receipt.previously_received ??
+  //   receipt.total_received_before ??
+  //   receipt.amount_received_before;
+
+  // const balanceDue = receipt.balance_due ?? receipt.remaining_balance;
 
   return (
-    <>
+    <PrintDocument company={company} showHeader={false} showFooter={false}>
       <style>
         {`
-          :root {
-            --navy: #1F2A6E;
-            --light: #F2F4F8;
-            --pale: #E4E8F5;
-            --grey: #6B7280;
-            --line: #D5D9E2;
-            --text: #222222;
-            --soft: #C9D0F5;
+          @page {
+            size: A4 portrait;
+            margin: 0;
           }
 
-          .cash-receipt-sheet {
-            width: 100%;
-            height: 274mm;
-            min-height: 274mm;
-            max-height: 274mm;
+          .cash-receipt-page,
+          .cash-receipt-page *,
+          .cash-receipt-page *::before,
+          .cash-receipt-page *::after {
             box-sizing: border-box;
+            -webkit-print-color-adjust: exact;
+            print-color-adjust: exact;
+          }
+
+          .cash-receipt-page {
+            --black: #111111;
+            --gold: #B8913A;
+            --cream: #FAF5E8;
+            --hairline: #E9DFC4;
+            --ink: #1A1A1A;
+            --muted-label: #777777;
+            --muted: #888888;
+            --body: #444444;
+            --contact: #555555;
+            --header-text: #BBBBBB;
+
+            width: 794px;
+            height: 1123px;
+            min-height: 1123px;
+            max-height: 1123px;
+
+            margin: 0;
+            padding: 0 36px 80px;
+
+            position: relative;
+            overflow: hidden;
 
             display: flex;
             flex-direction: column;
 
-            font-family:
-              Arial,
-              Helvetica,
-              sans-serif;
+            background: #ffffff;
+            color: var(--ink);
 
-            color: var(--text);
-            font-size: 9pt;
-            line-height: 1.25;
-
-            overflow: hidden;
+            font-family: Arial, Helvetica, sans-serif;
+            font-size: 12px;
+            line-height: 1.2;
           }
 
-          .cash-receipt-main {
-            flex: 0 0 auto;
-            width: 100%;
-          }
-
-          .cash-receipt-sheet,
-          .cash-receipt-sheet * {
-            box-sizing: border-box;
+          .cash-receipt-page *,
+          .cash-receipt-page *::before,
+          .cash-receipt-page *::after {
+            border-radius: 0 !important;
+            box-shadow: none !important;
           }
 
           /* HEADER */
 
-          .cash-receipt-header {
-            display: grid;
-            grid-template-columns: 135px 1fr;
-            column-gap: 12px;
-            align-items: center;
+          .cash-receipt-page .cash-header {
+            position: relative;
+            flex: 0 0 142px;
 
-            padding-bottom: 7px;
+            width: calc(100% + 72px);
+            height: 142px;
+            margin: 0 -36px;
 
-            border-bottom: 2px solid var(--navy);
-
-            break-inside: avoid;
-            page-break-inside: avoid;
+            background: var(--black);
+            border-bottom: 4px solid var(--gold);
+            overflow: hidden;
           }
 
-          .cash-receipt-logo {
-            width: 135px;
-            height: 69px;
+          .cash-receipt-page .cash-logo {
+            position: absolute;
+            left: 36px;
+            top: 30.5px;
+
+            width: 189.8px;
+            height: 78px;
+
+            display: block;
             object-fit: contain;
             object-position: left center;
-            display: block;
           }
 
-          .cash-receipt-company-name {
-            font-size: 18pt;
-            line-height: 1.05;
+          .cash-receipt-page .cash-company-block {
+            position: absolute;
+            left: 241.8px;
+            top: 30px;
+
+            width: 400px;
+            max-width: 400px;
+
+            overflow: hidden;
+          }
+
+          .cash-receipt-page .cash-company-name {
+            color: var(--gold);
+
+            font-family: "Times New Roman", Times, serif;
+            font-size: 26px;
+            line-height: 1.1;
             font-weight: 700;
-            color: var(--navy);
+            letter-spacing: 1px;
+
+            white-space: nowrap;
           }
 
-          .cash-receipt-company-address {
-            margin-top: 5px;
-            font-size: 9pt;
-            line-height: 1.25;
-            color: var(--grey);
+          .cash-receipt-page .cash-company-name.is-long {
+            font-size: 20px;
           }
 
-          .cash-receipt-company-contact {
-            margin-top: 2px;
-            font-size: 9pt;
-            line-height: 1.25;
-            color: var(--grey);
+          .cash-receipt-page .cash-company-meta {
+            margin-top: 4px;
+            color: var(--header-text);
+
+            font-size: 11.5px;
+            line-height: 16px;
+          }
+
+          .cash-receipt-page .cash-header-contact {
+            margin-top: 4px;
+            color: var(--header-text);
+
+            font-size: 11.5px;
+            line-height: 16px;
+
+            white-space: nowrap;
           }
 
           /* TITLE */
 
-          .cash-receipt-title-band {
+          .cash-receipt-page .cash-title-row {
+            flex: 0 0 46px;
+            height: 46px;
+
+            margin-top: 16px;
+
             display: flex;
-            justify-content: space-between;
             align-items: center;
+            justify-content: space-between;
 
-            height: 28px;
-
-            margin-top: 8px;
-            padding: 0 10px;
-
-            background: var(--navy);
-            color: #ffffff;
-
-            break-inside: avoid;
-            page-break-inside: avoid;
+            border-bottom: 1px solid var(--gold);
           }
 
-          .cash-receipt-title {
-            font-size: 16pt;
+          .cash-receipt-page .cash-title {
+            color: var(--gold);
+
+            font-family: "Times New Roman", Times, serif;
+            font-size: 30px;
             line-height: 1;
-            font-weight: 700;
+            font-style: italic;
           }
 
-          .cash-receipt-title-side {
-            font-size: 10pt;
+          .cash-receipt-page .cash-title-right {
+            color: var(--black);
+
+            font-size: 12.9px;
             line-height: 1;
-            font-weight: 400;
           }
 
           /* REFERENCE */
 
-          .cash-receipt-reference {
-            display: flex;
+          .cash-receipt-page .cash-reference {
+            flex: 0 0 49px;
+            height: 49px;
 
-            height: 46px;
+            margin-top: 10px;
 
-            margin-top: 5px;
-
-            background: var(--light);
-
-            break-inside: avoid;
-            page-break-inside: avoid;
-          }
-
-          .cash-receipt-reference-cell {
-            flex: 1 1 0;
-            min-width: 0;
-
-            padding: 7px 10px;
-
-            border-right: 1px solid var(--line);
-          }
-
-          .cash-receipt-reference-cell:last-child {
-            border-right: 0;
-          }
-
-          .cash-receipt-ref-label {
-            font-size: 7pt;
-            line-height: 1.1;
-            font-weight: 700;
-            color: var(--grey);
-            text-transform: uppercase;
-          }
-
-          .cash-receipt-ref-value {
-            margin-top: 4px;
-
-            font-size: 11pt;
-            line-height: 1.1;
-            font-weight: 700;
-            color: var(--text);
-
-            word-break: break-word;
-          }
-
-          /* AMOUNT HERO */
-
-          .cash-receipt-hero {
             display: grid;
-            grid-template-columns: 58% 42%;
+            grid-template-columns: 148.5px 176.3px 148.5px 1fr;
 
-            margin-top: 14px;
-
-            border: 2px solid var(--navy);
-
-            min-height: 91px;
-
-            break-inside: avoid;
-            page-break-inside: avoid;
+            background: var(--cream);
+            border-left: 3px solid var(--gold);
           }
 
-          .cash-receipt-hero-main {
-            padding: 14px 18px;
-
-            background: var(--navy);
-            color: #ffffff;
+          .cash-receipt-page .cash-reference-cell {
+            padding: 8px 12px;
           }
 
-          .cash-receipt-hero-label {
-            font-size: 9pt;
-            line-height: 1.1;
+          .cash-receipt-page .cash-reference-label {
+            color: var(--gold);
 
-            letter-spacing: 1px;
-
+            font-size: 10.5px;
+            line-height: 1;
             font-weight: 700;
-
-            color: var(--soft);
+            letter-spacing: 0.58px;
           }
 
-          .cash-receipt-hero-amount {
-            margin-top: 4px;
+          .cash-receipt-page .cash-reference-value {
+            margin-top: 3px;
 
-            font-size: 34pt;
-            line-height: 1.15;
-
+            color: var(--ink);
+            font-size: 14.9px;
+            line-height: 1.1;
             font-weight: 700;
 
             white-space: nowrap;
           }
 
-          .cash-receipt-hero-amount small {
-            font-size: 15pt;
-            font-weight: 400;
-            margin-right: 5px;
+          /* TWO COLUMNS */
+
+          .cash-receipt-page .cash-parties {
+            height: 72px;
+            margin-top: 0;
+            padding-top: 15px;
           }
 
-          .cash-receipt-hero-sub {
-            margin-top: 4px;
-
-            font-size: 9pt;
-            line-height: 1.25;
-
-            color: var(--soft);
-          }
-
-          .cash-receipt-hero-side {
-            display: grid;
-            grid-template-rows: 1fr 1fr;
-          }
-
-          .cash-receipt-hero-side-item {
-            padding: 11px 16px;
-
-            display: flex;
-            flex-direction: column;
-            justify-content: center;
-          }
-
-          .cash-receipt-hero-side-item:first-child {
-            background: var(--pale);
-            border-bottom: 2px solid #ffffff;
-          }
-
-          .cash-receipt-hero-side-item:last-child {
-            background: var(--light);
-          }
-
-          .cash-receipt-side-label {
-            font-size: 7pt;
-            line-height: 1.1;
-            font-weight: 700;
-            color: var(--grey);
-            text-transform: uppercase;
-          }
-
-          .cash-receipt-side-value {
-            margin-top: 3px;
-
-            font-size: 14pt;
-            line-height: 1.1;
-            font-weight: 700;
-
-            color: var(--navy);
-          }
-
-          /* WORDS */
-
-          .cash-receipt-words {
-            height: 30px;
-
-            display: flex;
-            align-items: center;
-
-            padding-left: 10px;
-
-            border-bottom: 1px solid var(--line);
-
-            break-inside: avoid;
-            page-break-inside: avoid;
-          }
-
-          .cash-receipt-words-label {
-            margin-right: 8px;
-
-            font-size: 8pt;
-            font-weight: 700;
-
-            color: var(--grey);
-          }
-
-          .cash-receipt-words-value {
-            font-size: 9pt;
-            font-style: italic;
-          }
-
-          /* CUSTOMER / REFERENCE */
-
-          .cash-receipt-two-column {
+          .cash-receipt-page .cash-party-grid {
             display: grid;
             grid-template-columns: 1fr 1fr;
-            column-gap: 8px;
-
-            margin-top: 16px;
-
-            break-inside: avoid;
-            page-break-inside: avoid;
+            column-gap: 20px;
           }
 
-          .cash-receipt-column-heading {
-            padding-bottom: 4px;
+          .cash-receipt-page .cash-party {
+            height: 57px;
 
-            margin-bottom: 6px;
+            border-bottom: 1px solid var(--gold);
+            overflow: hidden;
+          }
 
-            border-bottom: 1px solid var(--navy);
+          .cash-receipt-page .cash-party-heading {
+            color: var(--gold);
 
-            font-size: 9pt;
-            line-height: 1.1;
+            font-size: 10.9px;
+            line-height: 1;
             font-weight: 700;
-
-            color: var(--navy);
-
+            letter-spacing: 0.65px;
             text-transform: uppercase;
           }
 
-          .cash-receipt-column-primary {
-            padding-left: 10px;
+          .cash-receipt-page .cash-party-name {
+            margin-top: 8px;
 
-            font-size: 11pt;
-            line-height: 1.2;
+            color: var(--ink);
+            font-size: 14.9px;
+            line-height: 1.05;
             font-weight: 700;
           }
 
-          .cash-receipt-column-secondary {
-            margin-top: 3px;
-            padding-left: 10px;
+          .cash-receipt-page .cash-party-meta {
+            margin-top: 4px;
 
-            font-size: 9.5pt;
-            line-height: 1.2;
-
-            color: var(--grey);
-          }
-
-          .cash-receipt-column-secondary strong {
-            color: var(--text);
-            font-weight: 700;
+            color: var(--muted-label);
+            font-size: 10.9px;
+            line-height: 13px;
           }
 
           /* SECTION BAR */
 
-          .cash-receipt-section-bar {
+          .cash-receipt-page .cash-section {
+            width: 100%;
+            margin-top: 16px;
+          }
+
+          .cash-receipt-page .cash-section-bar {
+            height: 30px;
+            padding: 0 12px;
+
             display: flex;
             align-items: center;
 
-            height: 26px;
+            background: var(--black);
+            color: var(--gold);
 
-            margin-top: 16px;
-
-            padding: 0 10px;
-
-            background: var(--navy);
-            color: #ffffff;
-
-            font-size: 10pt;
+            font-family: "Times New Roman", Times, serif;
+            font-size: 12.9px;
             line-height: 1;
             font-weight: 700;
+            letter-spacing: 2px;
+            text-transform: uppercase;
+          }
 
-            break-inside: avoid;
-            page-break-inside: avoid;
+          /* PAYMENT DETAILS */
+
+          .cash-receipt-page .cash-payment-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr 1fr 1fr;
+          }
+
+          .cash-receipt-page .cash-payment-cell {
+            min-width: 0;
+            min-height: 44px;
+
+            padding: 7px 12px;
+
+            border-top: 1px solid var(--hairline);
+            border-right: 1px solid var(--hairline);
+          }
+
+          .cash-receipt-page .cash-payment-cell:last-child {
+            border-right: 0;
+          }
+
+          .cash-receipt-page .cash-payment-label {
+            color: var(--muted-label);
+
+            font-size: 9.5px;
+            line-height: 1;
+            font-weight: 700;
+            text-transform: uppercase;
+          }
+
+          .cash-receipt-page .cash-payment-value {
+            margin-top: 5px;
+
+            color: var(--ink);
+            font-size: 12px;
+            line-height: 15px;
+            font-weight: 700;
+
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
           }
 
           /* VEHICLE */
 
-          .cash-receipt-detail-grid {
+          .cash-receipt-page .cash-vehicle-row {
             display: grid;
-            grid-template-columns: 25% 25% 25% 25%;
-
-            break-inside: avoid;
-            page-break-inside: avoid;
+            grid-template-columns: 110px 261px 90px 261px;
           }
 
-          .cash-receipt-detail-cell {
+          .cash-receipt-page .cash-vehicle-row.tall {
+            min-height: 47px;
+          }
+
+          .cash-receipt-page .cash-vehicle-row.regular {
+            min-height: 32px;
+          }
+
+          .cash-receipt-page .cash-vehicle-label,
+          .cash-receipt-page .cash-vehicle-value,
+          .cash-receipt-page .cash-vehicle-empty {
             min-width: 0;
 
-            height: 24px;
-
-            display: flex;
-            align-items: center;
-
-            padding: 0 10px;
-
-            border-bottom: 1px solid var(--line);
+            border-top: 1px solid var(--hairline);
           }
 
-          .cash-receipt-detail-label-cell {
-            background: var(--light);
+          .cash-receipt-page .cash-vehicle-row:last-child > * {
+            border-bottom: 1px solid var(--hairline);
           }
 
-          .cash-receipt-detail-label {
-            font-size: 7pt;
-            line-height: 1.1;
+          .cash-receipt-page .cash-vehicle-label {
+            padding: 8px 12px;
 
+            color: var(--muted-label);
+            background: var(--cream);
+
+            font-size: 12.9px;
+            line-height: 15px;
+            font-weight: 700;
+          }
+
+          .cash-receipt-page .cash-vehicle-value {
+            padding: 8px 12px;
+
+            color: var(--ink);
+            background: #ffffff;
+
+            font-size: 12.9px;
+            line-height: 15px;
             font-weight: 700;
 
-            color: var(--grey);
-
-            text-transform: uppercase;
-          }
-
-          .cash-receipt-detail-value {
-            font-size: 10pt;
-            line-height: 1.1;
-
-            font-weight: 700;
-
-            color: var(--text);
-
-            word-break: break-word;
+            white-space: nowrap;
+            overflow: hidden;
           }
 
           /* PAYMENT SUMMARY */
 
-          .cash-receipt-summary-header {
+          .cash-receipt-page .cash-summary {
+            margin-top: 12px;
+          }
+
+          .cash-receipt-page .cash-summary-table {
+            width: 100%;
+            border-collapse: collapse;
+            table-layout: fixed;
+          }
+
+          .cash-receipt-page .cash-summary-table th {
+            height: 31px;
+            padding: 0 12px;
+
+            background: var(--black);
+            color: var(--gold);
+
+            font-family: "Times New Roman", Times, serif;
+            font-size: 12px;
+            line-height: 1;
+            font-weight: 700;
+            text-transform: uppercase;
+          }
+
+          .cash-receipt-page .cash-summary-table th:first-child {
+            width: 60%;
+            text-align: left;
+          }
+
+          .cash-receipt-page .cash-summary-table th:last-child {
+            width: 40%;
+            text-align: right;
+          }
+
+          .cash-receipt-page .cash-summary-table td {
+            height: 30px;
+            padding: 7px 12px;
+
+            border-bottom: 1px solid var(--hairline);
+
+            color: var(--ink);
+            background: #ffffff;
+
+            font-size: 12.9px;
+            line-height: 16px;
+          }
+
+          .cash-receipt-page .cash-summary-amount {
+            text-align: right;
+            font-variant-numeric: tabular-nums;
+          }
+
+          // .cash-receipt-page .cash-balance-row td {
+          //   height: 33px;
+
+          //   background: var(--black);
+          //   color: var(--gold);
+
+          //   font-family: "Times New Roman", Times, serif;
+          //   font-size: 16px;
+          //   line-height: 1;
+          //   font-weight: 700;
+          // }
+
+          /* WORDS */
+
+          .cash-receipt-page .cash-words {
+            height: 36px;
+
+            padding: 0 12px;
+
             display: flex;
-            justify-content: space-between;
             align-items: center;
+            gap: 24px;
 
-            height: 26px;
+            border-top: 1px solid var(--hairline);
+            border-bottom: 1px solid var(--hairline);
+          }
 
-            margin-top: 16px;
+          .cash-receipt-page .cash-words-label {
+            flex: 0 0 auto;
 
-            padding: 0 10px;
+            color: var(--muted-label);
 
-            background: var(--navy);
-            color: #ffffff;
-
-            font-size: 10pt;
+            font-size: 10.9px;
+            line-height: 1;
             font-weight: 700;
           }
 
-          .cash-receipt-summary-row {
-            display: grid;
-            grid-template-columns: 1fr 150px;
+          .cash-receipt-page .cash-words-value {
+            min-width: 0;
 
-            height: 24px;
+            color: var(--body);
 
-            border-bottom: 1px solid var(--line);
+            font-size: 12px;
+            line-height: 1.2;
+            font-style: italic;
 
-            font-size: 10pt;
-          }
-
-          .cash-receipt-summary-label,
-          .cash-receipt-summary-value {
-            display: flex;
-            align-items: center;
-
-            padding: 0 10px;
-          }
-
-          .cash-receipt-summary-value {
-            justify-content: flex-end;
-
-            font-weight: 700;
-          }
-
-          .cash-receipt-balance {
-            display: grid;
-            grid-template-columns: 1fr 150px;
-
-            height: 33px;
-
-            background: var(--pale);
-
-            color: var(--navy);
-
-            border-top: 1px solid var(--navy);
-            border-bottom: 2px solid var(--navy);
-
-            font-weight: 700;
-          }
-
-          .cash-receipt-balance-label,
-          .cash-receipt-balance-value {
-            display: flex;
-            align-items: center;
-
-            padding: 0 10px;
-          }
-
-          .cash-receipt-balance-label {
-            font-size: 11pt;
-          }
-
-          .cash-receipt-balance-value {
-            justify-content: flex-end;
-            font-size: 12pt;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
           }
 
           /* BOTTOM */
 
-          .cash-receipt-bottom {
+          .cash-receipt-page .cash-bottom {
+            width: 100%;
+            height: 59.3px;
+            min-height: 59.3px;
+
             margin-top: auto;
 
-            padding-top: 10px;
-
-            break-inside: avoid;
-            page-break-inside: avoid;
-          }
-
-          .cash-receipt-bottom-grid {
             display: grid;
-            grid-template-columns: 1fr 1fr;
-
-            column-gap: 20px;
+            grid-template-columns: 346px 346px;
+            column-gap: 30px;
           }
 
-          .cash-receipt-heading {
+          .cash-receipt-page .cash-terms-heading {
             padding-bottom: 4px;
 
-            margin-bottom: 6px;
+            border-bottom: 1px solid var(--gold);
 
-            border-bottom: 1px solid var(--navy);
+            color: var(--gold);
 
-            font-size: 9pt;
-            line-height: 1.1;
+            font-size: 10.5px;
+            line-height: 1;
             font-weight: 700;
-
-            color: var(--navy);
-
-            text-transform: uppercase;
+            letter-spacing: 0.58px;
           }
 
-          .cash-receipt-notes {
-            font-size: 9pt;
-            line-height: 1.7;
+          .cash-receipt-page .cash-terms-list {
+            margin: 6px 0 0;
+            padding: 0;
 
-            color: #444444;
+            list-style: none;
+
+            color: var(--body);
+
+            font-size: 12px;
+            line-height: 19px;
           }
 
-          .cash-receipt-stamp {
-            width: 145px;
-            height: 93px;
+          .cash-receipt-page .cash-stamp-signature {
+            height: 59.3px;
+
+            display: flex;
+            flex-direction: column;
+            justify-content: flex-end;
+            align-items: stretch;
+          }
+
+          .cash-receipt-page .cash-stamp-space {
+            flex: 1 1 auto;
+            min-height: 0;
+
+            display: flex;
+            align-items: flex-end;
+            justify-content: center;
+
+            overflow: visible;
+          }
+
+          .cash-receipt-page .cash-stamp-space img {
+            max-width: 220px;
+            max-height: 70px;
+
+            width: auto;
+            height: auto;
 
             object-fit: contain;
-
             display: block;
 
-            margin: 0 auto;
+            position: relative;
+            top: -12px;
           }
 
-          .cash-receipt-stamp-spacer {
-            width: 145px;
-            height: 93px;
+          .cash-receipt-page .cash-signature-caption {
+            padding-top: 7px;
 
-            margin: 0 auto;
-          }
+            border-top: 1px solid var(--hairline);
 
-          .cash-receipt-signatures {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
+            color: var(--muted);
 
-            column-gap: 20px;
-
-            margin-top: 6px;
-          }
-
-          .cash-receipt-signature {
-            padding-top: 4px;
-
-            border-top: 1px solid var(--line);
+            font-size: 10.9px;
+            line-height: 1;
 
             text-align: center;
-
-            font-size: 8pt;
-
-            color: var(--grey);
           }
 
           /* FOOTER */
 
-          .cash-receipt-footer {
-            flex-shrink: 0;
+          .cash-receipt-page .cash-footer {
+            position: absolute;
 
-            margin-top: 22px;
+            left: 0;
+            right: 0;
+            bottom: 0;
+
+            width: 100%;
+            height: 65px;
+          }
+
+          .cash-receipt-page .cash-contact {
+            position: absolute;
+
+            left: 0;
+            right: 0;
+            bottom: 50px;
+
+            height: 15px;
+
+            color: var(--contact);
+
+            font-size: 11.5px;
+            line-height: 15px;
 
             text-align: center;
-
-            font-size: 8.5pt;
-            line-height: 1.3;
-
-            color: var(--grey);
-
-            break-inside: avoid;
-            page-break-inside: avoid;
+            white-space: nowrap;
           }
 
-          .cash-receipt-thank-you {
+          .cash-receipt-page .cash-thank-you {
+            position: absolute;
+
+            left: 0;
+            right: 0;
+            bottom: 0;
+
+            height: 40px;
+
+            border-top: 4px solid var(--gold);
+            background: var(--black);
+
             display: flex;
-            justify-content: center;
             align-items: center;
+            justify-content: center;
 
-            height: 26px;
+            color: var(--gold);
 
-            margin-top: 8px;
-
-            background: var(--navy);
-            color: #ffffff;
-
-            font-size: 11pt;
-            font-weight: 700;
-          }
-
-          @page {
-            size: A4 portrait;
-            margin: 10mm;
+            font-family: "Times New Roman", Times, serif;
+            font-size: 14px;
+            line-height: 1;
+            font-style: italic;
+            letter-spacing: 3px;
           }
 
           @media print {
+            @page {
+              size: 210mm 297mm;
+              margin: 0 !important;
+            }
+
             html,
             body,
-            #root {
-              width: 100% !important;
-              height: auto !important;
-
-              min-height: 0 !important;
-
+            #root,
+            #root > * {
+              width: 210mm !important;
+              height: 297mm !important;
+              min-width: 210mm !important;
+              max-width: 210mm !important;
+              min-height: 297mm !important;
+              max-height: 297mm !important;
               margin: 0 !important;
               padding: 0 !important;
-
+              border: 0 !important;
               background: #ffffff !important;
-            }
-
-            body {
-              font-family:
-                Arial,
-                Helvetica,
-                sans-serif !important;
-
-              -webkit-print-color-adjust: exact !important;
-              print-color-adjust: exact !important;
-
-              overflow: visible !important;
-            }
-
-            .cash-receipt-sheet {
-              width: 100% !important;
-
-              height: 274mm !important;
-              min-height: 274mm !important;
-              max-height: 274mm !important;
-
-              display: flex !important;
-              flex-direction: column !important;
-
-              margin: 0 !important;
-              padding: 0 !important;
-
               overflow: hidden !important;
-
-              break-inside: avoid !important;
-              page-break-inside: avoid !important;
             }
 
-            .cash-receipt-main {
-              flex: 0 0 auto !important;
-            }
-
-            .cash-receipt-bottom {
-              margin-top: auto !important;
-
-              break-inside: avoid !important;
-              page-break-inside: avoid !important;
-            }
-
-            .cash-receipt-footer {
-              flex-shrink: 0 !important;
-
-              break-inside: avoid !important;
-              page-break-inside: avoid !important;
-            }
-
-            .print-area {
-              display: block !important;
-              position: static !important;
-
-              width: 100% !important;
-              height: auto !important;
-
-              margin: 0 !important;
-              padding: 0 !important;
-
-              background: #ffffff !important;
-            }
-
+            .print-area,
             .print-document {
-              display: block !important;
-              position: static !important;
-
-              width: 100% !important;
-              height: auto !important;
-
-              min-height: 0 !important;
-              max-width: none !important;
-
+              width: 210mm !important;
               margin: 0 !important;
               padding: 0 !important;
-
               background: #ffffff !important;
-
               border: 0 !important;
               box-shadow: none !important;
+            }
+
+            .cash-receipt-page {
+              width: 210mm !important;
+              height: 297mm !important;
+              min-height: 297mm !important;
+              max-height: 297mm !important;
+              margin: 0 !important;
+              overflow: hidden !important;
             }
           }
         `}
       </style>
 
-      <div className="cash-receipt-sheet">
-        <div className="cash-receipt-main">
-          {/* HEADER */}
+      <div className="cash-receipt-page">
+        <header className="cash-header">
+          <img
+            src={CASH_RECEIPT_LOGO}
+            alt="Prime Rides"
+            className="cash-logo"
+          />
 
-          <header className="cash-receipt-header">
-            <div>
-              {printAssets.logo ? (
-                <img
-                  src={printAssets.logo}
-                  alt=""
-                  className="cash-receipt-logo"
-                />
-              ) : null}
+          <div className="cash-company-block">
+            <div
+              className={`cash-company-name${
+                companyName.length > 28 ? " is-long" : ""
+              }`}
+            >
+              {companyName}
             </div>
 
-            <div>
-              <div className="cash-receipt-company-name">
-                {displayValue(company?.legal_entity_name)}
-              </div>
+            <div className="cash-company-meta">{companyAddress || "-"}</div>
 
-              <div className="cash-receipt-company-address">
-                {displayValue(company?.showroom_address)}
-              </div>
-
-              <div className="cash-receipt-company-contact">
-                Tel: {displayValue(company?.main_contact_mobile)}
-                {company?.corporate_email
-                  ? ` | ${company.corporate_email}`
-                  : ""}
-              </div>
+            <div className="cash-header-contact">
+              Tel: {companyPhone || "-"}
+              {companyEmail ? ` | ${companyEmail}` : ""}
             </div>
-          </header>
+          </div>
+        </header>
 
-          {/* TITLE */}
+        <div className="cash-title-row">
+          <div className="cash-title">Cash Receipt</div>
+          <div className="cash-title-right">Payment Received</div>
+        </div>
 
-          <div className="cash-receipt-title-band">
-            <div className="cash-receipt-title">Cash Receipt</div>
-
-            <div className="cash-receipt-title-side">Payment Received</div>
+        <section className="cash-reference">
+          <div className="cash-reference-cell">
+            <div className="cash-reference-label">RECEIPT #</div>
+            <div className="cash-reference-value">
+              {receipt.receipt_number || "-"}
+            </div>
           </div>
 
-          {/* REFERENCE STRIP */}
+          <div className="cash-reference-cell">
+            <div className="cash-reference-label">DATE</div>
+            <div className="cash-reference-value">
+              {formatDate(receipt.transaction_date)}
+            </div>
+          </div>
 
-          <div className="cash-receipt-reference">
-            <ReferenceCell label="Receipt #" value={receipt.receipt_number} />
+          <div className="cash-reference-cell">
+            <div className="cash-reference-label">CUSTOMER ID</div>
+            <div className="cash-reference-value">
+              {receipt.customer ?? "-"}
+            </div>
+          </div>
 
-            <ReferenceCell
-              label="Date"
-              value={formatDate(receipt.transaction_date)}
-            />
-
-            <ReferenceCell label="Customer ID" value={receipt.customer} />
-
-            <ReferenceCell
-              label="TRN"
-              value={
-                receipt.customer_trn ??
+          <div className="cash-reference-cell">
+            <div className="cash-reference-label">TRN</div>
+            <div className="cash-reference-value">
+              {receipt.customer_trn ??
                 receipt.trn ??
-                receipt.customer_tax_number
-              }
-            />
-          </div>
-
-          {/* AMOUNT HERO */}
-
-          <section className="cash-receipt-hero">
-            <div className="cash-receipt-hero-main">
-              <div className="cash-receipt-hero-label">AMOUNT RECEIVED</div>
-
-              <div className="cash-receipt-hero-amount">
-                <small>AED</small>
-                {formatAmount(amount)}
-              </div>
-
-              <div className="cash-receipt-hero-sub">
-                {displayValue(receipt.category, "Payment")}
-                {" · "}
-                {displayValue(receipt.payment_method, "Cash")}
-                {" · against Quotation "}
-                {displayValue(receipt.quote_number, "-")}
-              </div>
+                receipt.customer_tax_number ??
+                "-"}
             </div>
-
-            <div className="cash-receipt-hero-side">
-              <div className="cash-receipt-hero-side-item">
-                <div className="cash-receipt-side-label">PAYMENT TYPE</div>
-
-                <div className="cash-receipt-side-value">
-                  {displayValue(receipt.category)}
-                </div>
-              </div>
-
-              <div className="cash-receipt-hero-side-item">
-                <div className="cash-receipt-side-label">PAYMENT METHOD</div>
-
-                <div className="cash-receipt-side-value">
-                  {displayValue(receipt.payment_method)}
-                </div>
-              </div>
-            </div>
-          </section>
-
-          {/* AMOUNT IN WORDS */}
-
-          <div className="cash-receipt-words">
-            <span className="cash-receipt-words-label">IN WORDS</span>
-
-            <span className="cash-receipt-words-value">
-              {amountToWords(amount)}
-            </span>
           </div>
+        </section>
 
-          {/* RECEIVED FROM / REFERENCE */}
+        <section className="cash-parties">
+          <div className="cash-party-grid">
+            <div className="cash-party">
+              <div className="cash-party-heading">RECEIVED FROM</div>
 
-          <section className="cash-receipt-two-column">
-            <div>
-              <div className="cash-receipt-column-heading">RECEIVED FROM</div>
+              <div className="cash-party-name">{customerName}</div>
 
-              <div className="cash-receipt-column-primary">{customerName}</div>
-
-              <div className="cash-receipt-column-secondary">
+              <div className="cash-party-meta">
                 Mobile: <strong>{displayValue(receipt.customer_mobile)}</strong>
               </div>
             </div>
 
-            <div>
-              <div className="cash-receipt-column-heading">REFERENCE</div>
+            <div className="cash-party">
+              <div className="cash-party-heading">REFERENCE</div>
 
-              <div className="cash-receipt-column-primary">
+              <div className="cash-party-name">
                 {displayValue(receipt.reference)}
               </div>
 
-              <div className="cash-receipt-column-secondary">
+              <div className="cash-party-meta">
                 Description:{" "}
                 <strong>{displayValue(receipt.description)}</strong>
               </div>
             </div>
-          </section>
+          </div>
+        </section>
 
-          {/* VEHICLE DETAILS */}
+        <section className="cash-section">
+          <div className="cash-section-bar">PAYMENT DETAILS</div>
 
-          <section>
-            <div className="cash-receipt-section-bar">VEHICLE DETAILS</div>
-
-            <div className="cash-receipt-detail-grid">
-              <DetailCell label="Make & Model" labelCell />
-
-              <DetailCell value={vehicleName} />
-
-              <DetailCell label="Year" labelCell />
-
-              <DetailCell value={receipt.vehicle_year} />
-
-              <DetailCell label="Chassis No." labelCell />
-
-              <DetailCell value={receipt.vehicle_chassis_number} />
-
-              <DetailCell label="Engine No." labelCell />
-
-              <DetailCell value={receipt.vehicle_engine_number} />
-
-              <DetailCell label="Colour" labelCell />
-
-              <DetailCell value={receipt.vehicle_colour} />
-
-              <div className="cash-receipt-detail-cell" />
-              <div className="cash-receipt-detail-cell" />
-            </div>
-          </section>
-
-          {/* PAYMENT SUMMARY */}
-
-          <section>
-            <div className="cash-receipt-summary-header">
-              <span>PAYMENT SUMMARY</span>
-
-              <span>AMOUNT (AED)</span>
-            </div>
-
-            <div className="cash-receipt-summary-row">
-              <div className="cash-receipt-summary-label">Vehicle Price</div>
-
-              <div className="cash-receipt-summary-value">
-                {formatAmountOrDash(vehiclePrice)}
+          <div className="cash-payment-grid">
+            <div className="cash-payment-cell">
+              <div className="cash-payment-label">Payment Type</div>
+              <div className="cash-payment-value">
+                {displayValue(receipt.category)}
               </div>
             </div>
 
-            <div className="cash-receipt-summary-row">
-              <div className="cash-receipt-summary-label">
-                Previously Received
-              </div>
-
-              <div className="cash-receipt-summary-value">
-                {formatAmountOrDash(previouslyReceived)}
+            <div className="cash-payment-cell">
+              <div className="cash-payment-label">Payment Method</div>
+              <div className="cash-payment-value">
+                {displayValue(receipt.payment_method)}
               </div>
             </div>
 
-            <div className="cash-receipt-summary-row">
-              <div className="cash-receipt-summary-label">
-                Amount Received (this receipt)
-              </div>
-
-              <div className="cash-receipt-summary-value">
-                {formatAmountOrDash(amount)}
+            <div className="cash-payment-cell">
+              <div className="cash-payment-label">Direction</div>
+              <div className="cash-payment-value">
+                {formatDirection(receipt.direction)}
               </div>
             </div>
 
-            <div className="cash-receipt-balance">
-              <div className="cash-receipt-balance-label">BALANCE DUE</div>
-
-              <div className="cash-receipt-balance-value">
-                {formatAmountOrDash(balanceDue)}
+            <div className="cash-payment-cell">
+              <div className="cash-payment-label">Quotation</div>
+              <div className="cash-payment-value">
+                {displayValue(receipt.quote_number)}
               </div>
             </div>
-          </section>
-        </div>
+          </div>
+        </section>
 
-        {/* BOTTOM */}
+        <section className="cash-section">
+          <div className="cash-section-bar">VEHICLE DETAILS</div>
 
-        <section className="cash-receipt-bottom">
-          <div className="cash-receipt-bottom-grid">
-            <div>
-              <div className="cash-receipt-heading">TERMS & NOTES</div>
+          <div className="cash-vehicle-row tall">
+            <div className="cash-vehicle-label">Make &amp; Model</div>
+            <div className="cash-vehicle-value">{vehicleName || "-"}</div>
 
-              <div className="cash-receipt-notes">
-                <div>
-                  1. This receipt confirms the amount received against the
-                  referenced quotation.
-                </div>
-
-                <div>2. Please retain this receipt for your records.</div>
-
-                <div>3. All amounts are stated in AED.</div>
-              </div>
-            </div>
-
-            <div>
-              {printAssets.sealStamp ? (
-                <img
-                  src={printAssets.sealStamp}
-                  alt=""
-                  className="cash-receipt-stamp"
-                />
-              ) : (
-                <div className="cash-receipt-stamp-spacer" />
-              )}
+            <div className="cash-vehicle-label">Year</div>
+            <div className="cash-vehicle-value">
+              {receipt.vehicle_year ?? "-"}
             </div>
           </div>
 
-          <div className="cash-receipt-signatures">
-            <div className="cash-receipt-signature">Customer Signature</div>
+          <div className="cash-vehicle-row tall">
+            <div className="cash-vehicle-label">Chassis No.</div>
+            <div className="cash-vehicle-value">
+              {displayValue(receipt.vehicle_chassis_number)}
+            </div>
 
-            <div className="cash-receipt-signature">
+            <div className="cash-vehicle-label">Engine No.</div>
+            <div className="cash-vehicle-value">
+              {displayValue(receipt.vehicle_engine_number)}
+            </div>
+          </div>
+
+          <div className="cash-vehicle-row regular">
+            <div className="cash-vehicle-label">Colour</div>
+            <div className="cash-vehicle-value">
+              {displayValue(receipt.vehicle_colour)}
+            </div>
+
+            <div className="cash-vehicle-empty" />
+            <div className="cash-vehicle-empty" />
+          </div>
+        </section>
+
+        <section className="cash-summary">
+          <table className="cash-summary-table">
+            <thead>
+              <tr>
+                <th>DESCRIPTION</th>
+                <th>AMOUNT (AED)</th>
+              </tr>
+            </thead>
+
+            <tbody>
+              <tr>
+                <td>Amount Paid</td>
+                <td className="cash-summary-amount">
+                  {formatAmountOrDash(receipt.amount)}
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </section>
+
+        <section className="cash-section">
+          <div className="cash-words">
+            <div className="cash-words-label">AMOUNT IN WORDS</div>
+
+            <div className="cash-words-value">
+              {amountToWords(receipt.amount)}
+            </div>
+          </div>
+        </section>
+
+        <section className="cash-bottom">
+          <div>
+            <div className="cash-terms-heading">TERMS &amp; NOTES</div>
+
+            <ul className="cash-terms-list">
+              <li>
+                1. This receipt confirms the amount received against the
+                referenced quotation.
+              </li>
+              <li>2. Please retain this receipt for your records.</li>
+              <li>3. All amounts are stated in AED.</li>
+            </ul>
+          </div>
+
+          <div className="cash-stamp-signature">
+            <div className="cash-stamp-space">
+              {printAssets.sealStamp ? (
+                <img src={printAssets.sealStamp} alt="Company Seal & Stamp" />
+              ) : null}
+            </div>
+
+            <div className="cash-signature-caption">
               Authorised Signature &amp; Stamp
             </div>
           </div>
         </section>
 
-        {/* FOOTER */}
+        <footer className="cash-footer">
+          {/* <div className="cash-contact">
+            For any questions, please contact {companyPhone || "-"}
+            {companyEmail ? ` | ${companyEmail}` : ""}
+          </div> */}
 
-        <footer className="cash-receipt-footer">
-          <div>
-            For any questions, please contact{" "}
-            {displayValue(company?.main_contact_mobile)}
-            {company?.corporate_email ? ` | ${company.corporate_email}` : ""}
-          </div>
-
-          <div className="cash-receipt-thank-you">
-            Thank You For Your Business!
-          </div>
+          <div className="cash-thank-you">Thank You For Your Business!</div>
         </footer>
       </div>
-    </>
+    </PrintDocument>
   );
 }

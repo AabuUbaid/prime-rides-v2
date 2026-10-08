@@ -12,6 +12,8 @@ import {
   getVehicleSalesReport,
 } from "../../api/reports";
 
+import { getApiErrorMessage } from "../../utils/errorMessage";
+
 const PERIOD_OPTIONS = [
   { value: "daily", label: "Daily" },
   { value: "weekly", label: "Weekly" },
@@ -97,12 +99,12 @@ export default function Reports() {
           : error?.message || "Unable to load sales report.";
 
         setErrorMessage(message);
-        toast.error(message);
+        toast.error(getApiErrorMessage(error, "Unable to load sales report."));
       } else {
         const message = error?.message || "Unable to load sales report.";
 
         setErrorMessage(message);
-        toast.error(message);
+        toast.error(getApiErrorMessage(error, "Unable to load sales report."));
       }
 
       setSalesReport(null);
@@ -135,12 +137,16 @@ export default function Reports() {
           : error?.message || "Unable to load inventory report.";
 
         setErrorMessage(message);
-        toast.error(message);
+        toast.error(
+          getApiErrorMessage(error, "Unable to load inventory report."),
+        );
       } else {
         const message = error?.message || "Unable to load inventory report.";
 
         setErrorMessage(message);
-        toast.error(message);
+        toast.error(
+          getApiErrorMessage(error, "Unable to load inventory report."),
+        );
       }
 
       setInventoryReport(null);
@@ -173,13 +179,17 @@ export default function Reports() {
           : error?.message || "Unable to load cash receipts report.";
 
         setErrorMessage(message);
-        toast.error(message);
+        toast.error(
+          getApiErrorMessage(error, "Unable to load cash receipts report."),
+        );
       } else {
         const message =
           error?.message || "Unable to load cash receipts report.";
 
         setErrorMessage(message);
-        toast.error(message);
+        toast.error(
+          getApiErrorMessage(error, "Unable to load cash receipts report."),
+        );
       }
 
       setCashReceiptsReport(null);
@@ -212,12 +222,16 @@ export default function Reports() {
           : error?.message || "Unable to load finance report.";
 
         setErrorMessage(message);
-        toast.error(message);
+        toast.error(
+          getApiErrorMessage(error, "Unable to load finance report."),
+        );
       } else {
         const message = error?.message || "Unable to load finance report.";
 
         setErrorMessage(message);
-        toast.error(message);
+        toast.error(
+          getApiErrorMessage(error, "Unable to load finance report."),
+        );
       }
 
       setFinanceReport(null);
@@ -250,13 +264,17 @@ export default function Reports() {
           : error?.message || "Unable to load vehicle additions report.";
 
         setErrorMessage(message);
-        toast.error(message);
+        toast.error(
+          getApiErrorMessage(error, "Unable to load vehicle additions report."),
+        );
       } else {
         const message =
           error?.message || "Unable to load vehicle additions report.";
 
         setErrorMessage(message);
-        toast.error(message);
+        toast.error(
+          getApiErrorMessage(error, "Unable to load vehicle additions report."),
+        );
       }
 
       setVehicleAdditionsReport(null);
@@ -289,13 +307,17 @@ export default function Reports() {
           : error?.message || "Unable to load vehicle sales report.";
 
         setErrorMessage(message);
-        toast.error(message);
+        toast.error(
+          getApiErrorMessage(error, "Unable to load vehicle sales report."),
+        );
       } else {
         const message =
           error?.message || "Unable to load vehicle sales report.";
 
         setErrorMessage(message);
-        toast.error(message);
+        toast.error(
+          getApiErrorMessage(error, "Unable to load vehicle sales report."),
+        );
       }
 
       setVehicleSalesReport(null);
@@ -328,13 +350,23 @@ export default function Reports() {
           : error?.message || "Unable to load operational performance report.";
 
         setErrorMessage(message);
-        toast.error(message);
+        toast.error(
+          getApiErrorMessage(
+            error,
+            "Unable to load operational performance report.",
+          ),
+        );
       } else {
         const message =
           error?.message || "Unable to load operational performance report.";
 
         setErrorMessage(message);
-        toast.error(message);
+        toast.error(
+          getApiErrorMessage(
+            error,
+            "Unable to load operational performance report.",
+          ),
+        );
       }
 
       setOperationalPerformanceReport(null);

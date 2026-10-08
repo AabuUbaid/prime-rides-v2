@@ -3,6 +3,7 @@ import { Link } from "react-router-dom";
 import { toast } from "react-toastify";
 
 import { createBank, getBanks, updateBank } from "../../api/finance";
+import { getApiErrorMessage } from "../../utils/errorMessage";
 import { useAuth } from "../../context/AuthContext";
 
 const INITIAL_FORM = {
@@ -36,7 +37,7 @@ function BankManagement() {
     } catch (error) {
       console.error("Failed to load banks:", error);
 
-      toast.error(error?.message || "Failed to load banks.");
+      toast.error(getApiErrorMessage(error, "Failed to load banks."));
     } finally {
       setLoading(false);
     }
@@ -224,8 +225,10 @@ function BankManagement() {
       }
 
       toast.error(
-        error?.message ||
-          (editingBank ? "Failed to update bank." : "Failed to create bank."),
+        getApiErrorMessage(
+          error,
+          editingBank ? "Failed to update bank." : "Failed to create bank.",
+        ),
       );
     } finally {
       setSaving(false);
@@ -260,7 +263,7 @@ function BankManagement() {
     } catch (error) {
       console.error("Failed to update bank status:", error);
 
-      toast.error(error?.message || "Failed to update bank status.");
+      toast.error(getApiErrorMessage(error, "Failed to update bank status."));
     }
   }
 

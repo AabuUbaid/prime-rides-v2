@@ -8,6 +8,7 @@ import {
   getExpensePresets,
   updateExpensePreset,
 } from "../../api/finance";
+import { getApiErrorMessage } from "../../utils/errorMessage";
 import { useAuth } from "../../context/AuthContext";
 
 const INITIAL_FORM = {
@@ -79,16 +80,6 @@ function getResponseData(response) {
   return response;
 }
 
-function getApiMessage(error) {
-  const nonFieldErrors = getApiErrors(error).non_field_errors;
-
-  if (nonFieldErrors) {
-    return getFieldError(nonFieldErrors);
-  }
-
-  return error?.cause?.message || error?.message || "Something went wrong.";
-}
-
 function ExpensePresetManagement() {
   const { user } = useAuth();
 
@@ -116,8 +107,7 @@ function ExpensePresetManagement() {
     } catch (error) {
       console.error("Failed to load expense presets:", error);
 
-      toast.error(getApiMessage(error));
-
+      toast.error(getApiErrorMessage(error, "Something went wrong."));
       setPresets([]);
     } finally {
       setLoading(false);
@@ -374,7 +364,7 @@ function ExpensePresetManagement() {
         setFieldErrors(errors);
       }
 
-      toast.error(getApiMessage(error));
+      toast.error(getApiErrorMessage(error, "Something went wrong."));
     } finally {
       setSaving(false);
     }
@@ -402,7 +392,7 @@ function ExpensePresetManagement() {
     } catch (error) {
       console.error("Failed to update expense preset status:", error);
 
-      toast.error(getApiMessage(error));
+      toast.error(getApiErrorMessage(error, "Something went wrong."));
     }
   }
 
@@ -430,7 +420,9 @@ function ExpensePresetManagement() {
     } catch (error) {
       console.error("Failed to delete expense preset:", error);
 
-      toast.error(getApiMessage(error));
+      toast.error(
+        getApiErrorMessage(error, "Failed to delete expense preset."),
+      );
     }
   }
 

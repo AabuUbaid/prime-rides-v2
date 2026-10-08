@@ -1,4 +1,5 @@
 import PrintDocument from "../PrintDocument";
+const PROFORMA_LOGO = "/prime_rides_logo_gold_trimmed.png";
 
 function formatDate(value) {
   if (!value) {
@@ -13,188 +14,171 @@ function formatDate(value) {
 
   return date.toLocaleDateString("en-GB", {
     day: "2-digit",
-    month: "2-digit",
+    month: "short",
     year: "numeric",
   });
 }
 
-function formatNumber(value) {
+function displayValue(value, fallback = "-") {
   if (value === null || value === undefined || value === "") {
-    return "-";
+    return fallback;
   }
 
+  return String(value);
+}
+
+function numericValue(value) {
+  const number = Number(value);
+  return Number.isFinite(number) ? number : 0;
+}
+
+function formatAmount(value) {
   const number = Number(value);
 
   if (!Number.isFinite(number)) {
-    return String(value);
+    return "-";
   }
 
   return number.toLocaleString("en-AE", {
-    minimumFractionDigits: 2,
-    maximumFractionDigits: 2,
+    maximumFractionDigits: 0,
   });
 }
 
-const SMALL_NUMBERS = [
-  "Zero",
-  "One",
-  "Two",
-  "Three",
-  "Four",
-  "Five",
-  "Six",
-  "Seven",
-  "Eight",
-  "Nine",
-  "Ten",
-  "Eleven",
-  "Twelve",
-  "Thirteen",
-  "Fourteen",
-  "Fifteen",
-  "Sixteen",
-  "Seventeen",
-  "Eighteen",
-  "Nineteen",
-];
+function amountToWords(value) {
+  const number = numericValue(value);
+  const rounded = Math.round((number + Number.EPSILON) * 100) / 100;
 
-const TENS = [
-  "",
-  "",
-  "Twenty",
-  "Thirty",
-  "Forty",
-  "Fifty",
-  "Sixty",
-  "Seventy",
-  "Eighty",
-  "Ninety",
-];
-
-function numberToWordsBelowThousand(number) {
-  if (number < 20) {
-    return SMALL_NUMBERS[number];
+  if (rounded === 0) {
+    return "UAE Dirhams Zero Only";
   }
 
-  if (number < 100) {
-    const tens = Math.floor(number / 10);
-    const remainder = number % 10;
-
-    return remainder ? `${TENS[tens]}-${SMALL_NUMBERS[remainder]}` : TENS[tens];
-  }
-
-  const hundreds = Math.floor(number / 100);
-  const remainder = number % 100;
-
-  return remainder
-    ? `${SMALL_NUMBERS[hundreds]} Hundred ${numberToWordsBelowThousand(
-        remainder,
-      )}`
-    : `${SMALL_NUMBERS[hundreds]} Hundred`;
-}
-
-function numberToWords(number) {
-  if (!Number.isFinite(number)) {
-    return "";
-  }
-
-  if (number === 0) {
-    return "Zero";
-  }
-
-  let remainder = Math.floor(number);
-  const parts = [];
-  const scales = [
-    [1000000000, "Billion"],
-    [1000000, "Million"],
-    [1000, "Thousand"],
+  const smallNumbers = [
+    "Zero",
+    "One",
+    "Two",
+    "Three",
+    "Four",
+    "Five",
+    "Six",
+    "Seven",
+    "Eight",
+    "Nine",
+    "Ten",
+    "Eleven",
+    "Twelve",
+    "Thirteen",
+    "Fourteen",
+    "Fifteen",
+    "Sixteen",
+    "Seventeen",
+    "Eighteen",
+    "Nineteen",
   ];
 
-  for (const [scale, label] of scales) {
-    if (remainder >= scale) {
-      const scaled = Math.floor(remainder / scale);
-      parts.push(`${numberToWordsBelowThousand(scaled)} ${label}`);
-      remainder %= scale;
+  const tens = [
+    "",
+    "",
+    "Twenty",
+    "Thirty",
+    "Forty",
+    "Fifty",
+    "Sixty",
+    "Seventy",
+    "Eighty",
+    "Ninety",
+  ];
+
+  function belowThousand(valueToConvert) {
+    if (valueToConvert < 20) {
+      return smallNumbers[valueToConvert];
     }
+
+    if (valueToConvert < 100) {
+      const tensValue = Math.floor(valueToConvert / 10);
+      const remainder = valueToConvert % 10;
+
+      return remainder
+        ? `${tens[tensValue]}-${smallNumbers[remainder]}`
+        : tens[tensValue];
+    }
+
+    const hundreds = Math.floor(valueToConvert / 100);
+    const remainder = valueToConvert % 100;
+
+    return remainder
+      ? `${smallNumbers[hundreds]} Hundred ${belowThousand(remainder)}`
+      : `${smallNumbers[hundreds]} Hundred`;
   }
 
-  if (remainder > 0) {
-    parts.push(numberToWordsBelowThousand(remainder));
+  function wholeNumberToWords(valueToConvert) {
+    if (valueToConvert === 0) {
+      return "Zero";
+    }
+
+    let remainder = Math.floor(valueToConvert);
+    const parts = [];
+
+    const scales = [
+      [1000000000, "Billion"],
+      [1000000, "Million"],
+      [1000, "Thousand"],
+    ];
+
+    for (const [scale, label] of scales) {
+      if (remainder >= scale) {
+        const scaled = Math.floor(remainder / scale);
+        parts.push(`${belowThousand(scaled)} ${label}`);
+        remainder %= scale;
+      }
+    }
+
+    if (remainder > 0) {
+      parts.push(belowThousand(remainder));
+    }
+
+    return parts.join(" ");
   }
 
-  return parts.join(" ");
-}
-
-function amountToWords(value) {
-  const number = Number(value);
-
-  if (!Number.isFinite(number)) {
-    return "-";
-  }
-
-  const rounded = Math.round((number + Number.EPSILON) * 100) / 100;
   const whole = Math.floor(rounded);
   const fils = Math.round((rounded - whole) * 100);
 
   if (fils > 0) {
-    return `AED ${numberToWords(whole)} and ${numberToWords(fils)} Fils Only`;
+    return `UAE Dirhams ${wholeNumberToWords(
+      whole,
+    )} and ${wholeNumberToWords(fils)} Fils Only`;
   }
 
-  return `AED ${numberToWords(whole)} Only`;
+  return `UAE Dirhams ${wholeNumberToWords(whole)} Only`;
 }
 
-function getAddressLines(address) {
-  const raw = String(address || "").trim();
+function vehicleValueClass(value) {
+  const length = String(value ?? "-").length;
 
-  if (!raw) {
-    return ["-", "", "", ""];
+  if (length >= 29) {
+    return "proforma-vehicle-value--xs";
   }
 
-  const newlineParts = raw
-    .split(/\r?\n/)
-    .map((part) => part.trim())
-    .filter(Boolean);
-
-  if (newlineParts.length > 1) {
-    return newlineParts.slice(0, 4);
+  if (length >= 23) {
+    return "proforma-vehicle-value--sm";
   }
 
-  const commaParts = raw
-    .split(",")
-    .map((part) => part.trim())
-    .filter(Boolean);
-
-  if (commaParts.length >= 2) {
-    const lines = [];
-    let current = "";
-
-    for (const part of commaParts) {
-      const candidate = current ? `${current}, ${part}` : part;
-
-      if (candidate.length > 52 && current) {
-        lines.push(current);
-        current = part;
-      } else {
-        current = candidate;
-      }
-    }
-
-    if (current) {
-      lines.push(current);
-    }
-
-    return lines.slice(0, 4);
-  }
-
-  return [raw];
+  return "proforma-vehicle-value--regular";
 }
 
-function BodyRow({ row, zebra, label, value, amount }) {
+function SectionBar({ children, rightText = "" }) {
   return (
-    <div className={`proforma-body-row ${zebra ? "zebra" : ""}`}>
-      <div className="proforma-label-cell">{label ? `${label} :` : ""}</div>
-      <div className="proforma-value-cell">{value ?? ""}</div>
-      <div className="proforma-row-amount">{amount ?? ""}</div>
+    <div className="proforma-section-bar">
+      <span>{children}</span>
+      {rightText ? <span>{rightText}</span> : null}
+    </div>
+  );
+}
+
+function ReferenceCell({ label, value }) {
+  return (
+    <div className="proforma-reference-cell">
+      <div className="proforma-reference-label">{label}</div>
+      <div className="proforma-reference-value">{displayValue(value)}</div>
     </div>
   );
 }
@@ -211,61 +195,26 @@ export default function ProformaPrintTemplate({
   }
 
   const isFinance = proforma.payment_type === "finance";
-  const addressLines = getAddressLines(company?.showroom_address);
+
+  const companyName =
+    company?.legal_entity_name || "Prime Rides Cars Trading LLC";
+  const companyAddress = String(company?.showroom_address || "").trim();
+  const companyPhone =
+    company?.official_phone || company?.main_contact_mobile || "";
+  const companyEmail = company?.corporate_email || "";
+
   const vehicleName = [proforma.vehicle_make, proforma.vehicle_model]
     .filter(Boolean)
     .join(" ");
 
-  const netFinance = proforma.net_finance;
   const vehiclePrice = proforma.vehicle_price;
+  const vatAmount = proforma.vat;
   const downPayment = proforma.down_payment;
+  const netFinance = proforma.net_finance;
 
-  const bodyRows = [
-    { label: "", value: "", amount: "" },
-    { label: "", value: "", amount: "" },
-
-    {
-      label: "Model & Maker",
-      value: vehicleName,
-    },
-
-    {
-      label: "Year",
-      value: proforma.vehicle_year,
-    },
-
-    {
-      label: "Chassis No",
-      value: proforma.vehicle_chassis_number,
-    },
-
-    {
-      label: "Engine Number",
-      value: proforma.vehicle_engine_number,
-    },
-
-    {
-      label: "Cost Of The Vehicle",
-      value: "",
-      amount: formatNumber(vehiclePrice),
-    },
-
-    { label: "", value: "", amount: "" },
-
-    ...(isFinance
-      ? [
-          {
-            label: "Down Payment Amount",
-            value: "",
-            amount: formatNumber(downPayment),
-          },
-        ]
-      : []),
-
-    { label: "", value: "", amount: "" },
-    { label: "", value: "", amount: "" },
-    { label: "", value: "", amount: "" },
-  ];
+  const amountInWords = isFinance
+    ? amountToWords(netFinance)
+    : amountToWords(vehiclePrice);
 
   return (
     <PrintDocument company={company} showHeader={false} showFooter={false}>
@@ -276,492 +225,661 @@ export default function ProformaPrintTemplate({
             margin: 0;
           }
 
-          :root {
-            --bar: #3B5393;
-            --head: #2B4A8E;
-            --zebra: #F2F2F2;
-            --box: #CDD3EA;
-            --border: #000000;
-          }
-
-          .proforma-print-page,
-          .proforma-print-page *,
-          .proforma-print-page *::before,
-          .proforma-print-page *::after {
+          .proforma-page,
+          .proforma-page *,
+          .proforma-page *::before,
+          .proforma-page *::after {
             box-sizing: border-box;
             -webkit-print-color-adjust: exact;
             print-color-adjust: exact;
           }
 
-          .proforma-print-page {
+          .proforma-page {
+            --black: #111111;
+            --gold: #B8913A;
+            --cream: #FAF5E8;
+            --hairline: #E9DFC4;
+            --ink: #1A1A1A;
+            --muted-label: #777777;
+            --muted: #888888;
+            --body: #444444;
+            --contact: #555555;
+            --header-text: #BBBBBB;
+
+            width: 794px;
+            height: 1123px;
+            min-height: 1123px;
+            max-height: 1123px;
+
+            margin: 0;
+            padding: 0 36px 80px;
+
             position: relative;
-            width: 210mm !important;
-            height: 297mm !important;
-            min-height: 297mm !important;
-            max-height: 297mm !important;
-            margin: 0 !important;
-            padding: 0 !important;
-            overflow: hidden !important;
-            background: #fff;
-            color: #000;
-            font-family: Tahoma, Verdana, Arial, sans-serif;
-            font-weight: 700;
-            font-size: 8pt;
-            line-height: 1;
-            page-break-inside: avoid;
-            break-inside: avoid;
+            overflow: hidden;
+
+            display: flex;
+            flex-direction: column;
+
+            background: #ffffff;
+            color: var(--ink);
+
+            font-family: Arial, Helvetica, sans-serif;
+            font-size: 12px;
+            line-height: 1.2;
           }
 
-          .proforma-frame {
-            position: absolute;
-            left: 17.5mm;
-            top: 31.2mm;
-            width: 173.8mm;
-            height: 234.6mm;
-            border: 1.3pt solid var(--border);
-            overflow: hidden;
+          .proforma-page *,
+          .proforma-page *::before,
+          .proforma-page *::after {
+            border-radius: 0 !important;
+            box-shadow: none !important;
           }
+
+          /* HEADER */
 
           .proforma-header {
-            position: absolute;
-            left: 0;
-            top: 0;
-            width: 100%;
-            height: 19.2mm;
-            border-bottom: 1.3pt solid var(--border);
+            position: relative;
+
+            flex: 0 0 142px;
+
+            width: calc(100% + 72px);
+            height: 142px;
+            margin: 0 -36px;
+
+            background: var(--black);
+            border-bottom: 4px solid var(--gold);
+
+            overflow: hidden;
           }
 
           .proforma-logo {
             position: absolute;
-            left: 7mm;
-            top: 3.1mm;
-            width: 25.5mm;
-            height: 13mm;
+            left: 36px;
+            top: 30.5px;
+
+            width: 189.8px;
+            height: 78px;
+
+            display: block;
             object-fit: contain;
             object-position: left center;
           }
 
-          .proforma-company-name {
+          .proforma-company-block {
             position: absolute;
-            left: 52.3mm;
-            top: 9.6mm;
-            width: 83mm;
-            color: var(--head);
-            font-size: 12.3pt;
-            line-height: 1;
-            font-weight: 700;
-            white-space: nowrap;
-            transform: translateY(-50%);
-          }
+            left: 241.8px;
+            top: 30px;
 
-          .proforma-title {
-            position: absolute;
-            left: 50%;
-            top: 23mm;
-            width: 74mm;
-            transform: translate(-50%, -50%);
-            color: var(--head);
-            font-size: 12.1pt;
-            line-height: 1;
-            font-weight: 700;
-            text-align: center;
-            text-decoration: underline;
-            text-decoration-thickness: 0.9pt;
-            text-underline-offset: 0.7mm;
-            white-space: nowrap;
-          }
+            width: 400px;
+            max-width: 400px;
 
-          .proforma-address {
-            position: absolute;
-            left: 3.5mm;
-            top: 25.72mm;
-            width: 92mm;
-            font-size: 8pt;
-            line-height: 4.36mm;
-            font-weight: 700;
-            white-space: nowrap;
-          }
-
-          .proforma-address-line {
-            height: 4.36mm;
-          }
-
-          .proforma-meta {
-            position: absolute;
-            left: 106mm;
-            top: 30.0mm;
-            width: 61mm;
-            font-size: 7.9pt;
-            line-height: 4.35mm;
-            font-weight: 700;
-          }
-
-          .proforma-meta-row {
-            display: grid;
-            grid-template-columns: 39mm 22mm;
-            align-items: center;
-            height: 4.35mm;
-          }
-
-          .proforma-meta-label {
-            text-align: right;
-            padding-right: 2.4mm;
-            white-space: nowrap;
-          }
-
-          .proforma-meta-value {
-            text-align: center;
-            white-space: nowrap;
-          }
-
-          .proforma-bar {
-            position: absolute;
-            left: 0;
-            width: 76.1mm;
-            height: 4.5mm;
-            background: var(--bar);
-            color: #fff;
-            padding-left: 3.5mm;
-            display: flex;
-            align-items: center;
-            font-size: 9.6pt;
-            line-height: 1;
-            font-weight: 700;
-            white-space: nowrap;
-          }
-
-          .proforma-bank-bar {
-            top: 56.3mm;
-          }
-
-          .proforma-customer-bar {
-            top: 78mm;
-          }
-
-          .proforma-bank-details {
-            position: absolute;
-            left: 3.5mm;
-            top: 65.1mm;
-            font-size: 8pt;
-            line-height: 4.2mm;
-            font-weight: 700;
-          }
-
-          .proforma-customer-details {
-            position: absolute;
-            left: 3.5mm;
-            top: 89.05mm;
-            font-size: 8pt;
-            line-height: 4.5mm;
-            font-weight: 700;
-            white-space: nowrap;
-          }
-
-          .proforma-customer-name {
-            text-transform: uppercase;
-          }
-
-          .proforma-table-top-rule {
-            position: absolute;
-            left: 0;
-            top: 102.4mm;
-            width: 100%;
-            height: 1.3pt;
-            background: var(--border);
-          }
-
-          .proforma-table-header {
-            position: absolute;
-            left: 0;
-            top: 102.9mm;
-            width: 100%;
-            height: 4.5mm;
-            display: grid;
-            grid-template-columns: 143.5mm 30.3mm;
-            background: var(--bar);
-            color: #fff;
-            font-size: 9.6pt;
-            line-height: 1;
-            font-weight: 700;
-          }
-
-          .proforma-table-header-description {
-            padding-left: 3.5mm;
-            display: flex;
-            align-items: center;
-          }
-
-          .proforma-table-header-amount {
-            display: flex;
-            align-items: center;
-            justify-content: center;
-          }
-
-          .proforma-body {
-            position: absolute;
-            left: 0;
-            top: 107.4mm;
-            width: 100%;
-            height: 56.7mm;
-          }
-
-          .proforma-body::after {
-            content: "";
-            position: absolute;
-            left: 143.5mm;
-            top: -4.5mm;
-            width: 1.3pt;
-            height: 61.2mm;
-            background: var(--border);
-          }
-
-          .proforma-body-row {
-            position: relative;
-            display: grid;
-            grid-template-columns: 81.4mm 62.1mm 30.3mm;
-            width: 100%;
-            height: 4.725mm;
-            align-items: center;
-            font-size: 8.5pt;
-            line-height: 1;
-            font-weight: 400;
-          }
-
-          .proforma-body-row.zebra {
-            background: var(--zebra);
-          }
-
-          .proforma-label-cell {
-            padding-right: 1.8mm;
-            text-align: right;
-            font-size: 8.7pt;
-            font-weight: 700;
-            white-space: nowrap;
-          }
-
-          .proforma-value-cell {
-            padding-left: 1.7mm;
-            padding-right: 1.5mm;
-            text-align: left;
-            white-space: nowrap;
             overflow: hidden;
           }
 
-          .proforma-row-amount {
-            padding-right: 2.1mm;
-            text-align: right;
-            white-space: nowrap;
-            font-size: 8.8pt;
-            font-weight: 400;
-          }
+          .proforma-company-name {
+            color: var(--gold);
 
-          .proforma-table-bottom-rule {
-            position: absolute;
-            left: 0;
-            top: 164.1mm;
-            width: 100%;
-            height: 1.3pt;
-            background: var(--border);
-          }
-
-          .proforma-total-label {
-            position: absolute;
-            left: 43.7mm;
-            top: 170.8mm;
-            font-size: 8pt;
+            font-family: "Times New Roman", Times, serif;
+            font-size: 26px;
+            line-height: 1.1;
             font-weight: 700;
+            letter-spacing: 1px;
+
             white-space: nowrap;
           }
 
-          .proforma-total-words {
-            position: absolute;
-            left: 32.4mm;
-            top: 176mm;
-            font-size: 8pt;
-            font-weight: 700;
+          .proforma-company-name.is-long {
+            font-size: 20px;
+          }
+
+          .proforma-company-meta {
+            margin-top: 4px;
+            color: var(--header-text);
+
+            font-size: 11.5px;
+            line-height: 16px;
+          }
+
+          .proforma-header-contact {
+            margin-top: 4px;
+            color: var(--header-text);
+
+            font-size: 11.5px;
+            line-height: 16px;
+
             white-space: nowrap;
           }
 
-          .proforma-total-box {
-            position: absolute;
-            left: 143.5mm;
-            width: 30.3mm;
-            height: 5.2mm;
-            background: var(--box);
-            border: 0.6pt solid #555;
+          /* TITLE */
+
+          .proforma-title-row {
+            flex: 0 0 46px;
+            height: 46px;
+
+            margin-top: 16px;
+
             display: flex;
             align-items: center;
-            justify-content: flex-end;
-            padding-right: 2.1mm;
-            font-size: 8.8pt;
-            font-weight: 700;
-            white-space: nowrap;
+            justify-content: space-between;
+
+            border-bottom: 1px solid var(--gold);
           }
 
-          .proforma-net-box {
-            top: 174.3mm;
+          .proforma-title {
+            color: var(--gold);
+
+            font-family: "Times New Roman", Times, serif;
+            font-size: 30px;
+            line-height: 1;
+            font-style: italic;
+          }
+
+          .proforma-title-right {
+            color: var(--black);
+
+            font-size: 12.9px;
+            line-height: 1;
+          }
+
+          /* REFERENCE */
+
+          .proforma-reference {
+            flex: 0 0 49px;
+            height: 49px;
+
+            margin-top: 10px;
+
+            display: grid;
+            grid-template-columns: 148.5px 176.3px 148.5px 1fr;
+
+            background: var(--cream);
+            border-left: 3px solid var(--gold);
+          }
+
+          .proforma-reference-cell {
+            padding: 8px 12px;
+            min-width: 0;
+          }
+
+          .proforma-reference-label {
+            color: var(--gold);
+
+            font-size: 10.5px;
+            line-height: 1;
+            font-weight: 700;
+            letter-spacing: 0.58px;
+          }
+
+          .proforma-reference-value {
+            margin-top: 3px;
+
+            color: var(--ink);
+            font-size: 14.9px;
+            line-height: 1.1;
+            font-weight: 700;
+
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+          }
+
+          /* PARTIES */
+
+          .proforma-parties {
+            height: 72px;
+            margin-top: 0;
+            padding-top: 15px;
+          }
+
+          .proforma-party-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            column-gap: 20px;
+          }
+
+          .proforma-party {
+            height: 57px;
+
+            border-bottom: 1px solid var(--gold);
+            overflow: hidden;
+          }
+
+          .proforma-party-heading {
+            color: var(--gold);
+
+            font-size: 10.9px;
+            line-height: 1;
+            font-weight: 700;
+            letter-spacing: 0.65px;
+            text-transform: uppercase;
+          }
+
+          .proforma-party-name {
+            margin-top: 8px;
+
+            color: var(--ink);
+            font-size: 14.9px;
+            line-height: 1.05;
+            font-weight: 700;
+          }
+
+          .proforma-party-meta {
+            margin-top: 4px;
+
+            color: var(--muted-label);
+            font-size: 10.9px;
+            line-height: 13px;
+          }
+
+          /* SECTION */
+
+          .proforma-section {
+            width: 100%;
+            margin-top: 16px;
+          }
+
+          .proforma-section-bar {
+            height: 30px;
+            padding: 0 12px;
+
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+
+            background: var(--black);
+            color: var(--gold);
+
+            font-family: "Times New Roman", Times, serif;
+            font-size: 12.9px;
+            line-height: 1;
+            font-weight: 700;
+            letter-spacing: 2px;
+            text-transform: uppercase;
+          }
+
+          /* VEHICLE */
+
+          .proforma-vehicle-row {
+            display: grid;
+            grid-template-columns: 110px 261px 90px 261px;
+          }
+
+          .proforma-vehicle-row.tall {
+            min-height: 47px;
+          }
+
+          .proforma-vehicle-row.regular {
+            min-height: 32px;
+          }
+
+          .proforma-vehicle-label,
+          .proforma-vehicle-value,
+          .proforma-vehicle-empty {
+            min-width: 0;
+            border-top: 1px solid var(--hairline);
+          }
+
+          .proforma-vehicle-row:last-child > * {
+            border-bottom: 1px solid var(--hairline);
           }
 
           .proforma-vehicle-label {
-            position: absolute;
-            left: 43.7mm;
-            top: 189.7mm;
-            font-size: 8pt;
+            padding: 8px 12px;
+
+            color: var(--muted-label);
+            background: var(--cream);
+
+            font-size: 12.9px;
+            line-height: 15px;
             font-weight: 700;
+          }
+
+          .proforma-vehicle-value {
+            padding: 8px 12px;
+
+            color: var(--ink);
+            background: #ffffff;
+
+            font-size: 12.9px;
+            line-height: 15px;
+            font-weight: 700;
+
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+          }
+
+          .proforma-vehicle-value--sm {
+            font-size: 11.5px;
+          }
+
+          .proforma-vehicle-value--xs {
+            font-size: 10.5px;
+          }
+
+          /* COMMERCIAL SUMMARY */
+
+          .proforma-summary {
+            margin-top: 12px;
+          }
+
+          .proforma-summary-table {
+            width: 100%;
+            border-collapse: collapse;
+            table-layout: fixed;
+          }
+
+          .proforma-summary-table th {
+            height: 31px;
+            padding: 0 12px;
+
+            background: var(--black);
+            color: var(--gold);
+
+            font-family: "Times New Roman", Times, serif;
+            font-size: 12px;
+            line-height: 1;
+            font-weight: 700;
+            text-transform: uppercase;
+          }
+
+          .proforma-summary-table th:first-child {
+            width: 70%;
+            text-align: left;
+          }
+
+          .proforma-summary-table th:last-child {
+            width: 30%;
+            text-align: right;
+          }
+
+          .proforma-summary-table td {
+            height: 30px;
+            padding: 7px 12px;
+
+            border-bottom: 1px solid var(--hairline);
+
+            color: var(--ink);
+            background: #ffffff;
+
+            font-size: 12.9px;
+            line-height: 16px;
+          }
+
+          .proforma-summary-amount {
+            text-align: right;
+            font-variant-numeric: tabular-nums;
             white-space: nowrap;
           }
 
-          .proforma-vehicle-words {
-            position: absolute;
-            left: 31.9mm;
-            top: 194.7mm;
-            width: 67mm;
-            font-size: 8pt;
-            line-height: 4mm;
+          .proforma-summary-total td {
+            height: 33px;
+
+            background: var(--black);
+            color: var(--gold);
+
+            font-family: "Times New Roman", Times, serif;
+            font-size: 16px;
+            line-height: 1;
             font-weight: 700;
-            white-space: normal;
-            overflow-wrap: break-word;
           }
 
-          .proforma-vehicle-box {
-            top: 193.4mm;
+          /* WORDS */
+
+          .proforma-words {
+            height: 36px;
+
+            padding: 0 12px;
+
+            display: flex;
+            align-items: center;
+            gap: 24px;
+
+            border-top: 1px solid var(--hairline);
+            border-bottom: 1px solid var(--hairline);
           }
 
-          .proforma-stamp {
+          .proforma-words-label {
+            flex: 0 0 auto;
+
+            color: var(--muted-label);
+
+            font-size: 10.9px;
+            line-height: 1;
+            font-weight: 700;
+          }
+
+          .proforma-words-value {
+            min-width: 0;
+
+            color: var(--body);
+
+            font-size: 12px;
+            line-height: 1.2;
+            font-style: italic;
+
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+          }
+
+          /* BOTTOM */
+
+          .proforma-bottom {
+            width: 100%;
+            min-height: 90px;
+
+            margin-top: auto;
+
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            column-gap: 30px;
+          }
+
+          .proforma-terms {
+            min-width: 0;
+          }
+
+          .proforma-terms-heading {
+            padding-bottom: 4px;
+
+            border-bottom: 1px solid var(--gold);
+
+            color: var(--gold);
+
+            font-size: 10.5px;
+            line-height: 1;
+            font-weight: 700;
+            letter-spacing: 0.58px;
+          }
+
+          .proforma-terms-list {
+            margin: 6px 0 0;
+            padding: 0;
+
+            list-style: none;
+
+            color: var(--body);
+
+            font-size: 12px;
+            line-height: 19px;
+          }
+
+          .proforma-signature {
+            min-width: 0;
+
+            height: 90px;
+
+            display: flex;
+            flex-direction: column;
+            justify-content: flex-end;
+            align-items: stretch;
+          }
+
+          .proforma-signature-space {
+            position: relative;
+
+            height: 65px;
+            min-height: 65px;
+
+            display: flex;
+            align-items: flex-end;
+            justify-content: center;
+
+            overflow: visible;
+          }
+
+          .proforma-seal-stamp {
             position: absolute;
-            left: 100.7mm;
-            top: 188.9mm;
-            width: 40.2mm;
-            height: 25.7mm;
-            max-width: 40.2mm;
-            max-height: 25.7mm;
+            left: 50%;
+            bottom: 10px;
+
+            transform: translateX(-50%);
+
+            max-width: 300px;
+            max-height: 100px;
+
+            width: auto;
+            height: auto;
+
             object-fit: contain;
-            object-position: center center;
+            display: block;
+
+            z-index: 20;
+          }
+
+          .proforma-signature-caption {
+            padding-top: 7px;
+
+            border-top: 1px solid var(--hairline);
+
+            color: var(--muted);
+
+            font-size: 10.9px;
+            line-height: 1;
+
+            text-align: center;
+          }
+
+          /* DISCLAIMER + FOOTER */
+
+          .proforma-disclaimer {
+            position: absolute;
+
+            left: 0;
+            right: 0;
+            bottom: 72px;
+
+            color: var(--muted);
+
+            font-size: 10px;
+            line-height: 14px;
+
+            text-align: center;
+
             z-index: 10;
-            pointer-events: none;
           }
 
           .proforma-footer {
             position: absolute;
+
             left: 0;
-            top: 215.75mm;
+            right: 0;
+            bottom: 0;
+
             width: 100%;
+            height: 65px;
+          }
+
+          .proforma-contact {
+            position: absolute;
+
+            left: 0;
+            right: 0;
+            bottom: 50px;
+
+            height: 15px;
+
+            color: var(--contact);
+
+            font-size: 11.5px;
+            line-height: 15px;
+
             text-align: center;
-            font-weight: 700;
-          }
-
-          .proforma-footer-line-1,
-          .proforma-footer-line-2 {
-            font-size: 8pt;
-            line-height: 4.7mm;
             white-space: nowrap;
           }
 
-          .proforma-footer-line-3 {
-            font-size: 10pt;
-            line-height: 4.8mm;
-            white-space: nowrap;
+          .proforma-thank-you {
+            position: absolute;
+
+            left: 0;
+            right: 0;
+            bottom: 0;
+
+            height: 40px;
+
+            border-top: 4px solid var(--gold);
+            background: var(--black);
+
+            display: flex;
+            align-items: center;
+            justify-content: center;
+
+            color: var(--gold);
+
+            font-family: "Times New Roman", Times, serif;
+            font-size: 14px;
+            line-height: 1;
+            font-style: italic;
+            letter-spacing: 3px;
           }
-
-          /* -----------------------------------------
-   CASH PROFORMA LAYOUT
-   ----------------------------------------- */
-
-.proforma-print-page.is-cash .proforma-customer-bar {
-  top: 56.3mm;
-}
-
-.proforma-print-page.is-cash .proforma-customer-details {
-  top: 67.35mm;
-}
-
-.proforma-print-page.is-cash .proforma-table-top-rule {
-  top: 80.7mm;
-}
-
-.proforma-print-page.is-cash .proforma-table-header {
-  top: 81.2mm;
-}
-
-.proforma-print-page.is-cash .proforma-body {
-  top: 85.7mm;
-  height: 51.975mm;
-}
-
-.proforma-print-page.is-cash .proforma-body::after {
-  height: 56.475mm;
-}
-
-.proforma-print-page.is-cash .proforma-table-bottom-rule {
-  top: 137.675mm;
-}
-
-/* Cash does not have Net Finance.
-   Vehicle Price occupies that summary area. */
-
-.proforma-print-page.is-cash .proforma-vehicle-label {
-  top: 144.375mm;
-}
-
-.proforma-print-page.is-cash .proforma-vehicle-words {
-  top: 149.575mm;
-}
-
-.proforma-print-page.is-cash .proforma-vehicle-box {
-  top: 147.875mm;
-}
-
-.proforma-print-page.is-cash .proforma-stamp {
-  top: 143.375mm;
-}
-
-.proforma-print-page.is-cash .proforma-footer {
-  top: 170.225mm;
-}
 
           @media print {
-            html,
-            body,
-            #root {
-              width: 100% !important;
-              height: auto !important;
-              min-height: 0 !important;
+            @page {
+              size: A4 portrait !important;
               margin: 0 !important;
-              padding: 0 !important;
-              background: #fff !important;
             }
 
-            body {
-              font-family: Tahoma, Verdana, Arial, sans-serif !important;
-              -webkit-print-color-adjust: exact !important;
-              print-color-adjust: exact !important;
-              overflow: visible !important;
+            html,
+            body,
+            #root,
+            #root > * {
+              width: 210mm !important;
+              height: 297mm !important;
+              min-width: 210mm !important;
+              max-width: 210mm !important;
+              min-height: 297mm !important;
+              max-height: 297mm !important;
+
+              margin: 0 !important;
+              padding: 0 !important;
+              border: 0 !important;
+
+              background: #ffffff !important;
+              overflow: hidden !important;
             }
 
             .print-area,
             .print-document {
-              display: block !important;
-              position: static !important;
-              width: 100% !important;
-              height: auto !important;
-              min-height: 0 !important;
-              max-width: none !important;
+              width: 210mm !important;
               margin: 0 !important;
               padding: 0 !important;
-              background: #fff !important;
+              background: #ffffff !important;
               border: 0 !important;
               box-shadow: none !important;
-              overflow: visible !important;
             }
 
-            .proforma-print-page {
+            .proforma-page {
               width: 210mm !important;
               height: 297mm !important;
               min-height: 297mm !important;
               max-height: 297mm !important;
+
               margin: 0 !important;
-              padding: 0 !important;
               overflow: hidden !important;
+
+              break-after: auto !important;
+              page-break-after: auto !important;
               break-inside: avoid !important;
               page-break-inside: avoid !important;
             }
@@ -769,148 +887,251 @@ export default function ProformaPrintTemplate({
         `}
       </style>
 
-      <div
-        className={`proforma-print-page ${
-          isFinance ? "is-finance" : "is-cash"
-        }`}
-      >
-        <div className="proforma-frame">
-          <header className="proforma-header">
-            {printAssets.logo ? (
-              <img src={printAssets.logo} alt="" className="proforma-logo" />
-            ) : null}
+      <div className="proforma-page">
+        <header className="proforma-header">
+          <img
+            src={PROFORMA_LOGO}
+            alt="Prime Rides"
+            className="proforma-logo"
+          />
 
-            <div className="proforma-company-name">
-              {company?.legal_entity_name || "-"}
+          <div className="proforma-company-block">
+            <div
+              className={`proforma-company-name${
+                companyName.length > 28 ? " is-long" : ""
+              }`}
+            >
+              {companyName}
             </div>
-          </header>
 
+            <div className="proforma-company-meta">{companyAddress || "-"}</div>
+
+            <div className="proforma-header-contact">
+              Tel: {companyPhone || "-"}
+              {companyEmail ? ` | ${companyEmail}` : ""}
+            </div>
+          </div>
+        </header>
+
+        <div className="proforma-title-row">
           <div className="proforma-title">Proforma Invoice</div>
-
-          <div className="proforma-address">
-            {addressLines.map((line, index) => (
-              <div className="proforma-address-line" key={`address-${index}`}>
-                {line}
-              </div>
-            ))}
-            <div className="proforma-address-line">
-              Work :{" "}
-              {company?.official_phone || company?.main_contact_mobile || "-"}
-            </div>
-            <div className="proforma-address-line">
-              E-mail : {company?.corporate_email || "-"}
-            </div>
+          <div className="proforma-title-right">
+            {isFinance ? "Vehicle Finance" : "Cash Purchase"}
           </div>
-
-          <div className="proforma-meta">
-            <div className="proforma-meta-row">
-              <div className="proforma-meta-label">DATE :</div>
-              <div className="proforma-meta-value">
-                {formatDate(proforma.proforma_date)}
-              </div>
-            </div>
-            <div className="proforma-meta-row">
-              <div className="proforma-meta-label">PRINV #</div>
-              <div className="proforma-meta-value">
-                {proforma.proforma_number || "-"}
-              </div>
-            </div>
-            <div className="proforma-meta-row">
-              <div className="proforma-meta-label">CUSTOMER ID :</div>
-              <div className="proforma-meta-value">{customerId ?? "-"}</div>
-            </div>
-          </div>
-
-          {isFinance && (
-            <>
-              <div className="proforma-bar proforma-bank-bar">
-                BANK (Financed By)
-              </div>
-
-              <div className="proforma-bank-details">
-                <div>{proforma.bank_financed_by || "-"}</div>
-
-                <div>LPO No : {proforma.lpo || "-"}</div>
-              </div>
-            </>
-          )}
-
-          <div className="proforma-bar proforma-customer-bar">CUSTOMER</div>
-          <div className="proforma-customer-details">
-            <div className="proforma-customer-name">
-              {proforma.customer_name || "-"}
-            </div>
-            <div>MOBILE : {proforma.customer_mobile || "-"}</div>
-          </div>
-
-          <div className="proforma-table-top-rule" />
-
-          <div className="proforma-table-header">
-            <div className="proforma-table-header-description">DESCRIPTION</div>
-            <div className="proforma-table-header-amount">AMOUNT</div>
-          </div>
-
-          <div className="proforma-body">
-            {bodyRows.map((row, index) => (
-              <BodyRow
-                key={`row-${index + 1}`}
-                row={row}
-                zebra={(index + 1) % 2 === 0}
-                label={row.label}
-                value={row.value}
-                amount={row.amount}
-              />
-            ))}
-          </div>
-
-          <div className="proforma-table-bottom-rule" />
-
-          {isFinance && (
-            <>
-              <div className="proforma-total-label">Net Finance Amount</div>
-
-              <div className="proforma-total-words">
-                {netFinance !== null && netFinance !== undefined
-                  ? amountToWords(netFinance)
-                  : "-"}
-              </div>
-
-              <div className="proforma-total-box proforma-net-box">
-                {formatNumber(netFinance)}
-              </div>
-            </>
-          )}
-
-          <div className="proforma-vehicle-label">Vehicle Price</div>
-          <div className="proforma-vehicle-words">
-            {amountToWords(vehiclePrice)}
-          </div>
-          <div className="proforma-total-box proforma-vehicle-box">
-            {formatNumber(vehiclePrice)}
-          </div>
-
-          {includeSealStamp && printAssets.sealStamp ? (
-            <img
-              src={printAssets.sealStamp}
-              alt=""
-              className="proforma-stamp"
-            />
-          ) : null}
-
-          <footer className="proforma-footer">
-            <div className="proforma-footer-line-1">
-              If you have any questions about this price quote, please contact
-            </div>
-            <div className="proforma-footer-line-2">
-              Phone :{" "}
-              {company?.official_phone || company?.main_contact_mobile || "-"},
-              E-mail : {company?.corporate_email || "-"}
-            </div>
-            <div className="proforma-footer-line-3">
-              Thank You For Your Business!
-            </div>
-          </footer>
         </div>
+
+        <section className="proforma-reference">
+          <ReferenceCell
+            label="PROFORMA INVOICE #"
+            value={proforma.proforma_number}
+          />
+
+          <ReferenceCell
+            label="DATE"
+            value={formatDate(proforma.proforma_date)}
+          />
+
+          <ReferenceCell label="CUSTOMER ID" value={customerId} />
+
+          <ReferenceCell label="TRN" value={company?.tax_registration_number} />
+        </section>
+
+        <section className="proforma-parties">
+          <div className="proforma-party-grid">
+            <div className="proforma-party">
+              <div className="proforma-party-heading">
+                {isFinance ? "BANK (FINANCED BY)" : "PAYMENT METHOD"}
+              </div>
+
+              <div className="proforma-party-name">
+                {isFinance ? displayValue(proforma.bank_financed_by) : "Cash"}
+              </div>
+
+              <div className="proforma-party-meta">
+                {isFinance
+                  ? `LPO: ${displayValue(proforma.lpo)}`
+                  : "Payment required as per agreed terms."}
+              </div>
+            </div>
+
+            <div className="proforma-party">
+              <div className="proforma-party-heading">CUSTOMER</div>
+
+              <div className="proforma-party-name">
+                {displayValue(proforma.customer_name)}
+              </div>
+
+              <div className="proforma-party-meta">
+                Mobile: {displayValue(proforma.customer_mobile)}
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <section className="proforma-section">
+          <SectionBar>VEHICLE DETAILS</SectionBar>
+
+          <div className="proforma-vehicle-row tall">
+            <div className="proforma-vehicle-label">Make &amp; Model</div>
+            <div
+              className={`proforma-vehicle-value ${vehicleValueClass(
+                vehicleName,
+              )}`}
+            >
+              {vehicleName || "-"}
+            </div>
+
+            <div className="proforma-vehicle-label">Year</div>
+            <div className="proforma-vehicle-value">
+              {displayValue(proforma.vehicle_year)}
+            </div>
+          </div>
+
+          <div className="proforma-vehicle-row tall">
+            <div className="proforma-vehicle-label">Chassis No.</div>
+            <div
+              className={`proforma-vehicle-value ${vehicleValueClass(
+                proforma.vehicle_chassis_number,
+              )}`}
+            >
+              {displayValue(proforma.vehicle_chassis_number)}
+            </div>
+
+            <div className="proforma-vehicle-label">Engine No.</div>
+            <div
+              className={`proforma-vehicle-value ${vehicleValueClass(
+                proforma.vehicle_engine_number,
+              )}`}
+            >
+              {displayValue(proforma.vehicle_engine_number)}
+            </div>
+          </div>
+
+          <div className="proforma-vehicle-row regular">
+            <div className="proforma-vehicle-label">Mileage</div>
+            <div className="proforma-vehicle-value">
+              {proforma.vehicle_mileage === null ||
+              proforma.vehicle_mileage === undefined ||
+              proforma.vehicle_mileage === ""
+                ? "-"
+                : `${Number(proforma.vehicle_mileage).toLocaleString(
+                    "en-AE",
+                  )} km`}
+            </div>
+
+            <div className="proforma-vehicle-label">Quote</div>
+            <div className="proforma-vehicle-value">
+              {displayValue(proforma.quote)}
+            </div>
+          </div>
+        </section>
+
+        <section className="proforma-section proforma-summary">
+          <SectionBar rightText="AMOUNT (AED)">
+            {isFinance ? "FINANCE BREAKDOWN" : "PRICE SUMMARY"}
+          </SectionBar>
+
+          <table className="proforma-summary-table">
+            <thead>
+              <tr>
+                <th>DESCRIPTION</th>
+                <th>AMOUNT</th>
+              </tr>
+            </thead>
+
+            <tbody>
+              <tr>
+                <td>Vehicle Price</td>
+                <td className="proforma-summary-amount">
+                  {formatAmount(vehiclePrice)}
+                </td>
+              </tr>
+
+              <tr>
+                <td>VAT</td>
+                <td className="proforma-summary-amount">
+                  {formatAmount(vatAmount)}
+                </td>
+              </tr>
+
+              {isFinance ? (
+                <tr>
+                  <td>Down Payment</td>
+                  <td className="proforma-summary-amount">
+                    {formatAmount(downPayment)}
+                  </td>
+                </tr>
+              ) : null}
+
+              {isFinance ? (
+                <tr className="proforma-summary-total">
+                  <td>NET FINANCE AMOUNT</td>
+                  <td className="proforma-summary-amount">
+                    {formatAmount(netFinance)}
+                  </td>
+                </tr>
+              ) : null}
+            </tbody>
+          </table>
+        </section>
+
+        <section className="proforma-section">
+          <div className="proforma-words">
+            <div className="proforma-words-label">
+              {isFinance
+                ? "NET FINANCE AMOUNT IN WORDS"
+                : "VEHICLE PRICE IN WORDS"}
+            </div>
+
+            <div className="proforma-words-value">{amountInWords}</div>
+          </div>
+        </section>
+
+        <section className="proforma-bottom">
+          <div className="proforma-terms">
+            <div className="proforma-terms-heading">TERMS &amp; NOTES</div>
+
+            <ul className="proforma-terms-list">
+              <li>All amounts are stated in AED.</li>
+              <li>
+                This proforma reflects the saved vehicle and payment
+                information.
+              </li>
+            </ul>
+          </div>
+
+          <div className="proforma-signature">
+            <div className="proforma-signature-space">
+              {includeSealStamp && printAssets.sealStamp ? (
+                <img
+                  src={printAssets.sealStamp}
+                  alt="Company Seal & Stamp"
+                  className="proforma-seal-stamp"
+                />
+              ) : null}
+            </div>
+
+            <div className="proforma-signature-caption">
+              Authorised Signature &amp; Stamp
+            </div>
+          </div>
+        </section>
+
+        {includeSealStamp && printAssets.sealStamp ? (
+          <div className="proforma-disclaimer">
+            * This is a system generated document.
+          </div>
+        ) : null}
+
+        <footer className="proforma-footer">
+          <div className="proforma-contact">
+            For any questions about this proforma, please contact{" "}
+            {companyPhone || "-"}
+            {companyEmail ? ` | ${companyEmail}` : ""}
+          </div>
+
+          <div className="proforma-thank-you">Thank You For Your Business!</div>
+        </footer>
       </div>
     </PrintDocument>
   );

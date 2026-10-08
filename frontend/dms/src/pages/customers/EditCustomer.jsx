@@ -4,6 +4,7 @@ import { Link, useNavigate, useParams } from "react-router-dom";
 import { toast } from "react-toastify";
 
 import { getCustomer, updateCustomer } from "../../api/customers";
+import { getApiErrorMessage } from "../../utils/errorMessage";
 
 export default function EditCustomer() {
   const { id } = useParams();
@@ -60,7 +61,7 @@ export default function EditCustomer() {
         console.error("Failed to load customer:", error);
 
         if (!cancelled) {
-          toast.error(error?.message || "Unable to load customer.");
+          toast.error(getApiErrorMessage(error, "Unable to load customer."));
         }
       } finally {
         if (!cancelled) {
@@ -120,21 +121,7 @@ export default function EditCustomer() {
        * when duplicate phone numbers or other
        * serializer validation occurs.
        */
-      const backendErrors = error?.cause?.errors;
-
-      if (Array.isArray(backendErrors)) {
-        toast.error(backendErrors.join(" "));
-      } else if (backendErrors && typeof backendErrors === "object") {
-        const messages = Object.values(backendErrors).flat().filter(Boolean);
-
-        toast.error(
-          messages.length
-            ? messages.join(" ")
-            : error?.message || "Unable to update customer.",
-        );
-      } else {
-        toast.error(error?.message || "Unable to update customer.");
-      }
+      toast.error(getApiErrorMessage(error, "Unable to update customer."));
     } finally {
       setSaving(false);
     }

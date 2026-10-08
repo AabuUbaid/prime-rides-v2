@@ -15,38 +15,14 @@ import { formatAED } from "../../utils/formatters";
 import PrintDocument from "../../components/printing/PrintDocument";
 import EmiPrintTemplate from "../../components/printing/templates/EmiPrintTemplate";
 
+import { getApiErrorMessage } from "../../utils/errorMessage";
+
 function getResponseData(response) {
   if (response && Object.prototype.hasOwnProperty.call(response, "data")) {
     return response.data;
   }
 
   return response;
-}
-
-function getApiMessage(error) {
-  const errors = error?.cause?.errors;
-
-  if (errors && typeof errors === "object" && !Array.isArray(errors)) {
-    if (errors.non_field_errors) {
-      return Array.isArray(errors.non_field_errors)
-        ? errors.non_field_errors.join(" ")
-        : String(errors.non_field_errors);
-    }
-
-    const firstError = Object.values(errors)[0];
-
-    if (Array.isArray(firstError)) {
-      return firstError.join(" ");
-    }
-
-    if (firstError) {
-      return String(firstError);
-    }
-  }
-
-  return (
-    error?.cause?.message || error?.message || "Failed to load EMI details."
-  );
 }
 
 function formatPercentage(value) {
@@ -168,7 +144,10 @@ function EmiDetail() {
           return;
         }
 
-        const message = getApiMessage(requestError);
+        const message = getApiErrorMessage(
+          requestError,
+          "Failed to load EMI details.",
+        );
 
         setError(message);
         setEmi(null);
@@ -260,12 +239,7 @@ function EmiDetail() {
     } catch (deleteError) {
       console.error("Failed to delete EMI:", deleteError);
 
-      const message =
-        deleteError?.cause?.message ||
-        deleteError?.message ||
-        "Failed to delete EMI.";
-
-      toast.error(message);
+      toast.error(getApiErrorMessage(deleteError, "Failed to delete EMI."));
     } finally {
       setDeleting(false);
     }
@@ -480,8 +454,10 @@ function EmiDetail() {
                     console.error("EMI print failed:", error);
 
                     toast.error(
-                      error?.message ||
+                      getApiErrorMessage(
+                        error,
                         "Unable to prepare the EMI for printing.",
+                      ),
                     );
                   } finally {
                     setPrinting(false);

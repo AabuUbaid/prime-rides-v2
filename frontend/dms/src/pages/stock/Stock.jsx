@@ -1647,9 +1647,9 @@ function Stock() {
 
         {/* Desktop table */}
         <div className="hidden overflow-x-auto xl:block">
-          <div className="min-w-[1050px]">
+          <div className="min-w-[1180px]">
             {/* Header */}
-            <div className="grid grid-cols-[36px_minmax(220px,1.7fr)_70px_110px_100px_75px_105px_130px_150px] items-center border-b border-slate-200 bg-slate-50/80 px-4 py-3 text-[10px] font-bold uppercase tracking-[0.12em] text-slate-400">
+            <div className="grid grid-cols-[36px_minmax(220px,1.7fr)_70px_110px_100px_75px_105px_130px_120px_150px] items-center border-b border-slate-200 bg-slate-50/80 px-4 py-3 text-[10px] font-bold uppercase tracking-[0.12em] text-slate-400">
               <div />
 
               <div>Vehicle</div>
@@ -1665,6 +1665,8 @@ function Stock() {
               <div>Status</div>
 
               <div>Price</div>
+
+              <div>Documents</div>
 
               <div className="text-right">Actions</div>
             </div>
@@ -1686,7 +1688,7 @@ function Stock() {
                 return (
                   <div
                     key={car.id}
-                    className="group grid grid-cols-[36px_minmax(220px,1.7fr)_70px_110px_100px_75px_105px_130px_150px] items-center border-b border-slate-100 px-4 transition-colors last:border-b-0 hover:bg-slate-50"
+                    className="group grid grid-cols-[36px_minmax(220px,1.7fr)_70px_110px_100px_75px_105px_130px_120px_150px] items-center border-b border-slate-100 px-4 transition-colors last:border-b-0 hover:bg-slate-50"
                   >
                     {/* Selection */}
                     <div>
@@ -1801,6 +1803,35 @@ function Stock() {
                         : car.asking_price
                           ? `AED ${Number(car.asking_price).toLocaleString("en-AE")}`
                           : "-"}
+                    </div>
+
+                    {/* Documents */}
+                    <div>
+                      <div
+                        title={
+                          car.document_status?.ready
+                            ? "All required documents uploaded"
+                            : `Missing: ${
+                                car.document_status?.missing?.join(", ") ||
+                                "Required documents"
+                              }`
+                        }
+                        className={[
+                          "inline-flex items-center rounded-full px-2.5 py-1 text-[10px] font-bold",
+                          car.document_status?.ready
+                            ? "bg-emerald-50 text-emerald-700 ring-1 ring-inset ring-emerald-200"
+                            : "bg-amber-50 text-amber-700 ring-1 ring-inset ring-amber-200",
+                        ].join(" ")}
+                      >
+                        {car.document_status?.uploaded ?? 0}/
+                        {car.document_status?.required ?? 2}
+                      </div>
+
+                      <p className="mt-1 truncate text-[10px] text-slate-400">
+                        {car.document_status?.ready
+                          ? "All uploaded"
+                          : `${car.document_status?.missing?.length ?? 0} missing`}
+                      </p>
                     </div>
 
                     {/* Actions */}
@@ -1968,6 +1999,34 @@ function Stock() {
                           <StatusBadge status={car.status}>
                             {getStatusLabel(car.status)}
                           </StatusBadge>
+                        </div>
+
+                        <div className="mt-3 flex items-center justify-between gap-3">
+                          <div
+                            title={
+                              car.document_status?.ready
+                                ? "All required documents uploaded"
+                                : `Missing: ${
+                                    car.document_status?.missing?.join(", ") ||
+                                    "Required documents"
+                                  }`
+                            }
+                            className={[
+                              "inline-flex items-center rounded-full px-2.5 py-1 text-[10px] font-bold",
+                              car.document_status?.ready
+                                ? "bg-emerald-50 text-emerald-700 ring-1 ring-inset ring-emerald-200"
+                                : "bg-amber-50 text-amber-700 ring-1 ring-inset ring-amber-200",
+                            ].join(" ")}
+                          >
+                            Documents {car.document_status?.uploaded ?? 0}/
+                            {car.document_status?.required ?? 2}
+                          </div>
+
+                          <span className="text-[10px] font-medium text-slate-400">
+                            {car.document_status?.ready
+                              ? "All uploaded"
+                              : `${car.document_status?.missing?.length ?? 0} missing`}
+                          </span>
                         </div>
 
                         <div className="mt-3 flex flex-col gap-3 min-[420px]:flex-row min-[420px]:items-center min-[420px]:justify-between">

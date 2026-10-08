@@ -4,6 +4,7 @@ import { Eye, Plus, RefreshCw, Upload, UserRound } from "lucide-react";
 import { toast } from "react-toastify";
 
 import { getCustomers, importCustomers } from "../../api/customers";
+import { getApiErrorMessage } from "../../utils/errorMessage";
 
 function getCustomerName(customer) {
   return customer?.customer_name || customer?.name || "-";
@@ -80,8 +81,7 @@ export default function Customers() {
     } catch (error) {
       console.error("Failed to load customers:", error);
 
-      toast.error(error?.message || "Unable to load customers.");
-
+      toast.error(getApiErrorMessage(error, "Unable to load customers."));
       setCustomers([]);
     } finally {
       setLoading(false);
@@ -155,21 +155,7 @@ export default function Customers() {
     } catch (error) {
       console.error("Customer CSV import failed:", error);
 
-      const backendErrors = error?.cause?.errors;
-
-      if (Array.isArray(backendErrors)) {
-        toast.error(backendErrors.join(" "));
-      } else if (backendErrors && typeof backendErrors === "object") {
-        const messages = Object.values(backendErrors).flat().filter(Boolean);
-
-        toast.error(
-          messages.length
-            ? messages.join(" ")
-            : error?.message || "Unable to import customers.",
-        );
-      } else {
-        toast.error(error?.message || "Unable to import customers.");
-      }
+      toast.error(getApiErrorMessage(error, "Unable to import customers."));
     } finally {
       setImporting(false);
     }
