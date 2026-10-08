@@ -853,6 +853,7 @@ function CompanyManagement() {
                   <option value="Trade License">Trade License</option>
                   <option value="TRN Certificate">TRN Certificate</option>
                   <option value="Seal & Stamp">Seal & Stamp</option>
+                  <option value="Power of Attorney">Power of Attorney</option>
                 </Select>
 
                 <div>

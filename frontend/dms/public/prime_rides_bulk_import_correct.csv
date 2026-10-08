@@ -1,4 +1,4 @@
-make,model,variant,colour,year,purchase_cost,asking_price,least_selling_price,status,mileage,source,source_specify,supplier,highlight_public,chassis_number,engine_number
-Toyota,Camry,SE,White,2022,65000,72000,68000,available,45000,own_purchase,,ABC Motors,True,JTNAB123456789101,ENG10001
-Nissan,Patrol,SE,Black,2021,145000,165000,155000,available,38000,fly_wheel,,XYZ Cars,True,JTNAB123456789102,ENG10002
-Hyundai,Tucson,Premium,Silver,2023,58000,67000,62000,available,30000,trade_in,,Global Auto,False,JTNAB123456789103,ENG10003
+﻿make,model,variant,colour,year,purchase_cost,chassis_number,engine_number
+Toyota,Camry,GCC Grande,White,2024,92000,JTNB11HK5R3000123,A25A-FKS-240001
+Nissan,Patrol,GCC SE Titanium,Black,2024,165000,JN1TANZ62R0123456,VR30DDTT-240002
+Toyota,Land Cruiser,GCC GXR,Silver,2023,225000,JTMABACJ6P0012345,F33A-FTV-230003
