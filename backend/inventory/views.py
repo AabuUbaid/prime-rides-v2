@@ -455,8 +455,12 @@ class CarImageCoverAPIView(APIView):
 
 class CarExpenseAPIView(APIView):
 
-    permission_classes = [IsAuthenticated]
+    def get_permissions(self):
+        if self.request.method == "POST":
+            return [IsAuthenticated(), IsMasterOrAdmin()]
 
+        return [IsAuthenticated()]
+    
     def get(
         self,
         request,
@@ -514,7 +518,7 @@ class CarExpenseAPIView(APIView):
 
 class CarExpenseDetailAPIView(APIView):
 
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsAuthenticated, IsMasterOrAdmin]
 
     def patch(
         self,

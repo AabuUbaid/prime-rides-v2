@@ -533,9 +533,9 @@ function App() {
             <Route
               path="/ledger-accounts"
               element={
-                <ProtectedRoute>
+                <RoleRoute allowedRoles={["MASTER"]}>
                   <LedgerAccounts />
-                </ProtectedRoute>
+                </RoleRoute>
               }
             />
 

@@ -132,6 +132,12 @@ function EditCar() {
         source_specify: formatHumanText(formData.source_specify),
       };
 
+      if (user?.role === "ADMIN") {
+        delete normalizedData.purchase_cost;
+        delete normalizedData.asking_price;
+        delete normalizedData.least_selling_price;
+      }
+
       const result = await updateCar(id, normalizedData);
 
       console.log(result);
@@ -211,9 +217,14 @@ function EditCar() {
           <VehicleInformation formData={formData} handleChange={handleChange} />
         </div>
 
-        <div className="overflow-hidden rounded-2xl border border-slate-200 bg-white p-5 shadow-[0_2px_8px_rgba(15,23,42,0.04)] sm:p-6">
-          <PricingInformation formData={formData} handleChange={handleChange} />
-        </div>
+        {user?.role !== "ADMIN" && (
+          <div className="overflow-hidden rounded-2xl border border-slate-200 bg-white p-5 shadow-[0_2px_8px_rgba(15,23,42,0.04)] sm:p-6">
+            <PricingInformation
+              formData={formData}
+              handleChange={handleChange}
+            />
+          </div>
+        )}
 
         <div className="overflow-hidden rounded-2xl border border-slate-200 bg-white p-5 shadow-[0_2px_8px_rgba(15,23,42,0.04)] sm:p-6">
           <VehicleDetails

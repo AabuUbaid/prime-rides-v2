@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import { getRtaRecords } from "../../api/rta";
+import { useAuth } from "../../context/AuthContext";
 
 const RECORD_TYPE_LABELS = {
   PURCHASE: "Purchase",
@@ -17,6 +18,7 @@ const STATUS_LABELS = {
 };
 
 export default function RtaRecords() {
+  const { user } = useAuth();
   const [items, setItems] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
@@ -66,12 +68,14 @@ export default function RtaRecords() {
           </div>
 
           <div className="flex flex-wrap gap-2">
-            <Link
-              to="/rta/new"
-              className="rounded-lg bg-gray-900 px-4 py-2 text-sm font-medium text-white hover:bg-gray-800"
-            >
-              + Create RTA
-            </Link>
+            {user?.role !== "ADMIN" && (
+              <Link
+                to="/rta/new"
+                className="rounded-lg bg-gray-900 px-4 py-2 text-sm font-medium text-white hover:bg-gray-800"
+              >
+                + Create RTA
+              </Link>
+            )}
 
             <button
               type="button"

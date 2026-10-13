@@ -1085,7 +1085,7 @@ function CarDetails() {
         ))}
       </div>
 
-      {user?.role === "MASTER" && (
+      {canManageVehicle && (
         <>
           <ExpenseForm onAddExpense={handleAddExpense} />
 

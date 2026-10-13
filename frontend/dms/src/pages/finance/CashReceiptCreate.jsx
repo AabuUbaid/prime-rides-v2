@@ -28,6 +28,33 @@ const DIRECTIONS = [
   },
 ];
 
+const FIXED_CATEGORIES = [
+  {
+    value: "additional_payment",
+    label: "Additional Payment",
+    source: "standard",
+  },
+  {
+    value: "advance",
+    label: "Advance",
+    source: "standard",
+  },
+  {
+    value: "final_payment",
+    label: "Final Payment",
+    source: "standard",
+  },
+  {
+    value: "other",
+    label: "Other",
+    source: "standard",
+  },
+];
+
+const FIXED_CATEGORY_VALUES = new Set(
+  FIXED_CATEGORIES.map((option) => option.value),
+);
+
 const PAYMENT_METHODS = [
   { value: "cash", label: "Cash" },
   {

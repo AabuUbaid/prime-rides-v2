@@ -2,6 +2,7 @@ import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { createCar } from "../../api/inventory";
 import { toast } from "react-toastify";
+import { useAuth } from "../../context/AuthContext";
 
 import { formatHumanText } from "../../utils/textFormatters";
 import VehicleInformation from "./components/VehicleInformation";
@@ -44,6 +45,7 @@ const initialFormData = {
 };
 
 function AddCar() {
+  const { user } = useAuth();
   const navigate = useNavigate();
   const [formData, setFormData] = useState(initialFormData);
   const [saving, setSaving] = useState(false);
@@ -95,6 +97,12 @@ function AddCar() {
         source_specify: formatHumanText(formData.source_specify),
       };
 
+      if (user?.role === "ADMIN") {
+        delete normalizedFormData.purchase_cost;
+        delete normalizedFormData.asking_price;
+        delete normalizedFormData.least_selling_price;
+      }
+
       const result = await createCar(normalizedFormData);
 
       console.log(result);
@@ -145,9 +153,11 @@ function AddCar() {
       <div className="overflow-hidden rounded-2xl border border-slate-200 bg-white p-5 shadow-[0_2px_8px_rgba(15,23,42,0.04)] sm:p-6">
         <VehicleInformation formData={formData} handleChange={handleChange} />
       </div>
-      <div className="overflow-hidden rounded-2xl border border-slate-200 bg-white p-5 shadow-[0_2px_8px_rgba(15,23,42,0.04)] sm:p-6">
-        <PricingInformation formData={formData} handleChange={handleChange} />
-      </div>
+      {user?.role !== "ADMIN" && (
+        <div className="overflow-hidden rounded-2xl border border-slate-200 bg-white p-5 shadow-[0_2px_8px_rgba(15,23,42,0.04)] sm:p-6">
+          <PricingInformation formData={formData} handleChange={handleChange} />
+        </div>
+      )}
       <div className="overflow-hidden rounded-2xl border border-slate-200 bg-white p-5 shadow-[0_2px_8px_rgba(15,23,42,0.04)] sm:p-6">
         <VehicleDetails formData={formData} handleChange={handleChange} />
       </div>

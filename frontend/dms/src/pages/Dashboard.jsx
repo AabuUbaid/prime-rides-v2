@@ -23,6 +23,8 @@ import {
 
 import KPICard from "../components/ui/KPICard";
 
+import { useAuth } from "../context/AuthContext";
+
 import { getCars } from "../api/inventory";
 
 import { getQuotes } from "../api/quotes";
@@ -418,6 +420,9 @@ function ProgressBar({ value, max }) {
 \========================================================= */
 
 export default function Dashboard() {
+  const { user } = useAuth();
+  const isMaster = user?.role === "MASTER";
+
   const [loading, setLoading] = useState(true);
 
   const [cars, setCars] = useState([]);
@@ -1970,94 +1975,102 @@ export default function Dashboard() {
 
         \================================================= */}
 
-        <section className="mt-8 grid gap-5 xl:grid-cols-[1.15fr_0.85fr]">
+        <section
+          className={`mt-8 grid gap-5 ${
+            isMaster ? "xl:grid-cols-[1.15fr_0.85fr]" : "xl:grid-cols-1"
+          }`}
+        >
           {/* FINANCIAL */}
 
-          <div className="rounded-[24px] border border-slate-200 bg-white p-5 shadow-sm sm:p-7">
-            <SectionHeading
-              eyebrow="Finance"
-              title="Financial Overview"
-              description="Overall financial activity from available records."
-            />
+          {isMaster && (
+            <div className="rounded-[24px] border border-slate-200 bg-white p-5 shadow-sm sm:p-7">
+              <SectionHeading
+                eyebrow="Finance"
+                title="Financial Overview"
+                description="Overall financial activity from available records."
+              />
 
-            <div className="grid items-center gap-8 md:grid-cols-[280px_1fr]">
-              <div className="flex justify-center">
-                <div className="relative h-60 w-60">
-                  <div
-                    className="absolute inset-0 rounded-full"
-                    style={{
-                      background: financialGradient,
-                    }}
-                  />
+              <div className="grid items-center gap-8 md:grid-cols-[280px_1fr]">
+                <div className="flex justify-center">
+                  <div className="relative h-60 w-60">
+                    <div
+                      className="absolute inset-0 rounded-full"
+                      style={{
+                        background: financialGradient,
+                      }}
+                    />
 
-                  <div className="absolute inset-[8px] rounded-full bg-white" />
+                    <div className="absolute inset-[8px] rounded-full bg-white" />
 
-                  <div className="absolute inset-[48px] flex flex-col items-center justify-center rounded-full bg-slate-50">
-                    <span className="text-[9px] font-bold uppercase tracking-[0.15em] text-slate-400">
-                      Total
-                    </span>
+                    <div className="absolute inset-[48px] flex flex-col items-center justify-center rounded-full bg-slate-50">
+                      <span className="text-[9px] font-bold uppercase tracking-[0.15em] text-slate-400">
+                        Total
+                      </span>
 
-                    <span className="mt-1 text-xl font-black tracking-tight text-slate-900">
-                      {formatAED(financialTotal)}
-                    </span>
+                      <span className="mt-1 text-xl font-black tracking-tight text-slate-900">
+                        {formatAED(financialTotal)}
+                      </span>
 
-                    <span className="mt-1 text-[9px] text-slate-400">
-                      financial activity
-                    </span>
+                      <span className="mt-1 text-[9px] text-slate-400">
+                        financial activity
+                      </span>
+                    </div>
                   </div>
                 </div>
-              </div>
 
-              <div className="space-y-3">
-                {financialSegments.map((segment) => {
-                  const percentage =
-                    financialTotal > 0
-                      ? Math.round((segment.value / financialTotal) * 100)
-                      : 0;
+                <div className="space-y-3">
+                  {financialSegments.map((segment) => {
+                    const percentage =
+                      financialTotal > 0
+                        ? Math.round((segment.value / financialTotal) * 100)
+                        : 0;
 
-                  return (
-                    <div
-                      key={segment.label}
-                      className="rounded-2xl border border-slate-100 p-4"
-                    >
-                      <div className="flex items-center justify-between gap-4">
-                        <div className="flex items-center gap-2">
-                          <span
-                            className={`h-2.5 w-2.5 rounded-full ${segment.dot}`}
-                          />
+                    return (
+                      <div
+                        key={segment.label}
+                        className="rounded-2xl border border-slate-100 p-4"
+                      >
+                        <div className="flex items-center justify-between gap-4">
+                          <div className="flex items-center gap-2">
+                            <span
+                              className={`h-2.5 w-2.5 rounded-full ${segment.dot}`}
+                            />
 
-                          <span className="text-xs font-bold text-slate-600">
-                            {segment.label}
+                            <span className="text-xs font-bold text-slate-600">
+                              {segment.label}
+                            </span>
+                          </div>
+
+                          <span className="text-sm font-black text-slate-900">
+                            {formatAED(segment.value)}
                           </span>
                         </div>
 
-                        <span className="text-sm font-black text-slate-900">
-                          {formatAED(segment.value)}
-                        </span>
-                      </div>
+                        <div className="mt-3 h-1.5 overflow-hidden rounded-full bg-slate-100">
+                          <div
+                            className={`h-full rounded-full ${segment.dot}`}
+                            style={{
+                              width: `${percentage}%`,
+                            }}
+                          />
+                        </div>
 
-                      <div className="mt-3 h-1.5 overflow-hidden rounded-full bg-slate-100">
-                        <div
-                          className={`h-full rounded-full ${segment.dot}`}
-                          style={{
-                            width: `${percentage}%`,
-                          }}
-                        />
-                      </div>
+                        <div className="mt-1.5 flex justify-between">
+                          <span className="text-[9px] text-slate-400">
+                            Share
+                          </span>
 
-                      <div className="mt-1.5 flex justify-between">
-                        <span className="text-[9px] text-slate-400">Share</span>
-
-                        <span className="text-[9px] font-bold text-slate-500">
-                          {percentage}%
-                        </span>
+                          <span className="text-[9px] font-bold text-slate-500">
+                            {percentage}%
+                          </span>
+                        </div>
                       </div>
-                    </div>
-                  );
-                })}
+                    );
+                  })}
+                </div>
               </div>
             </div>
-          </div>
+          )}
 
           {/* STAFF */}
 

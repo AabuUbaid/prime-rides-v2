@@ -169,15 +169,20 @@ class CarCreateSerializer(serializers.ModelSerializer):
         }
 
     def validate(self, attrs):
-        
         request = self.context.get("request")
 
         if not is_master_request(request):
-            forbidden_fields = (
+            forbidden_fields = [
                 "purchase_cost",
                 "supplier",
                 "actual_mileage",
-            )
+            ]
+
+            if getattr(getattr(request, "user", None), "role", None) == "ADMIN":
+                forbidden_fields.extend([
+                    "asking_price",
+                    "least_selling_price",
+                ])
 
             submitted_forbidden_fields = [
                 field_name
@@ -190,6 +195,7 @@ class CarCreateSerializer(serializers.ModelSerializer):
                     field_name: "Only Master users can set this field."
                     for field_name in submitted_forbidden_fields
                 })
+
         purchase = attrs.get("purchase_cost")
         asking = attrs.get("asking_price")
         least = attrs.get("least_selling_price")
@@ -532,13 +538,16 @@ class CarDetailSerializer(
     
     def get_fields(self):
         fields = super().get_fields()
-
         request = self.context.get("request")
+        user = getattr(request, "user", None)
 
-        return remove_sensitive_fields(
-            fields,
-            request,
-        )
+        if getattr(user, "role", None) == "ADMIN":
+            for field_name in SENSITIVE_INVENTORY_FIELDS - {"expenses"}:
+                fields.pop(field_name, None)
+
+            return fields
+
+        return remove_sensitive_fields(fields, request)
 
     class Meta:
         model = Car
@@ -782,6 +791,23 @@ class CarUpdateSerializer(serializers.ModelSerializer):
         )
 
     def validate(self, attrs):
+
+        request = self.context.get("request")
+
+        if getattr(getattr(request, "user", None), "role", None) == "ADMIN":
+            price_fields = (
+                "purchase_cost",
+                "asking_price",
+                "least_selling_price",
+            )
+            submitted = [field for field in price_fields if field in self.initial_data]
+
+            if submitted:
+                raise serializers.ValidationError({
+                    field: "Admin users cannot change vehicle pricing."
+                    for field in submitted
+                })
+
         purchase = attrs.get("purchase_cost")
         asking = attrs.get("asking_price")
         least = attrs.get("least_selling_price")

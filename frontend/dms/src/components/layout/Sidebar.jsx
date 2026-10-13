@@ -104,13 +104,13 @@ function Sidebar({ user, onLogout, mobileOpen, onCloseMobile }) {
           label: "Bank Loans",
           path: "/finance/bank-loans",
           icon: Landmark,
-          roles: ["MASTER"],
+          roles: ["MASTER", "ADMIN"],
         },
         {
           label: "Cash Deals",
           path: "/finance/cash-deals",
           icon: Banknote,
-          roles: ["MASTER"],
+          roles: ["MASTER", "ADMIN"],
         },
         {
           label: "Cash Receipts",
@@ -122,16 +122,19 @@ function Sidebar({ user, onLogout, mobileOpen, onCloseMobile }) {
           label: "Balance Sheets",
           path: "/finance/balance-sheets",
           icon: BarChart3,
+          roles: ["MASTER", "ADMIN"],
         },
         {
           label: "Insurance",
           path: "/finance/insurance",
           icon: ShieldCheck,
+          roles: ["MASTER", "ADMIN"],
         },
         {
           label: "Finance",
           path: "/finance/master",
           icon: WalletCards,
+          roles: ["MASTER"],
         },
       ],
     },
@@ -143,16 +146,19 @@ function Sidebar({ user, onLogout, mobileOpen, onCloseMobile }) {
           label: "Proformas",
           path: "/finance/proformas",
           icon: FileCheck2,
+          roles: ["MASTER", "ADMIN"],
         },
         {
           label: "Delivery Notes",
           path: "/finance/delivery-notes",
           icon: ClipboardList,
+          roles: ["MASTER", "ADMIN"],
         },
         {
           label: "RTA",
           path: "/rta",
           icon: BadgeCheck,
+          roles: ["MASTER", "ADMIN"],
         },
       ],
     },
@@ -170,6 +176,7 @@ function Sidebar({ user, onLogout, mobileOpen, onCloseMobile }) {
           label: "Reports",
           path: "/reports",
           icon: FileChartColumnIncreasing,
+          roles: ["MASTER"],
         },
         {
           label: "User Access",
@@ -193,11 +200,13 @@ function Sidebar({ user, onLogout, mobileOpen, onCloseMobile }) {
           label: "Ledger Accounts",
           path: "/ledger-accounts",
           icon: WalletCards,
+          roles: ["MASTER"],
         },
         {
           label: "Settings",
           path: "/finance/settings",
           icon: Settings,
+          roles: ["MASTER"],
         },
         {
           label: "Company & Branches",
@@ -296,7 +305,7 @@ function Sidebar({ user, onLogout, mobileOpen, onCloseMobile }) {
         </div>
 
         {/* Quick action */}
-        {!collapsed && (
+        {!collapsed && ["MASTER", "ADMIN"].includes(user?.role) && (
           <div className="px-3 pt-3">
             <button
               type="button"

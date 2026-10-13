@@ -8,6 +8,7 @@ import {
   downloadRtaDocument,
   deleteRtaDocument,
 } from "../../api/rta";
+import { useAuth } from "../../context/AuthContext";
 
 import { getApiErrorMessage } from "../../utils/errorMessage";
 
@@ -35,6 +36,7 @@ function Field({ label, value }) {
 }
 
 export default function RtaRecordDetail() {
+  const { user } = useAuth();
   const { id } = useParams();
 
   const [record, setRecord] = useState(null);
@@ -379,60 +381,64 @@ export default function RtaRecordDetail() {
           <div className="flex items-center justify-between gap-4">
             <h2 className="font-semibold text-gray-900">RTA Documents</h2>
 
-            <form
-              onSubmit={handleDocumentUpload}
-              className="mt-5 rounded-xl border border-gray-200 bg-gray-50 p-4"
-            >
-              <div className="grid gap-4 md:grid-cols-[220px_1fr_auto] md:items-end">
-                <div>
-                  <label className="mb-1 block text-sm font-medium text-gray-700">
-                    Document Type
-                  </label>
+            {user?.role !== "ADMIN" && (
+              <form
+                onSubmit={handleDocumentUpload}
+                className="mt-5 rounded-xl border border-gray-200 bg-gray-50 p-4"
+              >
+                <div className="grid gap-4 md:grid-cols-[220px_1fr_auto] md:items-end">
+                  <div>
+                    <label className="mb-1 block text-sm font-medium text-gray-700">
+                      Document Type
+                    </label>
 
-                  <select
-                    value={uploadType}
-                    onChange={(event) => setUploadType(event.target.value)}
-                    disabled={uploading}
-                    className="w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm"
+                    <select
+                      value={uploadType}
+                      onChange={(event) => setUploadType(event.target.value)}
+                      disabled={uploading}
+                      className="w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm"
+                    >
+                      <option value="SUPPLIER_DOCUMENT">
+                        Supplier Document
+                      </option>
+                      <option value="PURCHASE_AGREEMENT">
+                        Purchase Agreement
+                      </option>
+                      <option value="SALE_AGREEMENT">Sale Agreement</option>
+                      <option value="OTHER">Other</option>
+                    </select>
+                  </div>
+
+                  <div>
+                    <label className="mb-1 block text-sm font-medium text-gray-700">
+                      File
+                    </label>
+
+                    <input
+                      type="file"
+                      accept=".pdf,.jpg,.jpeg,.png,.webp"
+                      onChange={(event) =>
+                        setUploadFile(event.target.files?.[0] || null)
+                      }
+                      disabled={uploading}
+                      className="block w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm"
+                    />
+                  </div>
+
+                  <button
+                    type="submit"
+                    disabled={uploading || !uploadFile}
+                    className="rounded-lg bg-gray-900 px-4 py-2 text-sm font-medium text-white disabled:cursor-not-allowed disabled:opacity-50"
                   >
-                    <option value="SUPPLIER_DOCUMENT">Supplier Document</option>
-                    <option value="PURCHASE_AGREEMENT">
-                      Purchase Agreement
-                    </option>
-                    <option value="SALE_AGREEMENT">Sale Agreement</option>
-                    <option value="OTHER">Other</option>
-                  </select>
+                    {uploading ? "Uploading..." : "Upload"}
+                  </button>
                 </div>
 
-                <div>
-                  <label className="mb-1 block text-sm font-medium text-gray-700">
-                    File
-                  </label>
-
-                  <input
-                    type="file"
-                    accept=".pdf,.jpg,.jpeg,.png,.webp"
-                    onChange={(event) =>
-                      setUploadFile(event.target.files?.[0] || null)
-                    }
-                    disabled={uploading}
-                    className="block w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm"
-                  />
-                </div>
-
-                <button
-                  type="submit"
-                  disabled={uploading || !uploadFile}
-                  className="rounded-lg bg-gray-900 px-4 py-2 text-sm font-medium text-white disabled:cursor-not-allowed disabled:opacity-50"
-                >
-                  {uploading ? "Uploading..." : "Upload"}
-                </button>
-              </div>
-
-              <p className="mt-2 text-xs text-gray-500">
-                PDF, JPEG, PNG, or WEBP. Maximum 10 MB.
-              </p>
-            </form>
+                <p className="mt-2 text-xs text-gray-500">
+                  PDF, JPEG, PNG, or WEBP. Maximum 10 MB.
+                </p>
+              </form>
+            )}
 
             {!documentsLoading && (
               <span className="text-sm text-gray-500">
@@ -491,13 +497,15 @@ export default function RtaRecordDetail() {
                       Download
                     </button>
 
-                    <button
-                      type="button"
-                      onClick={() => handleDocumentDelete(document)}
-                      className="rounded-lg border border-red-200 bg-white px-3 py-2 text-sm font-medium text-red-600 hover:bg-red-50"
-                    >
-                      Delete
-                    </button>
+                    {user?.role !== "ADMIN" && (
+                      <button
+                        type="button"
+                        onClick={() => handleDocumentDelete(document)}
+                        className="rounded-lg border border-red-200 bg-white px-3 py-2 text-sm font-medium text-red-600 hover:bg-red-50"
+                      >
+                        Delete
+                      </button>
+                    )}
                   </div>
                 </div>
               ))}

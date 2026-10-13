@@ -139,10 +139,10 @@ function amountToWords(value) {
   const fils = Math.round((rounded - whole) * 100);
 
   if (fils > 0) {
-    return `UAE Dirhams ${wholeNumberToWords(whole)} and ${wholeNumberToWords(fils)} Fils Only`;
+    return `Dirhams ${wholeNumberToWords(whole)} and ${wholeNumberToWords(fils)} Fils Only`;
   }
 
-  return `UAE Dirhams ${wholeNumberToWords(whole)} Only`;
+  return `Dirhams ${wholeNumberToWords(whole)} Only`;
 }
 
 function vehicleValueClass(value) {
@@ -225,7 +225,7 @@ export default function QuotePrintTemplate({
    * quote.price = historical vehicle amount for the quote,
    * finance.finance_amount = historical net finance amount.
    */
-  const vatAmount = numericValue(isFinance ? finance.vat_amount : vat.amount);
+  const vatAmount = isCash ? numericValue(vat.amount) : 0;
   const appliedExpenseTotal = isCash
     ? getAppliedExpenseTotal(expenses)
     : numericValue(finance.expense_total);
@@ -1163,13 +1163,15 @@ export default function QuotePrintTemplate({
                 </td>
               </tr>
 
-              <tr>
-                <td>VAT</td>
-                <td className="quote-price-rate">{vatRate}</td>
-                <td className="quote-price-amount">
-                  {formatAmount(vatAmount)}
-                </td>
-              </tr>
+              {isCash && (
+                <tr>
+                  <td>VAT</td>
+                  <td className="quote-price-rate">{vatRate}</td>
+                  <td className="quote-price-amount">
+                    {formatAmount(vatAmount)}
+                  </td>
+                </tr>
+              )}
 
               {isCash ? (
                 <tr>
@@ -1239,9 +1241,13 @@ export default function QuotePrintTemplate({
 
         <section className="quote-section quote-words-section">
           <div className="quote-word-row">
-            <div className="quote-word-label">Vehicle price in words</div>
+            <div className="quote-word-label">
+              {isFinance
+                ? "Net finance amount in words"
+                : "Total payable in words"}
+            </div>
             <div className="quote-word-value">
-              {amountToWords(vehicleAmount)}
+              {amountToWords(isFinance ? financeAmount : totalPayable)}
             </div>
           </div>
         </section>

@@ -11,7 +11,7 @@ from rest_framework.response import Response
 from rest_framework.views import APIView
 from config.pagination import StandardResultsSetPagination
 
-from accounts.permissions import IsMasterOrAdmin
+from accounts.permissions import IsMaster, IsMasterOrAdmin, IsNotAdmin
 
 from .models import (
     RTARecord,
@@ -41,6 +41,12 @@ class RTARecordListCreateView(generics.ListCreateAPIView):
     serializer_class = RTARecordSerializer
     permission_classes = [IsAuthenticated]
     pagination_class = StandardResultsSetPagination
+
+    def get_permissions(self):
+        if self.request.method == "POST":
+            return [IsAuthenticated(), IsNotAdmin()]
+
+        return [IsAuthenticated()]
 
     def get_queryset(self):
         queryset = super().get_queryset()
@@ -111,6 +117,12 @@ class RTAMasterUpdateView(generics.RetrieveUpdateAPIView):
         IsMasterOrAdmin,
     ]
 
+    def get_permissions(self):
+        if self.request.method in {"PUT", "PATCH"}:
+            return [IsAuthenticated(), IsMaster()]
+
+        return [IsAuthenticated(), IsMasterOrAdmin()]
+
 class RTATemplateListCreateView(generics.ListCreateAPIView):
     queryset = RTATemplate.objects.select_related(
         "company",
@@ -179,6 +191,13 @@ class RTADocumentListCreateView(generics.ListCreateAPIView):
         IsAuthenticated,
         IsMasterOrAdmin,
     ]
+
+    def get_permissions(self):
+        if self.request.method == "POST":
+            return [IsAuthenticated(), IsMaster()]
+
+        return [IsAuthenticated(), IsMasterOrAdmin()]
+
     parser_classes = [
         MultiPartParser,
         FormParser,
@@ -246,7 +265,7 @@ class RTADocumentDownloadView(APIView):
 class RTADocumentDeleteView(APIView):
     permission_classes = [
         IsAuthenticated,
-        IsMasterOrAdmin,
+        IsMaster,
     ]
 
     def delete(self, request, pk):
