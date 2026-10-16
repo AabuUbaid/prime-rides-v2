@@ -400,6 +400,15 @@ export default function CustomerDetail() {
 
               <div>
                 <p className="text-xs font-medium uppercase tracking-wide text-slate-500">
+                  Emirates ID Number
+                </p>
+                <p className="mt-1 text-sm font-medium text-slate-900">
+                  {customer.emirates_id_number || "—"}
+                </p>
+              </div>
+
+              <div>
+                <p className="text-xs font-medium uppercase tracking-wide text-slate-500">
                   Email
                 </p>
                 <p className="mt-1 text-sm font-medium text-slate-900">

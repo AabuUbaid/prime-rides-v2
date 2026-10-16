@@ -391,10 +391,10 @@ class CarListSerializer(
             )
         )
 
-        has_rta_passing = bool(
+        has_invoice = bool(
             getattr(
                 obj,
-                "has_rta_passing_document",
+                "has_invoice_document",
                 False,
             )
         )
@@ -402,7 +402,7 @@ class CarListSerializer(
         uploaded = sum(
             [
                 has_possession,
-                has_rta_passing,
+                has_invoice,
             ]
         )
 
@@ -411,8 +411,8 @@ class CarListSerializer(
         if not has_possession:
             missing.append("Possession Certificate")
 
-        if not has_rta_passing:
-            missing.append("RTA Passing")
+        if not has_invoice:
+            missing.append("Invoice")
 
         return {
             "required": 2,

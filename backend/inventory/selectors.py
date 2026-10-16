@@ -72,9 +72,9 @@ class InventorySelector:
                     )
                 ),
 
-                has_rta_passing_document=Exists(
+                has_invoice_document=Exists(
                     vehicle_documents.filter(
-                        document_type=VehicleDocument.DocumentType.RTA_PASSING,
+                        document_type=VehicleDocument.DocumentType.INVOICE,
                     )
                 ),
 

@@ -1,6 +1,7 @@
 from rest_framework import serializers
 
 from .models import Progression
+from decimal import Decimal
 
 
 class ProgressionSerializer(serializers.ModelSerializer):
@@ -39,6 +40,9 @@ class ProgressionSerializer(serializers.ModelSerializer):
     selling_price = serializers.SerializerMethodField()
     evaluation_price = serializers.SerializerMethodField()
     submitted_date = serializers.SerializerMethodField()
+    deal_status = serializers.SerializerMethodField()
+    deal_remark = serializers.SerializerMethodField()
+    advance_amount = serializers.SerializerMethodField()
 
     class Meta:
         model = Progression
@@ -66,6 +70,9 @@ class ProgressionSerializer(serializers.ModelSerializer):
             "selling_price",
             "evaluation_price",
             "submitted_date",
+            "deal_status",
+            "deal_remark",
+            "advance_amount",
             "created_at",
             "updated_at",
             "completed_at",
@@ -92,6 +99,9 @@ class ProgressionSerializer(serializers.ModelSerializer):
             "selling_price",
             "evaluation_price",
             "submitted_date",
+            "deal_status",
+            "deal_remark",
+            "advance_amount",
             "created_at",
             "updated_at",
             "completed_at",
@@ -274,6 +284,49 @@ class ProgressionSerializer(serializers.ModelSerializer):
             return obj.cash_deal.created_at.date()
 
         return obj.quote.created_at.date()
+    
+    def get_deal_status(self, obj):
+        if obj.bank_loan is not None:
+            loan = obj.bank_loan
+
+            if loan.status in ("approved", "rejected"):
+                return loan.status
+
+            return loan.application_status or loan.status
+
+        if obj.cash_deal is not None:
+            return obj.cash_deal.status
+
+        return None
+
+
+    def get_deal_remark(self, obj):
+        if obj.bank_loan is not None and obj.bank_loan.remark:
+            return obj.bank_loan.remark
+
+        if obj.cash_deal is not None and obj.cash_deal.remark:
+            return obj.cash_deal.remark
+
+        return obj.remark or ""
+
+
+    def get_advance_amount(self, obj):
+        if obj.cash_deal is not None:
+            return obj.cash_deal.advance_amount
+
+        # For finance deals, use actual customer receipts
+        # recorded under the Advance category.
+        receipts = obj.quote.cash_receipts.all()
+
+        return sum(
+            (
+                receipt.amount
+                for receipt in receipts
+                if receipt.direction == "customer_payment"
+                and receipt.category == "advance"
+            ),
+            Decimal("0.00"),
+        )
 
 
 class ProgressionUpdateSerializer(

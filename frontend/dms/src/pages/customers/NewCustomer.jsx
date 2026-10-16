@@ -11,6 +11,7 @@ export default function NewCustomer() {
 
   const [customerName, setCustomerName] = useState("");
   const [phoneNumber, setPhoneNumber] = useState("");
+  const [emiratesIdNumber, setEmiratesIdNumber] = useState("");
   const [email, setEmail] = useState("");
   const [customerType, setCustomerType] = useState("INDIVIDUAL");
 
@@ -38,6 +39,7 @@ export default function NewCustomer() {
       const response = await createCustomer({
         customer_name: customerName.trim(),
         phone_number: phoneNumber.trim(),
+        emirates_id_number: emiratesIdNumber.trim(),
         email: email.trim(),
         customer_type: customerType,
         company_name: customerType === "COMPANY" ? companyName.trim() : "",
@@ -131,6 +133,27 @@ export default function NewCustomer() {
                 disabled={saving}
               />
             </div>
+
+
+            <div>
+              <label
+                htmlFor="customer-emirates-id"
+                className="mb-2 block text-sm font-medium text-slate-700"
+              >
+                Emirates ID Number
+              </label>
+
+              <input
+                id="customer-emirates-id"
+                type="text"
+                value={emiratesIdNumber}
+                onChange={(event) => setEmiratesIdNumber(event.target.value)}
+                placeholder="Enter Emirates ID number"
+                className="w-full rounded-lg border border-slate-300 bg-white px-3 py-2.5 text-sm text-slate-900 outline-none transition placeholder:text-slate-400 focus:border-slate-500 focus:ring-2 focus:ring-slate-200"
+                disabled={saving}
+              />
+            </div>
+
 
             <div>
               <label

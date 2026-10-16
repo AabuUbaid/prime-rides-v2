@@ -3502,6 +3502,12 @@ def validate_cash_receipt_transaction(
 
             if bank_loan is not None:
                 expected_car_id = bank_loan.car_id
+                
+            if expected_car_id is None:
+                emi_sheet = getattr(quote, "emi_sheet", None)
+
+                if emi_sheet is not None:
+                    expected_car_id = emi_sheet.car_id
 
         if expected_car_id != car.id:
             raise ValidationError(
@@ -3707,8 +3713,11 @@ def create_cash_receipt(
         )
 
     # -----------------------------------------------------
-# Vehicle default
-# -----------------------------------------------------
+    # Vehicle default
+    # -----------------------------------------------------
+
+    if car is None:
+        car = quote.car
 
     if (
         car is None
@@ -3729,10 +3738,8 @@ def create_cash_receipt(
             car = bank_loan.car
 
     if car is None:
-        car = quote.car
-
-    if car is None:
         emi_sheet = getattr(quote, "emi_sheet", None)
+
         if emi_sheet is not None:
             car = emi_sheet.car
     # -----------------------------------------------------

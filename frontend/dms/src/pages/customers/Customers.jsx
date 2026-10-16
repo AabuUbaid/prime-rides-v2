@@ -203,7 +203,7 @@ export default function Customers() {
                 setSearch(event.target.value);
                 setPage(1);
               }}
-              placeholder="Search name, phone or email..."
+              placeholder="Search name, phone, Emirates ID or email..."
               className="w-64 rounded-lg border border-slate-300 bg-white px-3 py-2.5 text-sm text-slate-900 outline-none focus:border-slate-500 focus:ring-2 focus:ring-slate-200"
             />
 
@@ -213,8 +213,8 @@ export default function Customers() {
                 selectedImportFile
                   ? handleImportCustomers
                   : () => {
-                      importFileInputRef.current?.click();
-                    }
+                    importFileInputRef.current?.click();
+                  }
               }
               disabled={importing || loading}
               className="inline-flex items-center gap-2 rounded-lg border border-slate-300 bg-white px-4 py-2.5 text-sm font-medium text-slate-700 transition hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-60"
@@ -303,6 +303,10 @@ export default function Customers() {
                     </th>
 
                     <th className="px-5 py-3 text-left text-xs font-semibold uppercase tracking-wide text-slate-500">
+                      Emirates ID
+                    </th>
+
+                    <th className="px-5 py-3 text-left text-xs font-semibold uppercase tracking-wide text-slate-500">
                       Created
                     </th>
 
@@ -323,6 +327,10 @@ export default function Customers() {
 
                       <td className="px-5 py-4 text-sm text-slate-600">
                         {getCustomerPhone(customer)}
+                      </td>
+
+                      <td className="px-5 py-4 text-sm text-slate-600">
+                        {customer.emirates_id_number || "—"}
                       </td>
 
                       <td className="px-5 py-4 text-sm text-slate-600">

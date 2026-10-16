@@ -143,12 +143,12 @@ function amountToWords(value) {
   const fils = Math.round((rounded - whole) * 100);
 
   if (fils > 0) {
-    return `UAE Dirhams ${wholeNumberToWords(
+    return `Dirhams ${wholeNumberToWords(
       whole,
     )} and ${wholeNumberToWords(fils)} Fils Only`;
   }
 
-  return `UAE Dirhams ${wholeNumberToWords(whole)} Only`;
+  return `Dirhams ${wholeNumberToWords(whole)} Only`;
 }
 
 function vehicleValueClass(value) {
@@ -208,7 +208,6 @@ export default function ProformaPrintTemplate({
     .join(" ");
 
   const vehiclePrice = proforma.vehicle_price;
-  const vatAmount = proforma.vat;
   const downPayment = proforma.down_payment;
   const netFinance = proforma.net_finance;
 
@@ -897,9 +896,8 @@ export default function ProformaPrintTemplate({
 
           <div className="proforma-company-block">
             <div
-              className={`proforma-company-name${
-                companyName.length > 28 ? " is-long" : ""
-              }`}
+              className={`proforma-company-name${companyName.length > 28 ? " is-long" : ""
+                }`}
             >
               {companyName}
             </div>
@@ -1011,12 +1009,12 @@ export default function ProformaPrintTemplate({
             <div className="proforma-vehicle-label">Mileage</div>
             <div className="proforma-vehicle-value">
               {proforma.vehicle_mileage === null ||
-              proforma.vehicle_mileage === undefined ||
-              proforma.vehicle_mileage === ""
+                proforma.vehicle_mileage === undefined ||
+                proforma.vehicle_mileage === ""
                 ? "-"
                 : `${Number(proforma.vehicle_mileage).toLocaleString(
-                    "en-AE",
-                  )} km`}
+                  "en-AE",
+                )} km`}
             </div>
 
             <div className="proforma-vehicle-label">Quote</div>
@@ -1047,12 +1045,7 @@ export default function ProformaPrintTemplate({
                 </td>
               </tr>
 
-              <tr>
-                <td>VAT</td>
-                <td className="proforma-summary-amount">
-                  {formatAmount(vatAmount)}
-                </td>
-              </tr>
+
 
               {isFinance ? (
                 <tr>

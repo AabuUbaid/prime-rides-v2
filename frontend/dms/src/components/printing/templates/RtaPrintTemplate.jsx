@@ -1,4 +1,4 @@
-import { Globe2, Mail, Phone } from "lucide-react";
+import { Globe2, Mail, MapPin, Phone } from "lucide-react";
 
 const ACCENT = "#0070C0";
 
@@ -101,7 +101,7 @@ function getCompanyPhone(company) {
 }
 
 function getCompanyWebsite(company) {
-  return company?.website || company?.website_url || "www.primeridesuae.com";
+  return company?.website || company?.website_url || "";
 }
 
 function formatDate(value, type) {
@@ -278,43 +278,75 @@ function PrintLine({
   );
 }
 
+
 function Footer({ company }) {
   const phone = getCompanyPhone(company);
   const email = getCompanyEmail(company);
   const website = getCompanyWebsite(company);
   const address = getCompanyAddress(company);
 
+  const rowOneLength = [phone, email, website]
+    .filter(Boolean)
+    .join("").length;
+
+  const rowOneFontSize =
+    rowOneLength <= 60 ? 14.7 :
+      rowOneLength <= 66 ? 13.5 :
+        rowOneLength <= 74 ? 12.3 : 11;
+
+  const addressFontSize =
+    address.length <= 85 ? 14.7 :
+      address.length <= 105 ? 12 :
+        address.length <= 125 ? 11 : 10;
+
   return (
-    <div className="rta-footer">
-      <div className="rta-footer-row rta-footer-row-top">
-        <div className="rta-footer-item">
-          <Phone size={13} strokeWidth={2} className="rta-footer-icon" />
-          <span>{display(phone, "+971 4 503 2201")}</span>
-        </div>
+    <>
+      <img
+        src="/rta-letterhead/footer_art.png"
+        alt=""
+        className="rta-footer-art"
+      />
 
-        <div className="rta-footer-item">
-          <Mail size={13} strokeWidth={2} className="rta-footer-icon" />
-          <span>{display(email, "info@primeridesuae.com")}</span>
-        </div>
+      <div
+        className="rta-contact-row rta-contact-row-one"
+        style={{ fontSize: `${rowOneFontSize}px` }}
+      >
+        {phone && (
+          <div className="rta-footer-item">
+            <Phone size={13} strokeWidth={1.8} />
+            <span>{phone}</span>
+          </div>
+        )}
 
-        <div className="rta-footer-item">
-          <Globe2 size={13} strokeWidth={2} className="rta-footer-icon" />
-          <span>{display(website, "www.primeridesuae.com")}</span>
-        </div>
+        {email && (
+          <div className="rta-footer-item">
+            <Mail size={13} strokeWidth={1.8} />
+            <span>{email}</span>
+          </div>
+        )}
+
+        {website && (
+          <div className="rta-footer-item">
+            <Globe2 size={13} strokeWidth={1.8} />
+            <span>{website}</span>
+          </div>
+        )}
       </div>
-      <div className="rta-footer-row rta-footer-row-bottom">
-        <div className="rta-footer-item">
-          <span>
-            {display(
-              address,
-              "Jams Logistic Village Al Qusais Industrial Area - 01, Dubai - UAE",
-            )}
-          </span>
+
+      {address && (
+        <div
+          className={`rta-contact-row rta-contact-row-two ${address.length > 105 ? "rta-address-truncate" : ""
+            }`}
+          style={{ fontSize: `${addressFontSize}px` }}
+        >
+          <MapPin size={13} strokeWidth={1.8} />
+          <span>{address}</span>
         </div>
-      </div>
-    </div>
+      )}
+    </>
   );
 }
+
 
 function SharedStyles() {
   return (
@@ -397,6 +429,12 @@ function SharedStyles() {
           print-color-adjust: exact;
         }
 
+        .rta-print-page.rta-with-seal-stamp {
+  background: #fff2b2 !important;
+  -webkit-print-color-adjust: exact !important;
+  print-color-adjust: exact !important;
+}
+
         .rta-print-page *,
         .rta-print-page *::before,
         .rta-print-page *::after {
@@ -408,6 +446,19 @@ function SharedStyles() {
           margin: 0;
           padding: 0;
         }
+
+        
+.rta-company-seal-stamp {
+  position: absolute;
+  right: 60mm;
+  top: 232mm;
+  width: 30mm;
+  height: 30mm;
+  object-fit: contain;
+  z-index: 5;
+  pointer-events: none;
+}
+
 
         /* =====================================================
            EXACT COMMON HEADER STYLE
@@ -658,33 +709,302 @@ function SharedStyles() {
   flex: 0 0 auto;
   color: #ffffff;
 }
+
+
+
+/* ===== New RTA letterhead ===== */
+:root {
+  --navy: #0D3552;
+  --teal: #00ABB7;
+  --contact: #231F20;
+}
+
+.rta-print-page {
+  position: relative !important;
+  width: 794px !important;
+  height: 1123px !important;
+  min-width: 794px !important;
+  min-height: 1123px !important;
+  max-width: 794px !important;
+  max-height: 1123px !important;
+  padding: 0 !important;
+  overflow: hidden !important;
+  background: #fff !important;
+  box-shadow: none !important;
+  -webkit-print-color-adjust: exact !important;
+  print-color-adjust: exact !important;
+}
+
+/* Preserve body styling; only move body lines down 12.3px. */
+.rta-line {
+  z-index: 1;
+  transform: translateY(12.3px);
+}
+
+.rta-signature {
+  z-index: 1;
+  transform: translateY(12.3px);
+}
+
+/* Watermark: behind body text. */
+.rta-watermark {
+  position: absolute;
+  z-index: 0;
+  left: 174px;
+  top: 471.8px;
+  width: 445.25px;
+  height: 179px;
+  opacity: 1;
+  pointer-events: none;
+}
+
+/* Header. */
+.rta-new-logo {
+  position: absolute;
+  z-index: 2;
+  left: 37px;
+  top: 41.2px;
+  width: 154px;
+  height: 62px;
+  object-fit: contain;
+  display: block;
+}
+
+.rta-vertical-divider {
+  position: absolute;
+  z-index: 2;
+  left: 207.5px;
+  top: 35.8px;
+  width: 1.33px;
+  height: 73px;
+  background: var(--navy);
+}
+
+.rta-new-header-arabic,
+.rta-new-header-english {
+  position: absolute;
+  z-index: 2;
+  left: 224.1px;
+  width: 531.9px;
+  color: var(--navy);
+  text-align: center;
+  white-space: nowrap;
+  font-weight: 700;
+  overflow: visible;
+}
+
+.rta-new-header-arabic {
+  top: 43.4px;
+  line-height: 26.4px;
+  font-family: "Urdu Najd", "Noto Kufi Arabic", sans-serif;
+  direction: rtl;
+}
+
+.rta-new-header-english {
+  top: 71.7px;
+  line-height: 36.2px;
+  font-family: "Bebas Neue", Impact, sans-serif;
+  font-weight: 400;
+  direction: ltr;
+  letter-spacing: 0;
+}
+
+.rta-new-header-rule {
+  position: absolute;
+  z-index: 2;
+  left: 224.1px;
+  top: 108.8px;
+  width: 531.9px;
+  height: 1.33px;
+  background: var(--navy);
+}
+
+/* Footer artwork. */
+.rta-footer-art {
+  position: absolute;
+  z-index: 2;
+  left: 0;
+  bottom: 0;
+  width: 793.75px;
+  height: 92.75px;
+  object-fit: fill;
+  display: block;
+  pointer-events: none;
+}
+
+/* Footer contact text and Lucide icons. */
+.rta-contact-row {
+  position: absolute;
+  z-index: 3;
+  left: 19.5px;
+  display: flex;
+  align-items: center;
+  direction: ltr;
+  color: var(--contact);
+  font-family: Calibri, Carlito, Arial, sans-serif;
+  font-weight: 400;
+  line-height: 15px;
+  white-space: nowrap;
+  max-width: 510.5px;
+}
+
+.rta-contact-row-one {
+  top: 1056.9px;
+  gap: 17px;
+}
+
+
+.rta-contact-row-two {
+  position: absolute;
+  z-index: 3;
+  left: 19.5px;
+  top: 1077px;
+  width: 510px;
+  max-width: 510px;
+  display: flex;
+  align-items: flex-start;
+  gap: 4px;
+  direction: ltr;
+  color: var(--contact);
+  font-family: Calibri, Carlito, Arial, sans-serif;
+  font-weight: 400;
+  line-height: 12px;
+  white-space: normal;
+}
+
+
+
+.rta-footer-item {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  flex: 0 0 auto;
+  white-space: nowrap;
+  color: var(--contact) !important;
+  font-size: inherit !important;
+  line-height: inherit !important;
+  font-weight: 400;
+}
+
+
+.rta-footer-item svg,
+.rta-contact-row-two svg {
+  display: block;
+  flex: 0 0 auto;
+  color: var(--contact);
+}
+
+
+.rta-contact-row-two > span {
+  display: -webkit-box;
+  flex: 1 1 auto;
+  min-width: 0;
+  max-width: 100%;
+  white-space: normal;
+  overflow-wrap: anywhere;
+  word-break: normal;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 3;
+  line-height: 12px;
+  color: var(--contact) !important;
+  font-size: inherit !important;
+}
+
+.rta-address-truncate > span {
+  max-width: 100%;
+}
+
+
+@media screen {
+  .rta-print-page {
+    margin: 0 auto !important;
+  }
+}
+
+@media print {
+  @page {
+    size: A4 portrait;
+    margin: 0 !important;
+  }
+
+  html,
+  body,
+  #root {
+    margin: 0 !important;
+    padding: 0 !important;
+    width: 100% !important;
+    min-width: 0 !important;
+    background: #fff !important;
+  }
+
+  .rta-print-page {
+    margin: 0 !important;
+    box-shadow: none !important;
+    break-after: avoid;
+    page-break-after: avoid;
+  }
+}
+
        
       `}
     </style>
   );
 }
 
-function CommonHeader({ company, printAssets }) {
-  const arabicCompanyName = getArabicCompanyName(company);
 
+function CommonHeader({ company }) {
+  const arabicCompanyName = getArabicCompanyName(company);
   const englishCompanyName = getEnglishCompanyName(company);
+
+  const arabicSize =
+    arabicCompanyName.length <= 43 ? 24 :
+      arabicCompanyName.length <= 52 ? 21 : 18;
+
+  const englishSize =
+    englishCompanyName.length <= 39 ? 32 :
+      englishCompanyName.length <= 46 ? 29 : 25;
 
   return (
     <>
-      {printAssets?.logo ? (
-        <img src={printAssets.logo} alt="" className="rta-logo" />
-      ) : null}
+      <img
+        src="/rta-letterhead/header_logo.png"
+        alt=""
+        className="rta-new-logo"
+      />
 
-      <div className="rta-header-arabic">{arabicCompanyName}</div>
+      <div className="rta-vertical-divider" />
 
-      <div className="rta-header-english">{englishCompanyName}</div>
+      <div
+        className="rta-new-header-arabic"
+        style={{ fontSize: `${arabicSize}px` }}
+        dir="rtl"
+      >
+        {arabicCompanyName}
+      </div>
 
-      <div className="rta-header-rule" />
+      <div
+        className="rta-new-header-english"
+        style={{ fontSize: `${englishSize}px` }}
+        dir="ltr"
+      >
+        {englishCompanyName.toUpperCase()}
+      </div>
+
+      <div className="rta-new-header-rule" />
     </>
   );
 }
 
-function PurchaseTemplate({ record, company, template, printAssets }) {
+
+function PurchaseTemplate({
+  record,
+  company,
+  template,
+  printAssets,
+  includeSealStamp,
+}) {
   const content = getTemplateContent(record, template, company);
 
   const date = formatDate(record?.rta_date, "PURCHASE");
@@ -702,10 +1022,29 @@ function PurchaseTemplate({ record, company, template, printAssets }) {
   const tradeLicense = getTradeLicense(company);
 
   return (
-    <div className="rta-print-page">
+    <div
+      className={`rta-print-page ${includeSealStamp && printAssets?.sealStamp
+        ? "rta-with-seal-stamp"
+        : ""
+        }`}
+    >
       <SharedStyles />
 
-      <CommonHeader company={company} printAssets={printAssets} />
+      <img
+        src="/rta-letterhead/watermark.png"
+        alt=""
+        className="rta-watermark"
+      />
+
+      <CommonHeader company={company} />
+
+      {includeSealStamp && printAssets?.sealStamp ? (
+        <img
+          src={printAssets.sealStamp}
+          alt="Company Seal & Stamp"
+          className="rta-company-seal-stamp"
+        />
+      ) : null}
 
       {/* DATE */}
       <PrintLine top={40} right={24} fontSize="10pt" fontWeight={500}>
@@ -895,12 +1234,32 @@ function PurchaseTemplate({ record, company, template, printAssets }) {
   );
 }
 
-function SaleTemplate({ record, company, template, printAssets }) {
+function SaleTemplate({
+  record,
+  company,
+  template,
+  printAssets,
+  includeSealStamp,
+}) {
   const content = getTemplateContent(record, template, company);
 
   const date = formatDate(record?.rta_date, "SALE");
 
-  const buyerName = display(record?.second_party_name, "-");
+  const buyerName = display(
+    record?.first_party_signatory_name || record?.second_party_name,
+    "-",
+  );
+
+  const buyerEmiratesId = display(
+    record?.customer_emirates_id_number ||
+    record?.snapshot_data?.customer?.emirates_id_number,
+    "",
+  );
+
+  const firstPartySignatoryName = display(
+    record?.first_party_signatory_name,
+    "-",
+  );
 
   const chassis = display(record?.vehicle_chassis_number, "-");
 
@@ -911,10 +1270,28 @@ function SaleTemplate({ record, company, template, printAssets }) {
   const colour = display(record?.vehicle_colour, "-");
 
   return (
-    <div className="rta-print-page">
+    <div
+      className={`rta-print-page ${includeSealStamp && printAssets?.sealStamp
+        ? "rta-with-seal-stamp"
+        : ""
+        }`}
+    >
       <SharedStyles />
 
-      <CommonHeader company={company} printAssets={printAssets} />
+      <img
+        src="/rta-letterhead/watermark.png"
+        alt=""
+        className="rta-watermark"
+      />
+
+      <CommonHeader company={company} />
+      {includeSealStamp && printAssets?.sealStamp ? (
+        <img
+          src={printAssets.sealStamp}
+          alt="Company Seal & Stamp"
+          className="rta-company-seal-stamp"
+        />
+      ) : null}
 
       {/* DATE */}
       <PrintLine top={40} right={24} fontSize="10pt" fontWeight={500}>
@@ -983,7 +1360,9 @@ function SaleTemplate({ record, company, template, printAssets }) {
         color={ACCENT}
         direction="ltr"
       >
-        {buyerName}
+        {buyerEmiratesId
+          ? `${buyerName} - ${buyerEmiratesId}`
+          : buyerName}
       </PrintLine>
 
       {/* PARAGRAPHS */}
@@ -1113,6 +1492,8 @@ export default function RtaPrintTemplate({
   company,
   template,
   printAssets = {},
+  includeSealStamp = false,
+
 }) {
   if (!record) {
     return null;
@@ -1125,6 +1506,8 @@ export default function RtaPrintTemplate({
         company={company}
         template={template}
         printAssets={printAssets}
+        includeSealStamp={includeSealStamp}
+
       />
     );
   }
@@ -1135,6 +1518,7 @@ export default function RtaPrintTemplate({
       company={company}
       template={template}
       printAssets={printAssets}
+      includeSealStamp={includeSealStamp}
     />
   );
 }

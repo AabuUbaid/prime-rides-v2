@@ -12,6 +12,7 @@ export default function EditCustomer() {
 
   const [customerName, setCustomerName] = useState("");
   const [phoneNumber, setPhoneNumber] = useState("");
+  const [emiratesIdNumber, setEmiratesIdNumber] = useState("");
 
   const [email, setEmail] = useState("");
   const [customerType, setCustomerType] = useState("INDIVIDUAL");
@@ -48,6 +49,7 @@ export default function EditCustomer() {
         setCustomerName(response.data.customer_name || "");
 
         setPhoneNumber(response.data.phone_number || "");
+        setEmiratesIdNumber(response.data.emirates_id_number || "");
         setEmail(response.data.email || "");
 
         setCustomerType(response.data.customer_type || "INDIVIDUAL");
@@ -90,12 +92,18 @@ export default function EditCustomer() {
       return;
     }
 
+    if (!emiratesIdNumber.trim()) {
+      toast.error("Emirates ID number is required.");
+      return;
+    }
+
     try {
       setSaving(true);
 
       const response = await updateCustomer(id, {
         customer_name: customerName.trim(),
         phone_number: phoneNumber.trim(),
+        emirates_id_number: emiratesIdNumber.trim(),
         email: email.trim(),
         customer_type: customerType,
         company_name: customerType === "COMPANY" ? companyName.trim() : "",
@@ -204,6 +212,26 @@ export default function EditCustomer() {
                 disabled={saving}
               />
             </div>
+
+            <div>
+              <label
+                htmlFor="edit-customer-emirates-id"
+                className="mb-2 block text-sm font-medium text-slate-700"
+              >
+                Emirates ID Number
+              </label>
+
+              <input
+                id="edit-customer-emirates-id"
+                type="text"
+                value={emiratesIdNumber}
+                onChange={(event) => setEmiratesIdNumber(event.target.value)}
+                placeholder="Enter Emirates ID number"
+                className="w-full rounded-lg border border-slate-300 bg-white px-3 py-2.5 text-sm text-slate-900 outline-none transition placeholder:text-slate-400 focus:border-slate-500 focus:ring-2 focus:ring-slate-200"
+                disabled={saving}
+              />
+            </div>
+
           </div>
 
           <div>

@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { Link, useParams } from "react-router-dom";
+import { Link, useNavigate, useParams } from "react-router-dom";
 import { toast } from "react-toastify";
 import {
   getRtaRecord,
@@ -38,6 +38,9 @@ function Field({ label, value }) {
 export default function RtaRecordDetail() {
   const { user } = useAuth();
   const { id } = useParams();
+  const navigate = useNavigate();
+
+  const [includeSealStamp, setIncludeSealStamp] = useState(false);
 
   const [record, setRecord] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -199,12 +202,31 @@ export default function RtaRecordDetail() {
           </div>
 
           <div className="flex flex-wrap gap-2">
-            <Link
-              to={`/rta/${record.id}/print`}
-              className="rounded-lg bg-gray-900 px-4 py-2 text-sm font-medium text-white hover:bg-gray-800"
-            >
-              Print RTA
-            </Link>
+
+            <div className="flex flex-wrap items-center gap-3">
+              <label className="inline-flex cursor-pointer items-center gap-2 rounded-lg border border-gray-200 bg-white px-4 py-2 text-sm font-semibold text-gray-700">
+                <input
+                  type="checkbox"
+                  checked={includeSealStamp}
+                  onChange={(event) => setIncludeSealStamp(event.target.checked)}
+                  className="h-4 w-4 rounded border-gray-300"
+                />
+                <span>Add Company Seal &amp; Stamp</span>
+              </label>
+
+              <button
+                type="button"
+                onClick={() =>
+                  navigate(
+                    `/rta/${record.id}/print?seal_stamp=${includeSealStamp ? "1" : "0"}`,
+                  )
+                }
+                className="rounded-lg bg-gray-900 px-4 py-2 text-sm font-medium text-white hover:bg-gray-800"
+              >
+                Print RTA
+              </button>
+            </div>
+
 
             <Link
               to="/rta"

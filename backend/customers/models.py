@@ -36,6 +36,11 @@ class Customer(models.Model):
         max_length=30,
         unique=True,
     )
+    
+    emirates_id_number = models.CharField(
+        max_length=50,
+        blank=True,
+    )
 
     email = models.EmailField(
         max_length=254,

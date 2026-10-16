@@ -68,6 +68,7 @@ def create_customer(
     trade_license_number="",
     agent=None,
     documents=None,
+    emirates_id_number="",
 ):
     customer_name = validate_customer_name(
         customer_name,
@@ -101,6 +102,9 @@ def create_customer(
             trn=trn,
             trade_license_number=trade_license_number,
             agent=agent,
+            emirates_id_number=(
+                emirates_id_number or ""
+            ).strip(),
         )
         created = True
 
@@ -133,6 +137,7 @@ def update_customer(
     company_name=None,
     trn=None,
     trade_license_number=None,
+    emirates_id_number=None,
 ):
     if customer_name is not None:
         customer.customer_name = validate_customer_name(
@@ -188,6 +193,9 @@ def update_customer(
 
         if trade_license_number is not None:
             customer.trade_license_number = trade_license_number
+
+    if emirates_id_number is not None:
+        customer.emirates_id_number = emirates_id_number
 
     customer.save()
 

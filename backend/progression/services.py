@@ -1,5 +1,5 @@
 from decimal import Decimal
-from django.db.models import Sum
+from django.db.models import Q, Sum
 from django.utils import timezone
 from inventory.models import Car
 from inventory.services import InventoryService
@@ -267,7 +267,7 @@ def sync_progression_for_quote(*, quote_id):
         "Unsupported Quote payment method for Progression."
     )
 
-def list_progressions(*, user):
+def list_progressions(*, user, search=None):
     queryset = (
         Progression.objects
         .select_related(
@@ -282,9 +282,37 @@ def list_progressions(*, user):
             "bank_loan__agent__staff_profile",
             "cash_deal",
             "cash_deal__agent__staff_profile",
+            
         )
         .all()
     )
+    
+    if search:
+            queryset = queryset.filter(
+                Q(quote__quote_number__icontains=search)
+                | Q(quote__customer_name__icontains=search)
+                | Q(quote__customer_mobile__icontains=search)
+                | Q(quote__car__stock_id__icontains=search)
+                | Q(quote__car__make__icontains=search)
+                | Q(quote__car__model__icontains=search)
+                | Q(quote__car__chassis_number__icontains=search)
+                | Q(quote__vehicle_stock_id__icontains=search)
+                | Q(quote__vehicle_make__icontains=search)
+                | Q(quote__vehicle_model__icontains=search)
+                | Q(bank_loan__vehicle_stock_id__icontains=search)
+                | Q(bank_loan__vehicle_make__icontains=search)
+                | Q(bank_loan__vehicle_model__icontains=search)
+                | Q(bank_loan__bank_name__icontains=search)
+                | Q(cash_deal__vehicle_stock_id__icontains=search)
+                | Q(cash_deal__vehicle_make__icontains=search)
+                | Q(cash_deal__vehicle_model__icontains=search)
+                | Q(quote__salesperson__first_name__icontains=search)
+                | Q(quote__salesperson__last_name__icontains=search)
+                | Q(quote__salesperson__email__icontains=search)
+                | Q(status__icontains=search)
+                | Q(current_stage__icontains=search)
+                | Q(registration_emirate__icontains=search)
+            )
 
     if user.role == "SALES_STAFF":
         queryset = queryset.filter(

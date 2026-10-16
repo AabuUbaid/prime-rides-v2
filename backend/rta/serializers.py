@@ -26,6 +26,7 @@ class RTARecordSerializer(serializers.ModelSerializer):
             "second_party_name",
             "second_party_role",
             "second_party_mobile",
+            "customer_emirates_id_number",
 
             # Purchase supplier information
             "supplier_name",

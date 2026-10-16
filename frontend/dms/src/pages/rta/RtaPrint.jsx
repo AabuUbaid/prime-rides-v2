@@ -81,6 +81,8 @@ function preloadImage(url) {
 
 export default function RtaPrint() {
   const { id } = useParams();
+  const includeSealStamp =
+    new URLSearchParams(window.location.search).get("seal_stamp") === "1";
   const navigate = useNavigate();
 
   const [record, setRecord] = useState(null);
@@ -93,6 +95,7 @@ export default function RtaPrint() {
 
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
+
 
   /*
    * When the browser print dialog closes:
@@ -119,6 +122,7 @@ export default function RtaPrint() {
   useEffect(() => {
     let cancelled = false;
     let logoUrl = null;
+    let sealStampUrl = null;
 
     async function loadPrintData() {
       try {
@@ -157,6 +161,15 @@ export default function RtaPrint() {
               .toLowerCase() === "logo",
         );
 
+
+        const sealStampDocument = documents.find(
+          (document) =>
+            String(document?.name || "")
+              .trim()
+              .toLowerCase() === "seal & stamp",
+        );
+
+
         if (!logoDocument?.id) {
           throw new Error(
             "Company Logo is not configured. Please upload a Logo in Company Documents.",
@@ -172,6 +185,17 @@ export default function RtaPrint() {
         logoUrl = URL.createObjectURL(logoBlob);
 
         await preloadImage(logoUrl);
+
+        if (sealStampDocument?.id) {
+          const sealStampBlob = await downloadCompanyDocument(
+            sealStampDocument.id,
+          );
+
+          if (sealStampBlob instanceof Blob) {
+            sealStampUrl = URL.createObjectURL(sealStampBlob);
+            await preloadImage(sealStampUrl);
+          }
+        }
 
         /*
          * Template is company + record type specific.
@@ -219,6 +243,7 @@ export default function RtaPrint() {
 
         setPrintAssets({
           logo: logoUrl,
+          sealStamp: sealStampUrl,
         });
       } catch (requestError) {
         if (!cancelled) {
@@ -230,6 +255,8 @@ export default function RtaPrint() {
 
           setPrintAssets({
             logo: null,
+            sealStamp: null,
+
           });
 
           setError(
@@ -294,12 +321,32 @@ export default function RtaPrint() {
     );
   }
 
+  function handlePrintRta() {
+    if (includeSealStamp && !printAssets.sealStamp) {
+      setError(
+        "Company Seal & Stamp is not configured. Please upload it in Company Documents.",
+      );
+      return;
+    }
+
+    printDocument({
+      customerName:
+        record.second_party_name || record.first_party_name || "RTA",
+      documentNumber: `RTA-${record.id}`,
+      documentTitle:
+        record.record_type === "SALE"
+          ? `Sale RTA - RTA-${record.id}`
+          : `Purchase RTA - RTA-${record.id}`,
+    });
+  }
+
   return (
     <RtaPrintTemplate
       record={record}
       company={company}
       template={template}
       printAssets={printAssets}
+      includeSealStamp={includeSealStamp}
     />
   );
 }

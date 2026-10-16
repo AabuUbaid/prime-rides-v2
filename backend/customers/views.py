@@ -77,6 +77,10 @@ class CustomerListCreateView(APIView):
                 "email",
                 "",
             ),
+            emirates_id_number=serializer.validated_data.get(
+                "emirates_id_number",
+                "",
+            ),
             customer_type=serializer.validated_data.get(
                 "customer_type",
                 Customer.CustomerType.INDIVIDUAL,

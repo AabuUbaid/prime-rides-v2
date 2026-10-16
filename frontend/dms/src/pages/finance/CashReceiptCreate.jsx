@@ -144,8 +144,11 @@ function CashReceiptCreate() {
       setDirection(presetDirection);
     }
 
-    if (presetCategory) {
-      setCategory(presetCategory);
+    if (
+      presetCategory &&
+      FIXED_CATEGORY_VALUES.has(presetCategory.trim().toLowerCase())
+    ) {
+      setCategory(presetCategory.trim().toLowerCase());
     }
 
     if (presetPaymentMethod) {
@@ -443,11 +446,14 @@ function CashReceiptCreate() {
         setCategories(categoryOptions);
 
         const presetCategory = searchParams.get("category");
+        const normalizedPreset = String(presetCategory || "")
+          .trim()
+          .toLowerCase();
 
-        if (presetCategory) {
-          setCategory(presetCategory);
-        } else if (categoryOptions.length > 0 && !category) {
-          setCategory(categoryOptions[0].value);
+        if (FIXED_CATEGORY_VALUES.has(normalizedPreset)) {
+          setCategory(normalizedPreset);
+        } else if (!category) {
+          setCategory("additional_payment");
         }
       } catch (err) {
         if (!active) {
@@ -482,6 +488,8 @@ function CashReceiptCreate() {
     setEmiExpenseId("");
 
     if (!value) {
+      setCategory("");
+      setAmount("");
       return;
     }
 
@@ -489,8 +497,19 @@ function CashReceiptCreate() {
       (item) => String(item.id) === String(value),
     );
 
-    if (expense?.expense_type) {
-      setCategory(expense.expense_type);
+    if (expense) {
+      const expenseType = String(expense.expense_type || "").trim();
+      const normalizedType = expenseType.toLowerCase();
+
+      setCategory(
+        FIXED_CATEGORY_VALUES.has(normalizedType)
+          ? normalizedType
+          : expenseType,
+      );
+
+      setAmount(
+        String(expense.actual_amount ?? expense.amount ?? ""),
+      );
     }
   }
 
@@ -501,6 +520,8 @@ function CashReceiptCreate() {
     setQuoteExpenseId("");
 
     if (!value) {
+      setCategory("");
+      setAmount("");
       return;
     }
 
@@ -508,8 +529,19 @@ function CashReceiptCreate() {
       (item) => String(item.id) === String(value),
     );
 
-    if (expense?.expense_type) {
-      setCategory(expense.expense_type);
+    if (expense) {
+      const expenseType = String(expense.expense_type || "").trim();
+      const normalizedType = expenseType.toLowerCase();
+
+      setCategory(
+        FIXED_CATEGORY_VALUES.has(normalizedType)
+          ? normalizedType
+          : expenseType,
+      );
+
+      setAmount(
+        String(expense.actual_amount ?? expense.amount ?? ""),
+      );
     }
   }
 
@@ -600,31 +632,43 @@ function CashReceiptCreate() {
 
   const selectedContextExpense = quoteExpenseId
     ? quoteExpenses.find(
-        (expense) => String(expense.id) === String(quoteExpenseId),
-      )
+      (expense) => String(expense.id) === String(quoteExpenseId),
+    )
     : emiExpenseId
       ? emiExpenses.find(
-          (expense) => String(expense.id) === String(emiExpenseId),
-        )
+        (expense) => String(expense.id) === String(emiExpenseId),
+      )
       : null;
 
-  const categoryOptions =
-    selectedContextExpense?.expense_type &&
-    !categories.some(
-      (option) => option.value === selectedContextExpense.expense_type,
-    )
-      ? [
-          {
-            value: selectedContextExpense.expense_type,
-            label:
-              selectedContextExpense.name ||
-              selectedContextExpense.expense_type,
-            source: "selected_expense",
-          },
-          ...categories,
-        ]
-      : categories;
+  const selectedExpenseType = String(
+    selectedContextExpense?.expense_type ?? "",
+  ).trim();
 
+  const selectedExpenseTypeKey = selectedExpenseType.toLowerCase();
+
+  const selectedExpenseCategory =
+    selectedExpenseType &&
+      !FIXED_CATEGORY_VALUES.has(selectedExpenseTypeKey)
+      ? [
+        {
+          value: selectedExpenseType,
+          label:
+            categories.find(
+              (option) =>
+                String(option.value ?? "").toLowerCase() ===
+                selectedExpenseTypeKey,
+            )?.label ||
+            selectedContextExpense.name ||
+            selectedExpenseType,
+          source: "selected_expense",
+        },
+      ]
+      : [];
+
+  const categoryOptions = [
+    ...FIXED_CATEGORIES,
+    ...selectedExpenseCategory,
+  ];
   return (
     <div className="min-h-screen bg-[#f5f6fa] px-4 py-5 sm:px-6 lg:px-8">
       <div className="mx-auto max-w-5xl">
@@ -804,8 +848,8 @@ function CashReceiptCreate() {
                     Actual configured/reference amount:{" "}
                     {formatAED(
                       selectedContextExpense.actual_amount ??
-                        selectedContextExpense.amount ??
-                        0,
+                      selectedContextExpense.amount ??
+                      0,
                     )}
                     . The Cash Receipt amount remains separately entered by the
                     user.
@@ -940,8 +984,8 @@ function CashReceiptCreate() {
               />
 
               <p className="mt-1 text-xs leading-5 text-slate-500">
-                Enter the actual transaction amount. Do not copy a configured
-                expense amount automatically.
+                The amount is prefilled from the selected expense. Verify or adjust
+                it to match the actual transaction.
               </p>
             </div>
 

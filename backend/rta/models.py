@@ -113,6 +113,12 @@ class RTARecord(models.Model):
         max_length=30,
         blank=True,
     )
+    
+    customer_emirates_id_number = models.CharField(
+        max_length=50,
+        blank=True,
+        default="",
+    )
 
     # -------------------------------------------------
     # Purchase supplier information

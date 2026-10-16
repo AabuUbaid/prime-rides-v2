@@ -42,12 +42,19 @@ class ProgressionListView(APIView):
     ]
 
     def get(self, request):
+        search = request.query_params.get("search", "").strip()
+
         queryset = list_progressions(
             user=request.user,
+            search=search or None,
         )
 
         paginator = StandardResultsSetPagination()
-        page = paginator.paginate_queryset(queryset, request, view=self)
+        page = paginator.paginate_queryset(
+            queryset,
+            request,
+            view=self,
+        )
 
         return paginator.get_paginated_response(
             ProgressionSerializer(page, many=True).data,

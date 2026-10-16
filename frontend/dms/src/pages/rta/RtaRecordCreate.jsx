@@ -57,8 +57,8 @@ export default function RtaRecordCreate() {
   const [branchLoading, setBranchLoading] = useState(false);
 
   const [rtaReferenceNumber, setRtaReferenceNumber] = useState("");
+  const [customerEmiratesIdNumber, setCustomerEmiratesIdNumber] = useState("");
   const [firstPartySignatoryName, setFirstPartySignatoryName] = useState("");
-  const [secondPartySignatoryName, setSecondPartySignatoryName] = useState("");
   const [notes, setNotes] = useState("");
 
   const [loading, setLoading] = useState(true);
@@ -506,8 +506,8 @@ export default function RtaRecordCreate() {
         company: resolvedCompanyId,
         branch: selectedBranchId || null,
         rta_reference_number: rtaReferenceNumber.trim(),
+        customer_emirates_id_number: customerEmiratesIdNumber.trim(),
         first_party_signatory_name: firstPartySignatoryName.trim(),
-        second_party_signatory_name: secondPartySignatoryName.trim(),
         notes: notes.trim(),
       };
 
@@ -906,8 +906,8 @@ export default function RtaRecordCreate() {
               <p className="mt-1 text-sm font-medium">
                 {selectedBranch
                   ? selectedBranch.name ||
-                    selectedBranch.branch_name ||
-                    selectedBranch.id
+                  selectedBranch.branch_name ||
+                  selectedBranch.id
                   : "—"}
               </p>
             </div>
@@ -936,6 +936,21 @@ export default function RtaRecordCreate() {
 
                 <div>
                   <label className="mb-1 block text-sm font-medium">
+                    Customer Emirates ID Number
+                  </label>
+                  <input
+                    type="text"
+                    value={customerEmiratesIdNumber}
+                    onChange={(event) =>
+                      setCustomerEmiratesIdNumber(event.target.value)
+                    }
+                    className="w-full rounded border px-3 py-2"
+                    placeholder="Enter customer Emirates ID number"
+                  />
+                </div>
+
+                <div>
+                  <label className="mb-1 block text-sm font-medium">
                     First Party Signatory Name
                   </label>
 
@@ -950,21 +965,7 @@ export default function RtaRecordCreate() {
                   />
                 </div>
 
-                <div>
-                  <label className="mb-1 block text-sm font-medium">
-                    Second Party Signatory Name
-                  </label>
 
-                  <input
-                    type="text"
-                    value={secondPartySignatoryName}
-                    onChange={(event) =>
-                      setSecondPartySignatoryName(event.target.value)
-                    }
-                    className="w-full rounded border px-3 py-2"
-                    placeholder="Enter second party signatory name"
-                  />
-                </div>
 
                 <div className="md:col-span-2">
                   <label className="mb-1 block text-sm font-medium">

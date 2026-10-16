@@ -26,6 +26,7 @@ def _get_display_name(instance):
 
     return _get_value(
         instance,
+        "customer_name",
         "name",
         "full_name",
         "legal_entity_name",
@@ -79,6 +80,11 @@ def build_rta_snapshot(
             if customer
             else None,
             "name": _get_display_name(customer),
+            "emirates_id_number": _get_value(
+                customer,
+                "emirates_id_number",
+                default="",
+            ) if customer else "",
             "mobile": _get_value(
                 customer,
                 "mobile",
@@ -238,6 +244,22 @@ def create_rta_record(
     car = car or _get_value(quote, "car", "vehicle")
     customer = customer or _get_value(quote, "customer")
 
+    customer_emirates_id_number = extra_fields.pop(
+        "customer_emirates_id_number",
+        "",
+    )
+    customer_emirates_id_number = (
+        customer_emirates_id_number or ""
+    ).strip()
+
+    if (
+        record_type == RTARecord.RecordType.SALE
+        and customer
+        and customer_emirates_id_number
+    ):
+        customer.emirates_id_number = customer_emirates_id_number
+        customer.save(update_fields=["emirates_id_number"])
+
     supplier_name = extra_fields.pop("supplier_name", "")
     supplier_mobile = extra_fields.pop("supplier_mobile", "")
     supplier_address = extra_fields.pop("supplier_address", "")
@@ -302,6 +324,11 @@ def create_rta_record(
         "second_party_name": second_party_name,
         "second_party_role": second_party_role,
         "second_party_mobile": second_party_mobile,
+        "customer_emirates_id_number": (
+            customer_emirates_id_number
+            or customer_data.get("emirates_id_number")
+            or ""
+        ),
 
         "company_legal_name": company_data["legal_name"] or "",
         "trade_license_number": (

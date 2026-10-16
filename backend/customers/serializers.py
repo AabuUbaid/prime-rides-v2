@@ -98,6 +98,12 @@ class CustomerCreateSerializer(
     phone_number = serializers.CharField(
         max_length=30,
     )
+    
+    emirates_id_number = serializers.CharField(
+        max_length=50,
+        required=False,
+        allow_blank=True,
+    )
 
     email = serializers.EmailField(
         required=False,
@@ -232,6 +238,12 @@ class CustomerUpdateSerializer(
         max_length=30,
         required=False,
     )
+    
+    emirates_id_number = serializers.CharField(
+        max_length=50,
+        required=False,
+        allow_blank=True,
+    )
 
     email = serializers.EmailField(
         required=False,
@@ -344,6 +356,7 @@ class CustomerListSerializer(
             "trn",
             "trade_license_number",
             "phone_number",
+            "emirates_id_number",
             "email",
             "agent_id",
             "created_at",
@@ -398,6 +411,7 @@ class CustomerDetailSerializer(
             "id",
             "customer_name",
             "phone_number",
+            "emirates_id_number",
             "email",
             "agent_id",
             "documents",
