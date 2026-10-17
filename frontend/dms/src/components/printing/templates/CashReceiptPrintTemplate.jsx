@@ -887,13 +887,14 @@ export default function CashReceiptPrintTemplate({
             src={CASH_RECEIPT_LOGO}
             alt="Prime Rides"
             className="cash-logo"
+            loading="eager"
+            fetchPriority="high"
           />
 
           <div className="cash-company-block">
             <div
-              className={`cash-company-name${
-                companyName.length > 28 ? " is-long" : ""
-              }`}
+              className={`cash-company-name${companyName.length > 28 ? " is-long" : ""
+                }`}
             >
               {companyName}
             </div>

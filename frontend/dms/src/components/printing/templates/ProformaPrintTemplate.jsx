@@ -892,6 +892,8 @@ export default function ProformaPrintTemplate({
             src={PROFORMA_LOGO}
             alt="Prime Rides"
             className="proforma-logo"
+            loading="eager"
+            fetchPriority="high"
           />
 
           <div className="proforma-company-block">

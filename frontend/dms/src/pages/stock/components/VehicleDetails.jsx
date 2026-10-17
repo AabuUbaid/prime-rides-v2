@@ -1,4 +1,8 @@
+import { useAuth } from "../../../context/AuthContext";
+
 function VehicleDetails({ formData, handleChange, hideStatus = false }) {
+  const { user } = useAuth();
+
   return (
     <div className="space-y-5">
       <div>
@@ -23,15 +27,17 @@ function VehicleDetails({ formData, handleChange, hideStatus = false }) {
           className="h-10 w-full rounded-xl border border-slate-200 bg-white px-3 font-mono text-sm text-slate-800 outline-none transition placeholder:text-slate-400 focus:border-amber-400 focus:ring-2 focus:ring-amber-400/15"
         />
 
-        <input
-          type="number"
-          name="actual_mileage"
-          placeholder="Actual Mileage"
-          value={formData.actual_mileage}
-          onChange={handleChange}
-          min="0"
-          className="h-10 w-full rounded-xl border border-slate-200 bg-white px-3 font-mono text-sm text-slate-800 outline-none transition placeholder:text-slate-400 focus:border-amber-400 focus:ring-2 focus:ring-amber-400/15"
-        />
+        {user?.role === "MASTER" && (
+          <input
+            type="number"
+            name="actual_mileage"
+            placeholder="Actual Mileage"
+            value={formData.actual_mileage}
+            onChange={handleChange}
+            min="0"
+            className="h-10 w-full rounded-xl border border-slate-200 bg-white px-3 font-mono text-sm text-slate-800 outline-none transition placeholder:text-slate-400 focus:border-amber-400 focus:ring-2 focus:ring-amber-400/15"
+          />
+        )}
 
         <input
           type="text"

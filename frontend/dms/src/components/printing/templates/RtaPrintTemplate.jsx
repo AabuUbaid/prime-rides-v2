@@ -721,12 +721,12 @@ function SharedStyles() {
 
 .rta-print-page {
   position: relative !important;
-  width: 794px !important;
-  height: 1123px !important;
-  min-width: 794px !important;
-  min-height: 1123px !important;
-  max-width: 794px !important;
-  max-height: 1123px !important;
+ width: 210mm !important;
+height: 297mm !important;
+min-width: 210mm !important;
+min-height: 297mm !important;
+max-width: 210mm !important;
+max-height: 297mm !important;
   padding: 0 !important;
   overflow: hidden !important;
   background: #fff !important;
@@ -934,8 +934,9 @@ function SharedStyles() {
   #root {
     margin: 0 !important;
     padding: 0 !important;
-    width: 100% !important;
-    min-width: 0 !important;
+    width: 210mm !important;
+min-width: 210mm !important;
+max-width: 210mm !important;
     background: #fff !important;
   }
 
@@ -966,6 +967,8 @@ function CommonHeader({ company }) {
     englishCompanyName.length <= 39 ? 32 :
       englishCompanyName.length <= 46 ? 29 : 25;
 
+  const isMobile = window.matchMedia("(max-width: 768px)").matches;
+
   return (
     <>
       <img
@@ -986,7 +989,14 @@ function CommonHeader({ company }) {
 
       <div
         className="rta-new-header-english"
-        style={{ fontSize: `${englishSize}px` }}
+        style={{
+          fontSize: `${englishSize}px`,
+          transform: isMobile ? "scaleX(0.85)" : "none",
+          transformOrigin: "center",
+        }}
+
+
+
         dir="ltr"
       >
         {englishCompanyName.toUpperCase()}

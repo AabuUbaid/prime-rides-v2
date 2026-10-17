@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
+import ApprovedInsuranceDocumentPicker from "./ApprovedInsuranceDocumentPicker";
 import { getProformas } from "../../api/proforma";
 
 function formatDate(value) {
@@ -35,6 +36,8 @@ export default function Proformas() {
   const [search, setSearch] = useState("");
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
+  const navigate = useNavigate();
+  const [showCreatePicker, setShowCreatePicker] = useState(false);
 
   useEffect(() => {
     let cancelled = false;
@@ -89,25 +92,35 @@ export default function Proformas() {
           </p>
         </div>
 
-        <form
-          onSubmit={handleSearchSubmit}
-          className="flex w-full gap-2 lg:w-auto"
-        >
-          <input
-            type="search"
-            value={search}
-            onChange={(event) => setSearch(event.target.value)}
-            placeholder="Search Proforma, customer, mobile..."
-            className="w-full rounded-lg border border-gray-300 px-3 py-2.5 text-sm outline-none focus:border-gray-500 lg:w-80"
-          />
-
+        <div className="flex w-full flex-col gap-2 sm:flex-row lg:w-auto">
           <button
-            type="submit"
+            type="button"
+            onClick={() => setShowCreatePicker(true)}
             className="rounded-lg bg-gray-900 px-4 py-2.5 text-sm font-medium text-white hover:bg-gray-800"
           >
-            Search
+            Create Proforma
           </button>
-        </form>
+
+          <form
+            onSubmit={handleSearchSubmit}
+            className="flex w-full gap-2 lg:w-auto"
+          >
+            <input
+              type="search"
+              value={search}
+              onChange={(event) => setSearch(event.target.value)}
+              placeholder="Search Proforma, customer, mobile..."
+              className="w-full rounded-lg border border-gray-300 px-3 py-2.5 text-sm outline-none focus:border-gray-500 lg:w-80"
+            />
+
+            <button
+              type="submit"
+              className="rounded-lg bg-gray-900 px-4 py-2.5 text-sm font-medium text-white hover:bg-gray-800"
+            >
+              Search
+            </button>
+          </form>
+        </div>
       </div>
 
       {error && (
@@ -236,6 +249,18 @@ export default function Proformas() {
           </div>
         )}
       </div>
+      {showCreatePicker && (
+        <ApprovedInsuranceDocumentPicker
+          documentLabel="Proforma Invoice"
+          onClose={() => setShowCreatePicker(false)}
+          onApproved={(insurance) => {
+            setShowCreatePicker(false);
+            navigate(
+              `/finance/proformas/new?insurance=${encodeURIComponent(insurance.id)}`,
+            );
+          }}
+        />
+      )}
     </div>
   );
 }

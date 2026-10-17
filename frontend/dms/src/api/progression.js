@@ -1,20 +1,20 @@
 import { apiClient } from "./client";
 
-export async function getProgressions(search = "", options = {}) {
-  const params = new URLSearchParams();
-  const query = String(search || "").trim();
+export async function getProgressions(search = "", params = {}) {
+  const query = new URLSearchParams();
+  const searchValue = String(search ?? "").trim();
 
-  if (query) {
-    params.set("search", query);
+  if (searchValue) {
+    query.set("search", searchValue);
   }
 
-  Object.entries(options).forEach(([key, value]) => {
-    if (value !== null && value !== undefined && value !== "") {
-      params.set(key, String(value));
+  Object.entries(params).forEach(([key, value]) => {
+    if (value !== "" && value !== null && value !== undefined) {
+      query.set(key, String(value));
     }
   });
 
-  const queryString = params.toString();
+  const queryString = query.toString();
 
   return apiClient(
     `/progression/${queryString ? `?${queryString}` : ""}`,

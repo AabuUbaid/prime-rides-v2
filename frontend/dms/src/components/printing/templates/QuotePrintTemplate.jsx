@@ -1022,13 +1022,13 @@ export default function QuotePrintTemplate({
 
       <div className={pageClasses}>
         <header className="quote-header">
-          <img src={QUOTATION_LOGO} alt="Prime Rides" className="quote-logo" />
+          <img src={QUOTATION_LOGO} alt="Prime Rides" className="quote-logo" loading="eager"
+            fetchPriority="high" />
 
           <div className="quote-company-block">
             <div
-              className={`quote-company-name${
-                companyName.length > 28 ? " is-long" : ""
-              }`}
+              className={`quote-company-name${companyName.length > 28 ? " is-long" : ""
+                }`}
             >
               {companyName}
             </div>

@@ -100,6 +100,9 @@ const getStatusLabel = (value) => STATUS_LABELS[value] || value || "-";
 function Stock() {
   const { user } = useAuth();
   const isMaster = user?.role === "MASTER";
+  const canEditVehicle =
+    user?.role === "MASTER" || user?.role === "ADMIN";
+
   const [brands, setBrands] = useState([]);
   const [branches, setBranches] = useState([]);
   const [cars, setCars] = useState([]);
@@ -1845,7 +1848,7 @@ function Stock() {
                         <span className="sr-only">View</span>
                       </Button>
 
-                      {isMaster && (
+                      {canEditVehicle && (
                         <Button
                           type="button"
                           variant="ghost"

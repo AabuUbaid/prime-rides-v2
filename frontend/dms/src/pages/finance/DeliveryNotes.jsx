@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
+import ApprovedInsuranceDocumentPicker from "./ApprovedInsuranceDocumentPicker";
 import { getDeliveryNotes } from "../../api/deliveryNotes";
 
 function formatDate(value) {
@@ -25,6 +26,9 @@ export default function DeliveryNotes() {
   const [search, setSearch] = useState("");
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
+
+  const navigate = useNavigate();
+  const [showCreatePicker, setShowCreatePicker] = useState(false);
 
   useEffect(() => {
     let cancelled = false;
@@ -78,6 +82,14 @@ export default function DeliveryNotes() {
             Manage vehicle Delivery Notes created from approved Insurance.
           </p>
         </div>
+
+        <button
+          type="button"
+          onClick={() => setShowCreatePicker(true)}
+          className="rounded-lg bg-gray-900 px-4 py-2.5 text-sm font-medium text-white hover:bg-gray-800"
+        >
+          Create Delivery Note
+        </button>
 
         <form
           onSubmit={handleSearchSubmit}
@@ -212,6 +224,18 @@ export default function DeliveryNotes() {
           </div>
         )}
       </div>
+      {showCreatePicker && (
+        <ApprovedInsuranceDocumentPicker
+          documentLabel="Delivery Note"
+          onClose={() => setShowCreatePicker(false)}
+          onApproved={(insurance) => {
+            setShowCreatePicker(false);
+            navigate(
+              `/finance/delivery-notes/new?insurance=${encodeURIComponent(insurance.id)}`,
+            );
+          }}
+        />
+      )}
     </div>
   );
 }

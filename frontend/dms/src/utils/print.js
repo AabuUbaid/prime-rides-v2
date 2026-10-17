@@ -5,6 +5,54 @@ function sanitizePrintValue(value, fallback = "") {
     .replace(/\s+/g, " ");
 }
 
+function waitForPrintImage(image, timeoutMs = 3000) {
+  return new Promise((resolve) => {
+    if (image.complete) {
+      resolve();
+      return;
+    }
+
+    let timeoutId;
+
+    const finish = () => {
+      window.clearTimeout(timeoutId);
+      image.removeEventListener("load", finish);
+      image.removeEventListener("error", finish);
+      resolve();
+    };
+
+    image.addEventListener("load", finish);
+    image.addEventListener("error", finish);
+
+    timeoutId = window.setTimeout(finish, timeoutMs);
+
+    // Handle an image that loads while listeners are being attached.
+    if (image.complete) {
+      finish();
+    }
+  }).then(async () => {
+    if (
+      image.complete &&
+      image.naturalWidth > 0 &&
+      typeof image.decode === "function"
+    ) {
+      try {
+        await image.decode();
+      } catch {
+        // Don't block printing if an image cannot be decoded.
+      }
+    }
+  });
+}
+
+function waitForPrintImages() {
+  const images = Array.from(
+    document.querySelectorAll(".print-area img"),
+  );
+
+  return Promise.all(images.map(waitForPrintImage));
+}
+
 export function printDocument({
   customerName = "Customer",
   documentNumber = "Document",
@@ -26,7 +74,9 @@ export function printDocument({
 
   window.addEventListener("afterprint", restoreTitle);
 
-  window.print();
+  waitForPrintImages().then(() => {
+    window.print();
+  });
 }
 
 export function printInventoryVehicle(car) {

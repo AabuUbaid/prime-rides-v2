@@ -47,6 +47,11 @@ export const INVENTORY_STOCK_OUTPUT_FIELDS = [
     roles: ["MASTER", "ADMIN"],
   },
   {
+    key: "engine_number",
+    label: "Engine No",
+    roles: ["MASTER", "ADMIN"],
+  },
+  {
     key: "date_added",
     label: "Date Added",
     roles: ["MASTER", "ADMIN"],
@@ -59,11 +64,6 @@ export const INVENTORY_STOCK_OUTPUT_FIELDS = [
   {
     key: "purchase_cost",
     label: "Purchase Cost",
-    roles: ["MASTER"],
-  },
-  {
-    key: "engine_number",
-    label: "Engine No",
     roles: ["MASTER"],
   },
   {

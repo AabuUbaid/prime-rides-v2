@@ -638,7 +638,7 @@ function CarDetails() {
             </tr>
           )}
 
-          {user?.role === "MASTER" && (
+          {canManageVehicle && (
             <tr className="border-b border-slate-100 last:border-b-0">
               <th className="w-1/3 bg-slate-50 px-4 py-3 text-left text-[11px] font-bold uppercase tracking-[0.06em] text-slate-500">
                 Source
@@ -649,7 +649,7 @@ function CarDetails() {
             </tr>
           )}
 
-          {user?.role === "MASTER" && car.source === "other" && (
+          {canManageVehicle && car.source === "other" && (
             <tr className="border-b border-slate-100 last:border-b-0">
               <th className="w-1/3 bg-slate-50 px-4 py-3 text-left text-[11px] font-bold uppercase tracking-[0.06em] text-slate-500">
                 Source Specify
@@ -678,7 +678,7 @@ function CarDetails() {
             </td>
           </tr>
 
-          {user?.role === "MASTER" && (
+          {canManageVehicle && (
             <tr className="border-b border-slate-100 last:border-b-0">
               <th className="w-1/3 bg-slate-50 px-4 py-3 text-left text-[11px] font-bold uppercase tracking-[0.06em] text-slate-500">
                 Highlight Public
@@ -857,8 +857,8 @@ function CarDetails() {
                       <td className="px-4 py-3 text-slate-600">
                         {document.uploaded_at
                           ? new Date(document.uploaded_at).toLocaleString(
-                              "en-AE",
-                            )
+                            "en-AE",
+                          )
                           : "-"}
                       </td>
                       <td className="px-4 py-3 text-right">

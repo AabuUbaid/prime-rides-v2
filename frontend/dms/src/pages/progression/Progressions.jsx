@@ -45,7 +45,7 @@ export default function Progressions() {
       setLoading(true);
       setError("");
       const r = await getProgressions(searchValue);
-      setItems(Array.isArray(r?.data) ? r.data : Array.isArray(r) ? r : []);
+      setItems(getResponseRows(r));
     } catch (e) {
       setError(e?.message || "Unable to load Progression.");
     } finally {
