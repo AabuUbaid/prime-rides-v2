@@ -627,15 +627,25 @@ def create_quote(
 # Reserve vehicle when a Cash Quote is created
 # -----------------------------------------------------
 
-    if (
-        source == Quote.Source.STOCK
-        and payment_method == Quote.PaymentMethod.CASH
-        and car is not None
+        # Reserve vehicle when a Cash or Finance Quote is created.
+    if source == Quote.Source.STOCK and payment_method == Quote.PaymentMethod.CASH:
+        if car is not None and car.status == Car.Status.AVAILABLE:
+            InventoryService.update_car_status(
+                car=car,
+                new_status=Car.Status.RESERVED,
+            )
+
+    elif (
+        source == Quote.Source.SAVED_EMI
+        and payment_method == Quote.PaymentMethod.FINANCE
     ):
-        InventoryService.update_car_status(
-            car=car,
-            new_status=Car.Status.RESERVED,
-        )
+        emi_car = emi_sheet.car if emi_sheet is not None else None
+
+        if emi_car is not None and emi_car.status == Car.Status.AVAILABLE:
+            InventoryService.update_car_status(
+                car=emi_car,
+                new_status=Car.Status.RESERVED,
+            )
 
     if special_price_request is not None:
         SpecialPriceService.bind_to_transaction(
@@ -731,7 +741,21 @@ def update_quote(
                     )
 
             elif quote.payment_method == Quote.PaymentMethod.CASH:
-                # Cash booking moves the vehicle to BOOKED.
+                from finance.services import get_net_advance_for_quote
+
+                required_advance = (
+                    (quote.down_payment or Decimal("0.00"))
+                    + (quote.extra_down_payment or Decimal("0.00"))
+                )
+
+                net_advance = get_net_advance_for_quote(quote=quote)
+
+                if net_advance < required_advance:
+                    raise ValidationError(
+                        "The required advance payment must be received "
+                        "before booking this vehicle."
+                    )
+
                 if car.status != Car.Status.BOOKED:
                     InventoryService.prepare_car_for_booking(
                         car=car,

@@ -230,7 +230,6 @@ function EditCar() {
           <VehicleDetails
             formData={formData}
             handleChange={handleChange}
-            hideStatus={!["MASTER", "ADMIN"].includes(user?.role) || statusLocked}
           />
         </div>
 

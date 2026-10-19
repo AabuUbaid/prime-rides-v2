@@ -24,7 +24,8 @@ from .models import (
     BankLoan,
     BankLoanFollowUp,
     CashDeal,
-    BalanceSheet
+    BalanceSheet,
+    CashReceipt,
 )
 
 from .selectors import (
@@ -162,6 +163,25 @@ def _validate_financial_inputs(
         "vat_amount": vat_amount,
         "price_after_vat": applicable_price,
     }
+    
+def get_net_advance_for_quote(*, quote):
+    """Return customer advance receipts less their reversals."""
+
+    received = CashReceipt.objects.filter(
+        quote=quote,
+        direction=CashReceipt.Direction.CUSTOMER_PAYMENT,
+        category=CashReceipt.Category.ADVANCE,
+        reversal_of__isnull=True,
+    ).aggregate(total=Sum("amount"))["total"] or ZERO
+
+    reversed_amount = CashReceipt.objects.filter(
+        quote=quote,
+        reversal_of__isnull=False,
+        reversal_of__direction=CashReceipt.Direction.CUSTOMER_PAYMENT,
+        reversal_of__category=CashReceipt.Category.ADVANCE,
+    ).aggregate(total=Sum("amount"))["total"] or ZERO
+
+    return received - reversed_amount
 
 
 # =========================================================
@@ -3824,6 +3844,24 @@ def create_cash_receipt(
 
         created_by=created_by,
     )
+    
+        # Book a Cash vehicle once the required net advance is received.
+    if (
+        direction == CashReceipt.Direction.CUSTOMER_PAYMENT
+        and category == CashReceipt.Category.ADVANCE
+        and quote.payment_method == Quote.PaymentMethod.CASH
+    ):
+        required_advance = (
+            (quote.down_payment or ZERO)
+            + (quote.extra_down_payment or ZERO)
+        )
+
+        net_advance = get_net_advance_for_quote(quote=quote)
+
+        if net_advance >= required_advance and car is not None:
+            if car.status == Car.Status.RESERVED:
+                InventoryService.prepare_car_for_booking(car=car)
+    
     if (
         direction == CashReceipt.Direction.CUSTOMER_PAYMENT
         and category in CASH_DEAL_PAYMENT_CATEGORIES

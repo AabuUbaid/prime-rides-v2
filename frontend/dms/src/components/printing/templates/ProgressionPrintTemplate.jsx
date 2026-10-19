@@ -144,7 +144,7 @@ function ProgressionSection({ title, rows }) {
                         <th>Vehicle</th>
                         <th>Model</th>
                         <th>Status</th>
-                        <th>Seller</th>
+                        <th>Agent</th>
                         <th>Customer</th>
                         <th>Bank</th>
                         <th>Submitted date</th>
