@@ -135,8 +135,10 @@ def _validate_financial_inputs(
             field="tenure_years",
         )
 
-    vat_amount = _money(
-        vehicle_price * VAT_RATE
+    vat_amount = (
+        _money(vehicle_price * VAT_RATE)
+        if vat_enabled
+        else ZERO
     )
 
     applicable_price = _money(
@@ -1071,10 +1073,54 @@ def _resolve_master_expenses(
 
         applied_types.add(expense_type)
 
+   
     # -----------------------------------------------------
     # Generic conditional expenses from Master
     # -----------------------------------------------------
 
+    applied_future_types = {
+        item["expense_type"]
+        for item in result["future"]
+    }
+
+    conditional_presets = (
+        ExpensePreset.objects.filter(
+            is_active=True,
+            calculation_type=(
+                ExpensePreset.CalculationType.CONDITIONAL
+            ),
+        )
+        .exclude(expense_type__in=known_types)
+        .order_by("expense_type", "id")
+    )
+
+    for preset in conditional_presets:
+        expense_type = preset.expense_type.strip()
+
+        # Do not apply the same expense twice.
+        if expense_type in applied_future_types:
+            continue
+
+        if not _evaluate_expense_condition(
+            preset=preset,
+            condition_context=condition_context,
+            selected_types=selected_types,
+            applied_types=applied_types,
+        ):
+            continue
+
+        result["future"].append(
+            {
+                "selected": True,
+                "expense_type": expense_type,
+                "name": preset.name,
+                "description": "",
+                "amount": _money(preset.amount),
+            }
+        )
+
+        applied_future_types.add(expense_type)
+        applied_types.add(expense_type)
 
     # -----------------------------------------------------
     # Total
@@ -1298,6 +1344,78 @@ def resolve_banker_application_charge(
             ZERO,
         )
     )
+
+
+
+def calculate_cash_quote(
+    *,
+    vehicle_price,
+    bank_id,
+    vat_enabled=False,
+    expenses=None,
+    include_other_expenses=True,
+    registration_dubai=False,
+    driving_license=True,
+    service_package_selected=False,
+    service_package_id=None,
+):
+    vehicle_price = _money(Decimal(str(vehicle_price)))
+
+    if vehicle_price <= ZERO:
+        raise DjangoValidationError(
+            "Vehicle price must be greater than zero."
+        )
+
+    # Confirm the configured bank exists and is active.
+    bank = Bank.objects.filter(
+        pk=bank_id,
+        is_active=True,
+    ).first()
+
+    if not bank:
+        raise DjangoValidationError(
+            "Selected Cash bank is not active or does not exist."
+        )
+
+    vat_amount = (
+        _money(vehicle_price * VAT_RATE)
+        if vat_enabled
+        else ZERO
+    )
+    price_after_vat = _money(vehicle_price + vat_amount)
+
+    resolved_expenses = _resolve_master_expenses(
+        vehicle_price=vehicle_price,
+        bank_id=bank_id,
+        expenses=expenses,
+        registration_dubai=registration_dubai,
+        driving_license=driving_license,
+        service_package_selected=service_package_selected,
+        service_package_id=service_package_id,
+    )
+
+    normalized_expenses = _normalize_expenses(
+        resolved_expenses=resolved_expenses,
+        original_expenses=expenses,
+        include_other_expenses=include_other_expenses,
+    )
+
+    expense_total = _money(
+        sum(
+            (item["amount"] for item in normalized_expenses),
+            ZERO,
+        )
+    )
+
+    return {
+        "vehicle_price": vehicle_price,
+        "vat_enabled": bool(vat_enabled),
+        "vat_amount": vat_amount,
+        "price_after_vat": price_after_vat,
+        "include_other_expenses": bool(include_other_expenses),
+        "expense_total": expense_total,
+        "expenses": normalized_expenses,
+    }
 
 
 # =========================================================
@@ -1572,7 +1690,7 @@ def calculate_emi(
         # ---------------------------------------------
 
         "vehicle_price": vehicle_price,
-        "vat_enabled":True,
+        "vat_enabled": bool(vat_enabled),
         "vat_amount": vat_amount,
         "price_after_vat": price_after_vat,
         "down_payment": down_payment,
@@ -3785,37 +3903,7 @@ def create_cash_receipt(
     receipt_number = generate_cash_receipt_number()
     category = validate_cash_receipt_category(category)
 
-    if quote_expense and emi_expense:
-        raise ValidationError(
-            "Only one expense context can be linked to a cash receipt."
-        )
-
-    if quote_expense:
-        if quote_expense.quote_id != quote.id:
-            raise ValidationError(
-                "Selected QuoteExpense does not belong to the selected quote."
-            )
-
-        if quote_expense.expense_type.lower() != category.lower():
-            raise ValidationError(
-                "Receipt category does not match the selected QuoteExpense."
-            )
-
-    if emi_expense:
-        if not quote.emi_sheet_id:
-            raise ValidationError(
-                "The selected quote does not have an EMI sheet."
-            )
-
-        if emi_expense.emi_sheet_id != quote.emi_sheet_id:
-            raise ValidationError(
-                "Selected EmiExpense does not belong to the quote's EMI sheet."
-            )
-
-        if emi_expense.expense_type.lower() != category.lower():
-            raise ValidationError(
-                "Receipt category does not match the selected EmiExpense."
-            )
+    
     # -----------------------------------------------------
     # Create actual transaction
     # -----------------------------------------------------
@@ -3826,8 +3914,8 @@ def create_cash_receipt(
         customer=customer,
         quote=quote,
         car=car,
-        quote_expense=quote_expense,
-        emi_expense=emi_expense,
+        quote_expense=None,
+        emi_expense=None,
 
         direction=direction,
         category=category,

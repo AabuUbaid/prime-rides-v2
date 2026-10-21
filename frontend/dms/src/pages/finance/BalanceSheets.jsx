@@ -17,15 +17,17 @@ const BALANCE_STATUSES = [
   { value: "customer_payable", label: "Customer Payable" },
 ];
 
-function getResponseData(response) {
-  const body = response ?? {};
 
-  return Array.isArray(body?.data)
-    ? body.data
-    : Array.isArray(body)
-      ? body
-      : [];
-}
+const getResponseData = (response) => {
+  const body = response?.data ?? response;
+
+  if (Array.isArray(body?.results)) return body.results;
+  if (Array.isArray(body?.data)) return body.data;
+  if (Array.isArray(body)) return body;
+
+  return [];
+};
+
 
 function formatBalanceStatus(value) {
   if (value === "settled") {

@@ -371,6 +371,16 @@ export function calculateEmi(payload) {
   });
 }
 
+
+
+export function calculateCashQuote(payload) {
+  return apiClient("/finance/cash-quote/calculate/", {
+    method: "POST",
+    body: JSON.stringify(payload),
+  });
+}
+
+
 /**
  * Get saved EMI estimates.
  *

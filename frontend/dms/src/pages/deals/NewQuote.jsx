@@ -6,6 +6,7 @@ import { createQuote } from "../../api/quotes";
 import { getCar, getCars } from "../../api/inventory";
 import {
   calculateEmi,
+  calculateCashQuote,
   getBanks,
   getEmi,
   getEmiEstimates,
@@ -360,9 +361,9 @@ export default function NewQuote() {
 
       return (
         String(request?.car_stock_id || "").trim() ===
-          String(quoteVehicleStockId).trim() ||
+        String(quoteVehicleStockId).trim() ||
         String(request?.car?.stock_id || "").trim() ===
-          String(quoteVehicleStockId).trim()
+        String(quoteVehicleStockId).trim()
       );
     },
   );
@@ -508,11 +509,9 @@ export default function NewQuote() {
       try {
         setCalculatingStock(true);
 
-        const response = await calculateEmi({
+        const response = await calculateCashQuote({
           vehicle_price: numericPrice,
           vat_enabled: vatEnabled,
-          down_payment: 0,
-          tenure_years: 1,
           bank_id: Number(cashBankId),
           include_other_expenses: true,
           expenses: selectedExpenses.map((expense) => ({
@@ -816,20 +815,20 @@ export default function NewQuote() {
 
       const withoutConflictingPreset = conditionKey
         ? current.filter((expense) => {
-            const originalPreset = expensePresets.find(
-              (item) => String(item.id) === String(expense.id),
-            );
+          const originalPreset = expensePresets.find(
+            (item) => String(item.id) === String(expense.id),
+          );
 
-            if (!originalPreset) {
-              return true;
-            }
+          if (!originalPreset) {
+            return true;
+          }
 
-            if (getConditionKey(originalPreset) !== conditionKey) {
-              return true;
-            }
+          if (getConditionKey(originalPreset) !== conditionKey) {
+            return true;
+          }
 
-            return getConditionValue(originalPreset) === conditionValue;
-          })
+          return getConditionValue(originalPreset) === conditionValue;
+        })
         : current;
 
       return [...withoutConflictingPreset, preset];
@@ -1183,11 +1182,10 @@ export default function NewQuote() {
             <button
               type="button"
               onClick={() => handleSourceChange(SOURCE_STOCK)}
-              className={`rounded-2xl border p-5 text-left transition-all ${
-                source === SOURCE_STOCK
-                  ? "border-amber-400 bg-amber-50 shadow-sm"
-                  : "border-slate-200 bg-white hover:border-slate-300 hover:bg-slate-50"
-              }`}
+              className={`rounded-2xl border p-5 text-left transition-all ${source === SOURCE_STOCK
+                ? "border-amber-400 bg-amber-50 shadow-sm"
+                : "border-slate-200 bg-white hover:border-slate-300 hover:bg-slate-50"
+                }`}
             >
               <div className="text-base font-semibold text-gray-900">
                 Cash Sale
@@ -1202,11 +1200,10 @@ export default function NewQuote() {
             <button
               type="button"
               onClick={() => handleSourceChange(SOURCE_SAVED_EMI)}
-              className={`rounded-2xl border p-5 text-left transition-all ${
-                source === SOURCE_SAVED_EMI
-                  ? "border-amber-400 bg-amber-50 shadow-sm"
-                  : "border-slate-200 bg-white hover:border-slate-300 hover:bg-slate-50"
-              }`}
+              className={`rounded-2xl border p-5 text-left transition-all ${source === SOURCE_SAVED_EMI
+                ? "border-amber-400 bg-amber-50 shadow-sm"
+                : "border-slate-200 bg-white hover:border-slate-300 hover:bg-slate-50"
+                }`}
             >
               <div className="text-base font-semibold text-gray-900">
                 Finance Sale
@@ -1563,8 +1560,8 @@ export default function NewQuote() {
                               <div className="font-mono text-sm font-bold text-slate-900">
                                 {selectedSpecialPriceRequest.expires_at
                                   ? new Date(
-                                      selectedSpecialPriceRequest.expires_at,
-                                    ).toLocaleString()
+                                    selectedSpecialPriceRequest.expires_at,
+                                  ).toLocaleString()
                                   : "-"}
                               </div>
                             </div>
@@ -1689,15 +1686,13 @@ export default function NewQuote() {
                         return (
                           <label
                             key={preset.id}
-                            className={`flex cursor-pointer items-start gap-3 rounded-lg border p-4 transition ${
-                              selected
-                                ? "border-amber-400 bg-amber-50 shadow-sm"
-                                : "border-slate-200 bg-white hover:border-slate-300 hover:bg-slate-50"
-                            }${
-                              disabled
+                            className={`flex cursor-pointer items-start gap-3 rounded-lg border p-4 transition ${selected
+                              ? "border-amber-400 bg-amber-50 shadow-sm"
+                              : "border-slate-200 bg-white hover:border-slate-300 hover:bg-slate-50"
+                              }${disabled
                                 ? "cursor-not-allowed opacity-50"
                                 : "cursor-pointer"
-                            }`}
+                              }`}
                           >
                             <input
                               type="checkbox"
@@ -1749,11 +1744,10 @@ export default function NewQuote() {
 
                 <div className="mt-5 grid gap-3 md:grid-cols-2">
                   <label
-                    className={`flex cursor-pointer items-start gap-3 rounded-lg border p-4 transition ${
-                      isSelectedExpenseType("insurance")
-                        ? "border-amber-400 bg-amber-50 shadow-sm"
-                        : "border-slate-200 bg-white hover:border-slate-300 hover:bg-slate-50"
-                    }`}
+                    className={`flex cursor-pointer items-start gap-3 rounded-lg border p-4 transition ${isSelectedExpenseType("insurance")
+                      ? "border-amber-400 bg-amber-50 shadow-sm"
+                      : "border-slate-200 bg-white hover:border-slate-300 hover:bg-slate-50"
+                      }`}
                   >
                     <input
                       type="checkbox"
@@ -1853,7 +1847,7 @@ export default function NewQuote() {
 
                     {!drivingLicense &&
                       applicableInsuranceBand?.no_license_surcharge !==
-                        undefined && (
+                      undefined && (
                         <div className="mt-2 text-[10px] font-bold uppercase tracking-[0.08em] text-slate-400">
                           No-licence surcharge:{" "}
                           {formatCurrency(
@@ -2007,8 +2001,8 @@ export default function NewQuote() {
                     value={
                       selectedEmi
                         ? `${getCustomerName(selectedEmi) || getEmiVehicleName(selectedEmi) || `EMI #${selectedEmi.id}`} — ${formatCurrency(
-                            selectedEmi.price ?? selectedEmi.vehicle_price,
-                          )}`
+                          selectedEmi.price ?? selectedEmi.vehicle_price,
+                        )}`
                         : emiSearch
                     }
                     onChange={(event) => {
@@ -2288,8 +2282,8 @@ export default function NewQuote() {
                                 <div className="font-mono text-sm font-bold text-slate-900">
                                   {selectedSpecialPriceRequest.expires_at
                                     ? new Date(
-                                        selectedSpecialPriceRequest.expires_at,
-                                      ).toLocaleString()
+                                      selectedSpecialPriceRequest.expires_at,
+                                    ).toLocaleString()
                                     : "-"}
                                 </div>
                               </div>
@@ -2519,7 +2513,7 @@ export default function NewQuote() {
 
                   <div className="p-5">
                     {Array.isArray(selectedEmi.expenses) &&
-                    selectedEmi.expenses.length > 0 ? (
+                      selectedEmi.expenses.length > 0 ? (
                       <div className="divide-y divide-gray-100">
                         {selectedEmi.expenses.map((expense, index) => (
                           <div
@@ -2536,8 +2530,8 @@ export default function NewQuote() {
                             <span className="text-sm font-medium text-gray-900">
                               {formatCurrency(
                                 expense.amount ??
-                                  expense.actual_amount ??
-                                  expense.estimated_min,
+                                expense.actual_amount ??
+                                expense.estimated_min,
                               )}
                             </span>
                           </div>

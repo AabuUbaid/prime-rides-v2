@@ -44,6 +44,7 @@ from .serializers import (
     BankSerializer,
     EmiCalculationSerializer,
     EmiSheetCreateSerializer,
+    CashQuoteCalculationSerializer,
     EmiSheetSerializer,
     BankProcessingConfigurationSerializer,
     ExpensePresetSerializer,
@@ -426,6 +427,38 @@ class EmiCalculateView(APIView):
             },
             status=status.HTTP_200_OK,
         )
+        
+        
+
+class CashQuoteCalculateView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def post(self, request):
+        data = request.data.copy()
+
+        # Cash quotes do not use EMI/down-payment calculations.
+        data["down_payment"] = "0"
+        data["tenure_years"] = 1
+
+        serializer = CashQuoteCalculationSerializer(data=data)
+        serializer.is_valid(raise_exception=True)
+
+        try:
+            result = services.calculate_cash_quote(
+                **serializer.validated_data
+            )
+        except DjangoValidationError as exc:
+            detail = getattr(exc, "messages", [str(exc)])
+            return Response(
+                {"success": False, "message": detail[0]},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        return Response(
+            {"success": True, "data": result},
+            status=status.HTTP_200_OK,
+        )
+
 
 
 # =========================================================
@@ -1900,39 +1933,12 @@ class CashReceiptListCreateView(APIView):
                 pk=car_id,
             )
             
-        quote_expense = None
-        quote_expense_id = serializer.validated_data.get(
-            "quote_expense_id"
-        )
-
-        if quote_expense_id:
-            from quotes.models import QuoteExpense
-
-            quote_expense = get_object_or_404(
-                QuoteExpense,
-                pk=quote_expense_id,
-            )
-
-        emi_expense = None
-        emi_expense_id = serializer.validated_data.get(
-            "emi_expense_id"
-        )
-
-        if emi_expense_id:
-            from .models import EmiExpense
-
-            emi_expense = get_object_or_404(
-                EmiExpense,
-                pk=emi_expense_id,
-            )
 
         try:
             receipt = services.create_cash_receipt(
                 customer=customer,
                 quote=quote,
                 car=car,
-                quote_expense=quote_expense,
-                emi_expense=emi_expense,
                 direction=serializer.validated_data[
                     "direction"
                 ],

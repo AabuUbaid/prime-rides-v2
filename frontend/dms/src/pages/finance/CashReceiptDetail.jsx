@@ -625,40 +625,7 @@ function CashReceiptDetail() {
           </section>
         </div>
 
-        <section className="mt-6 rounded-2xl border border-[#e5e7eb] bg-white p-5 shadow-[0_2px_8px_rgba(15,23,42,0.04)] sm:p-6">
-          <h2 className="mb-5 text-[15px] font-bold text-[#172033]">
-            Expense Context
-          </h2>
 
-          <dl className="grid grid-cols-1 gap-4 sm:grid-cols-3">
-            <div>
-              <dt className="text-[10px] font-bold uppercase tracking-[0.08em] text-slate-400">
-                Quote Expense
-              </dt>
-              <dd className="mt-1 text-sm font-medium text-slate-800">
-                {receipt.quote_expense ?? "-"}
-              </dd>
-            </div>
-
-            <div>
-              <dt className="text-[10px] font-bold uppercase tracking-[0.08em] text-slate-400">
-                EMI Expense
-              </dt>
-              <dd className="mt-1 text-sm font-medium text-slate-800">
-                {receipt.emi_expense ?? "-"}
-              </dd>
-            </div>
-
-            <div>
-              <dt className="text-[10px] font-bold uppercase tracking-[0.08em] text-slate-400">
-                Reversed Receipt
-              </dt>
-              <dd className="mt-1 text-sm font-medium text-slate-800">
-                {receipt.reversed_receipt_id ?? "-"}
-              </dd>
-            </div>
-          </dl>
-        </section>
 
         <section className="mt-6 rounded-2xl border border-[#e5e7eb] bg-white p-5 shadow-[0_2px_8px_rgba(15,23,42,0.04)] sm:p-6">
           <h2 className="mb-5 text-[15px] font-bold text-[#172033]">

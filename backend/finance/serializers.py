@@ -598,6 +598,53 @@ class EmiCalculationSerializer(
 
 
 
+class CashQuoteCalculationSerializer(serializers.Serializer):
+    vehicle_price = serializers.DecimalField(
+        max_digits=12,
+        decimal_places=2,
+        min_value=Decimal("0.01"),
+    )
+
+    bank_id = serializers.IntegerField()
+
+    vat_enabled = serializers.BooleanField(
+        required=False,
+        default=False,
+    )
+
+    include_other_expenses = serializers.BooleanField(
+        required=False,
+        default=True,
+    )
+
+    registration_dubai = serializers.BooleanField(
+        required=False,
+        default=False,
+    )
+
+    driving_license = serializers.BooleanField(
+        required=False,
+        default=True,
+    )
+
+    service_package_selected = serializers.BooleanField(
+        required=False,
+        default=False,
+    )
+
+    service_package_id = serializers.IntegerField(
+        required=False,
+        allow_null=True,
+    )
+
+    expenses = EmiExpenseInputSerializer(
+        many=True,
+        required=False,
+        default=list,
+    )
+
+
+
 
 # =========================================================
 # EMI SHEET CREATE REQUEST
@@ -2078,172 +2125,103 @@ class BalanceSheetSerializer(serializers.ModelSerializer):
     def get_total_received(self, obj):
         return self._get_receipt_totals(obj)["received"] or 0
 
+    
     def get_total_spent(self, obj):
+        """
+        Balance Sheet selling value:
+        - Cash: vehicle price + VAT + actual company expenses.
+        - Finance: approved bank finance amount, as currently designed.
+        Estimated Quote/EMI expenses are excluded.
+        """
         quote = obj.quote
 
         if quote.payment_method == "Finance":
             return (
-                getattr(
-                    quote,
-                    "emi_finance_amount",
-                    None,
-                )
+                getattr(quote, "emi_finance_amount", None)
                 or Decimal("0.00")
             )
-
-        quote_amount = (
-            getattr(quote, "price", None)
-            or Decimal("0.00")
-        )
-
-        company_on_behalf = (
-            self._get_receipt_totals(obj)["spent"]
-            or Decimal("0.00")
-        )
-
-        return quote_amount + company_on_behalf
-
-    def get_spent_breakdown(self, obj):
-        quote = obj.quote
-
-        if quote.payment_method == "Finance":
-            evaluation = (
-                getattr(
-                    quote,
-                    "emi_vehicle_price",
-                    None,
-                )
-                or Decimal("0.00")
-            )
-
-            vat = (
-                getattr(
-                    quote,
-                    "emi_vat_amount",
-                    None,
-                )
-                or Decimal("0.00")
-            )
-
-            expense_total = (
-                getattr(
-                    quote,
-                    "emi_expense_total",
-                    None,
-                )
-                or Decimal("0.00")
-            )
-
-            down_payment = (
-                getattr(
-                    quote,
-                    "emi_down_payment",
-                    None,
-                )
-                or Decimal("0.00")
-            )
-
-            breakdown = [
-                {
-                    "type": "evaluation",
-                    "narration": "Evaluation",
-                    "amount": evaluation,
-                },
-                {
-                    "type": "vat",
-                    "narration": "VAT",
-                    "amount": vat,
-                },
-                {
-                    "type": "finance_expense",
-                    "narration": "Finance Expense",
-                    "amount": expense_total,
-                },
-            ]
-
-            if down_payment > 0:
-                breakdown.append(
-                    {
-                        "type": "down_payment",
-                        "narration": "Down Payment",
-                        "amount": -down_payment,
-                    }
-                )
-
-            return breakdown
 
         vehicle_price = (
             getattr(obj.car, "asking_price", None)
             or Decimal("0.00")
         )
 
-        quote_vat = (
+        vat_amount = (
             getattr(quote, "vat_amount", None)
             or Decimal("0.00")
         )
 
-        quote_expenses = getattr(
-            quote,
-            "_balance_sheet_expenses",
-            None,
+        actual_company_expenses = (
+            self._get_receipt_totals(obj)["spent"]
+            or Decimal("0.00")
         )
-        if quote_expenses is None:
-            quote_expenses = (
-                quote.expenses
-                .filter(
-                    actual_amount__isnull=False,
-                    applies=True,
-                )
-                .order_by("created_at")
+
+        return (
+            vehicle_price
+            + vat_amount
+            + actual_company_expenses
+        )
+
+    def get_spent_breakdown(self, obj):
+        """
+        Only show vehicle price, VAT and actual company
+        expenses. Never show estimated Quote/EMI expenses.
+        """
+        quote = obj.quote
+
+        if quote.payment_method == "Finance":
+            vehicle_price = (
+                getattr(quote, "emi_vehicle_price", None)
+                or Decimal("0.00")
+            )
+
+            vat_amount = (
+                getattr(quote, "emi_vat_amount", None)
+                or Decimal("0.00")
+            )
+
+        else:
+            vehicle_price = (
+                getattr(obj.car, "asking_price", None)
+                or Decimal("0.00")
+            )
+
+            vat_amount = (
+                getattr(quote, "vat_amount", None)
+                or Decimal("0.00")
             )
 
         breakdown = [
             {
-                "type": "quote_amount",
+                "type": "vehicle_price",
                 "narration": "Vehicle Price",
                 "amount": vehicle_price,
             }
         ]
 
-        if quote_vat > 0:
-            breakdown.append(
-                {
-                    "type": "vat",
-                    "narration": "VAT",
-                    "amount": quote_vat,
-                }
-            )
+        if vat_amount > 0:
+            breakdown.append({
+                "type": "vat",
+                "narration": "VAT",
+                "amount": vat_amount,
+            })
 
-        for expense in quote_expenses:
-            breakdown.append(
-                {
-                    "type": "quote_expense",
-                    "narration": expense.name or expense.expense_type,
-                    "amount": expense.actual_amount,
-                    "expense_id": expense.id,
-                    "expense_type": expense.expense_type,
-                }
-            )
-
-        company_receipts = self._get_company_receipts(obj)
-
-        for receipt in company_receipts:
-            breakdown.append(
-                {
-                    "type": "company_on_behalf",
-                    "narration": (
-                        receipt.description
-                        or receipt.category
-                        or "Company Expense"
-                    ),
-                    "amount": receipt.amount,
-                    "receipt_id": receipt.id,
-                    "receipt_number": receipt.receipt_number,
-                    "transaction_date": receipt.transaction_date,
-                }
-            )
+        for receipt in self._get_company_receipts(obj):
+            breakdown.append({
+                "type": "company_on_behalf",
+                "narration": (
+                    receipt.description
+                    or receipt.category
+                    or "Company Expense"
+                ),
+                "amount": receipt.amount,
+                "receipt_id": receipt.id,
+                "receipt_number": receipt.receipt_number,
+                "transaction_date": receipt.transaction_date,
+            })
 
         return breakdown
+
 
     def get_created_by_name(self, obj):
         if not obj.created_by:

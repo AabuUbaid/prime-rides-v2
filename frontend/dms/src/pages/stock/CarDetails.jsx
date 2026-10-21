@@ -409,6 +409,44 @@ function CarDetails() {
     }
   }
 
+
+  async function handleViewVehicleDocument(vehicleDocument) {
+    if (!vehicleDocument?.id || documentDownloadingId === vehicleDocument.id) {
+      return;
+    }
+
+    setDocumentDownloadingId(vehicleDocument.id);
+
+    try {
+      const blob = await downloadVehicleDocument(vehicleDocument.id);
+
+      if (!(blob instanceof Blob) || blob.size === 0) {
+        throw new Error("The server did not return a valid document file.");
+      }
+
+      const viewUrl = window.URL.createObjectURL(blob);
+      const viewerWindow = window.open(viewUrl, "_blank", "noopener,noreferrer");
+
+      if (!viewerWindow) {
+        window.URL.revokeObjectURL(viewUrl);
+        throw new Error("Please allow pop-ups to view this document.");
+      }
+
+      window.setTimeout(() => {
+        window.URL.revokeObjectURL(viewUrl);
+      }, 60000);
+    } catch (error) {
+      console.error("VIEW VEHICLE DOCUMENT FAILED:", error);
+
+      toast.error(
+        getApiErrorMessage(error, "Unable to view vehicle document."),
+      );
+    } finally {
+      setDocumentDownloadingId(null);
+    }
+  }
+
+
   async function handleDownloadVehicleDocument(vehicleDocument) {
     if (!vehicleDocument?.id || documentDownloadingId === vehicleDocument.id) {
       return;
@@ -866,13 +904,7 @@ function CarDetails() {
                           {document.file_url ? (
                             <button
                               type="button"
-                              onClick={() => {
-                                window.open(
-                                  document.file_url,
-                                  "_blank",
-                                  "noopener,noreferrer",
-                                );
-                              }}
+                              onClick={() => handleViewVehicleDocument(document)}
                               className="rounded-xl border border-slate-200 bg-white px-3 py-1.5 text-xs font-semibold text-slate-700 transition hover:bg-slate-50"
                             >
                               View

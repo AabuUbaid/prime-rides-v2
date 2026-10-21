@@ -21,6 +21,8 @@ from .views import (
     EmiSheetDetailView,
     EmiSheetListCreateView,
     
+    CashQuoteCalculateView,
+    
     BankLoanCreateView,
     BankLoanDetailView,
     BankLoanStatusUpdateView,
@@ -134,6 +136,12 @@ urlpatterns = [
         "emi/calculate/",
         EmiCalculateView.as_view(),
         name="finance-emi-calculate",
+    ),
+    
+    path(
+    "cash-quote/calculate/",
+    CashQuoteCalculateView.as_view(),
+    name="finance-cash-quote-calculate",
     ),
 
     # -------------------------------------------------

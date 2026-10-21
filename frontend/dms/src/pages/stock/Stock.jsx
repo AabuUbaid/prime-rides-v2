@@ -127,6 +127,7 @@ function Stock() {
 
   const [inventorySummary, setInventorySummary] = useState({
     total_vehicles: 0,
+    in_showroom: 0,
     available: 0,
     reserved: 0,
     sold: 0,
@@ -184,6 +185,13 @@ function Stock() {
     loadInventorySummary();
   }, [refreshKey]);
 
+  const inShowroom = Math.max(
+    0,
+    Number(inventorySummary.total_vehicles || 0) -
+    Number(inventorySummary.sold || 0) -
+    Number(inventorySummary.in_service || 0) -
+    Number(inventorySummary.upcoming || 0)
+  );
   useEffect(() => {
     async function loadBrands() {
       try {
@@ -1070,7 +1078,7 @@ function Stock() {
         </div>
 
         {/* Inventory summary */}
-        <div className="mt-6 grid grid-cols-2 gap-3 lg:grid-cols-5">
+        <div className="mt-6 grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-6">
           <div className="rounded-2xl border border-slate-200 bg-white px-4 py-4 shadow-sm">
             <p className="text-[10px] font-bold uppercase tracking-[0.12em] text-slate-400">
               Total Vehicles
@@ -1129,6 +1137,19 @@ function Stock() {
             </p>
 
             <p className="mt-1 text-xs text-violet-700/60">Completed stock</p>
+          </div>
+          <div className="rounded-2xl border border-cyan-100 bg-cyan-50/50 px-4 py-4 shadow-sm">
+            <p className="text-[10px] font-bold uppercase tracking-[0.12em] text-cyan-600">
+              In Showroom
+            </p>
+
+            <p className="mt-2 text-2xl font-bold tracking-tight text-cyan-900">
+              {inShowroom}
+            </p>
+
+            <p className="mt-1 text-xs text-cyan-700/60">
+              Currently in showroom
+            </p>
           </div>
         </div>
       </div>

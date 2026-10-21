@@ -11,8 +11,7 @@ import {
 import { getBalanceSheets } from "../../api/balanceSheets";
 
 import { getCustomers } from "../../api/customers";
-import { getQuote } from "../../api/quotes";
-import { getEmi } from "../../api/finance";
+
 
 import { getApiErrorMessage } from "../../utils/errorMessage";
 import { formatAED } from "../../utils/formatters";
@@ -88,27 +87,13 @@ function CashReceiptCreate() {
   const [dealsLoading, setDealsLoading] = useState(false);
   const [dealsError, setDealsError] = useState("");
 
-  const [selectedQuote, setSelectedQuote] = useState(null);
-
-  const [quoteExpenses, setQuoteExpenses] = useState([]);
-
-  const [emiExpenses, setEmiExpenses] = useState([]);
-
-  const [expenseLoading, setExpenseLoading] = useState(false);
-
-  const [expenseError, setExpenseError] = useState("");
-
-  const [quoteExpenseId, setQuoteExpenseId] = useState("");
-
-  const [emiExpenseId, setEmiExpenseId] = useState("");
-
   const [customerId, setCustomerId] = useState("");
   const [quoteId, setQuoteId] = useState("");
 
   const [balance, setBalance] = useState(null);
   const [balanceLoading, setBalanceLoading] = useState(false);
   const [balanceError, setBalanceError] = useState("");
-  const [direction, setDirection] = useState("customer_payment");
+  const [direction, setDirection] = useState("company_on_behalf");
   const [category, setCategory] = useState("");
   const [amount, setAmount] = useState("");
   const [paymentMethod, setPaymentMethod] = useState("cash");
@@ -332,99 +317,6 @@ function CashReceiptCreate() {
     };
   }, [customerId, quoteId]);
 
-  // Effect 2: load expense context whenever quote changes
-  useEffect(() => {
-    let active = true;
-
-    async function loadExpenseContext() {
-      if (!quoteId) {
-        setSelectedQuote(null);
-        setQuoteExpenses([]);
-        setEmiExpenses([]);
-        setQuoteExpenseId("");
-        setEmiExpenseId("");
-        setExpenseError("");
-        return;
-      }
-
-      try {
-        setExpenseLoading(true);
-        setExpenseError("");
-
-        setSelectedQuote(null);
-        setQuoteExpenses([]);
-        setEmiExpenses([]);
-        setQuoteExpenseId("");
-        setEmiExpenseId("");
-
-        const quoteResponse = await getQuote(quoteId);
-
-        if (!active) {
-          return;
-        }
-
-        const quote = quoteResponse?.data ?? quoteResponse;
-
-        if (!quote) {
-          throw new Error("Selected quote details were not returned.");
-        }
-
-        setSelectedQuote(quote);
-
-        const paymentMethod = String(quote.payment_method || "")
-          .trim()
-          .toLowerCase();
-
-        if (paymentMethod === "finance") {
-          const emiSheetId = quote.emi_sheet_id;
-
-          if (!emiSheetId) {
-            return;
-          }
-
-          const emiResponse = await getEmi(emiSheetId);
-
-          if (!active) {
-            return;
-          }
-
-          const emi = emiResponse?.data ?? emiResponse;
-
-          const expenses = Array.isArray(emi?.expenses) ? emi.expenses : [];
-
-          setEmiExpenses(expenses);
-          return;
-        }
-
-        const expenses = Array.isArray(quote.expenses) ? quote.expenses : [];
-
-        setQuoteExpenses(expenses);
-      } catch (err) {
-        if (!active) {
-          return;
-        }
-
-        console.error("Failed to load receipt expense context:", err);
-
-        setSelectedQuote(null);
-        setQuoteExpenses([]);
-        setEmiExpenses([]);
-
-        setExpenseError(err?.message || "Failed to load expense context.");
-      } finally {
-        if (active) {
-          setExpenseLoading(false);
-        }
-      }
-    }
-
-    loadExpenseContext();
-
-    return () => {
-      active = false;
-    };
-  }, [quoteId]);
-
   useEffect(() => {
     let active = true;
 
@@ -440,20 +332,27 @@ function CashReceiptCreate() {
         }
 
         const data = getResponseData(response);
-
         const categoryOptions = Array.isArray(data) ? data : [];
 
         setCategories(categoryOptions);
 
-        const presetCategory = searchParams.get("category");
-        const normalizedPreset = String(presetCategory || "")
+        const presetCategory = String(searchParams.get("category") || "")
           .trim()
           .toLowerCase();
 
-        if (FIXED_CATEGORY_VALUES.has(normalizedPreset)) {
-          setCategory(normalizedPreset);
-        } else if (!category) {
-          setCategory("additional_payment");
+        const matchedCategory = categoryOptions.find(
+          (option) =>
+            String(option.value ?? "").trim().toLowerCase() === presetCategory,
+        );
+
+        if (matchedCategory) {
+          setCategory(matchedCategory.value);
+        } else {
+          setCategory((current) =>
+            categoryOptions.some((option) => option.value === current)
+              ? current
+              : "",
+          );
         }
       } catch (err) {
         if (!active) {
@@ -481,70 +380,6 @@ function CashReceiptCreate() {
     };
   }, []);
 
-  function handleQuoteExpenseChange(event) {
-    const value = event.target.value;
-
-    setQuoteExpenseId(value);
-    setEmiExpenseId("");
-
-    if (!value) {
-      setCategory("");
-      setAmount("");
-      return;
-    }
-
-    const expense = quoteExpenses.find(
-      (item) => String(item.id) === String(value),
-    );
-
-    if (expense) {
-      const expenseType = String(expense.expense_type || "").trim();
-      const normalizedType = expenseType.toLowerCase();
-
-      setCategory(
-        FIXED_CATEGORY_VALUES.has(normalizedType)
-          ? normalizedType
-          : expenseType,
-      );
-
-      setAmount(
-        String(expense.actual_amount ?? expense.amount ?? ""),
-      );
-    }
-  }
-
-  function handleEmiExpenseChange(event) {
-    const value = event.target.value;
-
-    setEmiExpenseId(value);
-    setQuoteExpenseId("");
-
-    if (!value) {
-      setCategory("");
-      setAmount("");
-      return;
-    }
-
-    const expense = emiExpenses.find(
-      (item) => String(item.id) === String(value),
-    );
-
-    if (expense) {
-      const expenseType = String(expense.expense_type || "").trim();
-      const normalizedType = expenseType.toLowerCase();
-
-      setCategory(
-        FIXED_CATEGORY_VALUES.has(normalizedType)
-          ? normalizedType
-          : expenseType,
-      );
-
-      setAmount(
-        String(expense.actual_amount ?? expense.amount ?? ""),
-      );
-    }
-  }
-
   async function handleSubmit(event) {
     event.preventDefault();
 
@@ -568,21 +403,6 @@ function CashReceiptCreate() {
       return;
     }
 
-    if (quoteExpenseId && emiExpenseId) {
-      toast.error("Select only one expense context.");
-      return;
-    }
-
-    if (
-      selectedContextExpense &&
-      selectedContextExpense.expense_type !== category
-    ) {
-      toast.error(
-        "Selected expense context does not match the receipt category.",
-      );
-      return;
-    }
-
     try {
       setSaving(true);
 
@@ -596,14 +416,6 @@ function CashReceiptCreate() {
         description,
         reference,
       };
-
-      if (quoteExpenseId) {
-        payload.quote_expense_id = Number(quoteExpenseId);
-      }
-
-      if (emiExpenseId) {
-        payload.emi_expense_id = Number(emiExpenseId);
-      }
 
       if (transactionDate) {
         payload.transaction_date = transactionDate;
@@ -630,45 +442,8 @@ function CashReceiptCreate() {
     }
   }
 
-  const selectedContextExpense = quoteExpenseId
-    ? quoteExpenses.find(
-      (expense) => String(expense.id) === String(quoteExpenseId),
-    )
-    : emiExpenseId
-      ? emiExpenses.find(
-        (expense) => String(expense.id) === String(emiExpenseId),
-      )
-      : null;
+  const categoryOptions = categories;
 
-  const selectedExpenseType = String(
-    selectedContextExpense?.expense_type ?? "",
-  ).trim();
-
-  const selectedExpenseTypeKey = selectedExpenseType.toLowerCase();
-
-  const selectedExpenseCategory =
-    selectedExpenseType &&
-      !FIXED_CATEGORY_VALUES.has(selectedExpenseTypeKey)
-      ? [
-        {
-          value: selectedExpenseType,
-          label:
-            categories.find(
-              (option) =>
-                String(option.value ?? "").toLowerCase() ===
-                selectedExpenseTypeKey,
-            )?.label ||
-            selectedContextExpense.name ||
-            selectedExpenseType,
-          source: "selected_expense",
-        },
-      ]
-      : [];
-
-  const categoryOptions = [
-    ...FIXED_CATEGORIES,
-    ...selectedExpenseCategory,
-  ];
   return (
     <div className="min-h-screen bg-[#f5f6fa] px-4 py-5 sm:px-6 lg:px-8">
       <div className="mx-auto max-w-5xl">
@@ -772,92 +547,6 @@ function CashReceiptCreate() {
               )}
             </div>
 
-            {selectedQuote && (
-              <div className="md:col-span-2 rounded-2xl border border-[#e5e7eb] bg-slate-50/70 p-4 sm:p-5">
-                <div className="mb-3">
-                  <p className="text-sm font-bold text-[#172033]">
-                    Expense Context
-                  </p>
-
-                  <p className="mt-1 text-xs leading-5 text-slate-500">
-                    Optional. Select the specific Quote or EMI expense that this
-                    actual transaction relates to.
-                  </p>
-                </div>
-
-                {expenseLoading && (
-                  <p className="text-sm text-gray-500">
-                    Loading expense context...
-                  </p>
-                )}
-
-                {!expenseLoading &&
-                  !expenseError &&
-                  String(selectedQuote.payment_method || "")
-                    .trim()
-                    .toLowerCase() === "cash" && (
-                    <select
-                      value={quoteExpenseId}
-                      onChange={handleQuoteExpenseChange}
-                      className="h-10 w-full rounded-xl border border-slate-200 bg-white px-3 text-sm text-slate-800 outline-none transition focus:border-amber-400 focus:ring-2 focus:ring-amber-100"
-                    >
-                      <option value="">No Quote Expense</option>
-
-                      {quoteExpenses.map((expense) => (
-                        <option key={expense.id} value={expense.id}>
-                          {expense.name ||
-                            expense.expense_type ||
-                            `Expense #${expense.id}`}
-                          {" — "}
-                          {expense.expense_type || "-"}
-                        </option>
-                      ))}
-                    </select>
-                  )}
-
-                {!expenseLoading &&
-                  !expenseError &&
-                  String(selectedQuote.payment_method || "")
-                    .trim()
-                    .toLowerCase() === "finance" && (
-                    <select
-                      value={emiExpenseId}
-                      onChange={handleEmiExpenseChange}
-                      className="h-10 w-full rounded-xl border border-slate-200 bg-white px-3 text-sm text-slate-800 outline-none transition focus:border-amber-400 focus:ring-2 focus:ring-amber-100"
-                    >
-                      <option value="">No EMI Expense</option>
-
-                      {emiExpenses.map((expense) => (
-                        <option key={expense.id} value={expense.id}>
-                          {expense.name ||
-                            expense.expense_type ||
-                            `Expense #${expense.id}`}
-                          {" — "}
-                          {expense.expense_type || "-"}
-                        </option>
-                      ))}
-                    </select>
-                  )}
-
-                {expenseError && (
-                  <p className="mt-2 text-xs text-red-600">{expenseError}</p>
-                )}
-
-                {selectedContextExpense && (
-                  <p className="mt-2 text-xs text-gray-600">
-                    Actual configured/reference amount:{" "}
-                    {formatAED(
-                      selectedContextExpense.actual_amount ??
-                      selectedContextExpense.amount ??
-                      0,
-                    )}
-                    . The Cash Receipt amount remains separately entered by the
-                    user.
-                  </p>
-                )}
-              </div>
-            )}
-
             {quoteId && (
               <div className="mt-4 rounded-2xl border border-amber-100 bg-[#fffaf0] p-4 sm:p-5">
                 <div className="text-[10px] font-bold uppercase tracking-[0.08em] text-slate-500">
@@ -929,8 +618,7 @@ function CashReceiptCreate() {
                 value={category}
                 disabled={
                   categoriesLoading ||
-                  categoryOptions.length === 0 ||
-                  Boolean(selectedContextExpense)
+                  categoryOptions.length === 0
                 }
                 onChange={(event) => setCategory(event.target.value)}
                 className="h-10 w-full rounded-xl border border-slate-200 bg-white px-3 text-sm text-slate-800 outline-none transition focus:border-amber-400 focus:ring-2 focus:ring-amber-100 disabled:bg-slate-50 disabled:text-slate-400"
@@ -952,12 +640,6 @@ function CashReceiptCreate() {
                   </>
                 )}
               </select>
-
-              {selectedContextExpense && (
-                <p className="mt-1 text-xs leading-5 text-slate-500">
-                  Category is locked to the selected expense context.
-                </p>
-              )}
 
               {categoriesError && (
                 <p className="mt-1 text-xs text-red-600">{categoriesError}</p>
