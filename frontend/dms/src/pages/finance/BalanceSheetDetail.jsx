@@ -177,16 +177,19 @@ function BalanceSheetDetail() {
       return;
     }
 
+    const sellingPrice = Number(balanceSheet?.selling_price || 0);
     const totalReceived = Number(balanceSheet?.total_received || 0);
 
-    const totalSpent = Number(balanceSheet?.total_spent || 0);
+    console.log("Balance Sheet payment check:", {
+      selling_price: balanceSheet?.selling_price,
+      total_received: balanceSheet?.total_received,
+      quote_id: balanceSheet?.quote,
+    });
 
-    const amount = totalSpent - totalReceived;
+    const amount = Math.max(0, sellingPrice - totalReceived);
 
     if (amount <= 0) {
-      toast.error(
-        "There is no remaining balance available for a Cash Receipt.",
-      );
+      toast.info("The customer has no remaining payment due.");
       return;
     }
 
@@ -389,7 +392,7 @@ function BalanceSheetDetail() {
                 Selling Price
               </p>
               <p className="mt-1 text-lg font-semibold text-gray-900">
-                {formatAED(balanceSheet.evaluation)}
+                {formatAED(balanceSheet.selling_price)}
               </p>
             </div>
 

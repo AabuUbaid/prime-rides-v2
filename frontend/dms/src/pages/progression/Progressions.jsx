@@ -37,6 +37,8 @@ export default function Progressions() {
   const [search, setSearch] = useState("");
   const [appliedSearch, setAppliedSearch] = useState("");
 
+  const [showCompleted, setShowCompleted] = useState(false);
+
   const [printRows, setPrintRows] = useState(null);
   const [printingActive, setPrintingActive] = useState(false);
 
@@ -55,24 +57,25 @@ export default function Progressions() {
   useEffect(() => {
     load();
   }, []);
+
   const rows = useMemo(
     () =>
-      [...items].sort((a, b) => {
-        const aCompleted = a.status === "completed";
-        const bCompleted = b.status === "completed";
+      [...items]
+        .filter((item) => showCompleted || item.status !== "completed")
+        .sort((a, b) => {
+          const aCompleted = a.status === "completed";
+          const bCompleted = b.status === "completed";
 
-        // Completed always goes to the bottom.
-        if (aCompleted !== bCompleted) {
-          return Number(aCompleted) - Number(bCompleted);
-        }
+          if (aCompleted !== bCompleted) {
+            return Number(aCompleted) - Number(bCompleted);
+          }
 
-        // Within the same status group, newest first.
-        return (
-          new Date(b.updated_at || b.created_at || 0) -
-          new Date(a.updated_at || a.created_at || 0)
-        );
-      }),
-    [items],
+          return (
+            new Date(b.updated_at || b.created_at || 0) -
+            new Date(a.updated_at || a.created_at || 0)
+          );
+        }),
+    [items, showCompleted],
   );
 
   async function handlePrintActiveProgressions() {
@@ -303,6 +306,31 @@ export default function Progressions() {
             Clear
           </button>
         </form>
+
+        <div className="flex items-center justify-between rounded-lg border border-gray-200 bg-white px-4 py-3">
+          <div>
+            <p className="text-sm font-medium text-gray-900">
+              Show completed progressions
+            </p>
+            <p className="text-xs text-gray-500">
+              Completed records are hidden by default.
+            </p>
+          </div>
+
+          <button
+            type="button"
+            role="switch"
+            aria-checked={showCompleted}
+            onClick={() => setShowCompleted((previous) => !previous)}
+            className={`relative inline-flex h-6 w-11 shrink-0 items-center rounded-full transition-colors ${showCompleted ? "bg-gray-900" : "bg-gray-300"
+              }`}
+          >
+            <span
+              className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${showCompleted ? "translate-x-6" : "translate-x-1"
+                }`}
+            />
+          </button>
+        </div>
 
         {error && (
           <div className="rounded-lg border border-red-200 bg-red-50 p-4 text-sm text-red-700">

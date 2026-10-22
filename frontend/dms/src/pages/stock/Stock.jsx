@@ -20,7 +20,12 @@ import {
   deleteAllCars,
   bulkImportCars,
 } from "../../api/inventory";
-import { getBranches, getCompanies } from "../../api/company";
+import {
+  getBranches,
+  getCompanies,
+  getCompanyDocuments,
+  downloadCompanyDocument,
+} from "../../api/company";
 import { resolveBackendUrl } from "../../api/url";
 import { getInventoryStockOutputFields } from "../../utils/inventoryStockOutput";
 
@@ -151,7 +156,7 @@ function Stock() {
 
   const [printStockConfig, setPrintStockConfig] = useState(null);
   const [printingStock, setPrintingStock] = useState(false);
-  const [printStockStatus, setPrintStockStatus] = useState("");
+  const [printStockStatuses, setPrintStockStatuses] = useState([]);
 
   const [refreshKey, setRefreshKey] = useState(0);
   const [deletingAll, setDeletingAll] = useState(false);
@@ -643,7 +648,7 @@ function Stock() {
 
     setStockOutputFields(allowedFields);
     setSelectedStockOutputFields(allowedFields.map((field) => field.key));
-    setPrintStockStatus("");
+    setPrintStockStatuses([]);
     setShowStockOutputModal(true);
   }
 
@@ -723,7 +728,7 @@ function Stock() {
         const response = await getCars({
           search: searchQuery,
           ...appliedFilters,
-          status: printStockStatus,
+          status: "",
           ordering,
           page: currentPage,
           page_size: printPageSize,
@@ -750,10 +755,42 @@ function Stock() {
         currentPage += 1;
       }
 
-      if (!allCars.length) {
+      const filteredCars = printStockStatuses.length
+        ? allCars.filter((car) => printStockStatuses.includes(car.status))
+        : allCars;
+
+      if (!filteredCars.length) {
         window.alert("No inventory vehicles are available for printing.");
         return;
       }
+
+
+      const documentsResponse = await getCompanyDocuments();
+
+      const documents = Array.isArray(documentsResponse?.data)
+        ? documentsResponse.data
+        : Array.isArray(documentsResponse)
+          ? documentsResponse
+          : [];
+
+      const logoDocument = documents.find(
+        (document) => document?.name === "Logo",
+      );
+
+      if (!logoDocument?.id) {
+        throw new Error(
+          "Company Logo is not configured. Please upload a Logo in Company Documents.",
+        );
+      }
+
+      const logoBlob = await downloadCompanyDocument(logoDocument.id);
+
+      if (!(logoBlob instanceof Blob)) {
+        throw new Error("Unable to retrieve the company logo.");
+      }
+
+      const logoUrl = URL.createObjectURL(logoBlob);
+
 
       const previousTitle = document.title;
 
@@ -769,6 +806,7 @@ function Stock() {
         document.title = previousTitle;
         setPrintStockConfig(null);
         window.removeEventListener("afterprint", restoreTitle);
+        if (logoUrl) URL.revokeObjectURL(logoUrl);
       };
 
       window.addEventListener("afterprint", restoreTitle);
@@ -776,9 +814,11 @@ function Stock() {
       setShowStockOutputModal(false);
 
       setPrintStockConfig({
-        cars: allCars,
+        cars: filteredCars,
         selectedFields: [...selectedStockOutputFields],
         company,
+        printAssets: { logo: logoUrl },
+
       });
 
       setTimeout(() => {
@@ -2248,21 +2288,33 @@ function Stock() {
                   Vehicle Status
                 </label>
 
-                <select
-                  id="stock-print-status"
-                  value={printStockStatus}
-                  onChange={(event) => setPrintStockStatus(event.target.value)}
-                  disabled={printingStock}
-                  className="h-10 w-full rounded-xl border border-slate-200 bg-white px-3 text-sm text-slate-800 outline-none focus:border-amber-400 focus:ring-2 focus:ring-amber-100"
-                >
-                  <option value="">All Statuses</option>
-
+                <div className="grid grid-cols-2 gap-2 sm:grid-cols-3">
                   {STATUS_OPTIONS.map((option) => (
-                    <option key={option.value} value={option.value}>
+                    <label
+                      key={option.value}
+                      className="flex items-center gap-2 rounded-lg border border-slate-200 px-3 py-2 text-sm"
+                    >
+                      <input
+                        type="checkbox"
+                        checked={printStockStatuses.includes(option.value)}
+                        onChange={(event) => {
+                          setPrintStockStatuses((current) =>
+                            event.target.checked
+                              ? [...current, option.value]
+                              : current.filter((status) => status !== option.value)
+                          );
+                        }}
+                        disabled={printingStock}
+                        className="h-4 w-4 rounded border-slate-300 text-amber-500"
+                      />
                       {option.label}
-                    </option>
+                    </label>
                   ))}
-                </select>
+                </div>
+
+                <p className="mt-2 text-xs text-slate-500">
+                  Select no statuses to print all vehicles, or select multiple statuses.
+                </p>
 
                 <p className="mt-2 text-xs text-slate-500">
                   Print all inventory vehicles or limit the printout to one status.
@@ -2596,6 +2648,8 @@ function Stock() {
             cars={printStockConfig.cars}
             selectedFields={printStockConfig.selectedFields}
             company={printStockConfig.company}
+            printAssets={printStockConfig.printAssets}
+
           />
         </div>
       )}

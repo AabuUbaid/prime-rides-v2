@@ -1,4 +1,5 @@
 from decimal import Decimal
+from email.utils import quote
 from django.db.models import Q, Sum
 from django.utils import timezone
 from inventory.models import Car
@@ -333,6 +334,7 @@ def get_progression(*, pk, user):
         )
         
 
+
 def _balance_sheet_is_settled(*, quote):
     balance_sheet = (
         BalanceSheet.objects
@@ -343,54 +345,67 @@ def _balance_sheet_is_settled(*, quote):
     if balance_sheet is None:
         return False
 
-    total_received = (
+    receipts = (
         CashReceipt.objects
-        .filter(
-            quote=quote,
-            direction=CashReceipt.Direction.CUSTOMER_PAYMENT,
-        )
-        .aggregate(total=Sum("amount"))
-        .get("total")
-        or Decimal("0.00")
+        .filter(quote=quote)
+        .select_related("reversal_of")
     )
 
-    # Keep this calculation exactly aligned with
-    # BalanceSheetSerializer.get_total_spent().
+    total_received = Decimal("0.00")
+    company_expenses = Decimal("0.00")
+
+    for receipt in receipts:
+        amount = receipt.amount
+
+        if receipt.reversal_of_id:
+            original = receipt.reversal_of
+
+            if original.direction == (
+                CashReceipt.Direction.CUSTOMER_PAYMENT
+            ):
+                total_received -= amount
+
+            elif original.direction == (
+                CashReceipt.Direction.COMPANY_ON_BEHALF
+            ):
+                company_expenses -= amount
+
+            continue
+
+        if receipt.direction == (
+            CashReceipt.Direction.CUSTOMER_PAYMENT
+        ):
+            total_received += amount
+
+        elif receipt.direction == (
+            CashReceipt.Direction.COMPANY_ON_BEHALF
+        ):
+            company_expenses += amount
+
     if quote.payment_method == "Finance":
         total_spent = (
-            getattr(
-                quote,
-                "emi_finance_amount",
-                None,
-            )
+            getattr(quote, "emi_finance_amount", None)
             or Decimal("0.00")
         )
     else:
-        quote_amount = (
-            getattr(
-                quote,
-                "price",
-                None,
-            )
+        vehicle_price = (
+            getattr(balance_sheet.car, "asking_price", None)
             or Decimal("0.00")
         )
 
-        company_on_behalf = (
-            CashReceipt.objects
-            .filter(
-                quote=quote,
-                direction=CashReceipt.Direction.COMPANY_ON_BEHALF,
-            )
-            .aggregate(total=Sum("amount"))
-            .get("total")
+        vat_amount = (
+            getattr(quote, "vat_amount", None)
             or Decimal("0.00")
         )
 
-        total_spent = quote_amount + company_on_behalf
+        total_spent = (
+            vehicle_price
+            + vat_amount
+            + company_expenses
+        )
 
-    return (
-        total_received - total_spent
-    ) == Decimal("0.00")
+    return total_received == total_spent
+
        
 @transaction.atomic
 def advance_progression_stage(

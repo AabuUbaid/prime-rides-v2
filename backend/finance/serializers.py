@@ -1774,6 +1774,7 @@ class CashReceiptCreateSerializer(
 
         return validate_cash_receipt_category(value)
 
+    
     def validate(self, attrs):
         category = attrs.get("category")
         description = attrs.get("description", "")
@@ -1782,14 +1783,63 @@ class CashReceiptCreateSerializer(
             category == CashReceipt.Category.OTHER
             and not description.strip()
         ):
-            raise serializers.ValidationError(
-                {
-                    "description":
-                        "Description is required when category is Other."
-                }
-            )
+            raise serializers.ValidationError({
+                "description": (
+                    "Description is required when category is Other."
+                )
+            })
+
+        # Prevent customer payments exceeding the remaining balance.
+        if (
+            attrs.get("direction")
+            == CashReceipt.Direction.CUSTOMER_PAYMENT
+        ):
+            quote_id = attrs.get("quote_id")
+            amount = attrs.get("amount") or Decimal("0.00")
+
+            from .models import BalanceSheet
+
+            balance_sheet = BalanceSheet.objects.filter(
+                quote_id=quote_id
+            ).select_related("quote", "car").first()
+
+            if balance_sheet:
+                selling_price = (
+                    balance_sheet.car.asking_price
+                    + (balance_sheet.quote.vat_amount or Decimal("0.00"))
+                )
+
+                receipts = CashReceipt.objects.filter(
+                    quote_id=quote_id
+                ).select_related("reversal_of")
+
+                received = Decimal("0.00")
+
+                for receipt in receipts:
+                    if receipt.reversal_of_id:
+                        if (
+                            receipt.reversal_of.direction
+                            == CashReceipt.Direction.CUSTOMER_PAYMENT
+                        ):
+                            received -= receipt.amount
+                    elif (
+                        receipt.direction
+                        == CashReceipt.Direction.CUSTOMER_PAYMENT
+                    ):
+                        received += receipt.amount
+
+                remaining = selling_price - received
+
+                if amount > remaining:
+                    raise serializers.ValidationError({
+                        "amount": (
+                            f"Payment exceeds the remaining balance "
+                            f"of AED {max(remaining, Decimal('0.00')):.2f}."
+                        )
+                    })
 
         return attrs
+
 
 
 # =========================================================
@@ -2071,31 +2121,38 @@ class BalanceSheetSerializer(serializers.ModelSerializer):
 
         return totals
 
+    
+
     def _get_company_receipts(self, obj):
         receipts = getattr(
             obj.quote,
             "_balance_sheet_receipts",
             None,
         )
-        if receipts is not None:
-            return [
-                receipt
-                for receipt in receipts
-                if receipt.direction
-                == CashReceipt.Direction.COMPANY_ON_BEHALF
-            ]
 
-        return (
-            CashReceipt.objects
-            .filter(
-                quote_id=obj.quote_id,
-                direction=CashReceipt.Direction.COMPANY_ON_BEHALF,
+        if receipts is None:
+            receipts = (
+                CashReceipt.objects
+                .filter(quote_id=obj.quote_id)
+                .select_related("reversal_of")
+                .order_by("transaction_date", "created_at", "id")
             )
-            .order_by(
-                "transaction_date",
-                "created_at",
+
+        return [
+            receipt
+            for receipt in receipts
+            if (
+                receipt.direction
+                == CashReceipt.Direction.COMPANY_ON_BEHALF
+                and (
+                    receipt.reversal_of_id is None
+                    or receipt.reversal_of.direction
+                    == CashReceipt.Direction.COMPANY_ON_BEHALF
+                )
             )
-        )
+        ]
+
+
 
     def _get_cash_deal(self, obj):
         quote = obj.quote
@@ -2206,21 +2263,34 @@ class BalanceSheetSerializer(serializers.ModelSerializer):
                 "amount": vat_amount,
             })
 
+        
+    
         for receipt in self._get_company_receipts(obj):
+            is_reversal = receipt.reversal_of_id is not None
+
             breakdown.append({
-                "type": "company_on_behalf",
+                "type": (
+                    "company_expense_reversal"
+                    if is_reversal
+                    else "company_on_behalf"
+                ),
                 "narration": (
                     receipt.description
                     or receipt.category
                     or "Company Expense"
                 ),
-                "amount": receipt.amount,
+                "amount": (
+                    -receipt.amount
+                    if is_reversal
+                    else receipt.amount
+                ),
                 "receipt_id": receipt.id,
                 "receipt_number": receipt.receipt_number,
                 "transaction_date": receipt.transaction_date,
             })
 
         return breakdown
+
 
 
     def get_created_by_name(self, obj):
@@ -2239,11 +2309,28 @@ class BalanceSheetSerializer(serializers.ModelSerializer):
         )
 
     def get_selling_price(self, obj):
-        return getattr(
-            obj.quote,
-            "selling_price",
-            getattr(obj.quote, "price", None),
-        )
+        quote = obj.quote
+
+        if quote.payment_method == "Finance":
+            vehicle_price = (
+                getattr(quote, "emi_vehicle_price", None)
+                or Decimal("0.00")
+            )
+            vat_amount = (
+                getattr(quote, "emi_vat_amount", None)
+                or Decimal("0.00")
+            )
+        else:
+            vehicle_price = (
+                getattr(obj.car, "asking_price", None)
+                or Decimal("0.00")
+            )
+            vat_amount = (
+                getattr(quote, "vat_amount", None)
+                or Decimal("0.00")
+            )
+
+        return vehicle_price + vat_amount
 
     def get_evaluation(self, obj):
         if obj.quote.payment_method == "Cash":
@@ -2333,26 +2420,13 @@ class BalanceSheetSerializer(serializers.ModelSerializer):
             else None
         )
 
+    
     def get_net_difference(self, obj):
         return (
-            self.get_total_received(obj)
-            - self.get_total_spent(obj)
+            Decimal(str(self.get_total_spent(obj) or 0))
+            - Decimal(str(self.get_total_received(obj) or 0))
         )
 
-        company_on_behalf = (
-            CashReceipt.objects
-            .filter(
-                quote_id=obj.quote_id,
-                direction=CashReceipt.Direction.COMPANY_ON_BEHALF,
-            )
-            .aggregate(
-                total=Sum("amount")
-            )
-            .get("total")
-            or Decimal("0.00")
-        )
-
-        return customer_received - company_on_behalf
 
     def get_balance_status(self, obj):
         net = self.get_net_difference(obj)
@@ -2361,9 +2435,9 @@ class BalanceSheetSerializer(serializers.ModelSerializer):
             return "settled"
 
         if net > 0:
-            return "customer_receivable"
+            return "customer_payable"
 
-        return "customer_payable"
+        return "customer_receivable"
 
     def get_transactions(self, obj):
         receipts = getattr(

@@ -3830,6 +3830,8 @@ def create_cash_receipt(
     transaction_date=None,
     reference="",
     created_by=None,
+    reversal_of=None,
+    source="cash_receipt",
 ):
     """
     Create one historical Cash Receipt.
@@ -3849,6 +3851,40 @@ def create_cash_receipt(
                     "Created by is required."
             }
         )
+        
+        
+    if reversal_of is not None:
+            if reversal_of.quote_id != quote.id:
+                raise ValidationError(
+                    {
+                        "reversal_of":
+                            "The original receipt must belong to the same quote."
+                    }
+                )
+
+            if reversal_of.customer_id != customer.id:
+                raise ValidationError(
+                    {
+                        "reversal_of":
+                            "The original receipt must belong to the same customer."
+                    }
+                )
+
+            if reversal_of.reversal_of_id is not None:
+                raise ValidationError(
+                    {
+                        "reversal_of":
+                            "A reversal transaction cannot itself be reversed."
+                    }
+                )
+
+            if hasattr(reversal_of, "reversal"):
+                raise ValidationError(
+                    {
+                        "reversal_of":
+                            "This Cash Receipt has already been reversed."
+                    }
+                )
 
     # -----------------------------------------------------
     # Vehicle default
@@ -3928,83 +3964,86 @@ def create_cash_receipt(
         transaction_date=validated["transaction_date"],
 
         # Actual source is this Cash Receipt record.
-        source="cash_receipt",
+        source=source,
+        reversal_of=reversal_of,
 
         created_by=created_by,
     )
     
-        # Book a Cash vehicle once the required net advance is received.
-    if (
-        direction == CashReceipt.Direction.CUSTOMER_PAYMENT
-        and category == CashReceipt.Category.ADVANCE
-        and quote.payment_method == Quote.PaymentMethod.CASH
-    ):
-        required_advance = (
-            (quote.down_payment or ZERO)
-            + (quote.extra_down_payment or ZERO)
-        )
-
-        net_advance = get_net_advance_for_quote(quote=quote)
-
-        if net_advance >= required_advance and car is not None:
-            if car.status == Car.Status.RESERVED:
-                InventoryService.prepare_car_for_booking(car=car)
+    if reversal_of is None:
     
-    if (
-        direction == CashReceipt.Direction.CUSTOMER_PAYMENT
-        and category in CASH_DEAL_PAYMENT_CATEGORIES
-    ):
-        cash_deal = sync_cash_deal_from_receipts(
-            quote=quote,
-        )
-
+        # Book a Cash vehicle once the required net advance is received.
         if (
-            cash_deal is None
+            direction == CashReceipt.Direction.CUSTOMER_PAYMENT
             and category == CashReceipt.Category.ADVANCE
+            and quote.payment_method == Quote.PaymentMethod.CASH
         ):
-            from progression.services import (
-                sync_progression_for_quote,
+            required_advance = (
+                (quote.down_payment or ZERO)
+                + (quote.extra_down_payment or ZERO)
             )
 
-            sync_progression_for_quote(
-                quote_id=quote.id,
-            )
+            net_advance = get_net_advance_for_quote(quote=quote)
 
-    # -----------------------------------------------------
-    # Finance Bank Loan Approved Amount → Balance Sheet
-    # -----------------------------------------------------
-
-    if (
-        direction == CashReceipt.Direction.CUSTOMER_PAYMENT
-        and category == CashReceipt.Category.OTHER
-        and quote.payment_method == Quote.PaymentMethod.FINANCE
-    ):
-        approved_bank_loan = (
-            BankLoan.objects
-            .filter(
-                quote=quote,
-                status=BankLoan.Status.APPROVED,
-            )
-            .order_by("-updated_at", "-id")
-            .first()
-        )
-
+            if net_advance >= required_advance and car is not None:
+                if car.status == Car.Status.RESERVED:
+                    InventoryService.prepare_car_for_booking(car=car)
+        
         if (
-            approved_bank_loan is not None
-            and approved_bank_loan.approved_finance is not None
-            and validated["amount"] ==
-                approved_bank_loan.approved_finance
+            direction == CashReceipt.Direction.CUSTOMER_PAYMENT
+            and category in CASH_DEAL_PAYMENT_CATEGORIES
         ):
-            if not BalanceSheet.objects.filter(
-                quote_id=quote.id
-            ).exists():
-                create_balance_sheet(
-                    customer=customer,
-                    quote=quote,
-                    created_by=created_by,
+            cash_deal = sync_cash_deal_from_receipts(
+                quote=quote,
+            )
+
+            if (
+                cash_deal is None
+                and category == CashReceipt.Category.ADVANCE
+            ):
+                from progression.services import (
+                    sync_progression_for_quote,
                 )
 
-    return cash_receipt
+                sync_progression_for_quote(
+                    quote_id=quote.id,
+                )
+
+        # -----------------------------------------------------
+        # Finance Bank Loan Approved Amount → Balance Sheet
+        # -----------------------------------------------------
+
+        if (
+            direction == CashReceipt.Direction.CUSTOMER_PAYMENT
+            and category == CashReceipt.Category.OTHER
+            and quote.payment_method == Quote.PaymentMethod.FINANCE
+        ):
+            approved_bank_loan = (
+                BankLoan.objects
+                .filter(
+                    quote=quote,
+                    status=BankLoan.Status.APPROVED,
+                )
+                .order_by("-updated_at", "-id")
+                .first()
+            )
+
+            if (
+                approved_bank_loan is not None
+                and approved_bank_loan.approved_finance is not None
+                and validated["amount"] ==
+                    approved_bank_loan.approved_finance
+            ):
+                if not BalanceSheet.objects.filter(
+                    quote_id=quote.id
+                ).exists():
+                    create_balance_sheet(
+                        customer=customer,
+                        quote=quote,
+                        created_by=created_by,
+                    )
+
+        return cash_receipt
 
 @transaction.atomic
 def reverse_cash_receipt(
@@ -4076,6 +4115,8 @@ def reverse_cash_receipt(
         reference=reversal_reference,
         transaction_date=timezone.localdate(),
         created_by=created_by,
+        reversal_of=receipt,
+        source="cash_receipt_reversal",
     )
 
     reversal.reversal_of = receipt

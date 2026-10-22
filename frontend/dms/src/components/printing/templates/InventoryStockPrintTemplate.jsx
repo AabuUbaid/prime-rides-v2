@@ -175,6 +175,7 @@ export default function InventoryStockPrintTemplate({
   cars = [],
   selectedFields = [],
   company = {},
+  printAssets = {},
 }) {
   const selectedFieldDefinitions = INVENTORY_STOCK_OUTPUT_FIELDS.filter(
     (field) => {
@@ -208,6 +209,8 @@ export default function InventoryStockPrintTemplate({
       documentNumber="Stock List"
       date={generatedDate}
       company={company}
+      showHeader={false}
+      showFooter={false}
     >
       <div className="inventory-stock-pdf">
         <style>
@@ -309,6 +312,14 @@ export default function InventoryStockPrintTemplate({
               background: #ffffff;
             }
 
+            .inventory-stock-pdf-logo {
+  display: block;
+  width: 72px;
+  height: 22px;
+  object-fit: contain;
+  object-position: left center;
+}
+
             @page {
   size: A4 landscape;
   margin: 8mm 8mm 18mm 8mm;
@@ -393,7 +404,8 @@ export default function InventoryStockPrintTemplate({
 }
 
 .inventory-stock-pdf-table th {
-  background: #d9ead3;
+  background: #E8EDF2 !important;
+  color: #000000 !important;
   text-align: center;
   font-size: 7px;
   font-weight: 800;
@@ -426,9 +438,9 @@ export default function InventoryStockPrintTemplate({
 .inventory-stock-title-row th {
   height: 20px;
   padding: 3px 5px;
-  background: #000000;
-  color: #ffffff;
-  border-color: #000000;
+ background: #E8EDF2 !important;
+  color: #000000 !important;
+  border-color: #666666;
 }
 
 .inventory-stock-title-content {
@@ -439,6 +451,15 @@ export default function InventoryStockPrintTemplate({
   font-size: 8px;
   font-weight: 800;
   text-transform: uppercase;
+}
+
+.inventory-stock-logo {
+  display: block;
+  width: 72px;
+  height: 22px;
+  object-fit: contain;
+  object-position: left center;
+  flex-shrink: 0;
 }
 
 @media print {
@@ -494,9 +515,15 @@ export default function InventoryStockPrintTemplate({
                       <tr className="inventory-stock-title-row">
                         <th colSpan={selectedFieldDefinitions.length}>
                           <div className="inventory-stock-title-content">
-                            <span>
-                              {company?.legal_entity_name || "Company"}
-                            </span>
+                            {printAssets.logo && (
+                              <img
+                                src={printAssets.logo}
+                                alt="Company Logo"
+                                className="inventory-stock-logo"
+                              />
+                            )}
+
+                            <span>{company?.legal_entity_name || "Company"}</span>
 
                             <span>{generatedDate}</span>
                           </div>
