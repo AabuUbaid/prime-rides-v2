@@ -3,7 +3,7 @@ from django.shortcuts import get_object_or_404
 from rest_framework.exceptions import NotFound
 from drf_spectacular.utils import OpenApiResponse, extend_schema
 from rest_framework import status
-from rest_framework.permissions import IsAuthenticated
+from rest_framework.permissions import IsAuthenticated, AllowAny
 from rest_framework.response import Response
 from rest_framework.views import APIView
 import mimetypes
@@ -29,7 +29,7 @@ class CompanyListCreateView(APIView):
 
     def get_permissions(self):
         if self.request.method == "GET":
-            return [IsAuthenticated()]
+            return [AllowAny()]
 
         return super().get_permissions()
 

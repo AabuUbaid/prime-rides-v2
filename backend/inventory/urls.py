@@ -5,6 +5,8 @@ from .views import (
     BulkImageDeleteAPIView,
     BulkVehicleImportAPIView,
     CarAPIView,
+    PublicCarListAPIView,
+    PublicCarDetailAPIView,
     CarDetailAPIView,
     CarPrintAPIView,
     CarBrandListAPIView,
@@ -35,12 +37,24 @@ from .car_demand_views import (
 from .procurement_views import (
     ProcurementCheckListCreateView,
     ProcurementCheckDetailView,
+    PublicProcurementReportAPIView,
 )
 
 app_name = "inventory"
 
 
 urlpatterns = [
+    path(
+        "cars/public/",
+        PublicCarListAPIView.as_view(),
+        name="public-cars",
+    ),
+    path(
+        "cars/public/<uuid:car_id>/",
+        PublicCarDetailAPIView.as_view(),
+        name="public-car-detail",
+    ),
+
 
     # ---------------------------------------------------------
     # Vehicles
@@ -227,6 +241,16 @@ urlpatterns = [
         "car-demands/<uuid:demand_id>/unlink/",
         CarDemandUnlinkVehicleAPIView.as_view(),
         name="car-demand-unlink-vehicle",
+    ),
+    path(
+        "procurement-checks/public/",
+        PublicProcurementReportAPIView.as_view(),
+        name="procurement-check-public",
+    ),
+    path(
+        "procurement-checks/public/<int:pk>/",
+        PublicProcurementReportAPIView.as_view(),
+        name="procurement-check-public-detail",
     ),
     path(
         "procurement-checks/",

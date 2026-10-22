@@ -936,7 +936,7 @@ class BankProcessingConfigurationDetailView(
     )
     
 class BankLoanCreateView(APIView):
-    permission_classes = [IsMaster]
+    permission_classes = [IsMasterOrAdmin]
     def post(self, request):
         serializer = BankLoanCreateSerializer(
             data=request.data
@@ -1113,7 +1113,7 @@ class BankLoanStatusUpdateView(APIView):
         )
         
 class BankLoanFinanceUpdateView(APIView):
-    permission_classes = [IsMaster]
+    permission_classes = [IsMasterOrAdmin]
     def patch(self, request, pk):
         bank_loan = get_object_or_404(
             BankLoan,
@@ -1154,7 +1154,7 @@ class BankLoanFinanceUpdateView(APIView):
         )
         
 class BankLoanPriorityUpdateView(APIView):
-    permission_classes = [IsMaster]
+    permission_classes = [IsMasterOrAdmin]
     def patch(self, request, pk):
         bank_loan = get_object_or_404(
             BankLoan,
@@ -1193,7 +1193,7 @@ class BankLoanPriorityUpdateView(APIView):
         
         
 class BankLoanFollowUpCreateView(APIView):
-    permission_classes = [IsMaster]
+    permission_classes = [IsMasterOrAdmin]
     def get(self, request, pk):
         bank_loan = get_object_or_404(
             BankLoan,
@@ -1266,7 +1266,7 @@ class BankLoanFollowUpCreateView(APIView):
         )
         
 class BankLoanNewBankView(APIView):
-    permission_classes = [IsMaster]
+    permission_classes = [IsMasterOrAdmin]
     def post(self, request, pk):
         bank_loan = get_object_or_404(
             BankLoan,
@@ -1325,7 +1325,7 @@ class BankLoanNewBankView(APIView):
         )
         
 class BankLoanApplicationStatusUpdateView(APIView):
-    permission_classes = [IsMaster]
+    permission_classes = [IsMasterOrAdmin]
     def patch(self, request, pk):
         bank_loan = get_object_or_404(
             BankLoan,
@@ -1366,7 +1366,7 @@ class BankLoanApplicationStatusUpdateView(APIView):
         )
         
 class BankLoanApplicationInfoUpdateView(APIView):
-    permission_classes = [IsMaster]
+    permission_classes = [IsMasterOrAdmin]
     def patch(self, request, pk):
         bank_loan = get_object_or_404(
             BankLoan,
@@ -1453,8 +1453,7 @@ class BankLoanDetailView(APIView):
 # =========================================================
 
 class CashDealListCreateView(APIView):
-    permission_classes = [IsMaster]
-
+    permission_classes = [IsMasterOrAdmin]
     def get(self, request):
         queryset = (
             CashDeal.objects
@@ -1554,8 +1553,7 @@ class CashDealListCreateView(APIView):
 # =========================================================
 
 class CashDealDetailView(APIView):
-    permission_classes = [IsMaster]
-
+    permission_classes = [IsMasterOrAdmin]
     def get(self, request, pk):
         cash_deal = get_object_or_404(
             CashDeal.objects.select_related(

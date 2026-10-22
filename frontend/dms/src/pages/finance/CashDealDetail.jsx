@@ -54,7 +54,7 @@ function CashDealDetail() {
   const [remark, setRemark] = useState("");
 
   const { user } = useAuth();
-  const isMaster = user?.role === "MASTER";
+  const isMaster = ["MASTER", "ADMIN"].includes(user?.role);
 
   if (!isMaster) {
     return (

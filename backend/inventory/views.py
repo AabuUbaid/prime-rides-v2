@@ -1,5 +1,5 @@
 from rest_framework import status
-from rest_framework.permissions import IsAuthenticated
+from rest_framework.permissions import IsAuthenticated, AllowAny
 from rest_framework.response import Response
 from rest_framework.views import APIView
 from rest_framework.parsers import (
@@ -28,6 +28,7 @@ from django.db.models import Value
 from .serializers import (
     CarCreateSerializer,
     CarListSerializer,
+    PublicCarSerializer,
     CarDetailSerializer,
     CarPrintSerializer,
     CarUpdateSerializer,
@@ -1410,3 +1411,88 @@ class SpecialPriceDecisionAPIView(APIView):
             },
             status=status.HTTP_200_OK,
         )
+
+class PublicCarListAPIView(APIView):
+    permission_classes = [AllowAny]
+
+    def get(self, request):
+        qs = Car.objects.filter(
+            status="available",
+        ).prefetch_related("images")
+
+        highlight_only = request.query_params.get("highlighted") or request.query_params.get("featured")
+        if highlight_only and str(highlight_only).lower() in ("true", "1"):
+            qs = qs.filter(highlight_public=True)
+
+        make = request.query_params.get("make")
+        if make and make.lower() != "all makes":
+            qs = qs.filter(make__iexact=make)
+
+        category = request.query_params.get("category") or request.query_params.get("body_type")
+        if category and category.lower() != "all body styles":
+            qs = qs.filter(vehicle_type__iexact=category)
+
+        min_price = request.query_params.get("min_price") or request.query_params.get("minPrice")
+        if min_price:
+            try:
+                qs = qs.filter(asking_price__gte=Decimal(str(min_price)))
+            except Exception:
+                pass
+
+        max_price = request.query_params.get("max_price") or request.query_params.get("maxPrice")
+        if max_price:
+            try:
+                qs = qs.filter(asking_price__lte=Decimal(str(max_price)))
+            except Exception:
+                pass
+
+        min_year = request.query_params.get("min_year") or request.query_params.get("minYear")
+        if min_year:
+            try:
+                qs = qs.filter(year__gte=int(min_year))
+            except Exception:
+                pass
+
+        max_mileage = request.query_params.get("max_mileage") or request.query_params.get("maxMileage")
+        if max_mileage:
+            try:
+                qs = qs.filter(mileage__lte=int(max_mileage))
+            except Exception:
+                pass
+
+        q = request.query_params.get("q")
+        if q:
+            from django.db.models import Q
+            qs = qs.filter(
+                Q(make__icontains=q) |
+                Q(model__icontains=q) |
+                Q(variant__icontains=q)
+            )
+
+        sort = request.query_params.get("sort")
+        if sort == "price-low":
+            qs = qs.order_by("asking_price")
+        elif sort == "price-high":
+            qs = qs.order_by("-asking_price")
+        elif sort == "year-new":
+            qs = qs.order_by("-year")
+        elif sort == "mileage-low":
+            qs = qs.order_by("mileage")
+        else:
+            qs = qs.order_by("-created_at")
+
+        serializer = PublicCarSerializer(qs, many=True, context={"request": request})
+        return Response({"results": serializer.data, "count": qs.count()})
+
+
+class PublicCarDetailAPIView(APIView):
+    permission_classes = [AllowAny]
+
+    def get(self, request, car_id):
+        car = get_object_or_404(
+            Car.objects.prefetch_related("images"),
+            id=car_id,
+            status="available",
+        )
+        serializer = PublicCarSerializer(car, context={"request": request})
+        return Response(serializer.data)

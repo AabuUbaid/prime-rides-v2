@@ -352,7 +352,7 @@ function App() {
             <Route
               path="/finance/bank-loans"
               element={
-                <RoleRoute allowedRoles={["MASTER"]}>
+                <RoleRoute allowedRoles={["MASTER", "ADMIN"]}>
                   <BankLoans />
                 </RoleRoute>
               }
@@ -361,7 +361,7 @@ function App() {
             <Route
               path="/finance/bank-loans/:id"
               element={
-                <RoleRoute allowedRoles={["MASTER"]}>
+                <RoleRoute allowedRoles={["MASTER", "ADMIN"]}>
                   <BankLoanDetail />
                 </RoleRoute>
               }
@@ -370,7 +370,7 @@ function App() {
             <Route
               path="/finance/cash-deals"
               element={
-                <RoleRoute allowedRoles={["MASTER"]}>
+                <RoleRoute allowedRoles={["MASTER", "ADMIN"]}>
                   <CashDeals />
                 </RoleRoute>
               }
@@ -379,7 +379,7 @@ function App() {
             <Route
               path="/finance/cash-deals/:id"
               element={
-                <RoleRoute allowedRoles={["MASTER"]}>
+                <RoleRoute allowedRoles={["MASTER", "ADMIN"]}>
                   <CashDealDetail />
                 </RoleRoute>
               }

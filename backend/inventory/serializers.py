@@ -306,6 +306,32 @@ class CarImageSerializer(serializers.ModelSerializer):
             "id",
         )
 
+class PublicCarSerializer(serializers.ModelSerializer):
+    images = CarImageSerializer(many=True, read_only=True)
+
+    class Meta:
+        model = Car
+        fields = (
+            "id",
+            "stock_id",
+            "make",
+            "model",
+            "variant",
+            "colour",
+            "year",
+            "asking_price",
+            "least_selling_price",
+            "mileage",
+            "vehicle_type",
+            "source",
+            "status",
+            "highlight_public",
+            "images",
+            "created_at",
+        )
+        read_only_fields = fields
+
+
 class CarExpenseSerializer(serializers.ModelSerializer):
 
     class Meta:

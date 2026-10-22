@@ -60,7 +60,7 @@ function formatStatus(value) {
 
 function CashDeals() {
   const { user } = useAuth();
-  const isMaster = user?.role === "MASTER";
+  const isMaster = ["MASTER", "ADMIN"].includes(user?.role);
 
   const [cashDeals, setCashDeals] = useState([]);
   const [search, setSearch] = useState("");
