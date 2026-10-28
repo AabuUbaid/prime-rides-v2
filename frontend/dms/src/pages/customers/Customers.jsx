@@ -62,22 +62,27 @@ export default function Customers() {
         throw new Error("Unable to load customers.");
       }
 
+
       const data = response?.data ?? response;
 
       if (Array.isArray(data)) {
         setCustomers(data);
-        setTotalCount(data.length);
-        setHasNextPage(false);
-        setHasPreviousPage(false);
+        setTotalCount(Number(response?.pagination?.count ?? data.length));
+        setHasNextPage(Boolean(response?.pagination?.next));
+        setHasPreviousPage(Boolean(response?.pagination?.previous));
       } else {
         setCustomers(Array.isArray(data?.results) ? data.results : []);
-
-        setTotalCount(Number(data?.count ?? 0));
-
-        setHasNextPage(Boolean(data?.next));
-
-        setHasPreviousPage(Boolean(data?.previous));
+        setTotalCount(
+          Number(response?.pagination?.count ?? data?.count ?? 0)
+        );
+        setHasNextPage(
+          Boolean(response?.pagination?.next ?? data?.next)
+        );
+        setHasPreviousPage(
+          Boolean(response?.pagination?.previous ?? data?.previous)
+        );
       }
+
     } catch (error) {
       console.error("Failed to load customers:", error);
 

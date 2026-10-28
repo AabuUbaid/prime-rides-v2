@@ -1075,7 +1075,7 @@ class BankLoanCreateView(APIView):
         )
         
 class BankLoanStatusUpdateView(APIView):
-    permission_classes = [IsMaster]
+    permission_classes = [IsMasterOrAdmin]
     def patch(self, request, pk):
         bank_loan = get_object_or_404(
             BankLoan,
@@ -2211,7 +2211,13 @@ class BalanceSheetCustomerDealsView(APIView):
 
         quotes = (
             Quote.objects
-            .filter(customer_id=customer.id)
+            .filter(
+                Q(customer_id=customer.id)
+                | Q(
+                    customer__isnull=True,
+                    customer_mobile=customer.phone_number,
+                )
+            )
             .select_related("car")
             .order_by("-created_at")
         )

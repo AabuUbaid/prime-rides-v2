@@ -384,10 +384,10 @@ class InventoryFinancialFieldsMixin:
         return purchase_cost + expenses_total
 
     def get_estimated_margin(self, obj):
-        asking_price = obj.asking_price or Decimal("0.00")
+        least_selling_price = obj.least_selling_price or Decimal("0.00")
         total_cost = self.get_total_cost(obj)
 
-        return asking_price - total_cost
+        return least_selling_price - total_cost
 
 class CarListSerializer(
     InventoryFinancialFieldsMixin,
@@ -490,6 +490,8 @@ class CarListSerializer(
             "status",
             "asking_price",
             "mileage",
+            "least_selling_price",
+            "source",
             "vehicle_type",
             "actual_mileage",
             "service_location",

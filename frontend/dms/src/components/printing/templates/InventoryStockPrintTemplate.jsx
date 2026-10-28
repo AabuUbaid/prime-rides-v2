@@ -121,10 +121,20 @@ function formatFieldValue(car, fieldKey) {
       return formatPrice(car.expenses_total);
 
     case "est_margin":
-      return formatPrice(car.est_margin);
+      return formatPrice(
+        car.est_margin ?? car.estimated_margin
+      );
 
     case "days_in_stock":
-      return car.days_in_stock ?? "-";
+      if (
+        ["sold", "delivered"].includes(
+          String(car.status || "").toLowerCase()
+        )
+      ) {
+        return "-";
+      }
+
+      return car.days_in_stock ?? car.stock_age_days ?? "-";
 
     default:
       return "-";
@@ -177,15 +187,11 @@ export default function InventoryStockPrintTemplate({
   company = {},
   printAssets = {},
 }) {
-  const selectedFieldDefinitions = INVENTORY_STOCK_OUTPUT_FIELDS.filter(
-    (field) => {
-      if (!selectedFields.includes(field.key)) {
-        return false;
-      }
 
-      return cars.some((car) => formatFieldValue(car, field.key) !== "-");
-    },
+  const selectedFieldDefinitions = INVENTORY_STOCK_OUTPUT_FIELDS.filter(
+    (field) => selectedFields.includes(field.key),
   );
+
 
   const generatedDate = new Date().toLocaleDateString("en-US");
 
@@ -275,7 +281,7 @@ export default function InventoryStockPrintTemplate({
             .inventory-stock-pdf-table th {
               background: #d9ead3;
               text-align: center;
-              font-size: 7px;
+              font-size: 9px;
               font-weight: 800;
             }
 
@@ -288,7 +294,7 @@ export default function InventoryStockPrintTemplate({
             }
 
             .inventory-stock-pdf-table td {
-              font-size: 7px;
+              font-size: 9px;
               font-weight: 600;
               text-align: center;
             }
@@ -407,7 +413,7 @@ export default function InventoryStockPrintTemplate({
   background: #E8EDF2 !important;
   color: #000000 !important;
   text-align: center;
-  font-size: 7px;
+  font-size: 9px;
   font-weight: 800;
 }
 
@@ -420,7 +426,7 @@ export default function InventoryStockPrintTemplate({
 }
 
 .inventory-stock-pdf-table td {
-  font-size: 7px;
+  font-size: 9px;
   font-weight: 600;
   text-align: center;
 }

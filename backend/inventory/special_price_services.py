@@ -429,6 +429,27 @@ class SpecialPriceService:
 
             return None
 
+        # Reuse the Special Price approval already consumed by this EMI.
+        # Only applies when creating a Quote from the same saved EMI sheet.
+        if (
+            special_price_request_id is None
+            and transaction_type == "quote"
+            and emi_sheet is not None
+        ):
+            existing_emi_approval = (
+                SpecialPriceRequest.objects
+                .filter(
+                    car=car,
+                    emi_sheet=emi_sheet,
+                    status=SpecialPriceRequest.Status.USED,
+                )
+                .order_by("-used_at")
+                .first()
+            )
+
+            if existing_emi_approval is not None:
+                special_price_request_id = existing_emi_approval.pk
+
         # Non-Master below Least Selling Price requires approval.
         if special_price_request_id is None:
             raise ValidationError(

@@ -68,7 +68,7 @@ export default function RtaRecords() {
           </div>
 
           <div className="flex flex-wrap gap-2">
-            {user?.role !== "ADMIN" && (
+            {user?.role !== "SALES_STAFF" && (
               <Link
                 to="/rta/new"
                 className="rounded-lg bg-gray-900 px-4 py-2 text-sm font-medium text-white hover:bg-gray-800"

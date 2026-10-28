@@ -43,10 +43,7 @@ class RTARecordListCreateView(generics.ListCreateAPIView):
     pagination_class = StandardResultsSetPagination
 
     def get_permissions(self):
-        if self.request.method == "POST":
-            return [IsAuthenticated(), IsNotAdmin()]
-
-        return [IsAuthenticated()]
+        return [IsAuthenticated(), IsMasterOrAdmin()]
 
     def get_queryset(self):
         queryset = super().get_queryset()
@@ -162,8 +159,6 @@ class RTATemplateListCreateView(generics.ListCreateAPIView):
         return queryset
     
     def get_permissions(self):
-        if self.request.method == "GET":
-            return [IsAuthenticated()]
 
         return [IsAuthenticated(), IsMasterOrAdmin()]
 
@@ -193,8 +188,6 @@ class RTADocumentListCreateView(generics.ListCreateAPIView):
     ]
 
     def get_permissions(self):
-        if self.request.method == "POST":
-            return [IsAuthenticated(), IsMaster()]
 
         return [IsAuthenticated(), IsMasterOrAdmin()]
 

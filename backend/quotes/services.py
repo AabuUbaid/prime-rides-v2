@@ -511,17 +511,6 @@ def create_quote(
             emi_sheet=emi_sheet,
         )
     )
-    # -----------------------------------------------------
-    # Resolve Customer
-    # -----------------------------------------------------
-
-    customer_result = create_customer(
-        customer_name=customer_name,
-        phone_number=customer_mobile,
-        agent=None,
-    )
-
-    customer = customer_result["customer"]
 
     # -----------------------------------------------------
     # Generate backend-controlled Quote number
@@ -530,19 +519,13 @@ def create_quote(
     quote_number = generate_quote_number()
 
 
-    # -----------------------------------------------------
-    # Resolve Customer for stock Quote
-    # -----------------------------------------------------
-
-    customer = None
-
-    if source == Quote.Source.STOCK:
-        customer_result = create_customer(
-            customer_name=customer_name,
-            phone_number=customer_mobile,
-            agent=None,
-        )
-        customer = customer_result["customer"]
+   # Resolve Customer for every Quote source.
+    customer_result = create_customer(
+        customer_name=customer_name,
+        phone_number=customer_mobile,
+        agent=None,
+    )
+    customer = customer_result["customer"]
 
     # -----------------------------------------------------
     # Create base Quote

@@ -37,9 +37,15 @@ export const INVENTORY_STOCK_OUTPUT_FIELDS = [
     roles: ALL_ROLES,
   },
   {
+    key: "least_selling_price",
+    label: "Least Selling Price",
+    roles: ALL_ROLES,
+  },
+  {
     key: "status",
     label: "Status",
     roles: ALL_ROLES,
+    defaultSelected: false
   },
   {
     key: "chassis_number",
@@ -55,51 +61,49 @@ export const INVENTORY_STOCK_OUTPUT_FIELDS = [
     key: "date_added",
     label: "Date Added",
     roles: ["MASTER", "ADMIN"],
-  },
-  {
-    key: "least_selling_price",
-    label: "Least Selling Price",
-    roles: ["MASTER"],
+    defaultSelected: false
   },
   {
     key: "purchase_cost",
     label: "Purchase Cost",
     roles: ["MASTER"],
-  },
-  {
-    key: "expected_arrival",
-    label: "Expected Arrival",
-    roles: ["MASTER"],
+    defaultSelected: false
   },
   {
     key: "total_cost",
     label: "Total Cost",
     roles: ["MASTER"],
+    defaultSelected: false
   },
   {
     key: "notes",
     label: "Notes",
     roles: ["MASTER"],
+    defaultSelected: false
   },
   {
     key: "source",
     label: "Source",
     roles: ["MASTER"],
+    defaultSelected: false
   },
   {
     key: "expenses_total",
     label: "Expenses Total",
     roles: ["MASTER"],
+    defaultSelected: false
   },
   {
     key: "est_margin",
     label: "Est. Margin",
     roles: ["MASTER"],
+    defaultSelected: false
   },
   {
     key: "days_in_stock",
     label: "Days in Stock",
-    roles: ["MASTER"],
+    roles: ALL_ROLES,
+    defaultSelected: false
   },
 ];
 

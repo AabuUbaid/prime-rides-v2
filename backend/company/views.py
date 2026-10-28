@@ -128,6 +128,13 @@ class CompanyBranchListCreateView(APIView):
         IsMaster,
     ]
 
+    def get_permissions(self):
+        if self.request.method == "GET":
+            from accounts.permissions import IsMasterOrAdmin
+            return [IsAuthenticated(), IsMasterOrAdmin()]
+
+        return super().get_permissions()
+
     @extend_schema(
         responses=CompanyBranchSerializer(many=True),
     )

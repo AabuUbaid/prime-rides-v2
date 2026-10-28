@@ -151,6 +151,7 @@ function EditCar() {
       }));
 
       toast.success("Vehicle updated successfully.");
+      navigate("/stock");
     } catch (error) {
       console.error(error);
 

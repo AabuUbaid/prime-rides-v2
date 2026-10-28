@@ -647,7 +647,11 @@ function Stock() {
     const allowedFields = getInventoryStockOutputFields(user?.role);
 
     setStockOutputFields(allowedFields);
-    setSelectedStockOutputFields(allowedFields.map((field) => field.key));
+    setSelectedStockOutputFields(
+      allowedFields
+        .filter((field) => field.defaultSelected !== false)
+        .map((field) => field.key)
+    );
     setPrintStockStatuses([]);
     setShowStockOutputModal(true);
   }

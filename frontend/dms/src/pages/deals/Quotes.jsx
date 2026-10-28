@@ -111,19 +111,27 @@ export default function Quotes() {
           page_size: pageSize,
         });
 
+
         const data = response?.data ?? response;
 
         if (Array.isArray(data)) {
           setQuotes(data);
-          setTotalCount(data.length);
-          setHasNextPage(false);
-          setHasPreviousPage(false);
+          setTotalCount(Number(response?.pagination?.count ?? data.length));
+          setHasNextPage(Boolean(response?.pagination?.next));
+          setHasPreviousPage(Boolean(response?.pagination?.previous));
         } else {
           setQuotes(Array.isArray(data?.results) ? data.results : []);
-          setTotalCount(Number(data?.count ?? 0));
-          setHasNextPage(Boolean(data?.next));
-          setHasPreviousPage(Boolean(data?.previous));
+          setTotalCount(
+            Number(response?.pagination?.count ?? data?.count ?? 0)
+          );
+          setHasNextPage(
+            Boolean(response?.pagination?.next ?? data?.next)
+          );
+          setHasPreviousPage(
+            Boolean(response?.pagination?.previous ?? data?.previous)
+          );
         }
+
       } catch (err) {
         setQuotes([]);
 
@@ -236,11 +244,10 @@ export default function Quotes() {
                 key={tab.value}
                 type="button"
                 onClick={() => handleStatusChange(tab.value)}
-                className={`rounded-xl px-4 py-2 text-xs font-semibold transition ${
-                  active
+                className={`rounded-xl px-4 py-2 text-xs font-semibold transition ${active
                     ? "border border-amber-200 bg-amber-50 text-amber-700 shadow-sm"
                     : "border border-slate-200 bg-white text-slate-600 hover:bg-slate-50"
-                }`}
+                  }`}
               >
                 {tab.label}
               </button>

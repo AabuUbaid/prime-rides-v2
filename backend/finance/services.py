@@ -4159,12 +4159,26 @@ def validate_balance_sheet_creation(
             }
         )
 
-    if quote.customer_id != customer.id:
+    if quote.customer_id is not None:
+        if quote.customer_id != customer.id:
+            raise DjangoValidationError(
+                {
+                    "quote": (
+                        "The selected Quote does not belong "
+                        "to the selected Customer."
+                    ),
+                }
+            )
+    elif (
+        not quote.customer_mobile
+        or quote.customer_mobile.strip()
+        != customer.phone_number.strip()
+    ):
         raise DjangoValidationError(
             {
                 "quote": (
-                    "The selected Quote does not belong "
-                    "to the selected Customer."
+                    "The Quote customer details do not match "
+                    "the selected Customer."
                 ),
             }
         )

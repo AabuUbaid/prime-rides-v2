@@ -249,8 +249,8 @@ export default function ProgressionDetail() {
 
       const insuranceStatus = String(
         insuranceRecord?.application_status ||
-          insuranceRecord?.status ||
-          "unknown",
+        insuranceRecord?.status ||
+        "unknown",
       ).toLowerCase();
 
       setCheckedStages(
@@ -991,13 +991,12 @@ export default function ProgressionDetail() {
           <div>
             <small className="text-xs text-gray-500">Status</small>
             <div
-              className={`mt-1 font-medium ${
-                p.status === "active"
+              className={`mt-1 font-medium ${p.status === "active"
                   ? "text-green-700"
                   : p.status === "completed"
                     ? "text-blue-700"
                     : "text-gray-600"
-              }`}
+                }`}
             >
               {p.status || "-"}
             </div>
@@ -1049,22 +1048,20 @@ export default function ProgressionDetail() {
                       type="button"
                       onClick={() => canAct && handleStageClick(stage)}
                       disabled={!canAct}
-                      className={`group flex items-center gap-3 rounded-xl px-2 py-2 text-left transition ${
-                        !canAct
+                      className={`group flex items-center gap-3 rounded-xl px-2 py-2 text-left transition ${!canAct
                           ? "cursor-not-allowed opacity-50"
                           : isLoading
                             ? "cursor-wait opacity-60"
                             : "cursor-pointer hover:bg-gray-50"
-                      }`}
+                        }`}
                     >
                       <span
-                        className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-full border-2 transition ${
-                          checked
+                        className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-full border-2 transition ${checked
                             ? "border-gray-900 bg-gray-900 text-white"
                             : isCurrent
                               ? "border-blue-600 bg-blue-50 text-blue-600"
                               : "border-gray-300 bg-white text-gray-400 group-hover:border-gray-500"
-                        }`}
+                          }`}
                       >
                         {checked ? (
                           <span className="text-sm font-bold">✓</span>
@@ -1076,15 +1073,14 @@ export default function ProgressionDetail() {
                       </span>
 
                       <span
-                        className={`whitespace-nowrap text-sm font-medium ${
-                          checked
+                        className={`whitespace-nowrap text-sm font-medium ${checked
                             ? "text-gray-900"
                             : isCurrent
                               ? "text-blue-700"
                               : isSpecial
                                 ? "text-blue-600 group-hover:text-blue-700"
                                 : "text-gray-500"
-                        }`}
+                          }`}
                       >
                         {DISPLAY_LABELS[stage]}
                       </span>
@@ -1092,9 +1088,8 @@ export default function ProgressionDetail() {
 
                     {index < DISPLAY_STAGES.length - 1 && (
                       <div
-                        className={`mx-2 h-px flex-1 ${
-                          checked ? "bg-gray-900" : "bg-gray-200"
-                        }`}
+                        className={`mx-2 h-px flex-1 ${checked ? "bg-gray-900" : "bg-gray-200"
+                          }`}
                       />
                     )}
                   </div>
@@ -1187,11 +1182,10 @@ export default function ProgressionDetail() {
 
             <div className="space-y-3 px-6 py-6">
               <label
-                className={`flex cursor-pointer items-center gap-3 rounded-xl border p-4 transition ${
-                  passingChecks.dubai
+                className={`flex cursor-pointer items-center gap-3 rounded-xl border p-4 transition ${passingChecks.dubai
                     ? "border-green-200 bg-green-50"
                     : "border-gray-200 hover:bg-gray-50"
-                }`}
+                  }`}
               >
                 <input
                   type="checkbox"
@@ -1215,11 +1209,10 @@ export default function ProgressionDetail() {
               </label>
 
               <label
-                className={`flex cursor-pointer items-center gap-3 rounded-xl border p-4 transition ${
-                  passingChecks.emirate
+                className={`flex cursor-pointer items-center gap-3 rounded-xl border p-4 transition ${passingChecks.emirate
                     ? "border-green-200 bg-green-50"
                     : "border-gray-200 hover:bg-gray-50"
-                }`}
+                  }`}
               >
                 <input
                   type="checkbox"
@@ -1395,11 +1388,10 @@ export default function ProgressionDetail() {
                   (document) => (
                     <div
                       key={document.key}
-                      className={`rounded-xl border p-4 ${
-                        document.available
+                      className={`rounded-xl border p-4 ${document.available
                           ? "border-green-200 bg-green-50"
                           : "border-amber-200 bg-amber-50"
-                      }`}
+                        }`}
                     >
                       <div className="flex items-start justify-between gap-3">
                         <div>
@@ -1408,22 +1400,20 @@ export default function ProgressionDetail() {
                           </div>
 
                           <div
-                            className={`mt-1 text-xs font-medium ${
-                              document.available
+                            className={`mt-1 text-xs font-medium ${document.available
                                 ? "text-green-700"
                                 : "text-amber-700"
-                            }`}
+                              }`}
                           >
                             {document.available ? "Available" : "Missing"}
                           </div>
                         </div>
 
                         <span
-                          className={`flex h-7 w-7 shrink-0 items-center justify-center rounded-full text-sm font-bold ${
-                            document.available
+                          className={`flex h-7 w-7 shrink-0 items-center justify-center rounded-full text-sm font-bold ${document.available
                               ? "bg-green-600 text-white"
                               : "bg-amber-200 text-amber-800"
-                          }`}
+                            }`}
                         >
                           {document.available ? "✓" : "!"}
                         </span>
@@ -1436,59 +1426,59 @@ export default function ProgressionDetail() {
               {registrationDocuments?.documents?.filter(
                 (document) => document.download_available,
               ).length > 0 && (
-                <div className="space-y-3">
-                  <div>
-                    <h3 className="text-sm font-semibold text-gray-900">
-                      Available Documents
-                    </h3>
+                  <div className="space-y-3">
+                    <div>
+                      <h3 className="text-sm font-semibold text-gray-900">
+                        Available Documents
+                      </h3>
 
-                    <p className="mt-1 text-xs text-gray-500">
-                      Download each available document individually as a PDF.
-                    </p>
-                  </div>
+                      <p className="mt-1 text-xs text-gray-500">
+                        Download each available document individually as a PDF.
+                      </p>
+                    </div>
 
-                  <div className="space-y-2">
-                    {registrationDocuments.documents
-                      .filter((document) => document.download_available)
-                      .map((document) => {
-                        const loadingKey = `${document.source}:${document.id}`;
-                        const isDownloading =
-                          downloadingRegistrationDocument === loadingKey;
+                    <div className="space-y-2">
+                      {registrationDocuments.documents
+                        .filter((document) => document.download_available)
+                        .map((document) => {
+                          const loadingKey = `${document.source}:${document.id}`;
+                          const isDownloading =
+                            downloadingRegistrationDocument === loadingKey;
 
-                        return (
-                          <div
-                            key={loadingKey}
-                            className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-gray-200 bg-white p-4"
-                          >
-                            <div className="min-w-0">
-                              <div className="font-medium text-gray-900">
-                                {document.document_label ||
-                                  document.document_type}
-                              </div>
-
-                              <div className="mt-1 truncate text-xs text-gray-500">
-                                {document.file_name || "Document"}
-                              </div>
-                            </div>
-
-                            <button
-                              type="button"
-                              onClick={() =>
-                                handleRegistrationDocumentDownload(document)
-                              }
-                              disabled={isDownloading}
-                              className="shrink-0 rounded-lg bg-gray-900 px-3 py-2 text-xs font-semibold text-white hover:bg-gray-800 disabled:cursor-not-allowed disabled:opacity-60"
+                          return (
+                            <div
+                              key={loadingKey}
+                              className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-gray-200 bg-white p-4"
                             >
-                              {isDownloading
-                                ? "Downloading..."
-                                : "Download PDF"}
-                            </button>
-                          </div>
-                        );
-                      })}
+                              <div className="min-w-0">
+                                <div className="font-medium text-gray-900">
+                                  {document.document_label ||
+                                    document.document_type}
+                                </div>
+
+                                <div className="mt-1 truncate text-xs text-gray-500">
+                                  {document.file_name || "Document"}
+                                </div>
+                              </div>
+
+                              <button
+                                type="button"
+                                onClick={() =>
+                                  handleRegistrationDocumentDownload(document)
+                                }
+                                disabled={isDownloading}
+                                className="shrink-0 rounded-lg bg-gray-900 px-3 py-2 text-xs font-semibold text-white hover:bg-gray-800 disabled:cursor-not-allowed disabled:opacity-60"
+                              >
+                                {isDownloading
+                                  ? "Downloading..."
+                                  : "Download PDF"}
+                              </button>
+                            </div>
+                          );
+                        })}
+                    </div>
                   </div>
-                </div>
-              )}
+                )}
 
               {registrationDocuments?.missing_documents?.length > 0 && (
                 <div className="rounded-xl border border-amber-200 bg-amber-50 p-4">
@@ -1580,14 +1570,14 @@ export default function ProgressionDetail() {
                     type="button"
                     onClick={() =>
                       navigate(
-                        `/finance/balance-sheets?quote_id=${encodeURIComponent(
+                        `/finance/balance-sheets/new?quote_id=${encodeURIComponent(
                           p.quote,
-                        )}`,
+                        )}&customer_id=${encodeURIComponent(p.customer_id || "")}`,
                       )
                     }
                     className="mt-3 rounded-lg bg-gray-900 px-4 py-2 text-sm font-medium text-white"
                   >
-                    Open Balance Sheets
+                    Create Balance Sheet
                   </button>
                 </div>
               ) : (
@@ -1623,27 +1613,25 @@ export default function ProgressionDetail() {
                     </div>
 
                     <div
-                      className={`rounded-xl p-4 ${
-                        balanceSheet.balance_status === "settled"
+                      className={`rounded-xl p-4 ${balanceSheet.balance_status === "settled"
                           ? "bg-green-50"
                           : "bg-amber-50"
-                      }`}
+                        }`}
                     >
                       <div className="text-xs text-gray-500">
                         Balance Status
                       </div>
 
                       <div
-                        className={`mt-1 font-semibold ${
-                          balanceSheet.balance_status === "settled"
+                        className={`mt-1 font-semibold ${balanceSheet.balance_status === "settled"
                             ? "text-green-700"
                             : "text-amber-700"
-                        }`}
+                          }`}
                       >
                         {balanceSheet.balance_status === "settled"
                           ? "Settled"
                           : balanceSheet.balance_status ===
-                              "customer_receivable"
+                            "customer_receivable"
                             ? "Customer Receivable"
                             : balanceSheet.balance_status === "customer_payable"
                               ? "Customer Payable"
@@ -1735,20 +1723,18 @@ export default function ProgressionDetail() {
 
             <div className="space-y-4 px-6 py-6">
               <div
-                className={`rounded-xl border p-4 ${
-                  proformaRecord
+                className={`rounded-xl border p-4 ${proformaRecord
                     ? "border-green-200 bg-green-50"
                     : "border-amber-200 bg-amber-50"
-                }`}
+                  }`}
               >
                 <div className="flex items-center justify-between gap-4">
                   <div>
                     <div className="font-medium text-gray-900">Proforma</div>
 
                     <div
-                      className={`mt-1 text-xs font-medium ${
-                        proformaRecord ? "text-green-700" : "text-amber-700"
-                      }`}
+                      className={`mt-1 text-xs font-medium ${proformaRecord ? "text-green-700" : "text-amber-700"
+                        }`}
                     >
                       {proformaRecord
                         ? `Created — ${proformaRecord.proforma_number || ""}`
@@ -1788,11 +1774,10 @@ export default function ProgressionDetail() {
               </div>
 
               <div
-                className={`rounded-xl border p-4 ${
-                  deliveryNoteRecord
+                className={`rounded-xl border p-4 ${deliveryNoteRecord
                     ? "border-green-200 bg-green-50"
                     : "border-amber-200 bg-amber-50"
-                }`}
+                  }`}
               >
                 <div className="flex items-center justify-between gap-4">
                   <div>
@@ -1801,14 +1786,12 @@ export default function ProgressionDetail() {
                     </div>
 
                     <div
-                      className={`mt-1 text-xs font-medium ${
-                        deliveryNoteRecord ? "text-green-700" : "text-amber-700"
-                      }`}
+                      className={`mt-1 text-xs font-medium ${deliveryNoteRecord ? "text-green-700" : "text-amber-700"
+                        }`}
                     >
                       {deliveryNoteRecord
-                        ? `Created — ${
-                            deliveryNoteRecord.delivery_note_number || ""
-                          }`
+                        ? `Created — ${deliveryNoteRecord.delivery_note_number || ""
+                        }`
                         : "Not created"}
                     </div>
                   </div>

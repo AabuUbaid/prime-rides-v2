@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import { toast } from "react-toastify";
 
 import { getCustomers } from "../../api/customers";
@@ -19,11 +19,19 @@ function getResponseData(response) {
 function BalanceSheetCreate() {
   const navigate = useNavigate();
 
+  const [searchParams] = useSearchParams();
+
+  const initialCustomerId = searchParams.get("customer_id") || "";
+  const initialQuoteId = searchParams.get("quote_id") || "";
+
   const [customers, setCustomers] = useState([]);
   const [deals, setDeals] = useState([]);
 
-  const [customerId, setCustomerId] = useState("");
-  const [quoteId, setQuoteId] = useState("");
+  const [customerId, setCustomerId] = useState(initialCustomerId);
+  const [quoteId, setQuoteId] = useState(initialQuoteId);
+
+  const [customerSearch, setCustomerSearch] = useState("");
+  const [showCustomerOptions, setShowCustomerOptions] = useState(false);
 
   const [loadingCustomers, setLoadingCustomers] = useState(true);
   const [loadingDeals, setLoadingDeals] = useState(false);
@@ -37,10 +45,34 @@ function BalanceSheetCreate() {
         setLoadingCustomers(true);
         setError("");
 
-        const response = await getCustomers();
-        const data = getResponseData(response);
+        let allCustomers = [];
+        let page = 1;
+        let hasNext = true;
 
-        setCustomers(Array.isArray(data) ? data : []);
+        while (hasNext) {
+          const response = await getCustomers({
+            page,
+            page_size: 100,
+          });
+
+          const data = response?.data ?? response;
+          const pageCustomers = Array.isArray(data)
+            ? data
+            : Array.isArray(data?.results)
+              ? data.results
+              : [];
+
+          allCustomers = [...allCustomers, ...pageCustomers];
+
+          hasNext = Boolean(response?.pagination?.next ?? data?.next);
+          page += 1;
+
+          if (page > 1000) {
+            throw new Error("Customer pagination exceeded the safety limit.");
+          }
+        }
+
+        setCustomers(allCustomers);
       } catch (err) {
         console.error("Failed to load customers:", err);
 
@@ -63,13 +95,29 @@ function BalanceSheetCreate() {
       try {
         setLoadingDeals(true);
         setError("");
-        setQuoteId("");
 
         const response = await getCustomerBalanceSheetDeals(customerId);
 
         const data = getResponseData(response);
 
-        setDeals(Array.isArray(data) ? data : []);
+        const customerDeals = Array.isArray(data) ? data : [];
+
+        setDeals(customerDeals);
+
+        if (initialQuoteId) {
+          const matchingDeal = customerDeals.find(
+            (deal) => String(deal.id) === String(initialQuoteId),
+          );
+
+          if (matchingDeal) {
+            setQuoteId(String(matchingDeal.id));
+          } else {
+            setQuoteId("");
+            setError(
+              "The quote passed from Progression was not found under the selected customer.",
+            );
+          }
+        }
       } catch (err) {
         console.error("Failed to load customer deals:", err);
 
@@ -124,6 +172,24 @@ function BalanceSheetCreate() {
     }
   }
 
+  const filteredCustomers = customers.filter((customer) => {
+    const query = customerSearch.trim().toLowerCase();
+
+    if (!query) return true;
+
+    return [
+      customer.customer_name,
+      customer.name,
+      customer.phone_number,
+      customer.emirates_id_number,
+      customer.email,
+    ].some((value) => String(value || "").toLowerCase().includes(query));
+  });
+
+  const selectedCustomer = customers.find(
+    (customer) => String(customer.id) === String(customerId)
+  );
+
   return (
     <div className="min-h-screen bg-[#f5f6fa]">
 
@@ -151,38 +217,81 @@ function BalanceSheetCreate() {
           onSubmit={handleSubmit}
           className="mt-6 rounded-lg border border-gray-200 bg-white p-6 shadow-sm"
         >
-          <div>
+
+          <div className="relative">
             <label
-              htmlFor="balance-sheet-customer"
+              htmlFor="balance-sheet-customer-search"
               className="mb-1 block text-sm font-medium text-gray-700"
             >
               Customer
             </label>
 
-            <select
-              id="balance-sheet-customer"
-              value={customerId}
-              onChange={(event) => {
-                setCustomerId(event.target.value);
-                setQuoteId("");
+            <input
+              id="balance-sheet-customer-search"
+              type="search"
+              value={
+                showCustomerOptions
+                  ? customerSearch
+                  : selectedCustomer
+                    ? `${selectedCustomer.customer_name || selectedCustomer.name || `Customer #${selectedCustomer.id}`}${selectedCustomer.phone_number ? ` — ${selectedCustomer.phone_number}` : ""}`
+                    : customerSearch
+              }
+              onFocus={() => {
+                setCustomerSearch("");
+                setShowCustomerOptions(true);
               }}
+              onChange={(event) => {
+                setCustomerSearch(event.target.value);
+                setShowCustomerOptions(true);
+              }}
+              placeholder={
+                loadingCustomers
+                  ? "Loading customers..."
+                  : "Search customer name, phone, or Emirates ID..."
+              }
               disabled={loadingCustomers || submitting}
+              autoComplete="off"
               className="w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-sm outline-none focus:border-gray-500 focus:ring-1 focus:ring-gray-500"
-            >
-              <option value="">
-                {loadingCustomers ? "Loading customers..." : "Select customer"}
-              </option>
+            />
 
-              {customers.map((customer) => (
-                <option key={customer.id} value={customer.id}>
-                  {customer.customer_name ||
-                    customer.name ||
-                    `Customer #${customer.id}`}
-                  {customer.phone_number ? ` — ${customer.phone_number}` : ""}
-                </option>
-              ))}
-            </select>
+            {showCustomerOptions && !loadingCustomers && (
+              <div className="absolute z-20 mt-1 max-h-60 w-full overflow-y-auto rounded-md border border-gray-200 bg-white shadow-lg">
+                {filteredCustomers.length === 0 ? (
+                  <div className="px-3 py-3 text-sm text-gray-500">
+                    No matching customers found.
+                  </div>
+                ) : (
+                  filteredCustomers.map((customer) => (
+                    <button
+                      key={customer.id}
+                      type="button"
+                      onClick={() => {
+                        setCustomerId(String(customer.id));
+                        setCustomerSearch("");
+                        setShowCustomerOptions(false);
+                        setQuoteId("");
+                        setDeals([]);
+                      }}
+                      className="block w-full border-b border-gray-100 px-3 py-2 text-left text-sm hover:bg-gray-50"
+                    >
+                      <div className="font-medium text-gray-900">
+                        {customer.customer_name ||
+                          customer.name ||
+                          `Customer #${customer.id}`}
+                      </div>
+                      <div className="text-xs text-gray-500">
+                        {customer.phone_number || ""}
+                        {customer.emirates_id_number
+                          ? ` · ${customer.emirates_id_number}`
+                          : ""}
+                      </div>
+                    </button>
+                  ))
+                )}
+              </div>
+            )}
           </div>
+
 
           <div className="mt-4">
             <label
