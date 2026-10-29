@@ -383,10 +383,17 @@ def _balance_sheet_is_settled(*, quote):
             company_expenses += amount
 
     if quote.payment_method == "Finance":
-        total_spent = (
-            getattr(quote, "emi_finance_amount", None)
+        vehicle_price = (
+            getattr(quote, "emi_vehicle_price", None)
             or Decimal("0.00")
         )
+
+        vat_amount = (
+            getattr(quote, "emi_vat_amount", None)
+            or Decimal("0.00")
+        )
+
+        total_spent = vehicle_price + vat_amount
     else:
         vehicle_price = (
             getattr(balance_sheet.car, "asking_price", None)
@@ -398,11 +405,7 @@ def _balance_sheet_is_settled(*, quote):
             or Decimal("0.00")
         )
 
-        total_spent = (
-            vehicle_price
-            + vat_amount
-            + company_expenses
-        )
+        total_spent = vehicle_price + vat_amount
 
     return total_received == total_spent
 

@@ -10,6 +10,7 @@ import {
 } from "../../api/staff";
 import { useAuth } from "../../context/AuthContext";
 import { getApiErrorMessage } from "../../utils/errorMessage";
+import StatusBadge from "../../components/ui/StatusBadge";
 
 const ROLES = [
   "SALES_EXECUTIVE",
@@ -81,12 +82,12 @@ export default function Staff() {
     }
   }
   return (
-    <div className="min-h-screen bg-gray-50 p-6">
-      <div className="mx-auto max-w-7xl space-y-6">
-        <div className="flex justify-between">
+    <div className="min-h-screen bg-[#f5f6fa] px-4 py-6 sm:px-6 lg:px-8">
+      <div className="mx-auto w-full max-w-[1600px] space-y-6">
+        <div className="flex flex-wrap items-end justify-between gap-4">
           <div>
-            <h1 className="text-2xl font-semibold">Staff Management</h1>
-            <p className="mt-1 text-sm text-gray-500">
+            <h1 className="text-2xl font-bold tracking-tight text-slate-950 sm:text-3xl">Staff Management</h1>
+            <p className="mt-1 text-sm text-slate-500">
               Employee records are separate from RBAC roles.
             </p>
           </div>
@@ -97,7 +98,7 @@ export default function Staff() {
                 setEditing(null);
                 setShow(true);
               }}
-              className="rounded-lg bg-gray-900 px-4 py-2 text-sm text-white"
+              className="inline-flex h-10 items-center rounded-xl border border-amber-500 bg-amber-500 px-4 text-sm font-semibold text-slate-950 shadow-sm transition hover:border-amber-400 hover:bg-amber-400"
             >
               Add Staff
             </button>
@@ -106,7 +107,7 @@ export default function Staff() {
         {show && (
           <form
             onSubmit={save}
-            className="grid gap-4 rounded-xl border bg-white p-5 md:grid-cols-3"
+            className="grid gap-4 rounded-2xl border border-[#e5e7eb] bg-white p-5 shadow-[0_2px_8px_rgba(15,23,42,0.04)] md:grid-cols-3"
           >
             {[
               ["name", "Name"],
@@ -116,7 +117,7 @@ export default function Staff() {
               ["visa_expiry", "Visa Expiry"],
               ["leave_balance", "Leave Balance"],
             ].map(([k, l]) => (
-              <label key={k} className="text-sm font-medium">
+              <label key={k} className="text-[11px] font-bold uppercase tracking-[0.08em] text-slate-500">
                 {l}
                 <input
                   required={k === "name"}
@@ -129,52 +130,52 @@ export default function Staff() {
                         ? "number"
                         : "text"
                   }
-                  className="mt-2 w-full rounded-lg border px-3 py-2.5"
+                  className="mt-1.5 h-10 w-full rounded-xl border border-slate-200 bg-white px-3 text-sm font-normal normal-case tracking-normal text-slate-800 outline-none transition focus:border-amber-400 focus:ring-2 focus:ring-amber-400/15"
                 />
               </label>
             ))}
-            <label className="text-sm font-medium">
+            <label className="text-[11px] font-bold uppercase tracking-[0.08em] text-slate-500">
               Job Role
               <select
                 value={form.job_role}
                 onChange={(e) => setForm({ ...form, job_role: e.target.value })}
-                className="mt-2 w-full rounded-lg border px-3 py-2.5"
+                className="mt-1.5 h-10 w-full rounded-xl border border-slate-200 bg-white px-3 text-sm font-normal normal-case tracking-normal text-slate-800 outline-none transition focus:border-amber-400 focus:ring-2 focus:ring-amber-400/15"
               >
                 {ROLES.map((x) => (
                   <option key={x}>{x}</option>
                 ))}
               </select>
             </label>
-            <label className="text-sm font-medium md:col-span-2">
+            <label className="text-[11px] font-bold uppercase tracking-[0.08em] text-slate-500 md:col-span-2">
               Notes
               <textarea
                 value={form.notes}
                 onChange={(e) => setForm({ ...form, notes: e.target.value })}
                 rows={3}
-                className="mt-2 w-full rounded-lg border px-3 py-2.5"
+                className="mt-1.5 w-full rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-sm font-normal normal-case tracking-normal text-slate-800 outline-none transition focus:border-amber-400 focus:ring-2 focus:ring-amber-400/15"
               />
             </label>
             <div className="md:col-span-3 flex gap-2">
               <button
                 disabled={saving}
-                className="rounded-lg bg-gray-900 px-4 py-2 text-sm text-white"
+                className="inline-flex h-10 items-center rounded-xl border border-amber-500 bg-amber-500 px-4 text-sm font-semibold text-slate-950 shadow-sm transition hover:border-amber-400 hover:bg-amber-400"
               >
                 {saving ? "Saving..." : "Save"}
               </button>
               <button
                 type="button"
                 onClick={() => setShow(false)}
-                className="rounded-lg border px-4 py-2 text-sm"
+                className="inline-flex h-10 items-center rounded-xl border border-slate-200 bg-white px-4 text-sm font-semibold text-slate-700 shadow-sm transition hover:bg-slate-50"
               >
                 Cancel
               </button>
             </div>
           </form>
         )}
-        <div className="overflow-hidden rounded-xl border bg-white">
+        <div className="overflow-hidden rounded-2xl border border-[#e5e7eb] bg-white shadow-[0_2px_8px_rgba(15,23,42,0.04)]">
           <div className="overflow-x-auto">
             <table className="min-w-full text-sm">
-              <thead className="bg-gray-50 text-left text-xs uppercase text-gray-500">
+              <thead className="bg-slate-50 text-left text-[10px] font-bold uppercase tracking-[0.08em] text-slate-500">
                 <tr>
                   <th className="px-4 py-3">Name</th>
                   <th className="px-4 py-3">Job Role</th>
@@ -185,11 +186,18 @@ export default function Staff() {
               </thead>
               <tbody className="divide-y">
                 {items.map((s) => (
-                  <tr key={s.id}>
+                  <tr key={s.id} className="transition-colors hover:bg-slate-50/80">
                     <td className="px-4 py-3">{s.name}</td>
                     <td className="px-4 py-3">{s.job_role}</td>
                     <td className="px-4 py-3">{s.phone || "-"}</td>
-                    <td className="px-4 py-3">{s.status}</td>
+                    <td className="px-4 py-3">
+                      <StatusBadge
+                        status={s.status}
+                        variant={s.status === "ACTIVE" ? "success" : "neutral"}
+                      >
+                        {s.status}
+                      </StatusBadge>
+                    </td>
                     <td className="px-4 py-3 text-right">
                       {edit && (
                         <button
@@ -198,21 +206,25 @@ export default function Staff() {
                             setForm({ ...EMPTY, ...s });
                             setShow(true);
                           }}
-                          className="mr-3 font-medium"
+                          className="mr-2 inline-flex h-9 items-center rounded-xl border border-slate-200 bg-white px-3 text-xs font-semibold text-slate-700 shadow-sm transition hover:bg-slate-50"
                         >
                           Edit
                         </button>
                       )}
                       <Link
                         to={`/staff/${s.id}/performance`}
-                        className="font-medium"
+                        className="mr-2 inline-flex h-9 items-center rounded-xl border border-slate-200 bg-white px-3 text-xs font-semibold text-slate-700 shadow-sm transition hover:bg-slate-50"
                       >
                         Performance
                       </Link>
                       {edit && (
                         <button
                           onClick={() => toggle(s)}
-                          className="ml-3 text-red-600"
+                          className={`inline-flex h-9 items-center rounded-xl border px-3 text-xs font-semibold shadow-sm transition ${
+                            s.status === "ACTIVE"
+                              ? "border-rose-200 bg-white text-rose-600 hover:bg-rose-50"
+                              : "border-amber-500 bg-amber-500 text-slate-950 hover:bg-amber-400"
+                          }`}
                         >
                           {s.status === "ACTIVE" ? "Deactivate" : "Activate"}
                         </button>

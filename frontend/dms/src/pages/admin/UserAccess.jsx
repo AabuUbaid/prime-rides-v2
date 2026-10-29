@@ -11,6 +11,7 @@ import {
 } from "../../api/userAccess";
 import { getStaff } from "../../api/staff";
 import { getApiErrorMessage } from "../../utils/errorMessage";
+import StatusBadge from "../../components/ui/StatusBadge";
 const EMPTY = {
   email: "",
   password: "",
@@ -97,17 +98,17 @@ export default function UserAccess() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 p-6">
-      <div className="mx-auto max-w-7xl space-y-6">
+    <div className="min-h-screen bg-[#f5f6fa] px-4 py-6 sm:px-6 lg:px-8">
+      <div className="mx-auto w-full max-w-[1600px] space-y-6">
         <div>
-          <h1 className="text-2xl font-semibold">User Access Management</h1>
-          <p className="mt-1 text-sm text-gray-500">
+          <h1 className="text-2xl font-bold tracking-tight text-slate-950 sm:text-3xl">User Access Management</h1>
+          <p className="mt-1 text-sm text-slate-500">
             MASTER-only access administration.
           </p>
         </div>
         <form
           onSubmit={save}
-          className="grid gap-4 rounded-xl border bg-white p-5 md:grid-cols-3"
+          className="grid gap-4 rounded-2xl border border-[#e5e7eb] bg-white p-5 shadow-[0_2px_8px_rgba(15,23,42,0.04)] md:grid-cols-3"
         >
           {[
             ["email", "Email"],
@@ -116,18 +117,18 @@ export default function UserAccess() {
             ["phone", "Phone"],
             ["password", "Password"],
           ].map(([k, l]) => (
-            <label key={k} className="text-sm font-medium">
+            <label key={k} className="text-[11px] font-bold uppercase tracking-[0.08em] text-slate-500">
               {l}
               <input
                 type={k === "password" ? "password" : "text"}
                 value={form[k]}
                 onChange={(e) => setForm({ ...form, [k]: e.target.value })}
-                className="mt-2 w-full rounded-lg border px-3 py-2.5"
+                className="mt-1.5 h-10 w-full rounded-xl border border-slate-200 bg-white px-3 text-sm font-normal normal-case tracking-normal text-slate-800 outline-none transition focus:border-amber-400 focus:ring-2 focus:ring-amber-400/15"
                 required={!editing && (k === "email" || k === "password")}
               />
             </label>
           ))}
-          <label className="text-sm font-medium">
+          <label className="text-[11px] font-bold uppercase tracking-[0.08em] text-slate-500">
             Role
             <select
               value={form.role}
@@ -138,7 +139,7 @@ export default function UserAccess() {
                   staff_id: e.target.value === "MASTER" ? "" : form.staff_id,
                 })
               }
-              className="mt-2 w-full rounded-lg border px-3 py-2.5"
+              className="mt-1.5 h-10 w-full rounded-xl border border-slate-200 bg-white px-3 text-sm font-normal normal-case tracking-normal text-slate-800 outline-none transition focus:border-amber-400 focus:ring-2 focus:ring-amber-400/15"
             >
               <option>MASTER</option>
               <option>ADMIN</option>
@@ -146,7 +147,7 @@ export default function UserAccess() {
             </select>
           </label>
           {form.role !== "MASTER" && (
-            <label className="text-sm font-medium">
+            <label className="text-[11px] font-bold uppercase tracking-[0.08em] text-slate-500">
               Staff
               <select
                 value={form.staff_id || ""}
@@ -156,7 +157,7 @@ export default function UserAccess() {
                     staff_id: e.target.value,
                   })
                 }
-                className="mt-2 w-full rounded-lg border px-3 py-2.5"
+                className="mt-1.5 h-10 w-full rounded-xl border border-slate-200 bg-white px-3 text-sm font-normal normal-case tracking-normal text-slate-800 outline-none transition focus:border-amber-400 focus:ring-2 focus:ring-amber-400/15"
               >
                 <option value="">No linked staff</option>
 
@@ -181,16 +182,16 @@ export default function UserAccess() {
           <div className="md:col-span-3">
             <button
               disabled={saving}
-              className="rounded-lg bg-gray-900 px-4 py-2 text-sm text-white"
+              className="inline-flex h-10 items-center rounded-xl border border-amber-500 bg-amber-500 px-4 text-sm font-semibold text-slate-950 shadow-sm transition hover:border-amber-400 hover:bg-amber-400"
             >
               {saving ? "Saving..." : editing ? "Update User" : "Create User"}
             </button>
           </div>
         </form>
-        <div className="overflow-hidden rounded-xl border bg-white">
+        <div className="overflow-hidden rounded-2xl border border-[#e5e7eb] bg-white shadow-[0_2px_8px_rgba(15,23,42,0.04)]">
           <div className="overflow-x-auto">
             <table className="min-w-full text-sm">
-              <thead className="bg-gray-50 text-left text-xs uppercase text-gray-500">
+              <thead className="bg-slate-50 text-left text-[10px] font-bold uppercase tracking-[0.08em] text-slate-500">
                 <tr>
                   <th className="px-4 py-3">User</th>
                   <th className="px-4 py-3">Role</th>
@@ -199,58 +200,78 @@ export default function UserAccess() {
                   <th />
                 </tr>
               </thead>
-              <tbody className="divide-y">
+              <tbody className="divide-y divide-slate-100 bg-white">
                 {items.map((x) => (
-                  <tr key={x.id}>
+                  <tr key={x.id} className="transition-colors hover:bg-slate-50/80">
                     <td className="px-4 py-3">
-                      {x.first_name} {x.last_name}
-                      <div className="text-xs text-gray-500">{x.email}</div>
+                      <div className="font-medium text-slate-900">
+                        {x.first_name} {x.last_name}
+                      </div>
+                      <div className="text-xs text-slate-500">{x.email}</div>
                     </td>
-                    <td className="px-4 py-3">{x.role}</td>
-                    <td className="px-4 py-3">{x.staff_name || "-"}</td>
+                    <td className="px-4 py-3 text-sm text-slate-700">
+                      {x.role}
+                    </td>
+                    <td className="px-4 py-3 text-sm text-slate-700">
+                      {x.staff_name || "-"}
+                    </td>
                     <td className="px-4 py-3">
-                      {x.is_active ? "Active" : "Inactive"}
+                      <StatusBadge
+                        status={x.is_active ? "active" : "inactive"}
+                        variant={x.is_active ? "cyan" : "neutral"}
+                      >
+                        {x.is_active ? "Active" : "Inactive"}
+                      </StatusBadge>
                     </td>
-                    <td className="px-4 py-3 text-right">
-                      <button
-                        onClick={async () => {
-                          try {
-                            const response = await getUserAccessMember(x.id);
-                            const user = response?.data || response;
+                    <td className="px-4 py-3">
+                      <div className="flex flex-wrap items-center justify-end gap-2">
+                        <button
+                          type="button"
+                          onClick={async () => {
+                            try {
+                              const response = await getUserAccessMember(x.id);
+                              const user = response?.data || response;
 
-                            setEditing(user.id);
+                              setEditing(user.id);
 
-                            setForm({
-                              ...EMPTY,
-                              ...user,
-                              password: "",
-                              staff_id:
-                                user.role === "MASTER"
-                                  ? ""
-                                  : user.staff_id || "",
-                            });
-                          } catch (e) {
-                            toast.error(
-                              getApiErrorMessage(e, "Unable to load user."),
-                            );
-                          }
-                        }}
-                        className="mr-3 font-medium"
-                      >
-                        Edit
-                      </button>
-                      <button
-                        onClick={() => password(x)}
-                        className="mr-3 font-medium"
-                      >
-                        Password
-                      </button>
-                      <button
-                        onClick={() => toggle(x)}
-                        className="text-red-600"
-                      >
-                        {x.is_active ? "Deactivate" : "Activate"}
-                      </button>
+                              setForm({
+                                ...EMPTY,
+                                ...user,
+                                password: "",
+                                staff_id:
+                                  user.role === "MASTER"
+                                    ? ""
+                                    : user.staff_id || "",
+                              });
+                            } catch (e) {
+                              toast.error(
+                                getApiErrorMessage(e, "Unable to load user."),
+                              );
+                            }
+                          }}
+                          className="inline-flex h-9 items-center rounded-xl border border-slate-200 bg-white px-3 text-xs font-semibold text-slate-700 shadow-sm transition hover:bg-slate-50"
+                        >
+                          Edit
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => password(x)}
+                          className="inline-flex h-9 items-center rounded-xl border border-slate-200 bg-white px-3 text-xs font-semibold text-slate-700 shadow-sm transition hover:bg-slate-50"
+                        >
+                          Password
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => toggle(x)}
+                          className={`inline-flex h-9 items-center rounded-xl border px-3 text-xs font-semibold shadow-sm transition ${
+                            x.is_active
+                              ? "border-rose-200 bg-rose-50 text-rose-700 hover:bg-rose-100"
+                              : "border-amber-200 bg-amber-50 text-amber-800 hover:bg-amber-100"
+                          }`}
+                        >
+                          {x.is_active ? "Deactivate" : "Activate"}
+                        </button>
+                      </div>
                     </td>
                   </tr>
                 ))}

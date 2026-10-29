@@ -402,13 +402,12 @@ function EmiList() {
 
                         <td className="whitespace-nowrap px-4 py-4 text-sm">
                           <span
-                            className={`inline-flex rounded-full border px-2.5 py-1 text-[10px] font-bold uppercase tracking-wide ${
-                              emi.status === "active"
-                                ? "border-emerald-200 bg-emerald-50 text-emerald-700"
-                                : emi.status === "cancelled"
-                                  ? "border-slate-200 bg-slate-100 text-slate-600"
-                                  : "bg-gray-100 text-gray-700"
-                            }`}
+                            className={`inline-flex rounded-full border px-2.5 py-1 text-[10px] font-bold uppercase tracking-wide ${emi.status === "active"
+                              ? "border-emerald-200 bg-emerald-50 text-emerald-700"
+                              : emi.status === "cancelled"
+                                ? "border-slate-200 bg-slate-100 text-slate-600"
+                                : "bg-gray-100 text-gray-700"
+                              }`}
                           >
                             {getStatusLabel(emi.status)}
                           </span>
@@ -437,9 +436,8 @@ function EmiList() {
               <div className="mt-4 flex items-center justify-between rounded-2xl border border-slate-200 bg-white px-4 py-3">
                 <div className="text-sm text-slate-500">
                   {pagination?.count != null
-                    ? `${pagination.count} EMI record${
-                        pagination.count === 1 ? "" : "s"
-                      }`
+                    ? `${pagination.count} EMI record${pagination.count === 1 ? "" : "s"
+                    }`
                     : `Page ${page}`}
                 </div>
 

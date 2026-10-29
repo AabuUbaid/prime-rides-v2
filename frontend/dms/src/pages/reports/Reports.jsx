@@ -13,6 +13,7 @@ import {
 } from "../../api/reports";
 
 import { getApiErrorMessage } from "../../utils/errorMessage";
+import "./Reports.css";
 
 const PERIOD_OPTIONS = [
   { value: "daily", label: "Daily" },
@@ -37,6 +38,17 @@ function formatCurrency(value) {
   })}`;
 }
 
+function formatCount(value) {
+  if (value === null || value === undefined || value === "") {
+    return "—";
+  }
+
+  const number = Number(value);
+  return Number.isNaN(number)
+    ? String(value)
+    : number.toLocaleString("en-AE");
+}
+
 function formatLabel(value) {
   if (value === null || value === undefined || value === "") {
     return "-";
@@ -47,10 +59,254 @@ function formatLabel(value) {
     .replace(/\b\w/g, (letter) => letter.toUpperCase());
 }
 
+function getReportParams(filters) {
+  return {
+    period: filters.period,
+    date_from: filters.dateFrom,
+    date_to: filters.dateTo,
+  };
+}
+
+function MetricCard({ label, value }) {
+  return (
+    <div className="relative overflow-hidden rounded-2xl border border-[#e5e7eb] bg-white p-5 shadow-[0_2px_8px_rgba(15,23,42,0.04)]">
+      <span className="absolute inset-y-4 left-0 w-1 rounded-r bg-amber-400" />
+      <p className="text-[10px] font-bold uppercase tracking-[0.08em] text-slate-500">
+        {label}
+      </p>
+      <p className="mt-2 break-words text-xl font-bold tabular-nums text-slate-950 sm:text-2xl">
+        {value}
+      </p>
+    </div>
+  );
+}
+
+function ReportBarChart({ title, rows, label, series }) {
+  const chartRows = rows.map((row, index) => ({
+    row,
+    index,
+    label: label(row),
+    values: series.map((item) => {
+      const rawValue = item.getValue(row);
+      if (rawValue === null || rawValue === undefined || rawValue === "") {
+        return null;
+      }
+
+      const value = Number(rawValue);
+      return Number.isFinite(value) ? value : null;
+    }),
+  }));
+  const maxValue = Math.max(
+    0,
+    ...chartRows.flatMap((row) =>
+      row.values.map((value) => (value === null ? 0 : Math.abs(value))),
+    ),
+  );
+  const hasValues = chartRows.some((row) =>
+    row.values.some((value) => value !== null),
+  );
+  const colors = {
+    amber: "bg-amber-500",
+    blue: "bg-sky-500",
+    slate: "bg-slate-500",
+  };
+
+  return (
+    <section className="rounded-2xl border border-[#e5e7eb] bg-white p-5 shadow-[0_2px_8px_rgba(15,23,42,0.04)]">
+      <div className="mb-4 flex flex-wrap items-start justify-between gap-3">
+        <h3 className="text-sm font-bold text-slate-900">{title}</h3>
+        {series.length > 1 && (
+          <div className="flex flex-wrap gap-x-4 gap-y-2">
+            {series.map((item) => (
+              <span
+                key={item.key}
+                className="inline-flex items-center gap-1.5 text-xs text-slate-500"
+              >
+                <span
+                  className={`h-2 w-2 rounded-full ${colors[item.color] || colors.amber}`}
+                />
+                {item.label}
+              </span>
+            ))}
+          </div>
+        )}
+      </div>
+      {!rows.length || !hasValues ? (
+        <p className="py-6 text-center text-sm text-slate-500">
+          No chart data available.
+        </p>
+      ) : (
+        <div className="space-y-4">
+          {chartRows.map((chartRow) => (
+            <div key={`${chartRow.label}-${chartRow.index}`}>
+              <p className="mb-1.5 truncate text-xs font-medium text-slate-700">
+                {chartRow.label}
+              </p>
+              <div className="space-y-1.5">
+                {series.map((item, index) => {
+                  const value = chartRow.values[index];
+                  if (value === null) return null;
+                  const width =
+                    maxValue > 0 ? (Math.abs(value) / maxValue) * 100 : 0;
+
+                  return (
+                    <div
+                      key={item.key}
+                      className="flex items-center gap-3"
+                      title={`${item.label}: ${item.format(value)}`}
+                    >
+                      <div
+                        className="h-2.5 min-w-0 flex-1 overflow-hidden rounded-full bg-slate-100"
+                        role="progressbar"
+                        aria-label={`${chartRow.label}: ${item.label}`}
+                        aria-valuemin={0}
+                        aria-valuemax={maxValue}
+                        aria-valuenow={Math.abs(value)}
+                      >
+                        <div
+                          className={`h-full rounded-full transition-[width] ${colors[item.color] || colors.amber}`}
+                          style={{ width: `${width}%` }}
+                        />
+                      </div>
+                      <span className="w-28 shrink-0 text-right text-xs font-semibold tabular-nums text-slate-700">
+                        {item.format(value)}
+                      </span>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
+    </section>
+  );
+}
+
+function ReportDonutChart({ title, rows, label, value, format }) {
+  const colors = ["#f59e0b", "#0ea5e9", "#64748b", "#10b981", "#8b5cf6", "#f43f5e"];
+  const segments = rows
+    .map((row, index) => {
+      const rawValue = value(row);
+      if (rawValue === null || rawValue === undefined || rawValue === "") {
+        return null;
+      }
+
+      const numericValue = Number(rawValue);
+      if (!Number.isFinite(numericValue)) return null;
+
+      return {
+        label: label(row),
+        value: numericValue,
+        color: colors[index % colors.length],
+        index,
+      };
+    })
+    .filter(Boolean);
+  const total = segments.reduce(
+    (sum, segment) => sum + Math.abs(segment.value),
+    0,
+  );
+  const circumference = 2 * Math.PI * 38;
+  let offset = 0;
+
+  return (
+    <section className="rounded-2xl border border-[#e5e7eb] bg-white p-5 shadow-[0_2px_8px_rgba(15,23,42,0.04)]">
+      <h3 className="mb-4 text-sm font-bold text-slate-900">{title}</h3>
+      {segments.length === 0 ? (
+        <p className="py-6 text-center text-sm text-slate-500">
+          No chart data available.
+        </p>
+      ) : (
+        <div className="flex flex-col items-center gap-5 sm:flex-row sm:items-center">
+          <svg
+            className="h-36 w-36 shrink-0"
+            viewBox="0 0 100 100"
+            role="img"
+            aria-label={title}
+          >
+            <circle
+              cx="50"
+              cy="50"
+              r="38"
+              fill="none"
+              stroke="#e2e8f0"
+              strokeWidth="12"
+            />
+            {total > 0 &&
+              segments.map((segment) => {
+                const length =
+                  (Math.abs(segment.value) / total) * circumference;
+                const dashOffset = -offset;
+                offset += length;
+
+                return (
+                  <circle
+                    key={`${segment.label}-${segment.index}`}
+                    cx="50"
+                    cy="50"
+                    r="38"
+                    fill="none"
+                    stroke={segment.color}
+                    strokeWidth="12"
+                    strokeDasharray={`${length} ${circumference}`}
+                    strokeDashoffset={dashOffset}
+                    transform="rotate(-90 50 50)"
+                  >
+                    <title>
+                      {segment.label}: {format(segment.value)}
+                    </title>
+                  </circle>
+                );
+              })}
+            <text
+              x="50"
+              y="48"
+              textAnchor="middle"
+              className="fill-slate-500 text-[8px] font-semibold uppercase tracking-wide"
+            >
+              Breakdown
+            </text>
+            <text
+              x="50"
+              y="59"
+              textAnchor="middle"
+              className="fill-slate-900 text-[7px]"
+            >
+              {segments.length} groups
+            </text>
+          </svg>
+          <ul className="grid w-full gap-2">
+            {segments.map((segment) => (
+              <li
+                key={`${segment.label}-${segment.index}`}
+                className="flex min-w-0 items-center justify-between gap-3 text-xs"
+                title={`${segment.label}: ${format(segment.value)}`}
+              >
+                <span className="flex min-w-0 items-center gap-2 text-slate-600">
+                  <span
+                    className="h-2.5 w-2.5 shrink-0 rounded-full"
+                    style={{ backgroundColor: segment.color }}
+                  />
+                  <span className="truncate">{segment.label}</span>
+                </span>
+                <span className="shrink-0 font-semibold tabular-nums text-slate-800">
+                  {format(segment.value)}
+                </span>
+              </li>
+            ))}
+          </ul>
+        </div>
+      )}
+    </section>
+  );
+}
+
 export default function Reports() {
   const [period, setPeriod] = useState("daily");
   const [dateFrom, setDateFrom] = useState("");
   const [dateTo, setDateTo] = useState("");
+  const reportFilters = { period, dateFrom, dateTo };
 
   const [salesReport, setSalesReport] = useState(null);
   const [inventoryReport, setInventoryReport] = useState(null);
@@ -74,16 +330,12 @@ export default function Reports() {
 
   const [errorMessage, setErrorMessage] = useState("");
 
-  async function loadSalesReport() {
+  async function loadSalesReport(filters = reportFilters) {
     try {
       setLoading(true);
       setErrorMessage("");
 
-      const response = await getSalesReport({
-        period,
-        date_from: dateFrom,
-        date_to: dateTo,
-      });
+      const response = await getSalesReport(getReportParams(filters));
 
       setSalesReport(response);
     } catch (error) {
@@ -113,15 +365,11 @@ export default function Reports() {
     }
   }
 
-  async function loadInventoryReport() {
+  async function loadInventoryReport(filters = reportFilters) {
     try {
       setInventoryLoading(true);
 
-      const response = await getInventoryReport({
-        period,
-        date_from: dateFrom,
-        date_to: dateTo,
-      });
+      const response = await getInventoryReport(getReportParams(filters));
 
       setInventoryReport(response);
     } catch (error) {
@@ -155,15 +403,11 @@ export default function Reports() {
     }
   }
 
-  async function loadCashReceiptsReport() {
+  async function loadCashReceiptsReport(filters = reportFilters) {
     try {
       setCashReceiptsLoading(true);
 
-      const response = await getCashReceiptsReport({
-        period,
-        date_from: dateFrom,
-        date_to: dateTo,
-      });
+      const response = await getCashReceiptsReport(getReportParams(filters));
 
       setCashReceiptsReport(response);
     } catch (error) {
@@ -198,15 +442,11 @@ export default function Reports() {
     }
   }
 
-  async function loadFinanceReport() {
+  async function loadFinanceReport(filters = reportFilters) {
     try {
       setFinanceLoading(true);
 
-      const response = await getFinanceReport({
-        period,
-        date_from: dateFrom,
-        date_to: dateTo,
-      });
+      const response = await getFinanceReport(getReportParams(filters));
 
       setFinanceReport(response);
     } catch (error) {
@@ -240,15 +480,13 @@ export default function Reports() {
     }
   }
 
-  async function loadVehicleAdditionsReport() {
+  async function loadVehicleAdditionsReport(filters = reportFilters) {
     try {
       setVehicleAdditionsLoading(true);
 
-      const response = await getVehicleAdditionsReport({
-        period,
-        date_from: dateFrom,
-        date_to: dateTo,
-      });
+      const response = await getVehicleAdditionsReport(
+        getReportParams(filters),
+      );
 
       setVehicleAdditionsReport(response);
     } catch (error) {
@@ -283,15 +521,11 @@ export default function Reports() {
     }
   }
 
-  async function loadVehicleSalesReport() {
+  async function loadVehicleSalesReport(filters = reportFilters) {
     try {
       setVehicleSalesLoading(true);
 
-      const response = await getVehicleSalesReport({
-        period,
-        date_from: dateFrom,
-        date_to: dateTo,
-      });
+      const response = await getVehicleSalesReport(getReportParams(filters));
 
       setVehicleSalesReport(response);
     } catch (error) {
@@ -326,15 +560,13 @@ export default function Reports() {
     }
   }
 
-  async function loadOperationalPerformanceReport() {
+  async function loadOperationalPerformanceReport(filters = reportFilters) {
     try {
       setOperationalPerformanceLoading(true);
 
-      const response = await getOperationalPerformanceReport({
-        period,
-        date_from: dateFrom,
-        date_to: dateTo,
-      });
+      const response = await getOperationalPerformanceReport(
+        getReportParams(filters),
+      );
 
       setOperationalPerformanceReport(response);
     } catch (error) {
@@ -400,15 +632,14 @@ export default function Reports() {
     setDateFrom("");
     setDateTo("");
 
-    setTimeout(() => {
-      loadSalesReport();
-      loadInventoryReport();
-      loadCashReceiptsReport();
-      loadFinanceReport();
-      loadVehicleAdditionsReport();
-      loadVehicleSalesReport();
-      loadOperationalPerformanceReport();
-    }, 0);
+    const resetFilters = { period: "daily", dateFrom: "", dateTo: "" };
+    loadSalesReport(resetFilters);
+    loadInventoryReport(resetFilters);
+    loadCashReceiptsReport(resetFilters);
+    loadFinanceReport(resetFilters);
+    loadVehicleAdditionsReport(resetFilters);
+    loadVehicleSalesReport(resetFilters);
+    loadOperationalPerformanceReport(resetFilters);
   }
 
   const summary = salesReport?.summary || {};
@@ -562,39 +793,39 @@ export default function Reports() {
     : [];
 
   return (
-    <div className="min-h-screen bg-slate-50 px-4 py-6 sm:px-6 lg:px-8">
-      <div className="mx-auto max-w-7xl">
-        <div className="mb-6 flex items-center gap-3">
-          <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-slate-900 text-white">
+    <div className="reports-page min-h-screen bg-[#f5f6fa] px-4 py-6 sm:px-6 lg:px-8">
+      <div className="mx-auto w-full max-w-[1600px]">
+        <div className="mb-6 flex flex-wrap items-center gap-3">
+          <div className="flex h-10 w-10 items-center justify-center rounded-xl border border-amber-200 bg-amber-50 text-amber-600">
             <BarChart3 size={20} />
           </div>
 
           <div>
-            <h1 className="text-2xl font-semibold text-slate-900">Reports</h1>
+            <h1 className="text-2xl font-bold tracking-tight text-slate-950 sm:text-3xl">
+              Reports
+            </h1>
 
-            <p className="text-sm text-slate-500">
-              Sales, inventory, finance, cash receipt, vehicle and operational
-              reports.
+            <p className="mt-1 text-sm text-slate-500">
+              Performance and financial reporting for your dealership.
             </p>
           </div>
         </div>
 
-        <section className="mb-6 rounded-xl border border-slate-200 bg-white p-5 shadow-sm">
-          <div className="mb-4">
-            <h2 className="text-base font-semibold text-slate-900">
-              Sales Report
+        <section className="mb-6 rounded-2xl border border-[#e5e7eb] bg-white p-5 shadow-[0_2px_8px_rgba(15,23,42,0.04)]">
+          <div className="mb-4 flex items-center gap-2">
+            <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-amber-50 text-amber-600">
+              <BarChart3 size={16} />
+            </div>
+            <h2 className="text-sm font-bold text-slate-900">
+              Reporting period
             </h2>
-
-            <p className="mt-1 text-xs text-slate-500">
-              Sales values and breakdowns returned directly by the backend.
-            </p>
           </div>
 
-          <div className="grid gap-4 md:grid-cols-4">
+          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-[1fr_1fr_1fr_auto]">
             <div>
               <label
                 htmlFor="sales-period"
-                className="mb-1.5 block text-xs font-semibold uppercase tracking-wide text-slate-500"
+                className="mb-1.5 block text-[10px] font-bold uppercase tracking-[0.08em] text-slate-500"
               >
                 Period
               </label>
@@ -603,7 +834,7 @@ export default function Reports() {
                 id="sales-period"
                 value={period}
                 onChange={(event) => setPeriod(event.target.value)}
-                className="h-10 w-full rounded-lg border border-slate-300 bg-white px-3 text-sm text-slate-800 outline-none focus:border-slate-500 focus:ring-2 focus:ring-slate-200"
+                className="h-10 w-full rounded-xl border border-slate-200 bg-white px-3 text-sm text-slate-800 outline-none transition focus:border-amber-400 focus:ring-2 focus:ring-amber-400/15"
               >
                 {PERIOD_OPTIONS.map((option) => (
                   <option key={option.value} value={option.value}>
@@ -626,7 +857,8 @@ export default function Reports() {
                 type="date"
                 value={dateFrom}
                 onChange={(event) => setDateFrom(event.target.value)}
-                className="h-10 w-full rounded-lg border border-slate-300 bg-white px-3 text-sm text-slate-800 outline-none focus:border-slate-500 focus:ring-2 focus:ring-slate-200"
+                aria-label="Date from"
+                className="h-10 w-full rounded-xl border border-slate-200 bg-white px-3 text-sm text-slate-800 outline-none transition focus:border-amber-400 focus:ring-2 focus:ring-amber-400/15"
               />
             </div>
 
@@ -643,16 +875,17 @@ export default function Reports() {
                 type="date"
                 value={dateTo}
                 onChange={(event) => setDateTo(event.target.value)}
-                className="h-10 w-full rounded-lg border border-slate-300 bg-white px-3 text-sm text-slate-800 outline-none focus:border-slate-500 focus:ring-2 focus:ring-slate-200"
+                aria-label="Date to"
+                className="h-10 w-full rounded-xl border border-slate-200 bg-white px-3 text-sm text-slate-800 outline-none transition focus:border-amber-400 focus:ring-2 focus:ring-amber-400/15"
               />
             </div>
 
-            <div className="flex items-end gap-2">
+            <div className="flex items-end gap-2 sm:col-span-2 lg:col-span-1">
               <button
                 type="button"
                 onClick={handleApplyFilters}
                 disabled={loading}
-                className="inline-flex h-10 flex-1 items-center justify-center rounded-lg bg-slate-900 px-4 text-sm font-medium text-white transition hover:bg-slate-800 disabled:cursor-not-allowed disabled:opacity-60"
+                className="inline-flex h-10 flex-1 items-center justify-center rounded-xl border border-amber-500 bg-amber-500 px-4 text-sm font-semibold text-slate-950 shadow-sm transition hover:border-amber-400 hover:bg-amber-400 disabled:cursor-not-allowed disabled:opacity-60"
               >
                 {loading ? "Loading..." : "Apply"}
               </button>
@@ -661,7 +894,7 @@ export default function Reports() {
                 type="button"
                 onClick={handleResetFilters}
                 disabled={loading}
-                className="inline-flex h-10 rounded-lg border border-slate-300 bg-white px-4 text-sm font-medium text-slate-700 transition hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-60"
+                className="inline-flex h-10 items-center rounded-xl border border-slate-200 bg-white px-4 text-sm font-semibold text-slate-700 shadow-sm transition hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-60"
               >
                 Reset
               </button>
@@ -673,6 +906,15 @@ export default function Reports() {
           </p>
         </section>
 
+        <div className="mb-4">
+          <h2 className="text-xl font-bold tracking-tight text-slate-950">
+            Sales Report
+          </h2>
+          <p className="mt-1 text-sm text-slate-500">
+            Completed sales and grouped breakdowns for the selected period.
+          </p>
+        </div>
+
         {loading ? (
           <div className="flex min-h-64 items-center justify-center rounded-xl border border-slate-200 bg-white">
             <div className="text-sm text-slate-500">
@@ -680,7 +922,7 @@ export default function Reports() {
             </div>
           </div>
         ) : errorMessage ? (
-          <div className="rounded-xl border border-red-200 bg-red-50 px-5 py-4 text-sm text-red-700">
+          <div className="rounded-xl border border-rose-200 bg-rose-50 px-5 py-4 text-sm text-rose-700">
             {errorMessage}
           </div>
         ) : !salesReport ? (
@@ -690,35 +932,65 @@ export default function Reports() {
         ) : (
           <>
             <div className="mb-6 grid gap-4 md:grid-cols-3">
-              <div className="rounded-xl border border-slate-200 bg-white p-5 shadow-sm">
-                <p className="text-xs font-semibold uppercase tracking-wide text-slate-500">
-                  Total Sales
-                </p>
+              <MetricCard
+                label="Total Sales"
+                value={formatCount(summary.total_sales)}
+              />
+              <MetricCard
+                label="Total Sales Value"
+                value={formatCurrency(summary.total_sales_value)}
+              />
+              <MetricCard
+                label="Average Sale Value"
+                value={formatCurrency(summary.average_sale_value)}
+              />
+            </div>
 
-                <p className="mt-2 text-2xl font-bold text-slate-900">
-                  {summary.total_sales ?? 0}
-                </p>
-              </div>
-
-              <div className="rounded-xl border border-slate-200 bg-white p-5 shadow-sm">
-                <p className="text-xs font-semibold uppercase tracking-wide text-slate-500">
-                  Total Sales Value
-                </p>
-
-                <p className="mt-2 text-2xl font-bold text-slate-900">
-                  {formatCurrency(summary.total_sales_value)}
-                </p>
-              </div>
-
-              <div className="rounded-xl border border-slate-200 bg-white p-5 shadow-sm">
-                <p className="text-xs font-semibold uppercase tracking-wide text-slate-500">
-                  Average Sale Value
-                </p>
-
-                <p className="mt-2 text-2xl font-bold text-slate-900">
-                  {formatCurrency(summary.average_sale_value)}
-                </p>
-              </div>
+            <div className="mb-6 grid gap-4 lg:grid-cols-3">
+            <ReportDonutChart
+              title="Sales Value by Payment Method"
+              rows={paymentMethods}
+              label={(row) => formatLabel(row.payment_method)}
+              value={(row) => row.total_value}
+              format={formatCurrency}
+            />
+            <ReportBarChart
+              title="Sales by Salesperson"
+              rows={salespeople}
+              label={(row) =>
+                row.salesperson_name ||
+                (row.salesperson_id != null
+                  ? `Salesperson ${row.salesperson_id}`
+                  : "Unassigned")
+              }
+              series={[
+                {
+                  key: "sales-count",
+                  label: "Sales",
+                  color: "blue",
+                  getValue: (row) => row.count,
+                  format: (value) => value.toLocaleString("en-AE"),
+                },
+              ]}
+            />
+            <ReportBarChart
+              title="Sales by Branch"
+              rows={branches}
+              label={(row) =>
+                row.car__branch_id != null
+                  ? `Branch ${row.car__branch_id}`
+                  : "Unassigned"
+              }
+              series={[
+                {
+                  key: "sales-count",
+                  label: "Sales",
+                  color: "slate",
+                  getValue: (row) => row.count,
+                  format: (value) => value.toLocaleString("en-AE"),
+                },
+              ]}
+            />
             </div>
 
             <div className="mb-6 grid gap-6 lg:grid-cols-3">
@@ -916,72 +1188,91 @@ export default function Reports() {
             </div>
           ) : (
             <>
-              <div className="mb-6 grid gap-4 md:grid-cols-3 lg:grid-cols-6">
-                <div className="rounded-xl border border-slate-200 bg-white p-5 shadow-sm">
-                  <p className="text-xs font-semibold uppercase tracking-wide text-slate-500">
-                    Total Vehicles
-                  </p>
-
-                  <p className="mt-2 text-2xl font-bold text-slate-900">
-                    {inventorySnapshotSummary.total_vehicles ?? 0}
-                  </p>
-                </div>
-
-                <div className="rounded-xl border border-slate-200 bg-white p-5 shadow-sm">
-                  <p className="text-xs font-semibold uppercase tracking-wide text-slate-500">
-                    Inventory Value
-                  </p>
-
-                  <p className="mt-2 text-2xl font-bold text-slate-900">
-                    {formatCurrency(inventorySnapshotSummary.inventory_value)}
-                  </p>
-                </div>
-
-                <div className="rounded-xl border border-slate-200 bg-white p-5 shadow-sm">
-                  <p className="text-xs font-semibold uppercase tracking-wide text-slate-500">
-                    Total Purchase Cost
-                  </p>
-
-                  <p className="mt-2 text-2xl font-bold text-slate-900">
-                    {formatCurrency(
-                      inventorySnapshotSummary.total_purchase_cost,
-                    )}
-                  </p>
-                </div>
-
-                <div className="rounded-xl border border-slate-200 bg-white p-5 shadow-sm">
-                  <p className="text-xs font-semibold uppercase tracking-wide text-slate-500">
-                    Vehicles Added
-                  </p>
-
-                  <p className="mt-2 text-2xl font-bold text-slate-900">
-                    {inventoryAdditionsSummary.vehicles_added ?? 0}
-                  </p>
-                </div>
-
-                <div className="rounded-xl border border-slate-200 bg-white p-5 shadow-sm">
-                  <p className="text-xs font-semibold uppercase tracking-wide text-slate-500">
-                    Asking Price Added
-                  </p>
-
-                  <p className="mt-2 text-2xl font-bold text-slate-900">
-                    {formatCurrency(
-                      inventoryAdditionsSummary.asking_price_total,
-                    )}
-                  </p>
-                </div>
-              </div>
-
-              <div className="rounded-xl border border-slate-200 bg-white p-5 shadow-sm">
-                <p className="text-xs font-semibold uppercase tracking-wide text-slate-500">
-                  Purchase Cost Added
-                </p>
-
-                <p className="mt-2 text-2xl font-bold text-slate-900">
-                  {formatCurrency(
+              <div className="mb-6 grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
+                <MetricCard
+                  label="Total Vehicles"
+                  value={formatCount(inventorySnapshotSummary.total_vehicles)}
+                />
+                <MetricCard
+                  label="Inventory Value"
+                  value={formatCurrency(inventorySnapshotSummary.inventory_value)}
+                />
+                <MetricCard
+                  label="Total Purchase Cost"
+                  value={formatCurrency(
+                    inventorySnapshotSummary.total_purchase_cost,
+                  )}
+                />
+                <MetricCard
+                  label="Vehicles Added"
+                  value={formatCount(inventoryAdditionsSummary.vehicles_added)}
+                />
+                <MetricCard
+                  label="Asking Price Added"
+                  value={formatCurrency(
+                    inventoryAdditionsSummary.asking_price_total,
+                  )}
+                />
+                <MetricCard
+                  label="Purchase Cost Added"
+                  value={formatCurrency(
                     inventoryAdditionsSummary.purchase_cost_total,
                   )}
-                </p>
+                />
+              </div>
+
+              <div className="mb-6 grid gap-4 lg:grid-cols-2">
+                <ReportDonutChart
+                  title="Current Inventory by Status"
+                  rows={inventoryByStatus}
+                  label={(row) => formatLabel(row.status)}
+                  value={(row) => row.count}
+                  format={formatCount}
+                />
+                <ReportBarChart
+                  title="Current Inventory by Branch"
+                  rows={inventoryByBranch}
+                  label={(row) =>
+                    row.branch_id != null ? `Branch ${row.branch_id}` : "Unassigned"
+                  }
+                  series={[
+                    {
+                      key: "vehicles",
+                      label: "Vehicles",
+                      color: "blue",
+                      getValue: (row) => row.count,
+                      format: (value) => value.toLocaleString("en-AE"),
+                    },
+                  ]}
+                />
+                <ReportBarChart
+                  title="Vehicle Additions by Source"
+                  rows={inventoryBySource}
+                  label={(row) => formatLabel(row.source)}
+                  series={[
+                    {
+                      key: "vehicles",
+                      label: "Vehicles",
+                      color: "slate",
+                      getValue: (row) => row.count,
+                      format: (value) => value.toLocaleString("en-AE"),
+                    },
+                  ]}
+                />
+                <ReportBarChart
+                  title="Vehicle Additions by Status"
+                  rows={inventoryAdditionsByStatus}
+                  label={(row) => formatLabel(row.status)}
+                  series={[
+                    {
+                      key: "vehicles",
+                      label: "Vehicles",
+                      color: "amber",
+                      getValue: (row) => row.count,
+                      format: (value) => value.toLocaleString("en-AE"),
+                    },
+                  ]}
+                />
               </div>
 
               <div className="grid gap-6 lg:grid-cols-2">
@@ -1216,25 +1507,59 @@ export default function Reports() {
           ) : (
             <>
               <div className="mb-6 grid gap-4 md:grid-cols-2">
-                <div className="rounded-xl border border-slate-200 bg-white p-5 shadow-sm">
-                  <p className="text-xs font-semibold uppercase tracking-wide text-slate-500">
-                    Total Receipts
-                  </p>
+                <MetricCard
+                  label="Total Receipts"
+                  value={formatCount(cashReceiptsSummary.receipt_count)}
+                />
+                <MetricCard
+                  label="Total Receipt Amount"
+                  value={formatCurrency(cashReceiptsSummary.total_amount)}
+                />
+              </div>
 
-                  <p className="mt-2 text-2xl font-bold text-slate-900">
-                    {cashReceiptsSummary.receipt_count ?? 0}
-                  </p>
-                </div>
-
-                <div className="rounded-xl border border-slate-200 bg-white p-5 shadow-sm">
-                  <p className="text-xs font-semibold uppercase tracking-wide text-slate-500">
-                    Total Amount
-                  </p>
-
-                  <p className="mt-2 text-2xl font-bold text-slate-900">
-                    {formatCurrency(cashReceiptsSummary.total_amount)}
-                  </p>
-                </div>
+              <div className="mb-6 grid gap-4 lg:grid-cols-3">
+                <ReportBarChart
+                  title="Receipts by Direction"
+                  rows={cashReceiptsByDirection}
+                  label={(row) => formatLabel(row.direction)}
+                  series={[
+                    {
+                      key: "amount",
+                      label: "Amount",
+                      color: "amber",
+                      getValue: (row) => row.total_amount,
+                      format: formatCurrency,
+                    },
+                  ]}
+                />
+                <ReportBarChart
+                  title="Receipts by Category"
+                  rows={cashReceiptsByCategory}
+                  label={(row) => formatLabel(row.category)}
+                  series={[
+                    {
+                      key: "amount",
+                      label: "Amount",
+                      color: "blue",
+                      getValue: (row) => row.total_amount,
+                      format: formatCurrency,
+                    },
+                  ]}
+                />
+                <ReportBarChart
+                  title="Receipts by Payment Method"
+                  rows={cashReceiptsByPaymentMethod}
+                  label={(row) => formatLabel(row.payment_method)}
+                  series={[
+                    {
+                      key: "amount",
+                      label: "Amount",
+                      color: "slate",
+                      getValue: (row) => row.total_amount,
+                      format: formatCurrency,
+                    },
+                  ]}
+                />
               </div>
 
               <div className="grid gap-6 lg:grid-cols-3">
@@ -1408,7 +1733,6 @@ export default function Reports() {
             </>
           )}
         </section>
-      </div>
       <section className="mb-6">
         <div className="mb-4">
           <h2 className="text-xl font-semibold text-slate-900">
@@ -1438,36 +1762,71 @@ export default function Reports() {
               </h3>
 
               <div className="grid gap-4 md:grid-cols-3">
-                <div className="rounded-xl border border-slate-200 bg-white p-5 shadow-sm">
-                  <p className="text-xs font-semibold uppercase tracking-wide text-slate-500">
-                    Applications
-                  </p>
-
-                  <p className="mt-2 text-2xl font-bold text-slate-900">
-                    {financeBankLoanSummary.applications ?? 0}
-                  </p>
-                </div>
-
-                <div className="rounded-xl border border-slate-200 bg-white p-5 shadow-sm">
-                  <p className="text-xs font-semibold uppercase tracking-wide text-slate-500">
-                    Requested Finance
-                  </p>
-
-                  <p className="mt-2 text-2xl font-bold text-slate-900">
-                    {formatCurrency(financeBankLoanSummary.requested_finance)}
-                  </p>
-                </div>
-
-                <div className="rounded-xl border border-slate-200 bg-white p-5 shadow-sm">
-                  <p className="text-xs font-semibold uppercase tracking-wide text-slate-500">
-                    Approved Finance
-                  </p>
-
-                  <p className="mt-2 text-2xl font-bold text-slate-900">
-                    {formatCurrency(financeBankLoanSummary.approved_finance)}
-                  </p>
-                </div>
+                <MetricCard
+                  label="Applications"
+                  value={formatCount(financeBankLoanSummary.applications)}
+                />
+                <MetricCard
+                  label="Requested Finance"
+                  value={formatCurrency(financeBankLoanSummary.requested_finance)}
+                />
+                <MetricCard
+                  label="Approved Finance"
+                  value={formatCurrency(financeBankLoanSummary.approved_finance)}
+                />
               </div>
+            </div>
+
+            <div className="mb-6 grid gap-4 lg:grid-cols-3">
+              <ReportBarChart
+                title="Bank Loans by Status"
+                rows={financeBankLoansByStatus}
+                label={(row) => formatLabel(row.status)}
+                series={[
+                  {
+                    key: "loans",
+                    label: "Loans",
+                    color: "amber",
+                    getValue: (row) => row.count,
+                    format: (value) => value.toLocaleString("en-AE"),
+                  },
+                ]}
+              />
+              <ReportBarChart
+                title="Applications by Status"
+                rows={financeBankLoansByApplicationStatus}
+                label={(row) => formatLabel(row.application_status)}
+                series={[
+                  {
+                    key: "applications",
+                    label: "Applications",
+                    color: "blue",
+                    getValue: (row) => row.count,
+                    format: (value) => value.toLocaleString("en-AE"),
+                  },
+                ]}
+              />
+              <ReportBarChart
+                title="Requested vs Approved by Bank"
+                rows={financeBankLoansByBank}
+                label={(row) => row.bank_name || "Unassigned"}
+                series={[
+                  {
+                    key: "requested",
+                    label: "Requested",
+                    color: "amber",
+                    getValue: (row) => row.requested_finance,
+                    format: formatCurrency,
+                  },
+                  {
+                    key: "approved",
+                    label: "Approved",
+                    color: "blue",
+                    getValue: (row) => row.approved_finance,
+                    format: formatCurrency,
+                  },
+                ]}
+              />
             </div>
 
             <div className="mb-6 grid gap-6 lg:grid-cols-3">
@@ -1641,47 +2000,41 @@ export default function Reports() {
                 Cash Deals
               </h3>
 
-              <div className="grid gap-4 md:grid-cols-3">
-                <div className="rounded-xl border border-slate-200 bg-white p-5 shadow-sm">
-                  <p className="text-xs font-semibold uppercase tracking-wide text-slate-500">
-                    Deals
-                  </p>
-
-                  <p className="mt-2 text-2xl font-bold text-slate-900">
-                    {financeCashDealSummary.deals ?? 0}
-                  </p>
-                </div>
-
-                <div className="rounded-xl border border-slate-200 bg-white p-5 shadow-sm">
-                  <p className="text-xs font-semibold uppercase tracking-wide text-slate-500">
-                    Selling Price
-                  </p>
-
-                  <p className="mt-2 text-2xl font-bold text-slate-900">
-                    {formatCurrency(financeCashDealSummary.selling_price)}
-                  </p>
-                </div>
-
-                <div className="rounded-xl border border-slate-200 bg-white p-5 shadow-sm">
-                  <p className="text-xs font-semibold uppercase tracking-wide text-slate-500">
-                    Advance Amount
-                  </p>
-
-                  <p className="mt-2 text-2xl font-bold text-slate-900">
-                    {formatCurrency(financeCashDealSummary.advance_amount)}
-                  </p>
-                </div>
-
-                <div className="rounded-xl border border-slate-200 bg-white p-5 shadow-sm">
-                  <p className="text-xs font-semibold uppercase tracking-wide text-slate-500">
-                    Balance Amount
-                  </p>
-
-                  <p className="mt-2 text-2xl font-bold text-slate-900">
-                    {formatCurrency(financeCashDealSummary.balance_amount)}
-                  </p>
-                </div>
+              <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+                <MetricCard
+                  label="Deals"
+                  value={formatCount(financeCashDealSummary.deals)}
+                />
+                <MetricCard
+                  label="Selling Price"
+                  value={formatCurrency(financeCashDealSummary.selling_price)}
+                />
+                <MetricCard
+                  label="Advance Amount"
+                  value={formatCurrency(financeCashDealSummary.advance_amount)}
+                />
+                <MetricCard
+                  label="Balance Amount"
+                  value={formatCurrency(financeCashDealSummary.balance_amount)}
+                />
               </div>
+            </div>
+
+            <div className="mb-6">
+              <ReportBarChart
+                title="Cash Deals by Status"
+                rows={financeCashDealsByStatus}
+                label={(row) => formatLabel(row.status)}
+                series={[
+                  {
+                    key: "deals",
+                    label: "Deals",
+                    color: "amber",
+                    getValue: (row) => row.count,
+                    format: (value) => value.toLocaleString("en-AE"),
+                  },
+                ]}
+              />
             </div>
 
             <section className="rounded-xl border border-slate-200 bg-white shadow-sm">
@@ -1790,35 +2143,58 @@ export default function Reports() {
         ) : (
           <>
             <div className="mb-6 grid gap-4 md:grid-cols-3">
-              <div className="rounded-xl border border-slate-200 bg-white p-5 shadow-sm">
-                <p className="text-xs font-semibold uppercase tracking-wide text-slate-500">
-                  Vehicles Added
-                </p>
+              <MetricCard
+                label="Vehicles Added"
+                value={formatCount(vehicleAdditionsSummary.vehicles_added)}
+              />
+              <MetricCard
+                label="Asking Price Total"
+                value={formatCurrency(vehicleAdditionsSummary.asking_price_total)}
+              />
+              <MetricCard
+                label="Purchase Cost Total"
+                value={formatCurrency(vehicleAdditionsSummary.purchase_cost_total)}
+              />
+            </div>
 
-                <p className="mt-2 text-2xl font-bold text-slate-900">
-                  {vehicleAdditionsSummary.vehicles_added ?? 0}
-                </p>
-              </div>
-
-              <div className="rounded-xl border border-slate-200 bg-white p-5 shadow-sm">
-                <p className="text-xs font-semibold uppercase tracking-wide text-slate-500">
-                  Asking Price Total
-                </p>
-
-                <p className="mt-2 text-2xl font-bold text-slate-900">
-                  {formatCurrency(vehicleAdditionsSummary.asking_price_total)}
-                </p>
-              </div>
-
-              <div className="rounded-xl border border-slate-200 bg-white p-5 shadow-sm">
-                <p className="text-xs font-semibold uppercase tracking-wide text-slate-500">
-                  Purchase Cost Total
-                </p>
-
-                <p className="mt-2 text-2xl font-bold text-slate-900">
-                  {formatCurrency(vehicleAdditionsSummary.purchase_cost_total)}
-                </p>
-              </div>
+            <div className="mb-6 grid gap-4 lg:grid-cols-3">
+              <ReportBarChart
+                title="Vehicle Additions by Branch"
+                rows={vehicleAdditionsByBranch}
+                label={(row) =>
+                  row.branch_id != null ? `Branch ${row.branch_id}` : "Unassigned"
+                }
+                series={[
+                  {
+                    key: "vehicles",
+                    label: "Vehicles",
+                    color: "amber",
+                    getValue: (row) => row.count,
+                    format: (value) => value.toLocaleString("en-AE"),
+                  },
+                ]}
+              />
+              <ReportBarChart
+                title="Vehicle Additions by Source"
+                rows={vehicleAdditionsBySource}
+                label={(row) => formatLabel(row.source)}
+                series={[
+                  {
+                    key: "vehicles",
+                    label: "Vehicles",
+                    color: "blue",
+                    getValue: (row) => row.count,
+                    format: (value) => value.toLocaleString("en-AE"),
+                  },
+                ]}
+              />
+              <ReportDonutChart
+                title="Vehicle Additions by Status"
+                rows={vehicleAdditionsByStatus}
+                label={(row) => formatLabel(row.status)}
+                value={(row) => row.count}
+                format={formatCount}
+              />
             </div>
 
             <div className="grid gap-6 lg:grid-cols-3">
@@ -2003,35 +2379,72 @@ export default function Reports() {
         ) : (
           <>
             <div className="mb-6 grid gap-4 md:grid-cols-3">
-              <div className="rounded-xl border border-slate-200 bg-white p-5 shadow-sm">
-                <p className="text-xs font-semibold uppercase tracking-wide text-slate-500">
-                  Vehicles Sold
-                </p>
+              <MetricCard
+                label="Vehicles Sold"
+                value={formatCount(vehicleSalesSummary.vehicles_sold)}
+              />
+              <MetricCard
+                label="Total Sales Value"
+                value={formatCurrency(vehicleSalesSummary.total_sales_value)}
+              />
+              <MetricCard
+                label="Average Sale Value"
+                value={formatCurrency(vehicleSalesSummary.average_sale_value)}
+              />
+            </div>
 
-                <p className="mt-2 text-2xl font-bold text-slate-900">
-                  {vehicleSalesSummary.vehicles_sold ?? 0}
-                </p>
-              </div>
-
-              <div className="rounded-xl border border-slate-200 bg-white p-5 shadow-sm">
-                <p className="text-xs font-semibold uppercase tracking-wide text-slate-500">
-                  Total Sales Value
-                </p>
-
-                <p className="mt-2 text-2xl font-bold text-slate-900">
-                  {formatCurrency(vehicleSalesSummary.total_sales_value)}
-                </p>
-              </div>
-
-              <div className="rounded-xl border border-slate-200 bg-white p-5 shadow-sm">
-                <p className="text-xs font-semibold uppercase tracking-wide text-slate-500">
-                  Average Sale Value
-                </p>
-
-                <p className="mt-2 text-2xl font-bold text-slate-900">
-                  {formatCurrency(vehicleSalesSummary.average_sale_value)}
-                </p>
-              </div>
+            <div className="mb-6 grid gap-4 lg:grid-cols-3">
+              <ReportBarChart
+                title="Vehicle Sales by Branch"
+                rows={vehicleSalesByBranch}
+                label={(row) =>
+                  row.car__branch_id != null
+                    ? `Branch ${row.car__branch_id}`
+                    : "Unassigned"
+                }
+                series={[
+                  {
+                    key: "sales-value",
+                    label: "Sales value",
+                    color: "amber",
+                    getValue: (row) => row.total_value,
+                    format: formatCurrency,
+                  },
+                ]}
+              />
+              <ReportBarChart
+                title="Vehicle Sales by Payment Method"
+                rows={vehicleSalesByPaymentMethod}
+                label={(row) => formatLabel(row.payment_method)}
+                series={[
+                  {
+                    key: "sales-value",
+                    label: "Sales value",
+                    color: "blue",
+                    getValue: (row) => row.total_value,
+                    format: formatCurrency,
+                  },
+                ]}
+              />
+              <ReportBarChart
+                title="Vehicles Sold by Salesperson"
+                rows={vehicleSalesBySalesperson}
+                label={(row) =>
+                  row.salesperson_name ||
+                  (row.salesperson_id != null
+                    ? `Salesperson ${row.salesperson_id}`
+                    : "Unassigned")
+                }
+                series={[
+                  {
+                    key: "vehicles",
+                    label: "Vehicles",
+                    color: "slate",
+                    getValue: (row) => row.count,
+                    format: (value) => value.toLocaleString("en-AE"),
+                  },
+                ]}
+              />
             </div>
 
             <div className="grid gap-6 lg:grid-cols-3">
@@ -2233,26 +2646,73 @@ export default function Reports() {
         ) : (
           <>
             <div className="mb-6 grid gap-4 md:grid-cols-2">
-              <div className="rounded-xl border border-slate-200 bg-white p-5 shadow-sm">
-                <p className="text-xs font-semibold uppercase tracking-wide text-slate-500">
-                  Progressions Created
-                </p>
+              <MetricCard
+                label="Progressions Created"
+                value={
+                  operationalPerformanceCreatedSummary.progressions_created ??
+                  0
+                }
+              />
+              <MetricCard
+                label="Progressions Completed"
+                value={
+                  formatCount(
+                    operationalPerformanceCompleted.progressions_completed,
+                  )
+                }
+              />
+            </div>
 
-                <p className="mt-2 text-2xl font-bold text-slate-900">
-                  {operationalPerformanceCreatedSummary.progressions_created ??
-                    0}
-                </p>
-              </div>
-
-              <div className="rounded-xl border border-slate-200 bg-white p-5 shadow-sm">
-                <p className="text-xs font-semibold uppercase tracking-wide text-slate-500">
-                  Progressions Completed
-                </p>
-
-                <p className="mt-2 text-2xl font-bold text-slate-900">
-                  {operationalPerformanceCompleted.progressions_completed ?? 0}
-                </p>
-              </div>
+            <div className="mb-6 grid gap-4 lg:grid-cols-2">
+              <ReportDonutChart
+                title="Progressions by Status"
+                rows={operationalPerformanceByStatus}
+                label={(row) => formatLabel(row.status)}
+                value={(row) => row.count}
+                format={formatCount}
+              />
+              <ReportBarChart
+                title="Progressions by Current Stage"
+                rows={operationalPerformanceByStage}
+                label={(row) => formatLabel(row.current_stage)}
+                series={[
+                  {
+                    key: "progressions",
+                    label: "Progressions",
+                    color: "blue",
+                    getValue: (row) => row.count,
+                    format: (value) => value.toLocaleString("en-AE"),
+                  },
+                ]}
+              />
+              <ReportBarChart
+                title="Progressions by Source Type"
+                rows={operationalPerformanceBySourceType}
+                label={(row) => formatLabel(row.source_type)}
+                series={[
+                  {
+                    key: "progressions",
+                    label: "Progressions",
+                    color: "slate",
+                    getValue: (row) => row.count,
+                    format: (value) => value.toLocaleString("en-AE"),
+                  },
+                ]}
+              />
+              <ReportBarChart
+                title="Progressions by Registration Emirate"
+                rows={operationalPerformanceByRegistrationEmirate}
+                label={(row) => formatLabel(row.registration_emirate)}
+                series={[
+                  {
+                    key: "progressions",
+                    label: "Progressions",
+                    color: "amber",
+                    getValue: (row) => row.count,
+                    format: (value) => value.toLocaleString("en-AE"),
+                  },
+                ]}
+              />
             </div>
 
             <div className="grid gap-6 lg:grid-cols-2">
@@ -2450,6 +2910,7 @@ export default function Reports() {
           </>
         )}
       </section>
+      </div>
     </div>
   );
 }

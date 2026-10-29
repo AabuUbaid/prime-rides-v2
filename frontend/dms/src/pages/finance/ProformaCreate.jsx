@@ -10,9 +10,9 @@ import { getApiErrorMessage } from "../../utils/errorMessage";
 
 function DetailRow({ label, value }) {
   return (
-    <div className="flex flex-col gap-1 border-b border-gray-100 py-3 last:border-b-0 sm:flex-row sm:items-center sm:justify-between">
-      <span className="text-sm text-gray-500">{label}</span>
-      <span className="text-sm font-medium text-gray-900 sm:text-right">
+    <div className="flex flex-col gap-1 border-b border-slate-100 py-3 last:border-b-0 sm:flex-row sm:items-center sm:justify-between">
+      <span className="text-sm text-slate-500">{label}</span>
+      <span className="text-sm font-medium text-slate-900 sm:text-right">
         {value ?? "-"}
       </span>
     </div>
@@ -21,9 +21,9 @@ function DetailRow({ label, value }) {
 
 function Section({ title, children }) {
   return (
-    <section className="rounded-xl border border-gray-200 bg-white shadow-sm">
-      <div className="border-b border-gray-200 px-5 py-4">
-        <h2 className="text-base font-semibold text-gray-900">{title}</h2>
+    <section className="rounded-2xl border border-[#e5e7eb] bg-white shadow-[0_2px_8px_rgba(15,23,42,0.04)]">
+      <div className="border-b border-slate-200 px-5 py-4">
+        <h2 className="text-base font-semibold text-slate-900">{title}</h2>
       </div>
 
       <div className="px-5 py-1">{children}</div>
@@ -157,7 +157,7 @@ export default function ProformaCreate() {
   if (loading) {
     return (
       <div className="p-6">
-        <div className="rounded-xl border border-gray-200 bg-white p-10 text-center text-sm text-gray-500">
+        <div className="mx-auto w-full max-w-[1600px] rounded-2xl border border-[#e5e7eb] bg-white p-10 text-center text-sm text-slate-500 shadow-[0_2px_8px_rgba(15,23,42,0.04)]">
           Loading Insurance...
         </div>
       </div>
@@ -169,12 +169,12 @@ export default function ProformaCreate() {
       <div className="p-6">
         <Link
           to="/finance/insurance"
-          className="text-sm font-medium text-gray-600 hover:text-gray-900"
+          className="text-sm font-medium text-slate-600 hover:text-slate-900"
         >
           ← Back to Insurance
         </Link>
 
-        <div className="mt-4 rounded-xl border border-red-200 bg-red-50 p-6 text-sm text-red-700">
+        <div className="mx-auto mt-4 w-full max-w-[1600px] rounded-2xl border border-rose-200 bg-rose-50 p-6 text-sm text-rose-700">
           {error || "Insurance record not found."}
         </div>
       </div>
@@ -193,20 +193,20 @@ export default function ProformaCreate() {
   const isFinance = insurance.payment_method === "Finance";
 
   return (
-    <div className="p-6">
-      <div className="mb-6">
+    <div className="mx-auto min-h-screen w-full max-w-[1600px] px-4 py-6 sm:px-6 lg:px-8">
+      <div className="mb-7">
         <Link
           to={`/finance/insurance/${insurance.id}`}
-          className="text-sm font-medium text-gray-600 hover:text-gray-900"
+          className="text-sm font-medium text-slate-600 hover:text-slate-900"
         >
           ← Back to Insurance
         </Link>
 
-        <h1 className="mt-3 text-2xl font-semibold text-gray-900">
+        <h1 className="mt-3 text-2xl font-bold tracking-tight text-slate-950 sm:text-3xl">
           Create Proforma Invoice
         </h1>
 
-        <p className="mt-1 text-sm text-gray-500">
+        <p className="mt-1 text-sm text-slate-500">
           Create a Proforma from this approved Insurance record.
         </p>
       </div>
@@ -227,7 +227,7 @@ export default function ProformaCreate() {
             {isFinance && (
               <>
                 <div>
-                  <label className="mb-2 block text-sm text-gray-600">
+                  <label className="mb-1.5 block text-[11px] font-bold uppercase tracking-[0.08em] text-slate-500">
                     Bank / Financed By
                   </label>
 
@@ -235,12 +235,12 @@ export default function ProformaCreate() {
                     type="text"
                     value={bankFinancedBy}
                     onChange={(event) => setBankFinancedBy(event.target.value)}
-                    className="w-full rounded-lg border border-gray-300 px-3 py-2.5 text-sm outline-none focus:border-gray-500"
+                    className="h-10 w-full rounded-xl border border-slate-200 bg-white px-3 text-sm text-slate-800 outline-none transition focus:border-amber-400 focus:ring-2 focus:ring-amber-400/15"
                   />
                 </div>
 
                 <div className="mt-4">
-                  <label className="mb-2 block text-sm text-gray-600">
+                  <label className="mb-1.5 block text-[11px] font-bold uppercase tracking-[0.08em] text-slate-500">
                     LPO Number
                   </label>
 
@@ -248,14 +248,14 @@ export default function ProformaCreate() {
                     type="text"
                     value={lpo}
                     readOnly
-                    className="w-full rounded-lg border border-gray-300 bg-gray-50 px-3 py-2.5 text-sm outline-none"
+                    className="h-10 w-full rounded-xl border border-slate-200 bg-slate-50 px-3 text-sm text-slate-500 outline-none"
                   />
                 </div>
               </>
             )}
 
             <div className={isFinance ? "mt-4" : ""}>
-              <label className="mb-2 block text-sm text-gray-600">VAT</label>
+              <label className="mb-1.5 block text-[11px] font-bold uppercase tracking-[0.08em] text-slate-500">VAT</label>
 
               <input
                 type="number"
@@ -263,7 +263,7 @@ export default function ProformaCreate() {
                 step="0.01"
                 value={vat}
                 onChange={(event) => setVat(event.target.value)}
-                className="w-full rounded-lg border border-gray-300 px-3 py-2.5 text-sm outline-none focus:border-gray-500"
+                className="h-10 w-full rounded-xl border border-slate-200 bg-white px-3 text-sm text-slate-800 outline-none transition focus:border-amber-400 focus:ring-2 focus:ring-amber-400/15"
               />
             </div>
 
@@ -271,14 +271,14 @@ export default function ProformaCreate() {
               <button
                 type="submit"
                 disabled={saving}
-                className="rounded-lg bg-gray-900 px-4 py-2.5 text-sm font-medium text-white hover:bg-gray-800 disabled:opacity-50"
+                className="inline-flex h-10 items-center rounded-xl border border-amber-500 bg-amber-500 px-4 text-sm font-semibold text-slate-950 shadow-sm transition hover:border-amber-400 hover:bg-amber-400 disabled:opacity-50"
               >
                 {saving ? "Creating..." : "Create Proforma"}
               </button>
 
               <Link
                 to={`/finance/insurance/${insurance.id}`}
-                className="rounded-lg border border-gray-300 px-4 py-2.5 text-sm font-medium text-gray-700 hover:bg-gray-50"
+                className="inline-flex h-10 items-center rounded-xl border border-slate-200 bg-white px-4 text-sm font-semibold text-slate-700 shadow-sm transition hover:bg-slate-50"
               >
                 Cancel
               </Link>

@@ -345,8 +345,8 @@ function BankLoanDetail() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gray-50 p-6">
-        <div className="mx-auto max-w-6xl rounded-lg border border-gray-200 bg-white p-6">
+      <div className="min-h-screen bg-[#f5f6fa] px-4 py-6 sm:px-6 lg:px-8">
+        <div className="mx-auto w-full max-w-6xl rounded-2xl border border-[#e5e7eb] bg-white p-6 shadow-[0_2px_8px_rgba(15,23,42,0.04)]">
           Loading bank loan...
         </div>
       </div>
@@ -355,16 +355,16 @@ function BankLoanDetail() {
 
   if (error || !loan) {
     return (
-      <div className="min-h-screen bg-gray-50 p-6">
-        <div className="mx-auto max-w-6xl">
+      <div className="min-h-screen bg-[#f5f6fa] px-4 py-6 sm:px-6 lg:px-8">
+        <div className="mx-auto w-full max-w-6xl">
           <Link
             to="/finance/bank-loans"
-            className="text-sm font-medium text-gray-700 hover:underline"
+            className="text-sm font-medium text-slate-700 hover:underline"
           >
             ← Back to Bank Loans
           </Link>
 
-          <div className="mt-4 rounded-lg border border-red-200 bg-red-50 p-6 text-red-700">
+          <div className="mt-4 rounded-2xl border border-rose-200 bg-rose-50 p-6 text-rose-700">
             {error || "Bank loan not found."}
           </div>
         </div>
@@ -385,121 +385,121 @@ function BankLoanDetail() {
     .join(" ");
 
   return (
-    <div className="min-h-screen bg-gray-50 p-6">
-      <div className="mx-auto max-w-6xl">
-        <div className="mb-6 flex items-center justify-between">
+    <div className="min-h-screen bg-[#f5f6fa] px-4 py-6 sm:px-6 lg:px-8">
+      <div className="mx-auto w-full max-w-6xl">
+        <div className="mb-7 flex flex-wrap items-end justify-between gap-4">
           <div>
             <Link
               to="/finance/bank-loans"
-              className="text-sm font-medium text-gray-700 hover:underline"
+              className="text-sm font-medium text-slate-700 hover:underline"
             >
               ← Back to Bank Loans
             </Link>
 
-            <h1 className="mt-2 text-2xl font-semibold text-gray-900">
+            <h1 className="mt-2 text-2xl font-bold tracking-tight text-slate-950 sm:text-3xl">
               Bank Loan #{loan.id}
             </h1>
 
-            <p className="mt-1 text-sm text-gray-500">{customerName}</p>
+            <p className="mt-1 text-sm text-slate-500">{customerName}</p>
           </div>
 
           <button
             type="button"
             onClick={() => navigate("/finance/bank-loans")}
-            className="rounded-md border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50"
+            className="inline-flex h-10 items-center rounded-xl border border-slate-200 bg-white px-4 text-sm font-semibold text-slate-700 shadow-sm transition hover:bg-slate-50"
           >
             Close
           </button>
         </div>
 
         <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
-          <section className="rounded-lg border border-gray-200 bg-white p-6">
-            <h2 className="mb-4 text-lg font-semibold text-gray-900">
+          <section className="rounded-2xl border border-[#e5e7eb] bg-white p-6 shadow-[0_2px_8px_rgba(15,23,42,0.04)]">
+            <h2 className="mb-4 text-lg font-semibold text-slate-900">
               Customer
             </h2>
 
             <dl className="grid grid-cols-1 gap-4 sm:grid-cols-2">
               <div>
-                <dt className="text-xs font-medium uppercase text-gray-500">
+                <dt className="text-xs font-medium uppercase text-slate-500">
                   Name
                 </dt>
-                <dd className="mt-1 text-sm text-gray-900">{customerName}</dd>
+                <dd className="mt-1 text-sm text-slate-900">{customerName}</dd>
               </div>
 
               <div>
-                <dt className="text-xs font-medium uppercase text-gray-500">
+                <dt className="text-xs font-medium uppercase text-slate-500">
                   Mobile
                 </dt>
-                <dd className="mt-1 text-sm text-gray-900">{customerMobile}</dd>
+                <dd className="mt-1 text-sm text-slate-900">{customerMobile}</dd>
               </div>
             </dl>
           </section>
 
-          <section className="rounded-lg border border-gray-200 bg-white p-6">
-            <h2 className="mb-4 text-lg font-semibold text-gray-900">
+          <section className="rounded-2xl border border-[#e5e7eb] bg-white p-6 shadow-[0_2px_8px_rgba(15,23,42,0.04)]">
+            <h2 className="mb-4 text-lg font-semibold text-slate-900">
               Vehicle Snapshot
             </h2>
 
             <dl className="grid grid-cols-1 gap-4 sm:grid-cols-2">
               <div>
-                <dt className="text-xs font-medium uppercase text-gray-500">
+                <dt className="text-xs font-medium uppercase text-slate-500">
                   Vehicle
                 </dt>
-                <dd className="mt-1 text-sm text-gray-900">
+                <dd className="mt-1 text-sm text-slate-900">
                   {vehicleName || "-"}
                 </dd>
               </div>
 
               <div>
-                <dt className="text-xs font-medium uppercase text-gray-500">
+                <dt className="text-xs font-medium uppercase text-slate-500">
                   Stock ID
                 </dt>
-                <dd className="mt-1 text-sm text-gray-900">
+                <dd className="mt-1 text-sm text-slate-900">
                   {loan.vehicle_stock_id || "-"}
                 </dd>
               </div>
 
               <div>
-                <dt className="text-xs font-medium uppercase text-gray-500">
+                <dt className="text-xs font-medium uppercase text-slate-500">
                   Year
                 </dt>
-                <dd className="mt-1 text-sm text-gray-900">
+                <dd className="mt-1 text-sm text-slate-900">
                   {loan.vehicle_year || "-"}
                 </dd>
               </div>
 
               <div>
-                <dt className="text-xs font-medium uppercase text-gray-500">
+                <dt className="text-xs font-medium uppercase text-slate-500">
                   Colour
                 </dt>
-                <dd className="mt-1 text-sm text-gray-900">
+                <dd className="mt-1 text-sm text-slate-900">
                   {loan.vehicle_colour || "-"}
                 </dd>
               </div>
 
               <div>
-                <dt className="text-xs font-medium uppercase text-gray-500">
+                <dt className="text-xs font-medium uppercase text-slate-500">
                   Mileage
                 </dt>
-                <dd className="mt-1 text-sm text-gray-900">
+                <dd className="mt-1 text-sm text-slate-900">
                   {loan.vehicle_mileage ?? "-"}
                 </dd>
               </div>
 
               <div>
-                <dt className="text-xs font-medium uppercase text-gray-500">
+                <dt className="text-xs font-medium uppercase text-slate-500">
                   Chassis
                 </dt>
-                <dd className="mt-1 text-sm text-gray-900">
+                <dd className="mt-1 text-sm text-slate-900">
                   {loan.vehicle_chassis_number || "-"}
                 </dd>
               </div>
 
               <div>
-                <dt className="text-xs font-medium uppercase text-gray-500">
+                <dt className="text-xs font-medium uppercase text-slate-500">
                   Engine
                 </dt>
-                <dd className="mt-1 text-sm text-gray-900">
+                <dd className="mt-1 text-sm text-slate-900">
                   {loan.vehicle_engine_number || "-"}
                 </dd>
               </div>
@@ -508,19 +508,19 @@ function BankLoanDetail() {
         </div>
 
         <div className="mt-6 grid grid-cols-1 gap-6 lg:grid-cols-3">
-          <section className="rounded-lg border border-gray-200 bg-white p-6">
-            <h2 className="mb-4 text-lg font-semibold text-gray-900">Status</h2>
+          <section className="rounded-2xl border border-[#e5e7eb] bg-white p-6 shadow-[0_2px_8px_rgba(15,23,42,0.04)]">
+            <h2 className="mb-4 text-lg font-semibold text-slate-900">Status</h2>
 
             <div className="space-y-4">
               <div>
-                <label className="mb-1 block text-sm font-medium text-gray-700">
+                <label className="mb-1.5 block text-[11px] font-bold uppercase tracking-[0.08em] text-slate-500">
                   Decision Status
                 </label>
 
                 <select
                   value={decisionStatus}
                   onChange={(event) => setDecisionStatus(event.target.value)}
-                  className="w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-sm"
+                  className="h-10 w-full rounded-xl border border-slate-200 bg-white px-3 text-sm text-slate-800 outline-none transition focus:border-amber-400 focus:ring-2 focus:ring-amber-400/15"
                 >
                   {DECISION_STATUSES.map((option) => (
                     <option key={option} value={option}>
@@ -531,14 +531,14 @@ function BankLoanDetail() {
               </div>
 
               <div>
-                <label className="mb-1 block text-sm font-medium text-gray-700">
+                <label className="mb-1.5 block text-[11px] font-bold uppercase tracking-[0.08em] text-slate-500">
                   Application Status
                 </label>
 
                 <select
                   value={applicationStatus}
                   onChange={(event) => setApplicationStatus(event.target.value)}
-                  className="w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-sm"
+                  className="h-10 w-full rounded-xl border border-slate-200 bg-white px-3 text-sm text-slate-800 outline-none transition focus:border-amber-400 focus:ring-2 focus:ring-amber-400/15"
                 >
                   {APPLICATION_STATUSES.map((option) => (
                     <option key={option} value={option}>
@@ -549,14 +549,14 @@ function BankLoanDetail() {
               </div>
 
               <div>
-                <label className="mb-1 block text-sm font-medium text-gray-700">
+                <label className="mb-1.5 block text-[11px] font-bold uppercase tracking-[0.08em] text-slate-500">
                   Priority
                 </label>
 
                 <select
                   value={priority}
                   onChange={(event) => setPriority(event.target.value)}
-                  className="w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-sm"
+                  className="h-10 w-full rounded-xl border border-slate-200 bg-white px-3 text-sm text-slate-800 outline-none transition focus:border-amber-400 focus:ring-2 focus:ring-amber-400/15"
                 >
                   {PRIORITIES.map((option) => (
                     <option key={option} value={option}>
@@ -570,7 +570,7 @@ function BankLoanDetail() {
                     type="button"
                     disabled={saving}
                     onClick={saveStatus}
-                    className="w-full rounded-md bg-gray-900 px-4 py-2.5 text-sm font-medium text-white hover:bg-gray-800 disabled:cursor-not-allowed disabled:opacity-50"
+                    className="inline-flex h-10 w-full items-center justify-center rounded-xl border border-amber-500 bg-amber-500 px-4 text-sm font-semibold text-slate-950 shadow-sm transition hover:border-amber-400 hover:bg-amber-400 disabled:cursor-not-allowed disabled:opacity-50"
                   >
                     {saving ? "Saving..." : "Save Status"}
                   </button>
@@ -579,14 +579,14 @@ function BankLoanDetail() {
             </div>
           </section>
 
-          <section className="rounded-lg border border-gray-200 bg-white p-6 lg:col-span-2">
-            <h2 className="mb-4 text-lg font-semibold text-gray-900">
+          <section className="rounded-2xl border border-[#e5e7eb] bg-white p-6 shadow-[0_2px_8px_rgba(15,23,42,0.04)] lg:col-span-2">
+            <h2 className="mb-4 text-lg font-semibold text-slate-900">
               Finance
             </h2>
 
             <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
               <div>
-                <label className="mb-1 block text-sm font-medium text-gray-700">
+                <label className="mb-1.5 block text-[11px] font-bold uppercase tracking-[0.08em] text-slate-500">
                   Requested Finance
                 </label>
 
@@ -595,12 +595,12 @@ function BankLoanDetail() {
                   value={requestedFinance}
                   onChange={(event) => setRequestedFinance(event.target.value)}
                   disabled={financeReceiptCreated}
-                  className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm"
+                  className="h-10 w-full rounded-xl border border-slate-200 bg-white px-3 text-sm tabular-nums text-slate-800 outline-none transition focus:border-amber-400 focus:ring-2 focus:ring-amber-400/15"
                 />
               </div>
 
               <div>
-                <label className="mb-1 block text-sm font-medium text-gray-700">
+                <label className="mb-1.5 block text-[11px] font-bold uppercase tracking-[0.08em] text-slate-500">
                   Approved Finance
                 </label>
 
@@ -609,15 +609,15 @@ function BankLoanDetail() {
                   value={approvedFinance}
                   onChange={(event) => setApprovedFinance(event.target.value)}
                   disabled={financeReceiptCreated}
-                  className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm"
+                  className="h-10 w-full rounded-xl border border-slate-200 bg-white px-3 text-sm tabular-nums text-slate-800 outline-none transition focus:border-amber-400 focus:ring-2 focus:ring-amber-400/15"
                 />
               </div>
 
               <div>
-                <p className="mt-3 text-xs font-medium uppercase text-gray-500">
+                <p className="mt-3 text-xs font-medium uppercase text-slate-500">
                   Evaluation
                 </p>
-                <p className="mt-1 text-sm font-semibold text-gray-900">
+                <p className="mt-1 text-sm font-semibold text-slate-900">
                   {formatCurrency(loan.evaluation)}
                 </p>
               </div>
@@ -627,7 +627,7 @@ function BankLoanDetail() {
               type="button"
               disabled={saving || financeReceiptCreated}
               onClick={saveFinance}
-              className="mt-4 rounded-md bg-gray-900 px-4 py-2 text-sm font-medium text-white disabled:opacity-50"
+              className="mt-4 rounded-xl bg-amber-500 px-4 py-2 text-sm font-medium text-slate-950 disabled:opacity-50"
             >
               Save Finance
             </button>
@@ -635,29 +635,29 @@ function BankLoanDetail() {
         </div>
 
         {decisionStatus === "rejected" && (
-          <section className="mt-6 rounded-lg border border-amber-200 bg-amber-50 p-6">
-            <h2 className="mb-4 text-lg font-semibold text-gray-900">
+          <section className="mt-6 rounded-2xl border border-amber-200 bg-amber-50 p-6">
+            <h2 className="mb-4 text-lg font-semibold text-slate-900">
               Change Bank
             </h2>
 
-            <p className="mb-4 text-sm text-gray-600">
+            <p className="mb-4 text-sm text-slate-600">
               This bank loan was rejected. Select another bank to create a new
               bank-loan application for the same deal.
             </p>
 
             <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
               <div>
-                <label className="mb-1 block text-sm font-medium text-gray-700">
+                <label className="mb-1 block text-sm font-medium text-slate-700">
                   Current Bank
                 </label>
 
-                <div className="rounded-md border border-gray-300 bg-white px-3 py-2 text-sm text-gray-700">
+                <div className="rounded-xl border border-slate-300 bg-white px-3 py-2 text-sm text-slate-700">
                   {loan?.bank_name || loan?.bank?.name || loan?.bank || "-"}
                 </div>
               </div>
 
               <div>
-                <label className="mb-1 block text-sm font-medium text-gray-700">
+                <label className="mb-1 block text-sm font-medium text-slate-700">
                   New Bank
                 </label>
 
@@ -665,7 +665,7 @@ function BankLoanDetail() {
                   value={newBankId}
                   onChange={(event) => setNewBankId(event.target.value)}
                   disabled={saving || loadingBanks}
-                  className="w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-sm disabled:bg-gray-100"
+                  className="w-full rounded-xl border border-slate-300 bg-white px-3 py-2 text-sm disabled:bg-slate-100"
                 >
                   <option value="">
                     {loadingBanks ? "Loading banks..." : "Select a bank"}
@@ -694,7 +694,7 @@ function BankLoanDetail() {
                   type="button"
                   onClick={changeBank}
                   disabled={saving || loadingBanks || !newBankId}
-                  className="w-full rounded-md bg-gray-900 px-4 py-2 text-sm font-medium text-white disabled:cursor-not-allowed disabled:opacity-50"
+                  className="w-full rounded-xl bg-amber-500 px-4 py-2 text-sm font-medium text-slate-950 disabled:cursor-not-allowed disabled:opacity-50"
                 >
                   {saving ? "Creating..." : "Change Bank"}
                 </button>
@@ -703,8 +703,8 @@ function BankLoanDetail() {
           </section>
         )}
 
-        <section className="mt-6 rounded-lg border border-gray-200 bg-white p-6">
-          <h2 className="mb-4 text-lg font-semibold text-gray-900">
+        <section className="mt-6 rounded-2xl border border-[#e5e7eb] bg-white p-6 shadow-[0_2px_8px_rgba(15,23,42,0.04)]">
+          <h2 className="mb-4 text-lg font-semibold text-slate-900">
             Application Information
           </h2>
 
@@ -713,7 +713,7 @@ function BankLoanDetail() {
             className="grid grid-cols-1 gap-4 md:grid-cols-2"
           >
             <div>
-              <label className="mb-1 block text-sm font-medium text-gray-700">
+              <label className="mb-1 block text-sm font-medium text-slate-700">
                 Application Number
               </label>
 
@@ -721,12 +721,12 @@ function BankLoanDetail() {
                 type="text"
                 value={applicationNumber}
                 onChange={(event) => setApplicationNumber(event.target.value)}
-                className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm"
+                className="w-full rounded-xl border border-slate-300 px-3 py-2 text-sm"
               />
             </div>
 
             <div>
-              <label className="mb-1 block text-sm font-medium text-gray-700">
+              <label className="mb-1 block text-sm font-medium text-slate-700">
                 LPO Number
               </label>
 
@@ -734,12 +734,12 @@ function BankLoanDetail() {
                 type="text"
                 value={bankReference}
                 onChange={(event) => setBankReference(event.target.value)}
-                className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm"
+                className="w-full rounded-xl border border-slate-300 px-3 py-2 text-sm"
               />
             </div>
 
             <div>
-              <label className="mb-1 block text-sm font-medium text-gray-700">
+              <label className="mb-1 block text-sm font-medium text-slate-700">
                 Relationship Manager
               </label>
 
@@ -747,12 +747,12 @@ function BankLoanDetail() {
                 type="text"
                 value={relationshipManager}
                 onChange={(event) => setRelationshipManager(event.target.value)}
-                className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm"
+                className="w-full rounded-xl border border-slate-300 px-3 py-2 text-sm"
               />
             </div>
 
             <div>
-              <label className="mb-1 block text-sm font-medium text-gray-700">
+              <label className="mb-1 block text-sm font-medium text-slate-700">
                 Application Date
               </label>
 
@@ -760,12 +760,12 @@ function BankLoanDetail() {
                 type="date"
                 value={applicationDate || ""}
                 onChange={(event) => setApplicationDate(event.target.value)}
-                className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm"
+                className="w-full rounded-xl border border-slate-300 px-3 py-2 text-sm"
               />
             </div>
 
             <div>
-              <label className="mb-1 block text-sm font-medium text-gray-700">
+              <label className="mb-1 block text-sm font-medium text-slate-700">
                 Expected Approval Date
               </label>
 
@@ -775,12 +775,12 @@ function BankLoanDetail() {
                 onChange={(event) =>
                   setExpectedApprovalDate(event.target.value)
                 }
-                className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm"
+                className="w-full rounded-xl border border-slate-300 px-3 py-2 text-sm"
               />
             </div>
 
             <div className="md:col-span-2">
-              <label className="mb-1 block text-sm font-medium text-gray-700">
+              <label className="mb-1 block text-sm font-medium text-slate-700">
                 Remark
               </label>
 
@@ -788,7 +788,7 @@ function BankLoanDetail() {
                 value={applicationRemark}
                 onChange={(event) => setApplicationRemark(event.target.value)}
                 rows={3}
-                className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm"
+                className="w-full rounded-xl border border-slate-300 px-3 py-2 text-sm"
               />
             </div>
 
@@ -796,7 +796,7 @@ function BankLoanDetail() {
               <button
                 type="submit"
                 disabled={saving}
-                className="rounded-md bg-gray-900 px-4 py-2 text-sm font-medium text-white disabled:opacity-50"
+                className="rounded-xl bg-amber-500 px-4 py-2 text-sm font-medium text-slate-950 disabled:opacity-50"
               >
                 Save Application Information
               </button>
@@ -804,8 +804,8 @@ function BankLoanDetail() {
           </form>
         </section>
 
-        <section className="mt-6 rounded-lg border border-gray-200 bg-white p-6">
-          <h2 className="mb-4 text-lg font-semibold text-gray-900">
+        <section className="mt-6 rounded-2xl border border-[#e5e7eb] bg-white p-6 shadow-[0_2px_8px_rgba(15,23,42,0.04)]">
+          <h2 className="mb-4 text-lg font-semibold text-slate-900">
             Follow-ups
           </h2>
 
@@ -814,7 +814,7 @@ function BankLoanDetail() {
             className="grid grid-cols-1 gap-4 md:grid-cols-3"
           >
             <div className="md:col-span-2">
-              <label className="mb-1 block text-sm font-medium text-gray-700">
+              <label className="mb-1 block text-sm font-medium text-slate-700">
                 Note
               </label>
 
@@ -822,13 +822,13 @@ function BankLoanDetail() {
                 value={followUpNote}
                 onChange={(event) => setFollowUpNote(event.target.value)}
                 rows={3}
-                className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm"
+                className="w-full rounded-xl border border-slate-300 px-3 py-2 text-sm"
                 placeholder="Enter follow-up note..."
               />
             </div>
 
             <div>
-              <label className="mb-1 block text-sm font-medium text-gray-700">
+              <label className="mb-1 block text-sm font-medium text-slate-700">
                 Follow-up Date
               </label>
 
@@ -836,13 +836,13 @@ function BankLoanDetail() {
                 type="date"
                 value={followUpDate}
                 onChange={(event) => setFollowUpDate(event.target.value)}
-                className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm"
+                className="w-full rounded-xl border border-slate-300 px-3 py-2 text-sm"
               />
 
               <button
                 type="submit"
                 disabled={saving}
-                className="mt-4 rounded-md bg-gray-900 px-4 py-2 text-sm font-medium text-white disabled:opacity-50"
+                className="mt-4 rounded-xl bg-amber-500 px-4 py-2 text-sm font-medium text-slate-950 disabled:opacity-50"
               >
                 Add Follow-up
               </button>
@@ -851,27 +851,27 @@ function BankLoanDetail() {
 
           <div className="mt-6 space-y-3">
             {followUps.length === 0 && (
-              <p className="text-sm text-gray-500">No follow-ups recorded.</p>
+              <p className="text-sm text-slate-500">No follow-ups recorded.</p>
             )}
 
             {followUps.map((followUp) => (
               <div
                 key={followUp.id}
-                className="rounded-md border border-gray-200 p-4"
+                className="rounded-xl border border-slate-200 p-4"
               >
                 <div className="flex items-start justify-between gap-4">
-                  <p className="text-sm font-medium text-gray-900">
+                  <p className="text-sm font-medium text-slate-900">
                     {followUp.note || "-"}
                   </p>
 
-                  <span className="text-xs text-gray-500">
+                  <span className="text-xs text-slate-500">
                     {followUp.follow_up_date || "-"}
                   </span>
                 </div>
 
-                <div className="mt-2 text-xs text-gray-500">
+                <div className="mt-2 text-xs text-slate-500">
                   Added by:{" "}
-                  <span className="font-medium text-gray-700">
+                  <span className="font-medium text-slate-700">
                     {followUp.created_by_name || "-"}
                   </span>
                   {" · "}

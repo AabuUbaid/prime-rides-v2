@@ -80,42 +80,43 @@ export default function Proformas() {
   };
 
   return (
-    <div className="p-6">
-      <div className="mb-6 flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
+    <div className="min-h-screen bg-[#f5f6fa] px-4 py-6 sm:px-6 lg:px-8">
+      <div className="mx-auto w-full max-w-[1600px]">
+      <div className="mb-7 flex flex-col gap-4 xl:flex-row xl:items-end xl:justify-between">
         <div>
-          <h1 className="text-2xl font-semibold text-gray-900">
+          <h1 className="text-2xl font-bold tracking-tight text-slate-950 sm:text-3xl">
             Proforma Invoices
           </h1>
 
-          <p className="mt-1 text-sm text-gray-500">
+          <p className="mt-1 text-sm text-slate-500">
             Manage Proforma Invoices created from approved Insurance records.
           </p>
         </div>
 
-        <div className="flex w-full flex-col gap-2 sm:flex-row lg:w-auto">
+        <div className="flex w-full flex-wrap gap-2 sm:flex-row lg:w-auto">
           <button
             type="button"
             onClick={() => setShowCreatePicker(true)}
-            className="rounded-lg bg-gray-900 px-4 py-2.5 text-sm font-medium text-white hover:bg-gray-800"
+            className="inline-flex h-10 items-center rounded-xl border border-amber-500 bg-amber-500 px-4 text-sm font-semibold text-slate-950 shadow-sm transition hover:border-amber-400 hover:bg-amber-400"
           >
             Create Proforma
           </button>
 
           <form
             onSubmit={handleSearchSubmit}
-            className="flex w-full gap-2 lg:w-auto"
+            className="flex w-full flex-1 gap-2 lg:w-auto"
           >
             <input
               type="search"
               value={search}
               onChange={(event) => setSearch(event.target.value)}
               placeholder="Search Proforma, customer, mobile..."
-              className="w-full rounded-lg border border-gray-300 px-3 py-2.5 text-sm outline-none focus:border-gray-500 lg:w-80"
+              className="h-10 w-full rounded-xl border border-slate-200 bg-white px-3 text-sm text-slate-800 outline-none transition placeholder:text-slate-400 focus:border-amber-400 focus:ring-2 focus:ring-amber-400/15 lg:w-80"
             />
 
             <button
               type="submit"
-              className="rounded-lg bg-gray-900 px-4 py-2.5 text-sm font-medium text-white hover:bg-gray-800"
+              className="inline-flex h-10 items-center rounded-xl border border-amber-500 bg-amber-500 px-4 text-sm font-semibold text-slate-950 shadow-sm transition hover:border-amber-400 hover:bg-amber-400"
             >
               Search
             </button>
@@ -124,56 +125,56 @@ export default function Proformas() {
       </div>
 
       {error && (
-        <div className="mb-4 rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
+        <div className="mb-4 rounded-xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm text-rose-700">
           {error}
         </div>
       )}
 
-      <div className="overflow-hidden rounded-xl border border-gray-200 bg-white shadow-sm">
+      <div className="overflow-hidden rounded-2xl border border-[#e5e7eb] bg-white shadow-[0_2px_8px_rgba(15,23,42,0.04)]">
         {loading ? (
-          <div className="p-10 text-center text-sm text-gray-500">
+          <div className="p-10 text-center text-sm text-slate-500">
             Loading Proforma records...
           </div>
         ) : proformas.length === 0 ? (
-          <div className="p-10 text-center text-sm text-gray-500">
+          <div className="p-10 text-center text-sm text-slate-500">
             No Proforma records found.
           </div>
         ) : (
           <div className="overflow-x-auto">
-            <table className="min-w-full divide-y divide-gray-200">
-              <thead className="bg-gray-50">
+            <table className="min-w-full divide-y divide-slate-200">
+              <thead className="bg-slate-50">
                 <tr>
-                  <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-gray-500">
+                  <th className="px-4 py-3 text-left text-[10px] font-bold uppercase tracking-[0.08em] text-slate-500">
                     Proforma
                   </th>
 
-                  <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-gray-500">
+                  <th className="px-4 py-3 text-left text-[10px] font-bold uppercase tracking-[0.08em] text-slate-500">
                     Customer
                   </th>
 
-                  <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-gray-500">
+                  <th className="px-4 py-3 text-left text-[10px] font-bold uppercase tracking-[0.08em] text-slate-500">
                     Vehicle
                   </th>
 
-                  <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-gray-500">
+                  <th className="px-4 py-3 text-left text-[10px] font-bold uppercase tracking-[0.08em] text-slate-500">
                     Payment
                   </th>
 
-                  <th className="px-4 py-3 text-right text-xs font-semibold uppercase tracking-wide text-gray-500">
+                  <th className="px-4 py-3 text-right text-[10px] font-bold uppercase tracking-[0.08em] text-slate-500">
                     Vehicle Price
                   </th>
 
-                  <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-gray-500">
+                  <th className="px-4 py-3 text-left text-[10px] font-bold uppercase tracking-[0.08em] text-slate-500">
                     Date
                   </th>
 
-                  <th className="px-4 py-3 text-right text-xs font-semibold uppercase tracking-wide text-gray-500">
+                  <th className="px-4 py-3 text-right text-[10px] font-bold uppercase tracking-[0.08em] text-slate-500">
                     Action
                   </th>
                 </tr>
               </thead>
 
-              <tbody className="divide-y divide-gray-100">
+              <tbody className="divide-y divide-slate-100">
                 {proformas.map((proforma) => {
                   const vehicle = [
                     proforma.vehicle_make,
@@ -184,59 +185,59 @@ export default function Proformas() {
                     .join(" ");
 
                   return (
-                    <tr key={proforma.id} className="hover:bg-gray-50">
-                      <td className="px-4 py-4 align-top">
-                        <div className="text-sm font-medium text-gray-900">
+                    <tr key={proforma.id} className="transition-colors hover:bg-slate-50/80">
+                      <td className="px-4 py-3 align-top">
+                        <div className="text-sm font-medium text-slate-900">
                           {proforma.proforma_number || "-"}
                         </div>
 
-                        <div className="mt-1 text-xs text-gray-500">
+                        <div className="mt-1 text-xs text-slate-500">
                           Quote #{proforma.quote ?? "-"}
                         </div>
                       </td>
 
-                      <td className="px-4 py-4 align-top">
-                        <div className="text-sm font-medium text-gray-900">
+                      <td className="px-4 py-3 align-top">
+                        <div className="text-sm font-medium text-slate-900">
                           {proforma.customer_name || "-"}
                         </div>
 
-                        <div className="mt-1 text-xs text-gray-500">
+                        <div className="mt-1 text-xs text-slate-500">
                           {proforma.customer_mobile || "-"}
                         </div>
                       </td>
 
-                      <td className="px-4 py-4 align-top">
-                        <div className="text-sm font-medium text-gray-900">
+                      <td className="px-4 py-3 align-top">
+                        <div className="text-sm font-medium text-slate-900">
                           {vehicle || "-"}
                         </div>
 
-                        <div className="mt-1 text-xs text-gray-500">
+                        <div className="mt-1 text-xs text-slate-500">
                           Chassis: {proforma.vehicle_chassis_number || "-"}
                         </div>
 
-                        <div className="mt-1 text-xs text-gray-500">
+                        <div className="mt-1 text-xs text-slate-500">
                           Mileage: {proforma.vehicle_mileage ?? "-"}
                         </div>
                       </td>
 
-                      <td className="px-4 py-4 align-top">
+                      <td className="px-4 py-3 align-top">
                         <span className="inline-flex rounded-full bg-blue-100 px-2.5 py-1 text-xs font-semibold text-blue-700">
                           {formatPaymentType(proforma.payment_type)}
                         </span>
                       </td>
 
-                      <td className="px-4 py-4 text-right align-top text-sm font-medium text-gray-900">
+                      <td className="px-4 py-3 text-right align-top text-sm font-medium tabular-nums text-slate-900">
                         {proforma.vehicle_price ?? "-"}
                       </td>
 
-                      <td className="px-4 py-4 align-top text-sm text-gray-700">
+                      <td className="px-4 py-3 align-top text-sm text-slate-700">
                         {formatDate(proforma.proforma_date)}
                       </td>
 
-                      <td className="px-4 py-4 text-right align-top">
+                      <td className="px-4 py-3 text-right align-top">
                         <Link
                           to={`/finance/proformas/${proforma.id}`}
-                          className="inline-flex rounded-lg border border-gray-300 px-3 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50"
+                          className="inline-flex h-9 items-center rounded-xl border border-slate-200 bg-white px-3 text-xs font-semibold text-slate-700 shadow-sm transition hover:bg-slate-50"
                         >
                           Open
                         </Link>
@@ -261,6 +262,7 @@ export default function Proformas() {
           }}
         />
       )}
+      </div>
     </div>
   );
 }

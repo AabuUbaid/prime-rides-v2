@@ -29,8 +29,8 @@ const STATUS_LABELS = {
 function Field({ label, value }) {
   return (
     <div>
-      <div className="text-xs text-gray-500">{label}</div>
-      <div className="mt-1 font-medium text-gray-900">{value || "-"}</div>
+      <div className="text-xs text-slate-500">{label}</div>
+      <div className="mt-1 font-medium text-slate-900">{value || "-"}</div>
     </div>
   );
 }
@@ -172,13 +172,13 @@ export default function RtaRecordDetail() {
   }, [id]);
 
   if (loading) {
-    return <div className="p-6 text-sm text-gray-500">Loading...</div>;
+    return <div className="p-6 text-sm text-slate-500">Loading...</div>;
   }
 
   if (!record) {
     return (
       <div className="p-6">
-        <div className="rounded-xl border border-red-200 bg-red-50 p-4 text-sm text-red-700">
+        <div className="rounded-xl border border-rose-200 bg-rose-50 p-4 text-sm text-rose-700">
           RTA record could not be loaded.
         </div>
       </div>
@@ -186,15 +186,15 @@ export default function RtaRecordDetail() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 p-6">
-      <div className="mx-auto max-w-6xl space-y-6">
-        <div className="flex flex-wrap items-start justify-between gap-4">
+    <div className="min-h-screen bg-[#f5f6fa] px-4 py-6 sm:px-6 lg:px-8">
+      <div className="mx-auto w-full max-w-6xl space-y-6">
+        <div className="flex flex-wrap items-end justify-between gap-4">
           <div>
-            <h1 className="text-2xl font-semibold text-gray-900">
+            <h1 className="text-2xl font-bold tracking-tight text-slate-950 sm:text-3xl">
               RTA Record #{record.id}
             </h1>
 
-            <p className="mt-1 text-sm text-gray-500">
+            <p className="mt-1 text-sm text-slate-500">
               {RECORD_TYPE_LABELS[record.record_type] ||
                 record.record_type ||
                 "-"}
@@ -204,12 +204,12 @@ export default function RtaRecordDetail() {
           <div className="flex flex-wrap gap-2">
 
             <div className="flex flex-wrap items-center gap-3">
-              <label className="inline-flex cursor-pointer items-center gap-2 rounded-lg border border-gray-200 bg-white px-4 py-2 text-sm font-semibold text-gray-700">
+              <label className="inline-flex cursor-pointer items-center gap-2 rounded-xl border border-slate-200 bg-white px-4 py-2 text-sm font-semibold text-slate-700">
                 <input
                   type="checkbox"
                   checked={includeSealStamp}
                   onChange={(event) => setIncludeSealStamp(event.target.checked)}
-                  className="h-4 w-4 rounded border-gray-300"
+                  className="h-4 w-4 rounded border-slate-300"
                 />
                 <span>Add Company Seal &amp; Stamp</span>
               </label>
@@ -221,7 +221,7 @@ export default function RtaRecordDetail() {
                     `/rta/${record.id}/print?seal_stamp=${includeSealStamp ? "1" : "0"}`,
                   )
                 }
-                className="rounded-lg bg-gray-900 px-4 py-2 text-sm font-medium text-white hover:bg-gray-800"
+                className="inline-flex h-10 items-center rounded-xl border border-amber-500 bg-amber-500 px-4 text-sm font-semibold text-slate-950 shadow-sm transition hover:border-amber-400 hover:bg-amber-400"
               >
                 Print RTA
               </button>
@@ -230,15 +230,15 @@ export default function RtaRecordDetail() {
 
             <Link
               to="/rta"
-              className="rounded-lg border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50"
+              className="inline-flex h-10 items-center rounded-xl border border-slate-200 bg-white px-4 text-sm font-semibold text-slate-700 shadow-sm transition hover:bg-slate-50"
             >
               Back to RTA
             </Link>
           </div>
         </div>
 
-        <section className="rounded-2xl border border-gray-200 bg-white p-5 shadow-sm">
-          <h2 className="font-semibold text-gray-900">Record Information</h2>
+        <section className="rounded-2xl border border-[#e5e7eb] bg-white p-5 shadow-[0_2px_8px_rgba(15,23,42,0.04)]">
+          <h2 className="font-semibold text-slate-900">Record Information</h2>
 
           <div className="mt-4 grid gap-4 md:grid-cols-4">
             <Field
@@ -258,39 +258,39 @@ export default function RtaRecordDetail() {
           </div>
         </section>
 
-        <section className="rounded-2xl border border-gray-200 bg-white p-5 shadow-sm">
-          <h2 className="font-semibold text-gray-900">Parties</h2>
+        <section className="rounded-2xl border border-[#e5e7eb] bg-white p-5 shadow-[0_2px_8px_rgba(15,23,42,0.04)]">
+          <h2 className="font-semibold text-slate-900">Parties</h2>
 
           <div className="mt-4 grid gap-4 md:grid-cols-2">
-            <div className="rounded-xl bg-gray-50 p-4">
-              <div className="text-xs font-medium uppercase tracking-wide text-gray-500">
+            <div className="rounded-xl border border-slate-100 bg-slate-50/70 p-4">
+              <div className="text-xs font-medium uppercase tracking-wide text-slate-500">
                 First Party
               </div>
 
-              <div className="mt-2 font-semibold text-gray-900">
+              <div className="mt-2 font-semibold text-slate-900">
                 {record.first_party_name || "-"}
               </div>
 
-              <div className="mt-1 text-sm text-gray-500">
+              <div className="mt-1 text-sm text-slate-500">
                 {record.first_party_role || "-"}
               </div>
             </div>
 
-            <div className="rounded-xl bg-gray-50 p-4">
-              <div className="text-xs font-medium uppercase tracking-wide text-gray-500">
+            <div className="rounded-xl border border-slate-100 bg-slate-50/70 p-4">
+              <div className="text-xs font-medium uppercase tracking-wide text-slate-500">
                 Second Party
               </div>
 
-              <div className="mt-2 font-semibold text-gray-900">
+              <div className="mt-2 font-semibold text-slate-900">
                 {record.second_party_name || "-"}
               </div>
 
-              <div className="mt-1 text-sm text-gray-500">
+              <div className="mt-1 text-sm text-slate-500">
                 {record.second_party_role || "-"}
               </div>
 
               {record.second_party_mobile && (
-                <div className="mt-1 text-sm text-gray-500">
+                <div className="mt-1 text-sm text-slate-500">
                   {record.second_party_mobile}
                 </div>
               )}
@@ -299,8 +299,8 @@ export default function RtaRecordDetail() {
         </section>
 
         {record.record_type === "PURCHASE" && (
-          <section className="rounded-2xl border border-gray-200 bg-white p-5 shadow-sm">
-            <h2 className="font-semibold text-gray-900">Purchase Supplier</h2>
+          <section className="rounded-2xl border border-[#e5e7eb] bg-white p-5 shadow-[0_2px_8px_rgba(15,23,42,0.04)]">
+            <h2 className="font-semibold text-slate-900">Purchase Supplier</h2>
 
             <div className="mt-4 grid gap-4 md:grid-cols-2">
               <Field label="Supplier Name" value={record.supplier_name} />
@@ -315,8 +315,8 @@ export default function RtaRecordDetail() {
         )}
 
         {record.record_type === "SALE" && (
-          <section className="rounded-2xl border border-gray-200 bg-white p-5 shadow-sm">
-            <h2 className="font-semibold text-gray-900">Sale Customer</h2>
+          <section className="rounded-2xl border border-[#e5e7eb] bg-white p-5 shadow-[0_2px_8px_rgba(15,23,42,0.04)]">
+            <h2 className="font-semibold text-slate-900">Sale Customer</h2>
 
             <div className="mt-4 grid gap-4 md:grid-cols-2">
               <Field label="Customer ID" value={record.customer} />
@@ -337,8 +337,8 @@ export default function RtaRecordDetail() {
           </section>
         )}
 
-        <section className="rounded-2xl border border-gray-200 bg-white p-5 shadow-sm">
-          <h2 className="font-semibold text-gray-900">Vehicle Snapshot</h2>
+        <section className="rounded-2xl border border-[#e5e7eb] bg-white p-5 shadow-[0_2px_8px_rgba(15,23,42,0.04)]">
+          <h2 className="font-semibold text-slate-900">Vehicle Snapshot</h2>
 
           <div className="mt-4 grid gap-4 md:grid-cols-3">
             <Field label="Stock ID" value={record.vehicle_stock_id} />
@@ -360,8 +360,8 @@ export default function RtaRecordDetail() {
           </div>
         </section>
 
-        <section className="rounded-2xl border border-gray-200 bg-white p-5 shadow-sm">
-          <h2 className="font-semibold text-gray-900">Company and Branch</h2>
+        <section className="rounded-2xl border border-[#e5e7eb] bg-white p-5 shadow-[0_2px_8px_rgba(15,23,42,0.04)]">
+          <h2 className="font-semibold text-slate-900">Company and Branch</h2>
 
           <div className="mt-4 grid gap-4 md:grid-cols-3">
             <Field label="Company" value={record.company_legal_name} />
@@ -372,8 +372,8 @@ export default function RtaRecordDetail() {
           </div>
         </section>
 
-        <section className="rounded-2xl border border-gray-200 bg-white p-5 shadow-sm">
-          <h2 className="font-semibold text-gray-900">RTA Details</h2>
+        <section className="rounded-2xl border border-[#e5e7eb] bg-white p-5 shadow-[0_2px_8px_rgba(15,23,42,0.04)]">
+          <h2 className="font-semibold text-slate-900">RTA Details</h2>
 
           <div className="mt-4 grid gap-4 md:grid-cols-2">
             <Field
@@ -393,24 +393,24 @@ export default function RtaRecordDetail() {
           </div>
 
           <div className="mt-4">
-            <div className="text-xs text-gray-500">Notes</div>
-            <div className="mt-1 whitespace-pre-wrap text-sm text-gray-900">
+            <div className="text-xs text-slate-500">Notes</div>
+            <div className="mt-1 whitespace-pre-wrap text-sm text-slate-900">
               {record.notes || "-"}
             </div>
           </div>
         </section>
-        <section className="rounded-2xl border border-gray-200 bg-white p-5 shadow-sm">
+        <section className="rounded-2xl border border-[#e5e7eb] bg-white p-5 shadow-[0_2px_8px_rgba(15,23,42,0.04)]">
           <div className="flex items-center justify-between gap-4">
-            <h2 className="font-semibold text-gray-900">RTA Documents</h2>
+            <h2 className="font-semibold text-slate-900">RTA Documents</h2>
 
             {user?.role !== "ADMIN" && (
               <form
                 onSubmit={handleDocumentUpload}
-                className="mt-5 rounded-xl border border-gray-200 bg-gray-50 p-4"
+                className="mt-5 rounded-xl border border-slate-200 bg-slate-50 p-4"
               >
                 <div className="grid gap-4 md:grid-cols-[220px_1fr_auto] md:items-end">
                   <div>
-                    <label className="mb-1 block text-sm font-medium text-gray-700">
+                    <label className="mb-1 block text-sm font-medium text-slate-700">
                       Document Type
                     </label>
 
@@ -418,7 +418,7 @@ export default function RtaRecordDetail() {
                       value={uploadType}
                       onChange={(event) => setUploadType(event.target.value)}
                       disabled={uploading}
-                      className="w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm"
+                      className="h-10 w-full rounded-xl border border-slate-200 bg-white px-3 text-sm text-slate-800 outline-none transition focus:border-amber-400 focus:ring-2 focus:ring-amber-400/15"
                     >
                       <option value="SUPPLIER_DOCUMENT">
                         Supplier Document
@@ -432,7 +432,7 @@ export default function RtaRecordDetail() {
                   </div>
 
                   <div>
-                    <label className="mb-1 block text-sm font-medium text-gray-700">
+                    <label className="mb-1 block text-sm font-medium text-slate-700">
                       File
                     </label>
 
@@ -443,38 +443,38 @@ export default function RtaRecordDetail() {
                         setUploadFile(event.target.files?.[0] || null)
                       }
                       disabled={uploading}
-                      className="block w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm"
+                      className="block h-10 w-full rounded-xl border border-slate-200 bg-white px-3 text-sm text-slate-800 outline-none transition focus:border-amber-400 focus:ring-2 focus:ring-amber-400/15"
                     />
                   </div>
 
                   <button
                     type="submit"
                     disabled={uploading || !uploadFile}
-                    className="rounded-lg bg-gray-900 px-4 py-2 text-sm font-medium text-white disabled:cursor-not-allowed disabled:opacity-50"
+                    className="inline-flex h-10 items-center rounded-xl border border-amber-500 bg-amber-500 px-4 text-sm font-semibold text-slate-950 shadow-sm transition hover:border-amber-400 hover:bg-amber-400 disabled:cursor-not-allowed disabled:opacity-50"
                   >
                     {uploading ? "Uploading..." : "Upload"}
                   </button>
                 </div>
 
-                <p className="mt-2 text-xs text-gray-500">
+                <p className="mt-2 text-xs text-slate-500">
                   PDF, JPEG, PNG, or WEBP. Maximum 10 MB.
                 </p>
               </form>
             )}
 
             {!documentsLoading && (
-              <span className="text-sm text-gray-500">
+              <span className="text-sm text-slate-500">
                 {documents.length} document{documents.length === 1 ? "" : "s"}
               </span>
             )}
           </div>
 
           {documentsLoading ? (
-            <div className="mt-4 text-sm text-gray-500">
+            <div className="mt-4 text-sm text-slate-500">
               Loading documents...
             </div>
           ) : documents.length === 0 ? (
-            <div className="mt-4 rounded-lg border border-dashed border-gray-300 p-5 text-sm text-gray-500">
+            <div className="mt-4 rounded-xl border border-dashed border-slate-300 p-5 text-sm text-slate-500">
               No RTA documents uploaded.
             </div>
           ) : (
@@ -482,31 +482,31 @@ export default function RtaRecordDetail() {
               {documents.map((document) => (
                 <div
                   key={document.id}
-                  className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-gray-200 bg-gray-50 p-4"
+                  className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-slate-200 bg-slate-50 p-4"
                 >
                   <div>
-                    <div className="font-medium text-gray-900">
+                    <div className="font-medium text-slate-900">
                       {document.original_filename ||
                         document.document_type ||
                         "Document"}
                     </div>
 
-                    <div className="mt-1 text-xs text-gray-500">
+                    <div className="mt-1 text-xs text-slate-500">
                       {document.document_type || "-"}
                     </div>
                   </div>
                   <div
                     key={document.id}
-                    className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-gray-200 bg-gray-50 p-4"
+                    className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-slate-200 bg-slate-50 p-4"
                   >
                     <div>
-                      <div className="font-medium text-gray-900">
+                      <div className="font-medium text-slate-900">
                         {document.original_filename ||
                           document.document_type ||
                           "Document"}
                       </div>
 
-                      <div className="mt-1 text-xs text-gray-500">
+                      <div className="mt-1 text-xs text-slate-500">
                         {document.document_type || "-"}
                       </div>
                     </div>
@@ -514,7 +514,7 @@ export default function RtaRecordDetail() {
                     <button
                       type="button"
                       onClick={() => handleDocumentDownload(document)}
-                      className="rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50"
+                      className="inline-flex h-10 items-center rounded-xl border border-slate-200 bg-white px-3 text-sm font-semibold text-slate-700 shadow-sm transition hover:bg-slate-50"
                     >
                       Download
                     </button>
@@ -523,7 +523,7 @@ export default function RtaRecordDetail() {
                       <button
                         type="button"
                         onClick={() => handleDocumentDelete(document)}
-                        className="rounded-lg border border-red-200 bg-white px-3 py-2 text-sm font-medium text-red-600 hover:bg-red-50"
+                        className="rounded-xl border border-rose-200 bg-white px-3 py-2 text-sm font-medium text-rose-600 hover:bg-rose-50"
                       >
                         Delete
                       </button>

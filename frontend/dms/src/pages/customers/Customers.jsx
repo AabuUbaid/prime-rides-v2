@@ -171,28 +171,28 @@ export default function Customers() {
   }, [loadCustomers]);
 
   return (
-    <div className="min-h-screen bg-slate-50 px-4 py-6 sm:px-6 lg:px-8">
-      <div className="mx-auto max-w-7xl">
-        <div className="mb-6 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+    <div className="min-h-screen bg-[#f5f6fa] px-4 py-6 sm:px-6 lg:px-8">
+      <div className="mx-auto w-full max-w-[1600px]">
+        <div className="mb-7 flex flex-col gap-4 xl:flex-row xl:items-end xl:justify-between">
           <div>
             <div className="flex items-center gap-3">
-              <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-slate-900 text-white">
+              <div className="flex h-10 w-10 items-center justify-center rounded-xl border border-amber-200 bg-amber-50 text-amber-600">
                 <UserRound size={20} />
               </div>
 
               <div>
-                <h1 className="text-2xl font-semibold text-slate-900">
+                <h1 className="text-2xl font-bold tracking-tight text-slate-950 sm:text-3xl">
                   Customers
                 </h1>
 
-                <p className="text-sm text-slate-500">
+                <p className="mt-1 text-sm text-slate-500">
                   Manage customer records and history.
                 </p>
               </div>
             </div>
           </div>
 
-          <div className="flex items-center gap-2">
+          <div className="flex flex-wrap items-center gap-2">
             <input
               ref={importFileInputRef}
               type="file"
@@ -209,7 +209,7 @@ export default function Customers() {
                 setPage(1);
               }}
               placeholder="Search name, phone, Emirates ID or email..."
-              className="w-64 rounded-lg border border-slate-300 bg-white px-3 py-2.5 text-sm text-slate-900 outline-none focus:border-slate-500 focus:ring-2 focus:ring-slate-200"
+              className="h-10 w-full rounded-xl border border-slate-200 bg-white px-3 text-sm text-slate-800 outline-none transition placeholder:text-slate-400 focus:border-amber-400 focus:ring-2 focus:ring-amber-400/15 sm:w-64"
             />
 
             <button
@@ -222,7 +222,7 @@ export default function Customers() {
                   }
               }
               disabled={importing || loading}
-              className="inline-flex items-center gap-2 rounded-lg border border-slate-300 bg-white px-4 py-2.5 text-sm font-medium text-slate-700 transition hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-60"
+              className="inline-flex h-10 items-center gap-2 rounded-xl border border-slate-200 bg-white px-4 text-sm font-semibold text-slate-700 shadow-sm transition hover:border-slate-300 hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-60"
             >
               <Upload size={16} />
 
@@ -237,7 +237,7 @@ export default function Customers() {
               type="button"
               onClick={loadCustomers}
               disabled={loading}
-              className="inline-flex items-center gap-2 rounded-lg border border-slate-300 bg-white px-4 py-2.5 text-sm font-medium text-slate-700 transition hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-60"
+              className="inline-flex h-10 items-center gap-2 rounded-xl border border-slate-200 bg-white px-4 text-sm font-semibold text-slate-700 shadow-sm transition hover:border-slate-300 hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-60"
             >
               <RefreshCw size={16} className={loading ? "animate-spin" : ""} />
               Refresh
@@ -245,7 +245,7 @@ export default function Customers() {
 
             <Link
               to="/customers/new"
-              className="inline-flex items-center gap-2 rounded-lg bg-slate-900 px-4 py-2.5 text-sm font-medium text-white transition hover:bg-slate-800"
+              className="inline-flex h-10 items-center gap-2 rounded-xl border border-amber-500 bg-amber-500 px-4 text-sm font-semibold text-slate-950 shadow-sm transition hover:border-amber-400 hover:bg-amber-400"
             >
               <Plus size={16} />
               New Customer
@@ -261,9 +261,9 @@ export default function Customers() {
           )}
         </div>
 
-        <div className="overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm">
+        <div className="overflow-hidden rounded-2xl border border-[#e5e7eb] bg-white shadow-[0_2px_8px_rgba(15,23,42,0.04)]">
           <div className="border-b border-slate-200 px-5 py-4">
-            <div className="text-sm text-slate-500">
+            <div className="text-xs font-medium text-slate-500">
               {loading
                 ? "Loading customers..."
                 : `${totalCount} customer${totalCount === 1 ? "" : "s"}`}
@@ -288,7 +288,7 @@ export default function Customers() {
 
               <Link
                 to="/customers/new"
-                className="mt-4 inline-flex items-center gap-2 rounded-lg bg-slate-900 px-4 py-2.5 text-sm font-medium text-white hover:bg-slate-800"
+                className="mt-4 inline-flex h-10 items-center gap-2 rounded-xl border border-amber-500 bg-amber-500 px-4 text-sm font-semibold text-slate-950 shadow-sm transition hover:border-amber-400 hover:bg-amber-400"
               >
                 <Plus size={16} />
                 New Customer
@@ -299,23 +299,23 @@ export default function Customers() {
               <table className="min-w-full divide-y divide-slate-200">
                 <thead className="bg-slate-50">
                   <tr>
-                    <th className="px-5 py-3 text-left text-xs font-semibold uppercase tracking-wide text-slate-500">
+                    <th className="px-4 py-3 text-left text-[10px] font-bold uppercase tracking-[0.08em] text-slate-500">
                       Customer
                     </th>
 
-                    <th className="px-5 py-3 text-left text-xs font-semibold uppercase tracking-wide text-slate-500">
+                    <th className="px-4 py-3 text-left text-[10px] font-bold uppercase tracking-[0.08em] text-slate-500">
                       Phone
                     </th>
 
-                    <th className="px-5 py-3 text-left text-xs font-semibold uppercase tracking-wide text-slate-500">
+                    <th className="px-4 py-3 text-left text-[10px] font-bold uppercase tracking-[0.08em] text-slate-500">
                       Emirates ID
                     </th>
 
-                    <th className="px-5 py-3 text-left text-xs font-semibold uppercase tracking-wide text-slate-500">
+                    <th className="px-4 py-3 text-left text-[10px] font-bold uppercase tracking-[0.08em] text-slate-500">
                       Created
                     </th>
 
-                    <th className="px-5 py-3 text-right text-xs font-semibold uppercase tracking-wide text-slate-500">
+                    <th className="px-4 py-3 text-right text-[10px] font-bold uppercase tracking-[0.08em] text-slate-500">
                       Action
                     </th>
                   </tr>
@@ -323,29 +323,29 @@ export default function Customers() {
 
                 <tbody className="divide-y divide-slate-100 bg-white">
                   {customers.map((customer) => (
-                    <tr key={customer.id} className="hover:bg-slate-50">
-                      <td className="px-5 py-4">
+                    <tr key={customer.id} className="transition-colors hover:bg-slate-50/80">
+                      <td className="px-4 py-3">
                         <div className="font-medium text-slate-900">
                           {getCustomerName(customer)}
                         </div>
                       </td>
 
-                      <td className="px-5 py-4 text-sm text-slate-600">
+                      <td className="px-4 py-3 text-sm text-slate-600">
                         {getCustomerPhone(customer)}
                       </td>
 
-                      <td className="px-5 py-4 text-sm text-slate-600">
+                      <td className="px-4 py-3 text-sm text-slate-600">
                         {customer.emirates_id_number || "—"}
                       </td>
 
-                      <td className="px-5 py-4 text-sm text-slate-600">
+                      <td className="px-4 py-3 text-sm text-slate-600">
                         {formatDate(customer.created_at)}
                       </td>
 
-                      <td className="px-5 py-4 text-right">
+                      <td className="px-4 py-3 text-right">
                         <Link
                           to={`/customers/${customer.id}`}
-                          className="inline-flex items-center gap-2 rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50"
+                          className="inline-flex h-9 items-center gap-2 rounded-xl border border-slate-200 bg-white px-3 text-sm font-semibold text-slate-700 shadow-sm transition hover:border-slate-300 hover:bg-slate-50"
                         >
                           <Eye size={15} />
                           View
@@ -360,12 +360,12 @@ export default function Customers() {
         </div>
       </div>
       {!loading && totalCount > 0 && (
-        <div className="flex items-center justify-between border-t border-slate-200 px-5 py-4">
+        <div className="mt-4 flex items-center justify-between">
           <button
             type="button"
             disabled={!hasPreviousPage}
             onClick={() => setPage((current) => Math.max(1, current - 1))}
-            className="rounded-lg border border-slate-300 bg-white px-4 py-2 text-sm font-medium text-slate-700 disabled:cursor-not-allowed disabled:opacity-50"
+            className="h-9 rounded-xl border border-slate-200 bg-white px-4 text-sm font-semibold text-slate-700 shadow-sm transition hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-50"
           >
             Previous
           </button>
@@ -380,7 +380,7 @@ export default function Customers() {
             type="button"
             disabled={!hasNextPage}
             onClick={() => setPage((current) => current + 1)}
-            className="rounded-lg border border-slate-300 bg-white px-4 py-2 text-sm font-medium text-slate-700 disabled:cursor-not-allowed disabled:opacity-50"
+            className="h-9 rounded-xl border border-slate-200 bg-white px-4 text-sm font-semibold text-slate-700 shadow-sm transition hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-50"
           >
             Next
           </button>

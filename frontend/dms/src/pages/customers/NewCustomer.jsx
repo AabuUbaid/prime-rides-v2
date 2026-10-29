@@ -65,12 +65,12 @@ export default function NewCustomer() {
   }
 
   return (
-    <div className="min-h-screen bg-slate-50 px-4 py-6 sm:px-6 lg:px-8">
+    <div className="min-h-screen bg-[#f5f6fa] px-4 py-6 sm:px-6 lg:px-8">
       <div className="mx-auto max-w-3xl">
         <div className="mb-6 flex items-center gap-3">
           <Link
             to="/customers"
-            className="inline-flex h-9 w-9 items-center justify-center rounded-lg border border-slate-300 bg-white text-slate-600 hover:bg-slate-50"
+            className="inline-flex h-9 w-9 items-center justify-center rounded-xl border border-slate-200 bg-white text-slate-600 shadow-sm transition hover:bg-slate-50"
             aria-label="Back to customers"
           >
             <ArrowLeft size={18} />
@@ -78,9 +78,9 @@ export default function NewCustomer() {
 
           <div>
             <div className="flex items-center gap-2">
-              <UserRound size={20} className="text-slate-700" />
+              <UserRound size={20} className="text-amber-600" />
 
-              <h1 className="text-2xl font-semibold text-slate-900">
+              <h1 className="text-2xl font-bold tracking-tight text-slate-950">
                 New Customer
               </h1>
             </div>
@@ -93,13 +93,13 @@ export default function NewCustomer() {
 
         <form
           onSubmit={handleSubmit}
-          className="rounded-xl border border-slate-200 bg-white shadow-sm"
+          className="rounded-2xl border border-[#e5e7eb] bg-white shadow-[0_2px_8px_rgba(15,23,42,0.04)]"
         >
           <div className="grid gap-5 p-6">
             <div>
               <label
                 htmlFor="customer-name"
-                className="mb-2 block text-sm font-medium text-slate-700"
+                className="mb-1.5 block text-[11px] font-bold uppercase tracking-[0.08em] text-slate-500"
               >
                 Customer Name
               </label>
@@ -110,7 +110,7 @@ export default function NewCustomer() {
                 value={customerName}
                 onChange={(event) => setCustomerName(event.target.value)}
                 placeholder="Enter customer name"
-                className="w-full rounded-lg border border-slate-300 bg-white px-3 py-2.5 text-sm text-slate-900 outline-none transition placeholder:text-slate-400 focus:border-slate-500 focus:ring-2 focus:ring-slate-200"
+                className="h-10 w-full rounded-xl border border-slate-200 bg-white px-3 text-sm text-slate-800 outline-none transition placeholder:text-slate-400 focus:border-amber-400 focus:ring-2 focus:ring-amber-400/15"
                 disabled={saving}
               />
             </div>
@@ -118,7 +118,7 @@ export default function NewCustomer() {
             <div>
               <label
                 htmlFor="customer-phone"
-                className="mb-2 block text-sm font-medium text-slate-700"
+                className="mb-1.5 block text-[11px] font-bold uppercase tracking-[0.08em] text-slate-500"
               >
                 Phone Number
               </label>
@@ -129,7 +129,7 @@ export default function NewCustomer() {
                 value={phoneNumber}
                 onChange={(event) => setPhoneNumber(event.target.value)}
                 placeholder="Enter phone number"
-                className="w-full rounded-lg border border-slate-300 bg-white px-3 py-2.5 text-sm text-slate-900 outline-none transition placeholder:text-slate-400 focus:border-slate-500 focus:ring-2 focus:ring-slate-200"
+                className="h-10 w-full rounded-xl border border-slate-200 bg-white px-3 text-sm text-slate-800 outline-none transition placeholder:text-slate-400 focus:border-amber-400 focus:ring-2 focus:ring-amber-400/15"
                 disabled={saving}
               />
             </div>
@@ -138,7 +138,7 @@ export default function NewCustomer() {
             <div>
               <label
                 htmlFor="customer-emirates-id"
-                className="mb-2 block text-sm font-medium text-slate-700"
+                className="mb-1.5 block text-[11px] font-bold uppercase tracking-[0.08em] text-slate-500"
               >
                 Emirates ID Number
               </label>
@@ -149,7 +149,7 @@ export default function NewCustomer() {
                 value={emiratesIdNumber}
                 onChange={(event) => setEmiratesIdNumber(event.target.value)}
                 placeholder="Enter Emirates ID number"
-                className="w-full rounded-lg border border-slate-300 bg-white px-3 py-2.5 text-sm text-slate-900 outline-none transition placeholder:text-slate-400 focus:border-slate-500 focus:ring-2 focus:ring-slate-200"
+                className="h-10 w-full rounded-xl border border-slate-200 bg-white px-3 text-sm text-slate-800 outline-none transition placeholder:text-slate-400 focus:border-amber-400 focus:ring-2 focus:ring-amber-400/15"
                 disabled={saving}
               />
             </div>
@@ -158,7 +158,7 @@ export default function NewCustomer() {
             <div>
               <label
                 htmlFor="customer-email"
-                className="mb-2 block text-sm font-medium text-slate-700"
+                className="mb-1.5 block text-[11px] font-bold uppercase tracking-[0.08em] text-slate-500"
               >
                 Email
               </label>
@@ -169,7 +169,7 @@ export default function NewCustomer() {
                 value={email}
                 onChange={(event) => setEmail(event.target.value)}
                 placeholder="customer@example.com"
-                className="w-full rounded-lg border border-slate-300 bg-white px-3 py-2.5 text-sm text-slate-900 outline-none focus:border-slate-500 focus:ring-2 focus:ring-slate-200"
+                className="h-10 w-full rounded-xl border border-slate-200 bg-white px-3 text-sm text-slate-800 outline-none transition focus:border-amber-400 focus:ring-2 focus:ring-amber-400/15"
                 disabled={saving}
               />
             </div>
@@ -177,7 +177,7 @@ export default function NewCustomer() {
             <div>
               <label
                 htmlFor="customer-type"
-                className="mb-2 block text-sm font-medium text-slate-700"
+                className="mb-1.5 block text-[11px] font-bold uppercase tracking-[0.08em] text-slate-500"
               >
                 Customer Type
               </label>
@@ -186,7 +186,7 @@ export default function NewCustomer() {
                 id="customer-type"
                 value={customerType}
                 onChange={(event) => setCustomerType(event.target.value)}
-                className="w-full rounded-lg border border-slate-300 bg-white px-3 py-2.5 text-sm text-slate-900 outline-none focus:border-slate-500 focus:ring-2 focus:ring-slate-200"
+                className="h-10 w-full rounded-xl border border-slate-200 bg-white px-3 text-sm text-slate-800 outline-none transition focus:border-amber-400 focus:ring-2 focus:ring-amber-400/15"
                 disabled={saving}
               >
                 <option value="INDIVIDUAL">Individual</option>
@@ -199,7 +199,7 @@ export default function NewCustomer() {
                 <div>
                   <label
                     htmlFor="company-name"
-                    className="mb-2 block text-sm font-medium text-slate-700"
+                    className="mb-1.5 block text-[11px] font-bold uppercase tracking-[0.08em] text-slate-500"
                   >
                     Company Name
                   </label>
@@ -210,7 +210,7 @@ export default function NewCustomer() {
                     value={companyName}
                     onChange={(event) => setCompanyName(event.target.value)}
                     placeholder="Enter company name"
-                    className="w-full rounded-lg border border-slate-300 bg-white px-3 py-2.5 text-sm text-slate-900 outline-none focus:border-slate-500 focus:ring-2 focus:ring-slate-200"
+                    className="h-10 w-full rounded-xl border border-slate-200 bg-white px-3 text-sm text-slate-800 outline-none transition focus:border-amber-400 focus:ring-2 focus:ring-amber-400/15"
                     disabled={saving}
                   />
                 </div>
@@ -218,7 +218,7 @@ export default function NewCustomer() {
                 <div>
                   <label
                     htmlFor="trn"
-                    className="mb-2 block text-sm font-medium text-slate-700"
+                    className="mb-1.5 block text-[11px] font-bold uppercase tracking-[0.08em] text-slate-500"
                   >
                     TRN
                   </label>
@@ -229,7 +229,7 @@ export default function NewCustomer() {
                     value={trn}
                     onChange={(event) => setTrn(event.target.value)}
                     placeholder="Enter TRN"
-                    className="w-full rounded-lg border border-slate-300 bg-white px-3 py-2.5 text-sm text-slate-900 outline-none focus:border-slate-500 focus:ring-2 focus:ring-slate-200"
+                    className="h-10 w-full rounded-xl border border-slate-200 bg-white px-3 text-sm text-slate-800 outline-none transition focus:border-amber-400 focus:ring-2 focus:ring-amber-400/15"
                     disabled={saving}
                   />
                 </div>
@@ -237,7 +237,7 @@ export default function NewCustomer() {
                 <div>
                   <label
                     htmlFor="trade-license-number"
-                    className="mb-2 block text-sm font-medium text-slate-700"
+                    className="mb-1.5 block text-[11px] font-bold uppercase tracking-[0.08em] text-slate-500"
                   >
                     Trade License Number
                   </label>
@@ -250,7 +250,7 @@ export default function NewCustomer() {
                       setTradeLicenseNumber(event.target.value)
                     }
                     placeholder="Enter trade license number"
-                    className="w-full rounded-lg border border-slate-300 bg-white px-3 py-2.5 text-sm text-slate-900 outline-none focus:border-slate-500 focus:ring-2 focus:ring-slate-200"
+                    className="h-10 w-full rounded-xl border border-slate-200 bg-white px-3 text-sm text-slate-800 outline-none transition focus:border-amber-400 focus:ring-2 focus:ring-amber-400/15"
                     disabled={saving}
                   />
                 </div>
@@ -258,10 +258,10 @@ export default function NewCustomer() {
             )}
           </div>
 
-          <div className="flex items-center justify-end gap-3 border-t border-slate-200 bg-slate-50 px-6 py-4">
+          <div className="flex flex-wrap items-center justify-end gap-3 border-t border-slate-100 bg-slate-50/70 px-6 py-4">
             <Link
               to="/customers"
-              className="rounded-lg border border-slate-300 bg-white px-4 py-2.5 text-sm font-medium text-slate-700 hover:bg-slate-50"
+              className="inline-flex h-10 items-center rounded-xl border border-slate-200 bg-white px-4 text-sm font-semibold text-slate-700 shadow-sm transition hover:bg-slate-50"
             >
               Cancel
             </Link>
@@ -269,7 +269,7 @@ export default function NewCustomer() {
             <button
               type="submit"
               disabled={saving}
-              className="inline-flex items-center gap-2 rounded-lg bg-slate-900 px-4 py-2.5 text-sm font-medium text-white hover:bg-slate-800 disabled:cursor-not-allowed disabled:opacity-60"
+              className="inline-flex h-10 items-center gap-2 rounded-xl border border-amber-500 bg-amber-500 px-4 text-sm font-semibold text-slate-950 shadow-sm transition hover:border-amber-400 hover:bg-amber-400 disabled:cursor-not-allowed disabled:opacity-60"
             >
               <Save size={16} />
 

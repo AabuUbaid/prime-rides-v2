@@ -511,11 +511,11 @@ export default function ProgressionDetail() {
     const status = getInsuranceStatus();
 
     if (status === "approved" || status === "completed") {
-      return "bg-green-50 text-green-700 border-green-200";
+      return "bg-emerald-50 text-emerald-700 border-emerald-200";
     }
 
     if (status === "rejected" || status === "cancelled") {
-      return "bg-red-50 text-red-700 border-red-200";
+      return "bg-rose-50 text-rose-700 border-rose-200";
     }
 
     if (status === "not_created") {
@@ -923,59 +923,59 @@ export default function ProgressionDetail() {
   }, [p]);
 
   if (!p) {
-    return <div className="p-6 text-sm text-gray-500">Loading...</div>;
+    return <div className="p-6 text-sm text-slate-500">Loading...</div>;
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 p-6">
-      <div className="mx-auto max-w-6xl space-y-6">
-        <div className="flex flex-wrap items-start justify-between gap-4">
+    <div className="min-h-screen bg-[#f5f6fa] px-4 py-6 sm:px-6 lg:px-8">
+      <div className="mx-auto w-full max-w-6xl space-y-6">
+        <div className="flex flex-wrap items-end justify-between gap-4">
           <div>
-            <h1 className="text-2xl font-semibold">Progression #{p.id}</h1>
+            <h1 className="text-2xl font-bold tracking-tight text-slate-950 sm:text-3xl">Progression #{p.id}</h1>
 
-            <p className="mt-1 text-sm text-gray-500">
+            <p className="mt-1 text-sm text-slate-500">
               Quote {p.quote_number || p.quote || "-"}
             </p>
           </div>
 
           <Link
             to="/progression"
-            className="rounded-lg border border-gray-300 bg-white px-4 py-2 text-sm font-medium hover:bg-gray-50"
+            className="inline-flex h-10 items-center rounded-xl border border-slate-200 bg-white px-4 text-sm font-semibold text-slate-700 shadow-sm transition hover:bg-slate-50"
           >
             Back
           </Link>
         </div>
 
-        <section className="grid gap-4 rounded-2xl border border-gray-200 bg-white p-5 shadow-sm md:grid-cols-4">
+        <section className="grid gap-4 rounded-2xl border border-[#e5e7eb] bg-white p-5 shadow-[0_2px_8px_rgba(15,23,42,0.04)] md:grid-cols-4">
           <div>
-            <small className="text-xs text-gray-500">Vehicle</small>
+            <small className="text-xs text-slate-500">Vehicle</small>
             <div className="mt-1 font-medium">{p.vehicle_stock_id || "-"}</div>
           </div>
 
           <div>
-            <small className="text-xs text-gray-500">Customer</small>
+            <small className="text-xs text-slate-500">Customer</small>
             <div className="mt-1 font-medium">{p.customer_name || "-"}</div>
           </div>
 
           <div>
-            <small className="text-xs text-gray-500">Seller</small>
+            <small className="text-xs text-slate-500">Seller</small>
             <div className="mt-1 font-medium">{p.seller_name || "-"}</div>
           </div>
 
           <div>
-            <small className="text-xs text-gray-500">Bank / Payment</small>
+            <small className="text-xs text-slate-500">Bank / Payment</small>
             <div className="mt-1 font-medium">
               {p.bank_name || p.payment_method || "-"}
             </div>
           </div>
 
           <div>
-            <small className="text-xs text-gray-500">Selling Price</small>
+            <small className="text-xs text-slate-500">Selling Price</small>
             <div className="mt-1 font-medium">AED {p.selling_price ?? "-"}</div>
           </div>
 
           <div>
-            <small className="text-xs text-gray-500">
+            <small className="text-xs text-slate-500">
               Registration Emirate
             </small>
             <div className="mt-1 font-medium">
@@ -984,18 +984,18 @@ export default function ProgressionDetail() {
           </div>
 
           <div>
-            <small className="text-xs text-gray-500">Current Stage</small>
+            <small className="text-xs text-slate-500">Current Stage</small>
             <div className="mt-1 font-medium">{backendStageLabel}</div>
           </div>
 
           <div>
-            <small className="text-xs text-gray-500">Status</small>
+            <small className="text-xs text-slate-500">Status</small>
             <div
               className={`mt-1 font-medium ${p.status === "active"
-                  ? "text-green-700"
+                  ? "text-emerald-700"
                   : p.status === "completed"
                     ? "text-blue-700"
-                    : "text-gray-600"
+                    : "text-slate-600"
                 }`}
             >
               {p.status || "-"}
@@ -1003,33 +1003,34 @@ export default function ProgressionDetail() {
           </div>
         </section>
 
-        <section className="rounded-2xl border border-gray-200 bg-white p-5 shadow-sm">
-          <div className="flex flex-wrap items-center justify-between gap-3">
+        <section className="rounded-2xl border border-[#e5e7eb] bg-white p-5 shadow-[0_2px_8px_rgba(15,23,42,0.04)] sm:p-6">
+          <div className="flex flex-wrap items-center justify-between gap-4">
             <div>
-              <h2 className="font-semibold text-gray-900">
+              <h2 className="font-semibold text-slate-900">
                 Progression Checklist
               </h2>
 
-              <p className="mt-1 text-xs text-gray-500">
+              <p className="mt-1 text-xs text-slate-500">
                 Each action is persisted by the backend Progression state
                 machine.
               </p>
             </div>
 
-            <div className="text-xs text-gray-400">
-              {advancing ? "Updating..." : `Current: ${backendStageLabel}`}
+            <div className="min-w-[150px] rounded-xl border border-blue-100 bg-blue-50/70 px-3 py-2">
+              <div className="text-[10px] font-semibold uppercase tracking-[0.08em] text-blue-600">
+                Current Stage
+              </div>
+              <div className="mt-0.5 text-sm font-semibold text-blue-900">
+                {advancing ? "Updating..." : backendStageLabel}
+              </div>
             </div>
           </div>
 
-          <div className="mt-6 overflow-x-auto pb-2">
-            <div className="flex min-w-[980px] items-center">
+          <ol className="relative mt-6 grid grid-cols-1 lg:grid-cols-6">
               {DISPLAY_STAGES.map((stage, index) => {
                 const checked = Boolean(checkedStages[stage]);
 
                 const isCurrent = activeDisplayStage === stage;
-
-                const isSpecial =
-                  stage === "insurance" || stage === "registration";
 
                 const isLoading =
                   stage === "insurance"
@@ -1043,24 +1044,25 @@ export default function ProgressionDetail() {
                   !(p.status !== "active" && stage !== "completed");
 
                 return (
-                  <div key={stage} className="flex flex-1 items-center">
+                  <li key={stage} className="relative min-w-0">
                     <button
                       type="button"
                       onClick={() => canAct && handleStageClick(stage)}
                       disabled={!canAct}
-                      className={`group flex items-center gap-3 rounded-xl px-2 py-2 text-left transition ${!canAct
+                      aria-current={isCurrent ? "step" : undefined}
+                      className={`group relative z-10 flex w-full items-center gap-3 rounded-xl px-2 py-2 text-left transition lg:flex-col lg:items-center lg:gap-3 lg:px-3 lg:text-center ${!canAct
                           ? "cursor-not-allowed opacity-50"
                           : isLoading
                             ? "cursor-wait opacity-60"
-                            : "cursor-pointer hover:bg-gray-50"
+                            : "cursor-pointer hover:bg-slate-50"
                         }`}
                     >
                       <span
-                        className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-full border-2 transition ${checked
-                            ? "border-gray-900 bg-gray-900 text-white"
+                        className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-full border-2 transition ${checked
+                            ? `border-amber-500 bg-amber-500 text-slate-950 ${isCurrent ? "ring-4 ring-blue-100" : ""}`
                             : isCurrent
-                              ? "border-blue-600 bg-blue-50 text-blue-600"
-                              : "border-gray-300 bg-white text-gray-400 group-hover:border-gray-500"
+                              ? "border-blue-500 bg-blue-50 text-blue-600 ring-4 ring-blue-100"
+                              : "border-slate-300 bg-white text-slate-400 group-hover:border-slate-400"
                           }`}
                       >
                         {checked ? (
@@ -1068,18 +1070,16 @@ export default function ProgressionDetail() {
                         ) : isCurrent ? (
                           <span className="h-3 w-3 rounded-full bg-blue-600" />
                         ) : (
-                          <span className="h-3 w-3 rounded-sm border border-gray-300" />
+                          <span className="h-3 w-3 rounded-sm border border-slate-300" />
                         )}
                       </span>
 
                       <span
-                        className={`whitespace-nowrap text-sm font-medium ${checked
-                            ? "text-gray-900"
-                            : isCurrent
-                              ? "text-blue-700"
-                              : isSpecial
-                                ? "text-blue-600 group-hover:text-blue-700"
-                                : "text-gray-500"
+                        className={`min-w-0 text-sm font-semibold ${isCurrent
+                            ? "text-blue-800"
+                            : checked
+                              ? "text-slate-900"
+                              : "text-slate-500"
                           }`}
                       >
                         {DISPLAY_LABELS[stage]}
@@ -1088,20 +1088,20 @@ export default function ProgressionDetail() {
 
                     {index < DISPLAY_STAGES.length - 1 && (
                       <div
-                        className={`mx-2 h-px flex-1 ${checked ? "bg-gray-900" : "bg-gray-200"
+                        aria-hidden="true"
+                        className={`absolute left-[26px] top-[26px] bottom-[-26px] w-px lg:left-[calc(50%+18px)] lg:right-auto lg:top-[26px] lg:bottom-auto lg:h-px lg:w-[calc(100%-36px)] ${checked ? "bg-amber-400" : "bg-slate-200"
                           }`}
                       />
                     )}
-                  </div>
+                  </li>
                 );
               })}
-            </div>
-          </div>
+          </ol>
         </section>
 
-        <section className="rounded-2xl border border-gray-200 bg-white p-5 shadow-sm">
+        <section className="rounded-2xl border border-[#e5e7eb] bg-white p-5 shadow-[0_2px_8px_rgba(15,23,42,0.04)]">
           <div className="grid gap-4 md:grid-cols-2">
-            <label className="text-sm font-medium text-gray-700">
+            <label className="text-sm font-medium text-slate-700">
               Registration Emirate
               <select
                 disabled={!manage || saving}
@@ -1112,7 +1112,7 @@ export default function ProgressionDetail() {
                     registration_emirate: e.target.value,
                   })
                 }
-                className="mt-2 w-full rounded-lg border border-gray-300 bg-white px-3 py-2.5 outline-none focus:border-gray-500"
+                className="mt-2 h-10 w-full rounded-xl border border-slate-200 bg-white px-3 text-sm text-slate-800 outline-none transition focus:border-amber-400 focus:ring-2 focus:ring-amber-400/15"
               >
                 <option value="">Select</option>
 
@@ -1124,7 +1124,7 @@ export default function ProgressionDetail() {
               </select>
             </label>
 
-            <label className="text-sm font-medium text-gray-700">
+            <label className="text-sm font-medium text-slate-700">
               Remark
               <textarea
                 disabled={!manage || saving}
@@ -1136,7 +1136,7 @@ export default function ProgressionDetail() {
                   })
                 }
                 rows={4}
-                className="mt-2 w-full rounded-lg border border-gray-300 px-3 py-2.5 outline-none focus:border-gray-500"
+                className="mt-2 w-full rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-sm text-slate-800 outline-none transition focus:border-amber-400 focus:ring-2 focus:ring-amber-400/15"
               />
             </label>
           </div>
@@ -1146,7 +1146,7 @@ export default function ProgressionDetail() {
               type="button"
               onClick={save}
               disabled={saving || advancing}
-              className="mt-4 rounded-lg bg-gray-900 px-4 py-2 text-sm font-medium text-white hover:bg-gray-800 disabled:cursor-not-allowed disabled:opacity-60"
+              className="mt-4 inline-flex h-10 items-center rounded-xl border border-amber-500 bg-amber-500 px-4 text-sm font-semibold text-slate-950 shadow-sm transition hover:border-amber-400 hover:bg-amber-400 disabled:cursor-not-allowed disabled:opacity-60"
             >
               {saving ? "Saving..." : "Save Details"}
             </button>
@@ -1155,16 +1155,16 @@ export default function ProgressionDetail() {
       </div>
 
       {showPassingModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/60 p-4">
           <div className="w-full max-w-md rounded-2xl bg-white shadow-2xl">
-            <div className="border-b border-gray-100 px-6 py-5">
+            <div className="border-b border-slate-100 px-6 py-5">
               <div className="flex items-start justify-between gap-4">
                 <div>
-                  <h2 className="text-lg font-semibold text-gray-900">
+                  <h2 className="text-lg font-semibold text-slate-900">
                     Passing Requirements
                   </h2>
 
-                  <p className="mt-1 text-sm text-gray-500">
+                  <p className="mt-1 text-sm text-slate-500">
                     {p.registration_emirate} registration requires both passing
                     checks.
                   </p>
@@ -1173,7 +1173,7 @@ export default function ProgressionDetail() {
                 <button
                   type="button"
                   onClick={() => setShowPassingModal(false)}
-                  className="rounded-lg px-2 py-1 text-gray-400 hover:bg-gray-100 hover:text-gray-700"
+                  className="rounded-xl px-2 py-1 text-slate-400 hover:bg-slate-100 hover:text-slate-700"
                 >
                   ✕
                 </button>
@@ -1183,8 +1183,8 @@ export default function ProgressionDetail() {
             <div className="space-y-3 px-6 py-6">
               <label
                 className={`flex cursor-pointer items-center gap-3 rounded-xl border p-4 transition ${passingChecks.dubai
-                    ? "border-green-200 bg-green-50"
-                    : "border-gray-200 hover:bg-gray-50"
+                    ? "border-emerald-200 bg-emerald-50"
+                    : "border-slate-200 hover:bg-slate-50"
                   }`}
               >
                 <input
@@ -1196,13 +1196,13 @@ export default function ProgressionDetail() {
                       dubai: e.target.checked,
                     }))
                   }
-                  className="h-5 w-5 rounded border-gray-300"
+                  className="h-5 w-5 rounded border-slate-300"
                 />
 
                 <div>
-                  <div className="font-medium text-gray-900">Dubai Passing</div>
+                  <div className="font-medium text-slate-900">Dubai Passing</div>
 
-                  <div className="text-xs text-gray-500">
+                  <div className="text-xs text-slate-500">
                     Required first passing check
                   </div>
                 </div>
@@ -1210,8 +1210,8 @@ export default function ProgressionDetail() {
 
               <label
                 className={`flex cursor-pointer items-center gap-3 rounded-xl border p-4 transition ${passingChecks.emirate
-                    ? "border-green-200 bg-green-50"
-                    : "border-gray-200 hover:bg-gray-50"
+                    ? "border-emerald-200 bg-emerald-50"
+                    : "border-slate-200 hover:bg-slate-50"
                   }`}
               >
                 <input
@@ -1223,15 +1223,15 @@ export default function ProgressionDetail() {
                       emirate: e.target.checked,
                     }))
                   }
-                  className="h-5 w-5 rounded border-gray-300"
+                  className="h-5 w-5 rounded border-slate-300"
                 />
 
                 <div>
-                  <div className="font-medium text-gray-900">
+                  <div className="font-medium text-slate-900">
                     {p.registration_emirate} Passing
                   </div>
 
-                  <div className="text-xs text-gray-500">
+                  <div className="text-xs text-slate-500">
                     Required registration-emirate passing check
                   </div>
                 </div>
@@ -1243,7 +1243,7 @@ export default function ProgressionDetail() {
                 disabled={
                   !passingChecks.dubai || !passingChecks.emirate || advancing
                 }
-                className="mt-3 w-full rounded-xl bg-gray-900 px-4 py-3 text-sm font-semibold text-white transition hover:bg-gray-800 disabled:cursor-not-allowed disabled:opacity-40"
+                className="mt-3 w-full rounded-xl bg-amber-500 px-4 py-3 text-sm font-semibold text-slate-950 transition hover:bg-amber-600 disabled:cursor-not-allowed disabled:opacity-40"
               >
                 {advancing ? "Updating..." : "Mark Passing Complete"}
               </button>
@@ -1253,16 +1253,16 @@ export default function ProgressionDetail() {
       )}
 
       {showInsuranceModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/60 p-4">
           <div className="w-full max-w-md rounded-2xl bg-white shadow-2xl">
-            <div className="border-b border-gray-100 px-6 py-5">
+            <div className="border-b border-slate-100 px-6 py-5">
               <div className="flex items-start justify-between gap-4">
                 <div>
-                  <h2 className="text-lg font-semibold text-gray-900">
+                  <h2 className="text-lg font-semibold text-slate-900">
                     Insurance Status
                   </h2>
 
-                  <p className="mt-1 text-sm text-gray-500">
+                  <p className="mt-1 text-sm text-slate-500">
                     Check the customer's insurance application before continuing
                     the Progression.
                   </p>
@@ -1271,7 +1271,7 @@ export default function ProgressionDetail() {
                 <button
                   type="button"
                   onClick={() => setShowInsuranceModal(false)}
-                  className="rounded-lg px-2 py-1 text-gray-400 hover:bg-gray-100 hover:text-gray-700"
+                  className="rounded-xl px-2 py-1 text-slate-400 hover:bg-slate-100 hover:text-slate-700"
                 >
                   ✕
                 </button>
@@ -1304,11 +1304,11 @@ export default function ProgressionDetail() {
               )}
 
               {insuranceRecord && (
-                <div className="space-y-2 rounded-xl bg-gray-50 p-4 text-sm">
+                <div className="space-y-2 rounded-xl bg-slate-50 p-4 text-sm">
                   {insuranceRecord.insurance_company && (
                     <div className="flex justify-between gap-4">
-                      <span className="text-gray-500">Insurance Company</span>
-                      <span className="font-medium text-gray-900">
+                      <span className="text-slate-500">Insurance Company</span>
+                      <span className="font-medium text-slate-900">
                         {insuranceRecord.insurance_company}
                       </span>
                     </div>
@@ -1316,8 +1316,8 @@ export default function ProgressionDetail() {
 
                   {insuranceRecord.policy_number && (
                     <div className="flex justify-between gap-4">
-                      <span className="text-gray-500">Policy Number</span>
-                      <span className="font-medium text-gray-900">
+                      <span className="text-slate-500">Policy Number</span>
+                      <span className="font-medium text-slate-900">
                         {insuranceRecord.policy_number}
                       </span>
                     </div>
@@ -1329,7 +1329,7 @@ export default function ProgressionDetail() {
                 <button
                   type="button"
                   onClick={() => setShowInsuranceModal(false)}
-                  className="flex-1 rounded-xl border border-gray-300 bg-white px-4 py-3 text-sm font-medium text-gray-700 hover:bg-gray-50"
+                  className="flex-1 rounded-xl border border-slate-300 bg-white px-4 py-3 text-sm font-medium text-slate-700 hover:bg-slate-50"
                 >
                   Close
                 </button>
@@ -1337,7 +1337,7 @@ export default function ProgressionDetail() {
                 <button
                   type="button"
                   onClick={handleInsuranceContinue}
-                  className="flex-1 rounded-xl bg-gray-900 px-4 py-3 text-sm font-semibold text-white hover:bg-gray-800"
+                  className="flex-1 rounded-xl bg-amber-500 px-4 py-3 text-sm font-semibold text-slate-950 hover:bg-amber-600"
                 >
                   {getInsuranceStatus() === "approved"
                     ? "Continue Progression"
@@ -1352,20 +1352,20 @@ export default function ProgressionDetail() {
       )}
 
       {showRegistrationDocumentsModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/60 p-4">
           <div className="flex max-h-[calc(100vh-2rem)] w-full max-w-2xl flex-col overflow-hidden rounded-2xl bg-white shadow-2xl">
-            <div className="border-b border-gray-100 px-6 py-5">
+            <div className="border-b border-slate-100 px-6 py-5">
               <div className="flex items-start justify-between gap-4">
                 <div>
-                  <h2 className="text-lg font-semibold text-gray-900">
+                  <h2 className="text-lg font-semibold text-slate-900">
                     Prepare Items for Registration
                   </h2>
 
-                  <p className="mt-1 text-sm text-gray-500">
+                  <p className="mt-1 text-sm text-slate-500">
                     Required registration documents for this customer and
                     vehicle.
                   </p>
-                  <p className="mt-1 text-xs text-gray-500">
+                  <p className="mt-1 text-xs text-slate-500">
                     Possession Certificate and RTA Passing are required for all
                     customers. Company Trade License is additionally required
                     for company customers. Passport and other customer documents
@@ -1376,7 +1376,7 @@ export default function ProgressionDetail() {
                 <button
                   type="button"
                   onClick={() => setShowRegistrationDocumentsModal(false)}
-                  className="rounded-lg px-2 py-1 text-gray-400 hover:bg-gray-100 hover:text-gray-700"
+                  className="rounded-xl px-2 py-1 text-slate-400 hover:bg-slate-100 hover:text-slate-700"
                 >
                   ✕
                 </button>
@@ -1389,19 +1389,19 @@ export default function ProgressionDetail() {
                     <div
                       key={document.key}
                       className={`rounded-xl border p-4 ${document.available
-                          ? "border-green-200 bg-green-50"
+                          ? "border-emerald-200 bg-emerald-50"
                           : "border-amber-200 bg-amber-50"
                         }`}
                     >
                       <div className="flex items-start justify-between gap-3">
                         <div>
-                          <div className="font-medium text-gray-900">
+                          <div className="font-medium text-slate-900">
                             {document.label}
                           </div>
 
                           <div
                             className={`mt-1 text-xs font-medium ${document.available
-                                ? "text-green-700"
+                                ? "text-emerald-700"
                                 : "text-amber-700"
                               }`}
                           >
@@ -1411,7 +1411,7 @@ export default function ProgressionDetail() {
 
                         <span
                           className={`flex h-7 w-7 shrink-0 items-center justify-center rounded-full text-sm font-bold ${document.available
-                              ? "bg-green-600 text-white"
+                              ? "bg-emerald-600 text-white"
                               : "bg-amber-200 text-amber-800"
                             }`}
                         >
@@ -1428,11 +1428,11 @@ export default function ProgressionDetail() {
               ).length > 0 && (
                   <div className="space-y-3">
                     <div>
-                      <h3 className="text-sm font-semibold text-gray-900">
+                      <h3 className="text-sm font-semibold text-slate-900">
                         Available Documents
                       </h3>
 
-                      <p className="mt-1 text-xs text-gray-500">
+                      <p className="mt-1 text-xs text-slate-500">
                         Download each available document individually as a PDF.
                       </p>
                     </div>
@@ -1448,15 +1448,15 @@ export default function ProgressionDetail() {
                           return (
                             <div
                               key={loadingKey}
-                              className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-gray-200 bg-white p-4"
+                              className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-slate-200 bg-white p-4"
                             >
                               <div className="min-w-0">
-                                <div className="font-medium text-gray-900">
+                                <div className="font-medium text-slate-900">
                                   {document.document_label ||
                                     document.document_type}
                                 </div>
 
-                                <div className="mt-1 truncate text-xs text-gray-500">
+                                <div className="mt-1 truncate text-xs text-slate-500">
                                   {document.file_name || "Document"}
                                 </div>
                               </div>
@@ -1467,7 +1467,7 @@ export default function ProgressionDetail() {
                                   handleRegistrationDocumentDownload(document)
                                 }
                                 disabled={isDownloading}
-                                className="shrink-0 rounded-lg bg-gray-900 px-3 py-2 text-xs font-semibold text-white hover:bg-gray-800 disabled:cursor-not-allowed disabled:opacity-60"
+                                className="shrink-0 rounded-xl bg-amber-500 px-3 py-2 text-xs font-semibold text-slate-950 hover:bg-amber-600 disabled:cursor-not-allowed disabled:opacity-60"
                               >
                                 {isDownloading
                                   ? "Downloading..."
@@ -1495,24 +1495,24 @@ export default function ProgressionDetail() {
               )}
 
               {registrationDocuments?.registration_documents_ready ? (
-                <div className="rounded-xl border border-green-200 bg-green-50 p-4">
-                  <div className="text-sm font-semibold text-green-800">
+                <div className="rounded-xl border border-emerald-200 bg-emerald-50 p-4">
+                  <div className="text-sm font-semibold text-emerald-800">
                     Registration documents are ready.
                   </div>
                 </div>
               ) : (
-                <div className="rounded-xl border border-gray-200 bg-gray-50 p-4">
-                  <div className="text-sm font-medium text-gray-700">
+                <div className="rounded-xl border border-slate-200 bg-slate-50 p-4">
+                  <div className="text-sm font-medium text-slate-700">
                     Registration preparation is not complete yet.
                   </div>
                 </div>
               )}
 
-              <div className="sticky bottom-0 flex gap-3 border-t border-gray-100 bg-white pt-4">
+              <div className="sticky bottom-0 flex gap-3 border-t border-slate-100 bg-white pt-4">
                 <button
                   type="button"
                   onClick={() => setShowRegistrationDocumentsModal(false)}
-                  className="flex-1 rounded-xl border border-gray-300 bg-white px-4 py-3 text-sm font-medium text-gray-700 hover:bg-gray-50"
+                  className="flex-1 rounded-xl border border-slate-300 bg-white px-4 py-3 text-sm font-medium text-slate-700 hover:bg-slate-50"
                 >
                   Close
                 </button>
@@ -1523,7 +1523,7 @@ export default function ProgressionDetail() {
                   disabled={
                     !registrationDocuments?.registration_documents_ready
                   }
-                  className="flex-1 rounded-xl bg-gray-900 px-4 py-3 text-sm font-semibold text-white hover:bg-gray-800 disabled:cursor-not-allowed disabled:opacity-40"
+                  className="flex-1 rounded-xl bg-amber-500 px-4 py-3 text-sm font-semibold text-slate-950 hover:bg-amber-600 disabled:cursor-not-allowed disabled:opacity-40"
                 >
                   Continue to Registration
                 </button>
@@ -1534,16 +1534,16 @@ export default function ProgressionDetail() {
       )}
 
       {showBalanceModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/60 p-4">
           <div className="w-full max-w-lg rounded-2xl bg-white shadow-2xl">
-            <div className="border-b border-gray-100 px-6 py-5">
+            <div className="border-b border-slate-100 px-6 py-5">
               <div className="flex items-start justify-between gap-4">
                 <div>
-                  <h2 className="text-lg font-semibold text-gray-900">
+                  <h2 className="text-lg font-semibold text-slate-900">
                     Registration Balance Sheet
                   </h2>
 
-                  <p className="mt-1 text-sm text-gray-500">
+                  <p className="mt-1 text-sm text-slate-500">
                     Settle the customer's Balance Sheet before opening the RTA
                     Sale.
                   </p>
@@ -1552,7 +1552,7 @@ export default function ProgressionDetail() {
                 <button
                   type="button"
                   onClick={() => setShowBalanceModal(false)}
-                  className="rounded-lg px-2 py-1 text-gray-400 hover:bg-gray-100 hover:text-gray-700"
+                  className="rounded-xl px-2 py-1 text-slate-400 hover:bg-slate-100 hover:text-slate-700"
                 >
                   ✕
                 </button>
@@ -1575,7 +1575,7 @@ export default function ProgressionDetail() {
                         )}&customer_id=${encodeURIComponent(p.customer_id || "")}`,
                       )
                     }
-                    className="mt-3 rounded-lg bg-gray-900 px-4 py-2 text-sm font-medium text-white"
+                    className="mt-3 rounded-xl bg-amber-500 px-4 py-2 text-sm font-medium text-slate-950"
                   >
                     Create Balance Sheet
                   </button>
@@ -1583,18 +1583,18 @@ export default function ProgressionDetail() {
               ) : (
                 <>
                   <div className="grid grid-cols-2 gap-3">
-                    <div className="rounded-xl bg-gray-50 p-4">
-                      <div className="text-xs text-gray-500">Customer</div>
+                    <div className="rounded-xl bg-slate-50 p-4">
+                      <div className="text-xs text-slate-500">Customer</div>
 
-                      <div className="mt-1 font-medium text-gray-900">
+                      <div className="mt-1 font-medium text-slate-900">
                         {balanceSheet.customer_name || p.customer_name || "-"}
                       </div>
                     </div>
 
-                    <div className="rounded-xl bg-gray-50 p-4">
-                      <div className="text-xs text-gray-500">Quote</div>
+                    <div className="rounded-xl bg-slate-50 p-4">
+                      <div className="text-xs text-slate-500">Quote</div>
 
-                      <div className="mt-1 font-medium text-gray-900">
+                      <div className="mt-1 font-medium text-slate-900">
                         {balanceSheet.quote_number ||
                           p.quote_number ||
                           p.quote ||
@@ -1602,29 +1602,29 @@ export default function ProgressionDetail() {
                       </div>
                     </div>
 
-                    <div className="rounded-xl bg-gray-50 p-4">
-                      <div className="text-xs text-gray-500">
+                    <div className="rounded-xl bg-slate-50 p-4">
+                      <div className="text-xs text-slate-500">
                         Net Difference
                       </div>
 
-                      <div className="mt-1 font-medium text-gray-900">
+                      <div className="mt-1 font-medium text-slate-900">
                         AED {balanceSheet.net_difference ?? "-"}
                       </div>
                     </div>
 
                     <div
                       className={`rounded-xl p-4 ${balanceSheet.balance_status === "settled"
-                          ? "bg-green-50"
+                          ? "bg-emerald-50"
                           : "bg-amber-50"
                         }`}
                     >
-                      <div className="text-xs text-gray-500">
+                      <div className="text-xs text-slate-500">
                         Balance Status
                       </div>
 
                       <div
                         className={`mt-1 font-semibold ${balanceSheet.balance_status === "settled"
-                            ? "text-green-700"
+                            ? "text-emerald-700"
                             : "text-amber-700"
                           }`}
                       >
@@ -1645,7 +1645,7 @@ export default function ProgressionDetail() {
                     onClick={() =>
                       navigate(`/finance/balance-sheets/${balanceSheet.id}`)
                     }
-                    className="w-full rounded-lg border border-gray-300 bg-white px-4 py-2.5 text-sm font-medium text-gray-700 hover:bg-gray-50"
+                    className="w-full rounded-xl border border-slate-300 bg-white px-4 py-2.5 text-sm font-medium text-slate-700 hover:bg-slate-50"
                   >
                     Open Balance Sheet
                   </button>
@@ -1657,7 +1657,7 @@ export default function ProgressionDetail() {
                       disabled={
                         balanceSheet.balance_status !== "settled" || advancing
                       }
-                      className="w-full rounded-xl bg-green-700 px-4 py-3 text-left text-white disabled:cursor-not-allowed disabled:opacity-40"
+                      className="w-full rounded-xl bg-emerald-700 px-4 py-3 text-left text-white disabled:cursor-not-allowed disabled:opacity-40"
                     >
                       <span className="block text-sm font-semibold">
                         {advancing
@@ -1665,7 +1665,7 @@ export default function ProgressionDetail() {
                           : "Mark Registration Completed"}
                       </span>
 
-                      <span className="mt-1 block text-xs text-green-100">
+                      <span className="mt-1 block text-xs text-emerald-100">
                         Sale RTA already exists. Complete the Registration stage
                         for this progression.
                       </span>
@@ -1677,13 +1677,13 @@ export default function ProgressionDetail() {
                       disabled={
                         balanceSheet.balance_status !== "settled" || advancing
                       }
-                      className="w-full rounded-xl bg-gray-900 px-4 py-3 text-left text-white disabled:cursor-not-allowed disabled:opacity-40"
+                      className="w-full rounded-xl bg-amber-500 px-4 py-3 text-left text-slate-950 disabled:cursor-not-allowed disabled:opacity-40"
                     >
                       <span className="block text-sm font-semibold">
                         Continue to RTA Sale
                       </span>
 
-                      <span className="mt-1 block text-xs text-gray-300">
+                      <span className="mt-1 block text-xs text-slate-300">
                         Open the Sale RTA form with the transaction details
                         pre-filled.
                       </span>
@@ -1696,16 +1696,16 @@ export default function ProgressionDetail() {
         </div>
       )}
       {showDeliveryCompletionModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/60 p-4">
           <div className="w-full max-w-lg rounded-2xl bg-white shadow-2xl">
-            <div className="border-b border-gray-100 px-6 py-5">
+            <div className="border-b border-slate-100 px-6 py-5">
               <div className="flex items-start justify-between gap-4">
                 <div>
-                  <h2 className="text-lg font-semibold text-gray-900">
+                  <h2 className="text-lg font-semibold text-slate-900">
                     Complete Delivery Video
                   </h2>
 
-                  <p className="mt-1 text-sm text-gray-500">
+                  <p className="mt-1 text-sm text-slate-500">
                     Both commercial documents must be created before this
                     Progression can be completed.
                   </p>
@@ -1714,7 +1714,7 @@ export default function ProgressionDetail() {
                 <button
                   type="button"
                   onClick={() => setShowDeliveryCompletionModal(false)}
-                  className="rounded-lg px-2 py-1 text-gray-400 hover:bg-gray-100 hover:text-gray-700"
+                  className="rounded-xl px-2 py-1 text-slate-400 hover:bg-slate-100 hover:text-slate-700"
                 >
                   ✕
                 </button>
@@ -1724,16 +1724,16 @@ export default function ProgressionDetail() {
             <div className="space-y-4 px-6 py-6">
               <div
                 className={`rounded-xl border p-4 ${proformaRecord
-                    ? "border-green-200 bg-green-50"
+                    ? "border-emerald-200 bg-emerald-50"
                     : "border-amber-200 bg-amber-50"
                   }`}
               >
                 <div className="flex items-center justify-between gap-4">
                   <div>
-                    <div className="font-medium text-gray-900">Proforma</div>
+                    <div className="font-medium text-slate-900">Proforma</div>
 
                     <div
-                      className={`mt-1 text-xs font-medium ${proformaRecord ? "text-green-700" : "text-amber-700"
+                      className={`mt-1 text-xs font-medium ${proformaRecord ? "text-emerald-700" : "text-amber-700"
                         }`}
                     >
                       {proformaRecord
@@ -1748,7 +1748,7 @@ export default function ProgressionDetail() {
                       onClick={() =>
                         navigate(`/finance/proformas/${proformaRecord.id}`)
                       }
-                      className="rounded-lg border border-gray-300 px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50"
+                      className="rounded-xl border border-slate-300 px-4 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50"
                     >
                       View
                     </button>
@@ -1765,7 +1765,7 @@ export default function ProgressionDetail() {
                           )}`,
                         )
                       }
-                      className="rounded-lg bg-gray-900 px-4 py-2 text-sm font-semibold text-white hover:bg-gray-800 disabled:cursor-not-allowed disabled:opacity-50"
+                      className="rounded-xl bg-amber-500 px-4 py-2 text-sm font-semibold text-slate-950 hover:bg-amber-600 disabled:cursor-not-allowed disabled:opacity-50"
                     >
                       Create Proforma
                     </button>
@@ -1775,18 +1775,18 @@ export default function ProgressionDetail() {
 
               <div
                 className={`rounded-xl border p-4 ${deliveryNoteRecord
-                    ? "border-green-200 bg-green-50"
+                    ? "border-emerald-200 bg-emerald-50"
                     : "border-amber-200 bg-amber-50"
                   }`}
               >
                 <div className="flex items-center justify-between gap-4">
                   <div>
-                    <div className="font-medium text-gray-900">
+                    <div className="font-medium text-slate-900">
                       Delivery Note
                     </div>
 
                     <div
-                      className={`mt-1 text-xs font-medium ${deliveryNoteRecord ? "text-green-700" : "text-amber-700"
+                      className={`mt-1 text-xs font-medium ${deliveryNoteRecord ? "text-emerald-700" : "text-amber-700"
                         }`}
                     >
                       {deliveryNoteRecord
@@ -1804,7 +1804,7 @@ export default function ProgressionDetail() {
                           `/finance/delivery-notes/${deliveryNoteRecord.id}`,
                         )
                       }
-                      className="rounded-lg border border-gray-300 px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50"
+                      className="rounded-xl border border-slate-300 px-4 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50"
                     >
                       View
                     </button>
@@ -1821,7 +1821,7 @@ export default function ProgressionDetail() {
                           )}`,
                         )
                       }
-                      className="rounded-lg bg-gray-900 px-4 py-2 text-sm font-semibold text-white hover:bg-gray-800 disabled:cursor-not-allowed disabled:opacity-50"
+                      className="rounded-xl bg-amber-500 px-4 py-2 text-sm font-semibold text-slate-950 hover:bg-amber-600 disabled:cursor-not-allowed disabled:opacity-50"
                     >
                       Create Delivery Note
                     </button>
@@ -1835,18 +1835,18 @@ export default function ProgressionDetail() {
                   Delivery Video stage.
                 </div>
               ) : (
-                <div className="rounded-xl border border-green-200 bg-green-50 p-4 text-sm text-green-800">
+                <div className="rounded-xl border border-emerald-200 bg-emerald-50 p-4 text-sm text-emerald-800">
                   Both required documents have been created. Delivery Video can
                   now be completed.
                 </div>
               )}
             </div>
 
-            <div className="flex gap-3 border-t border-gray-100 px-6 py-5">
+            <div className="flex gap-3 border-t border-slate-100 px-6 py-5">
               <button
                 type="button"
                 onClick={() => setShowDeliveryCompletionModal(false)}
-                className="flex-1 rounded-xl border border-gray-300 px-4 py-3 text-sm font-semibold text-gray-700 hover:bg-gray-50"
+                className="flex-1 rounded-xl border border-slate-300 px-4 py-3 text-sm font-semibold text-slate-700 hover:bg-slate-50"
               >
                 Close
               </button>
@@ -1868,7 +1868,7 @@ export default function ProgressionDetail() {
                     toast.success("Delivery Video completed successfully.");
                   }
                 }}
-                className="flex-1 rounded-xl bg-green-600 px-4 py-3 text-sm font-semibold text-white hover:bg-green-700 disabled:cursor-not-allowed disabled:opacity-40"
+                className="flex-1 rounded-xl bg-emerald-600 px-4 py-3 text-sm font-semibold text-white hover:bg-emerald-700 disabled:cursor-not-allowed disabled:opacity-40"
               >
                 {advancing ? "Completing..." : "Complete Delivery Video"}
               </button>

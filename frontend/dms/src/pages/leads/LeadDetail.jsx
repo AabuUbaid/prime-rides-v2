@@ -145,30 +145,30 @@ export default function LeadDetail() {
   }
 
   if (!lead) {
-    return <div className="p-6 text-sm text-gray-500">Loading...</div>;
+    return <div className="p-6 text-sm text-slate-500">Loading...</div>;
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 p-6">
-      <div className="mx-auto max-w-5xl space-y-6">
-        <div className="flex justify-between">
+    <div className="min-h-screen bg-[#f5f6fa] px-4 py-6 sm:px-6 lg:px-8">
+      <div className="mx-auto w-full max-w-6xl space-y-6">
+        <div className="flex flex-wrap items-end justify-between gap-4">
           <div>
-            <h1 className="text-2xl font-semibold">Lead #{lead.id}</h1>
+            <h1 className="text-2xl font-bold tracking-tight text-slate-950 sm:text-3xl">Lead #{lead.id}</h1>
 
-            <p className="mt-1 text-sm text-gray-500">
+            <p className="mt-1 text-sm text-slate-500">
               {lead.customer_name || "Unnamed customer"} · {lead.phone_number}
             </p>
           </div>
 
           <Link
             to="/leads"
-            className="rounded-lg border bg-white px-4 py-2 text-sm"
+            className="inline-flex h-10 items-center rounded-xl border border-slate-200 bg-white px-4 text-sm font-semibold text-slate-700 shadow-sm transition hover:bg-slate-50"
           >
             Back
           </Link>
         </div>
 
-        <section className="grid gap-4 rounded-xl border bg-white p-5 md:grid-cols-2">
+        <section className="grid gap-4 rounded-2xl border border-[#e5e7eb] bg-white p-5 shadow-[0_2px_8px_rgba(15,23,42,0.04)] md:grid-cols-2">
           {manage && (
             <label className="text-sm font-medium">
               Assigned Staff
@@ -180,7 +180,7 @@ export default function LeadDetail() {
                     assigned_to: e.target.value || null,
                   })
                 }
-                className="mt-2 w-full rounded-lg border px-3 py-2.5"
+                className="mt-1.5 h-10 w-full rounded-xl border border-slate-200 bg-white px-3 text-sm text-slate-800 outline-none transition focus:border-amber-400 focus:ring-2 focus:ring-amber-400/15"
               >
                 <option value="">Unassigned</option>
 
@@ -205,7 +205,7 @@ export default function LeadDetail() {
                   enquiry_source: e.target.value,
                 })
               }
-              className="mt-2 w-full rounded-lg border px-3 py-2.5"
+              className="mt-1.5 h-10 w-full rounded-xl border border-slate-200 bg-white px-3 text-sm text-slate-800 outline-none transition focus:border-amber-400 focus:ring-2 focus:ring-amber-400/15"
             >
               {SOURCES.map((x) => (
                 <option key={x} value={x}>
@@ -225,7 +225,7 @@ export default function LeadDetail() {
                   enquiry_status: e.target.value,
                 })
               }
-              className="mt-2 w-full rounded-lg border px-3 py-2.5"
+              className="mt-1.5 h-10 w-full rounded-xl border border-slate-200 bg-white px-3 text-sm text-slate-800 outline-none transition focus:border-amber-400 focus:ring-2 focus:ring-amber-400/15"
             >
               {STATUSES.map((x) => (
                 <option key={x} value={x}>
@@ -246,11 +246,11 @@ export default function LeadDetail() {
                 })
               }
               rows={5}
-              className="mt-2 w-full rounded-lg border px-3 py-2.5"
+              className="mt-1.5 h-10 w-full rounded-xl border border-slate-200 bg-white px-3 text-sm text-slate-800 outline-none transition focus:border-amber-400 focus:ring-2 focus:ring-amber-400/15"
             />
           </label>
 
-          <div className="text-sm text-gray-600">
+          <div className="text-sm text-slate-600">
             Last activity:{" "}
             {lead.last_activity_at
               ? new Date(lead.last_activity_at).toLocaleString()
@@ -264,7 +264,7 @@ export default function LeadDetail() {
             <button
               onClick={save}
               disabled={saving}
-              className="rounded-lg bg-gray-900 px-4 py-2 text-sm text-white"
+              className="rounded-xl bg-amber-500 px-4 py-2 text-sm text-slate-950"
             >
               {saving ? "Saving..." : "Save Lead"}
             </button>
@@ -272,7 +272,7 @@ export default function LeadDetail() {
             {user?.role === "MASTER" && (
               <button
                 onClick={remove}
-                className="ml-3 rounded-lg border border-red-300 px-4 py-2 text-sm text-red-700"
+                className="ml-3 rounded-xl border border-rose-300 px-4 py-2 text-sm text-rose-700"
               >
                 Delete
               </button>
@@ -280,7 +280,7 @@ export default function LeadDetail() {
           </div>
         </section>
 
-        <section className="rounded-xl border bg-white p-5">
+        <section className="rounded-2xl border border-[#e5e7eb] bg-white p-5 shadow-[0_2px_8px_rgba(15,23,42,0.04)]">
           <h2 className="font-semibold">Activity</h2>
 
           <div className="mt-3 flex gap-2">
@@ -288,12 +288,12 @@ export default function LeadDetail() {
               value={note}
               onChange={(e) => setNote(e.target.value)}
               placeholder="Follow-up note"
-              className="flex-1 rounded-lg border px-3 py-2.5 text-sm"
+              className="h-10 flex-1 rounded-xl border border-slate-200 bg-white px-3 text-sm text-slate-800 outline-none transition focus:border-amber-400 focus:ring-2 focus:ring-amber-400/15"
             />
 
             <button
               onClick={activity}
-              className="rounded-lg bg-gray-900 px-4 py-2 text-sm text-white"
+              className="rounded-xl bg-amber-500 px-4 py-2 text-sm text-slate-950"
             >
               Add
             </button>
@@ -301,17 +301,17 @@ export default function LeadDetail() {
 
           <div className="mt-4 space-y-3">
             {(lead.activities || []).map((a) => (
-              <div key={a.id} className="rounded-lg bg-gray-50 p-3 text-sm">
+              <div key={a.id} className="rounded-xl bg-slate-50 p-3 text-sm">
                 <div>{a.note}</div>
 
-                <div className="mt-1 text-xs text-gray-500">
+                <div className="mt-1 text-xs text-slate-500">
                   {a.created_at ? new Date(a.created_at).toLocaleString() : "-"}
                 </div>
               </div>
             ))}
 
             {!(lead.activities || []).length && (
-              <div className="text-sm text-gray-500">
+              <div className="text-sm text-slate-500">
                 No activities returned.
               </div>
             )}

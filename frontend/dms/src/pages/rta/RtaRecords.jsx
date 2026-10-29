@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import { getRtaRecords } from "../../api/rta";
 import { useAuth } from "../../context/AuthContext";
+import StatusBadge from "../../components/ui/StatusBadge";
 
 const RECORD_TYPE_LABELS = {
   PURCHASE: "Purchase",
@@ -54,15 +55,15 @@ export default function RtaRecords() {
   }, []);
 
   return (
-    <div className="min-h-screen bg-gray-50 p-6">
-      <div className="mx-auto max-w-7xl space-y-6">
-        <div className="flex flex-wrap items-center justify-between gap-3">
+    <div className="min-h-screen bg-[#f5f6fa] px-4 py-6 sm:px-6 lg:px-8">
+      <div className="mx-auto w-full max-w-[1600px] space-y-6">
+        <div className="flex flex-wrap items-end justify-between gap-4">
           <div>
-            <h1 className="text-2xl font-semibold text-gray-900">
+            <h1 className="text-2xl font-bold tracking-tight text-slate-950 sm:text-3xl">
               RTA Records
             </h1>
 
-            <p className="mt-1 text-sm text-gray-500">
+            <p className="mt-1 text-sm text-slate-500">
               Manage RTA purchase and sale records.
             </p>
           </div>
@@ -71,7 +72,7 @@ export default function RtaRecords() {
             {user?.role !== "SALES_STAFF" && (
               <Link
                 to="/rta/new"
-                className="rounded-lg bg-gray-900 px-4 py-2 text-sm font-medium text-white hover:bg-gray-800"
+                className="inline-flex h-10 items-center rounded-xl border border-amber-500 bg-amber-500 px-4 text-sm font-semibold text-slate-950 shadow-sm transition hover:border-amber-400 hover:bg-amber-400"
               >
                 + Create RTA
               </Link>
@@ -81,7 +82,7 @@ export default function RtaRecords() {
               type="button"
               onClick={load}
               disabled={loading}
-              className="rounded-lg border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-60"
+              className="inline-flex h-10 items-center rounded-xl border border-slate-200 bg-white px-4 text-sm font-semibold text-slate-700 shadow-sm transition hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-60"
             >
               {loading ? "Refreshing..." : "Refresh"}
             </button>
@@ -89,15 +90,15 @@ export default function RtaRecords() {
         </div>
 
         {error && (
-          <div className="rounded-lg border border-red-200 bg-red-50 p-4 text-sm text-red-700">
+          <div className="rounded-2xl border border-rose-200 bg-rose-50 p-4 text-sm text-rose-700">
             {error}
           </div>
         )}
 
-        <div className="overflow-hidden rounded-xl border border-gray-200 bg-white shadow-sm">
+        <div className="overflow-hidden rounded-2xl border border-[#e5e7eb] bg-white shadow-[0_2px_8px_rgba(15,23,42,0.04)]">
           <div className="overflow-x-auto">
             <table className="min-w-full text-sm">
-              <thead className="bg-gray-50 text-left text-xs uppercase text-gray-500">
+              <thead className="bg-slate-50 text-left text-[10px] font-bold uppercase tracking-[0.08em] text-slate-500">
                 <tr>
                   <th className="px-4 py-3">RTA Date</th>
                   <th className="px-4 py-3">Type</th>
@@ -110,9 +111,9 @@ export default function RtaRecords() {
                 </tr>
               </thead>
 
-              <tbody className="divide-y divide-gray-100">
+              <tbody className="divide-y divide-slate-100">
                 {items.map((record) => (
-                  <tr key={record.id}>
+                  <tr key={record.id} className="transition-colors hover:bg-slate-50/80">
                     <td className="px-4 py-3">{record.rta_date || "-"}</td>
 
                     <td className="px-4 py-3">
@@ -124,13 +125,13 @@ export default function RtaRecords() {
                     <td className="px-4 py-3">{record.quote || "-"}</td>
 
                     <td className="px-4 py-3">
-                      <div className="font-medium text-gray-900">
+                      <div className="font-medium text-slate-900">
                         {record.vehicle_stock_id ||
                           record.vehicle_chassis_number ||
                           "-"}
                       </div>
 
-                      <div className="text-xs text-gray-500">
+                      <div className="text-xs text-slate-500">
                         {[record.vehicle_make, record.vehicle_model]
                           .filter(Boolean)
                           .join(" ") || "-"}
@@ -146,23 +147,25 @@ export default function RtaRecords() {
                     </td>
 
                     <td className="px-4 py-3">
-                      <div className="font-medium text-gray-900">
+                      <div className="font-medium text-slate-900">
                         {record.second_party_name || "-"}
                       </div>
 
-                      <div className="text-xs text-gray-500">
+                      <div className="text-xs text-slate-500">
                         {record.second_party_role || "-"}
                       </div>
                     </td>
 
                     <td className="px-4 py-3">
-                      {STATUS_LABELS[record.status] || record.status || "-"}
+                      <StatusBadge status={record.status}>
+                        {STATUS_LABELS[record.status] || record.status || "-"}
+                      </StatusBadge>
                     </td>
 
                     <td className="px-4 py-3 text-right">
                       <Link
                         to={`/rta/${record.id}`}
-                        className="font-medium text-gray-900 hover:underline"
+                        className="inline-flex h-9 items-center rounded-xl border border-slate-200 bg-white px-3 text-xs font-semibold text-slate-700 shadow-sm transition hover:bg-slate-50"
                       >
                         Open
                       </Link>
@@ -174,7 +177,7 @@ export default function RtaRecords() {
           </div>
 
           {!loading && !items.length && (
-            <div className="p-6 text-sm text-gray-500">
+            <div className="p-6 text-sm text-slate-500">
               No RTA records are currently available.
             </div>
           )}

@@ -65,20 +65,20 @@ function FinanceMaster() {
 
   if (user?.role !== "MASTER") {
     return (
-      <div className="min-h-screen bg-gray-50 p-6">
+      <div className="min-h-screen bg-[#f5f6fa] p-6">
         <div className="mx-auto max-w-7xl">
-          <div className="rounded-lg border border-red-200 bg-white p-6 shadow-sm">
-            <h1 className="text-lg font-semibold text-red-700">
+          <div className="rounded-xl border border-rose-200 bg-white p-6 shadow-sm">
+            <h1 className="text-lg font-semibold text-rose-700">
               Access denied
             </h1>
 
-            <p className="mt-2 text-sm text-gray-600">
+            <p className="mt-2 text-sm text-slate-600">
               Finance Master is available only to Master users.
             </p>
 
             <Link
               to="/dashboard"
-              className="mt-4 inline-flex rounded-md border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 transition hover:bg-gray-100"
+              className="mt-4 inline-flex rounded-xl border border-slate-300 bg-white px-4 py-2 text-sm font-medium text-slate-700 transition hover:bg-slate-100"
             >
               Back to Dashboard
             </Link>
@@ -90,40 +90,13 @@ function FinanceMaster() {
 
   return (
     <div className="min-h-screen bg-[#f5f6fa]">
-      <header className="border-b bg-white">
-        <div className="mx-auto flex max-w-7xl items-center justify-between px-6 py-4">
-          <div>
-            <h1 className="text-2xl font-bold text-gray-900">Prime Rides</h1>
-
-            <p className="text-sm text-gray-500">Dealer Management System</p>
-          </div>
-
-          <div className="flex items-center gap-3">
-            <Link
-              to="/dashboard"
-              className="rounded-md border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 transition hover:bg-gray-100"
-            >
-              Dashboard
-            </Link>
-
-            <div className="text-right">
-              <p className="text-sm font-medium text-gray-900">
-                {user?.first_name}
-              </p>
-
-              <p className="text-xs uppercase text-gray-500">{user?.role}</p>
-            </div>
-          </div>
-        </div>
-      </header>
-
-      <main className="mx-auto w-full max-w-[1500px] px-4 py-6 sm:px-6 lg:px-8">
+      <main className="mx-auto w-full max-w-[1600px] px-4 py-6 sm:px-6 lg:px-8">
         <div className="mb-8">
-          <h2 className="text-2xl font-semibold text-gray-900">
+          <h1 className="text-2xl font-bold tracking-tight text-slate-950 sm:text-3xl">
             Finance Master
-          </h2>
+          </h1>
 
-          <p className="mt-1 text-sm text-gray-500">
+          <p className="mt-1 text-sm text-slate-500">
             Access finance transactions, estimates, and configuration.
           </p>
         </div>
@@ -133,20 +106,20 @@ function FinanceMaster() {
             <Link
               key={item.key}
               to={item.path}
-              className="group rounded-lg border border-gray-200 bg-white p-6 shadow-sm transition hover:border-gray-300 hover:shadow-md"
+              className="group rounded-2xl border border-[#e5e7eb] bg-white p-6 shadow-[0_2px_8px_rgba(15,23,42,0.04)] transition hover:border-slate-300 hover:shadow-[0_8px_24px_rgba(15,23,42,0.07)]"
             >
               <div className="flex items-start justify-between gap-4">
                 <div>
-                  <h3 className="text-lg font-semibold text-gray-900">
+                  <h3 className="text-lg font-semibold text-slate-900">
                     {item.title}
                   </h3>
 
-                  <p className="mt-2 text-sm leading-6 text-gray-500">
+                  <p className="mt-2 text-sm leading-6 text-slate-500">
                     {item.description}
                   </p>
                 </div>
 
-                <span className="text-gray-400 transition group-hover:translate-x-1 group-hover:text-gray-700">
+                <span className="text-slate-400 transition group-hover:translate-x-1 group-hover:text-slate-700">
                   →
                 </span>
               </div>

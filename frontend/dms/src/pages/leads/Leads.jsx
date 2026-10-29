@@ -5,6 +5,7 @@ import { createLead, getLeads } from "../../api/leads";
 import { getStaff } from "../../api/staff";
 import { useAuth } from "../../context/AuthContext";
 import { getApiErrorMessage } from "../../utils/errorMessage";
+import StatusBadge from "../../components/ui/StatusBadge";
 
 const SOURCES = [
   "Direct",
@@ -134,12 +135,12 @@ export default function Leads() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 p-6">
-      <div className="mx-auto max-w-7xl space-y-6">
-        <div className="flex items-start justify-between">
+    <div className="min-h-screen bg-[#f5f6fa] px-4 py-6 sm:px-6 lg:px-8">
+      <div className="mx-auto w-full max-w-[1600px] space-y-6">
+        <div className="flex flex-wrap items-end justify-between gap-4">
           <div>
-            <h1 className="text-2xl font-semibold">Leads</h1>
-            <p className="mt-1 text-sm text-gray-500">
+            <h1 className="text-2xl font-bold tracking-tight text-slate-950 sm:text-3xl">Leads</h1>
+            <p className="mt-1 text-sm text-slate-500">
               Sales Staff are automatically assigned their own leads by the
               backend.
             </p>
@@ -147,24 +148,24 @@ export default function Leads() {
 
           <button
             onClick={() => setShow((v) => !v)}
-            className="rounded-lg bg-gray-900 px-4 py-2 text-sm text-white"
+            className="inline-flex h-10 items-center rounded-xl border border-amber-500 bg-amber-500 px-4 text-sm font-semibold text-slate-950 shadow-sm transition hover:border-amber-400 hover:bg-amber-400"
           >
             {show ? "Close" : "New Lead"}
           </button>
         </div>
 
-        <div className="grid gap-3 rounded-xl border bg-white p-4 md:grid-cols-4">
+        <div className="grid gap-3 rounded-2xl border border-[#e5e7eb] bg-white p-5 shadow-[0_2px_8px_rgba(15,23,42,0.04)] md:grid-cols-4">
           <input
             value={search}
             onChange={(e) => setSearch(e.target.value)}
             placeholder="Search leads..."
-            className="rounded-lg border px-3 py-2.5"
+            className="h-10 rounded-xl border border-slate-200 bg-white px-3 text-sm text-slate-800 outline-none transition placeholder:text-slate-400 focus:border-amber-400 focus:ring-2 focus:ring-amber-400/15"
           />
 
           <select
             value={statusFilter}
             onChange={(e) => setStatusFilter(e.target.value)}
-            className="rounded-lg border px-3 py-2.5"
+            className="h-10 rounded-xl border border-slate-200 bg-white px-3 text-sm text-slate-800 outline-none transition focus:border-amber-400 focus:ring-2 focus:ring-amber-400/15"
           >
             <option value="">All Statuses</option>
             {STATUSES.map((x) => (
@@ -177,7 +178,7 @@ export default function Leads() {
           <select
             value={sourceFilter}
             onChange={(e) => setSourceFilter(e.target.value)}
-            className="rounded-lg border px-3 py-2.5"
+            className="h-10 rounded-xl border border-slate-200 bg-white px-3 text-sm text-slate-800 outline-none transition focus:border-amber-400 focus:ring-2 focus:ring-amber-400/15"
           >
             <option value="">All Sources</option>
             {SOURCES.map((x) => (
@@ -191,7 +192,7 @@ export default function Leads() {
             <select
               value={assignedFilter}
               onChange={(e) => setAssignedFilter(e.target.value)}
-              className="rounded-lg border px-3 py-2.5"
+              className="h-10 rounded-xl border border-slate-200 bg-white px-3 text-sm text-slate-800 outline-none transition focus:border-amber-400 focus:ring-2 focus:ring-amber-400/15"
             >
               <option value="">All Staff</option>
 
@@ -207,7 +208,7 @@ export default function Leads() {
             <button
               type="button"
               onClick={clearFilters}
-              className="rounded-lg border bg-white px-3 py-2.5 text-sm"
+              className="h-10 rounded-xl border border-slate-200 bg-white px-3 text-sm font-semibold text-slate-700 transition hover:bg-slate-50"
             >
               Clear Filters
             </button>
@@ -218,7 +219,7 @@ export default function Leads() {
               <button
                 type="button"
                 onClick={clearFilters}
-                className="rounded-lg border bg-white px-3 py-2 text-sm"
+                className="h-9 rounded-xl border border-slate-200 bg-white px-3 text-sm font-semibold text-slate-700 transition hover:bg-slate-50"
               >
                 Clear Filters
               </button>
@@ -229,7 +230,7 @@ export default function Leads() {
         {show && (
           <form
             onSubmit={save}
-            className="grid gap-4 rounded-xl border bg-white p-5 md:grid-cols-3"
+            className="grid gap-4 rounded-2xl border border-[#e5e7eb] bg-white p-5 shadow-[0_2px_8px_rgba(15,23,42,0.04)] md:grid-cols-3"
           >
             <label className="text-sm font-medium">
               Phone Number
@@ -242,7 +243,7 @@ export default function Leads() {
                     phone_number: e.target.value,
                   })
                 }
-                className="mt-2 w-full rounded-lg border px-3 py-2.5"
+                className="mt-1.5 h-10 w-full rounded-xl border border-slate-200 bg-white px-3 text-sm text-slate-800 outline-none transition focus:border-amber-400 focus:ring-2 focus:ring-amber-400/15"
               />
             </label>
 
@@ -256,7 +257,7 @@ export default function Leads() {
                     customer_name: e.target.value,
                   })
                 }
-                className="mt-2 w-full rounded-lg border px-3 py-2.5"
+                className="mt-1.5 h-10 w-full rounded-xl border border-slate-200 bg-white px-3 text-sm text-slate-800 outline-none transition focus:border-amber-400 focus:ring-2 focus:ring-amber-400/15"
               />
             </label>
 
@@ -270,7 +271,7 @@ export default function Leads() {
                     email: e.target.value,
                   })
                 }
-                className="mt-2 w-full rounded-lg border px-3 py-2.5"
+                className="mt-1.5 h-10 w-full rounded-xl border border-slate-200 bg-white px-3 text-sm text-slate-800 outline-none transition focus:border-amber-400 focus:ring-2 focus:ring-amber-400/15"
               />
             </label>
 
@@ -284,7 +285,7 @@ export default function Leads() {
                     enquiry_source: e.target.value,
                   })
                 }
-                className="mt-2 w-full rounded-lg border px-3 py-2.5"
+                className="mt-1.5 h-10 w-full rounded-xl border border-slate-200 bg-white px-3 text-sm text-slate-800 outline-none transition focus:border-amber-400 focus:ring-2 focus:ring-amber-400/15"
               >
                 {SOURCES.map((x) => (
                   <option key={x} value={x}>
@@ -304,7 +305,7 @@ export default function Leads() {
                     enquiry_status: e.target.value,
                   })
                 }
-                className="mt-2 w-full rounded-lg border px-3 py-2.5"
+                className="mt-1.5 h-10 w-full rounded-xl border border-slate-200 bg-white px-3 text-sm text-slate-800 outline-none transition focus:border-amber-400 focus:ring-2 focus:ring-amber-400/15"
               >
                 {STATUSES.map((x) => (
                   <option key={x} value={x}>
@@ -325,7 +326,7 @@ export default function Leads() {
                       assigned_to: e.target.value,
                     })
                   }
-                  className="mt-2 w-full rounded-lg border px-3 py-2.5"
+                  className="mt-1.5 h-10 w-full rounded-xl border border-slate-200 bg-white px-3 text-sm text-slate-800 outline-none transition focus:border-amber-400 focus:ring-2 focus:ring-amber-400/15"
                 >
                   <option value="">Select</option>
 
@@ -351,14 +352,14 @@ export default function Leads() {
                   })
                 }
                 rows={3}
-                className="mt-2 w-full rounded-lg border px-3 py-2.5"
+                className="mt-1.5 h-10 w-full rounded-xl border border-slate-200 bg-white px-3 text-sm text-slate-800 outline-none transition focus:border-amber-400 focus:ring-2 focus:ring-amber-400/15"
               />
             </label>
 
             <div className="md:col-span-3">
               <button
                 disabled={saving}
-                className="rounded-lg bg-gray-900 px-4 py-2 text-sm text-white"
+                className="rounded-xl bg-amber-500 px-4 py-2 text-sm text-slate-950"
               >
                 {saving ? "Saving..." : "Create Lead"}
               </button>
@@ -366,10 +367,10 @@ export default function Leads() {
           </form>
         )}
 
-        <div className="overflow-hidden rounded-xl border bg-white">
+        <div className="overflow-hidden rounded-2xl border border-[#e5e7eb] bg-white shadow-[0_2px_8px_rgba(15,23,42,0.04)]">
           <div className="overflow-x-auto">
             <table className="min-w-full text-sm">
-              <thead className="bg-gray-50 text-left text-xs uppercase text-gray-500">
+              <thead className="bg-slate-50 text-left text-[10px] font-bold uppercase tracking-[0.08em] text-slate-500">
                 <tr>
                   <th className="px-4 py-3">Customer</th>
                   <th className="px-4 py-3">Source</th>
@@ -380,19 +381,23 @@ export default function Leads() {
                 </tr>
               </thead>
 
-              <tbody className="divide-y">
+              <tbody className="divide-y divide-slate-100">
                 {items.map((x) => (
-                  <tr key={x.id}>
+                  <tr key={x.id} className="transition-colors hover:bg-slate-50/80">
                     <td className="px-4 py-3">
                       {x.customer_name || "-"}
-                      <div className="text-xs text-gray-500">
+                      <div className="text-xs text-slate-500">
                         {x.phone_number}
                       </div>
                     </td>
 
                     <td className="px-4 py-3">{x.enquiry_source || "-"}</td>
 
-                    <td className="px-4 py-3">{x.enquiry_status || "-"}</td>
+                    <td className="px-4 py-3">
+                      <StatusBadge status={x.enquiry_status}>
+                        {x.enquiry_status || "-"}
+                      </StatusBadge>
+                    </td>
 
                     <td className="px-4 py-3">
                       {x.assigned_to_name || x.assigned_to?.name || "-"}
@@ -403,7 +408,10 @@ export default function Leads() {
                     </td>
 
                     <td className="px-4 py-3 text-right">
-                      <Link to={`/leads/${x.id}`} className="font-medium">
+                      <Link
+                        to={`/leads/${x.id}`}
+                        className="inline-flex h-9 items-center rounded-xl border border-slate-200 bg-white px-3 text-xs font-semibold text-slate-700 shadow-sm transition hover:bg-slate-50"
+                      >
                         Open
                       </Link>
                     </td>
@@ -414,7 +422,7 @@ export default function Leads() {
                   <tr>
                     <td
                       colSpan={6}
-                      className="px-4 py-8 text-center text-sm text-gray-500"
+                      className="px-4 py-8 text-center text-sm text-slate-500"
                     >
                       No leads found.
                     </td>

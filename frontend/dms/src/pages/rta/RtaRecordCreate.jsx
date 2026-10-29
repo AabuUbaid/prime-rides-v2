@@ -548,33 +548,33 @@ export default function RtaRecordCreate() {
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-semibold">Create RTA Record</h1>
+          <h1 className="text-2xl font-bold tracking-tight text-slate-950 sm:text-3xl">Create RTA Record</h1>
 
-          <p className="text-sm text-gray-500">
+          <p className="text-sm text-slate-500">
             Prepare a Purchase or Sale RTA record.
           </p>
         </div>
 
-        <Link to="/rta" className="rounded border px-4 py-2 text-sm">
+        <Link to="/rta" className="inline-flex h-10 items-center rounded-xl border border-slate-200 bg-white px-4 text-sm font-semibold text-slate-700 shadow-sm transition hover:bg-slate-50">
           Back to RTA Records
         </Link>
       </div>
 
       {loading && (
-        <div className="rounded border bg-white p-6">
+        <div className="rounded-2xl border border-[#e5e7eb] bg-white p-6 shadow-[0_2px_8px_rgba(15,23,42,0.04)]">
           Loading RTA form data...
         </div>
       )}
 
       {!loading && error && (
-        <div className="rounded border border-red-200 bg-red-50 p-4 text-sm text-red-700">
+        <div className="rounded border border-rose-200 bg-rose-50 p-4 text-sm text-rose-700">
           {error}
         </div>
       )}
 
       {!loading && !error && (
         <>
-          <div className="rounded border bg-white p-6">
+          <div className="rounded-2xl border border-[#e5e7eb] bg-white p-6 shadow-[0_2px_8px_rgba(15,23,42,0.04)]">
             <h2 className="text-lg font-semibold">Record Information</h2>
 
             <div className="mt-4 grid gap-4 md:grid-cols-2">
@@ -586,7 +586,7 @@ export default function RtaRecordCreate() {
                 <select
                   value={recordType}
                   onChange={handleRecordTypeChange}
-                  className="w-full rounded border px-3 py-2"
+                  className="h-10 w-full rounded-xl border border-slate-200 bg-white px-3 text-sm text-slate-800 outline-none transition focus:border-amber-400 focus:ring-2 focus:ring-amber-400/15"
                 >
                   <option value="PURCHASE">Purchase</option>
 
@@ -603,7 +603,7 @@ export default function RtaRecordCreate() {
                   type="date"
                   value={rtaDate}
                   onChange={(event) => setRtaDate(event.target.value)}
-                  className="w-full rounded border px-3 py-2"
+                  className="h-10 w-full rounded-xl border border-slate-200 bg-white px-3 text-sm text-slate-800 outline-none transition focus:border-amber-400 focus:ring-2 focus:ring-amber-400/15"
                 />
               </div>
 
@@ -616,7 +616,7 @@ export default function RtaRecordCreate() {
                   <select
                     value={selectedQuoteId}
                     onChange={handleQuoteChange}
-                    className="w-full rounded border px-3 py-2"
+                    className="h-10 w-full rounded-xl border border-slate-200 bg-white px-3 text-sm text-slate-800 outline-none transition focus:border-amber-400 focus:ring-2 focus:ring-amber-400/15"
                   >
                     <option value="">Select a quote</option>
 
@@ -637,7 +637,7 @@ export default function RtaRecordCreate() {
                     value={selectedPurchaseCarId}
                     onChange={handlePurchaseVehicleChange}
                     disabled={purchaseCarLoading || purchaseRoute}
-                    className="w-full rounded border px-3 py-2 disabled:bg-gray-100"
+                    className="h-10 w-full rounded-xl border border-slate-200 bg-white px-3 text-sm text-slate-800 outline-none transition focus:border-amber-400 focus:ring-2 focus:ring-amber-400/15 disabled:bg-slate-50"
                   >
                     <option value="">
                       {purchaseCarLoading
@@ -656,7 +656,7 @@ export default function RtaRecordCreate() {
                   </select>
 
                   {!purchaseCarLoading && !purchaseVehicles.length && (
-                    <p className="mt-2 text-xs text-gray-500">
+                    <p className="mt-2 text-xs text-slate-500">
                       No inventory vehicles are currently available.
                     </p>
                   )}
@@ -670,7 +670,7 @@ export default function RtaRecordCreate() {
                   value={selectedBranchId}
                   onChange={(event) => setSelectedBranchId(event.target.value)}
                   disabled={!selectedCompanyId || branchLoading}
-                  className="w-full rounded border px-3 py-2 disabled:bg-gray-100"
+                  className="h-10 w-full rounded-xl border border-slate-200 bg-white px-3 text-sm text-slate-800 outline-none transition focus:border-amber-400 focus:ring-2 focus:ring-amber-400/15 disabled:bg-slate-50"
                 >
                   <option value="">
                     {branchLoading ? "Loading branches..." : "Select a branch"}
@@ -686,7 +686,7 @@ export default function RtaRecordCreate() {
             </div>
 
             {recordType === "SALE" && quoteLoading && (
-              <p className="mt-3 text-sm text-gray-500">
+              <p className="mt-3 text-sm text-slate-500">
                 Loading quote details...
               </p>
             )}
@@ -697,7 +697,7 @@ export default function RtaRecordCreate() {
 
                 <div className="mt-3 grid gap-3 md:grid-cols-2">
                   <div>
-                    <p className="text-xs text-gray-500">Quote</p>
+                    <p className="text-xs text-slate-500">Quote</p>
 
                     <p className="text-sm font-medium">
                       {selectedQuote.quote_number || selectedQuote.id}
@@ -705,7 +705,7 @@ export default function RtaRecordCreate() {
                   </div>
 
                   <div>
-                    <p className="text-xs text-gray-500">Vehicle ID</p>
+                    <p className="text-xs text-slate-500">Vehicle ID</p>
 
                     <p className="text-sm font-medium">
                       {saleVehicleLoading
@@ -715,7 +715,7 @@ export default function RtaRecordCreate() {
                   </div>
 
                   <div>
-                    <p className="text-xs text-gray-500">Customer ID</p>
+                    <p className="text-xs text-slate-500">Customer ID</p>
 
                     <p className="text-sm font-medium">
                       {selectedQuote.customer_id || "—"}
@@ -723,7 +723,7 @@ export default function RtaRecordCreate() {
                   </div>
 
                   <div>
-                    <p className="text-xs text-gray-500">Customer</p>
+                    <p className="text-xs text-slate-500">Customer</p>
 
                     <p className="text-sm font-medium">
                       {selectedQuote.customer_name || "—"}
@@ -735,17 +735,17 @@ export default function RtaRecordCreate() {
           </div>
 
           {recordType === "SALE" && (
-            <div className="rounded border bg-white p-6">
+            <div className="rounded-2xl border border-[#e5e7eb] bg-white p-6 shadow-[0_2px_8px_rgba(15,23,42,0.04)]">
               <h2 className="text-lg font-semibold">Sale Customer</h2>
 
               {!selectedQuote ? (
-                <p className="mt-3 text-sm text-gray-500">
+                <p className="mt-3 text-sm text-slate-500">
                   Select a quote to load the customer.
                 </p>
               ) : (
                 <div className="mt-4 grid gap-4 md:grid-cols-2">
                   <div>
-                    <p className="text-xs text-gray-500">Customer</p>
+                    <p className="text-xs text-slate-500">Customer</p>
 
                     <p className="mt-1 text-sm font-medium">
                       {selectedQuote.customer_name || "—"}
@@ -753,7 +753,7 @@ export default function RtaRecordCreate() {
                   </div>
 
                   <div>
-                    <p className="text-xs text-gray-500">Customer Mobile</p>
+                    <p className="text-xs text-slate-500">Customer Mobile</p>
 
                     <p className="mt-1 text-sm font-medium">
                       {selectedQuote.customer_mobile || "—"}
@@ -761,7 +761,7 @@ export default function RtaRecordCreate() {
                   </div>
 
                   <div>
-                    <p className="text-xs text-gray-500">Customer ID</p>
+                    <p className="text-xs text-slate-500">Customer ID</p>
 
                     <p className="mt-1 text-sm font-medium">
                       {selectedQuote.customer_id || "—"}
@@ -772,28 +772,28 @@ export default function RtaRecordCreate() {
             </div>
           )}
 
-          <div className="rounded border bg-white p-6">
+          <div className="rounded-2xl border border-[#e5e7eb] bg-white p-6 shadow-[0_2px_8px_rgba(15,23,42,0.04)]">
             <div>
               <h2 className="text-lg font-semibold">Purchase Vehicle</h2>
 
-              <p className="mt-1 text-sm text-gray-500">
+              <p className="mt-1 text-sm text-slate-500">
                 Vehicle selected from Add Stock.
               </p>
             </div>
 
             {recordType === "PURCHASE" ? (
               purchaseCarLoading ? (
-                <p className="mt-3 text-sm text-gray-500">
+                <p className="mt-3 text-sm text-slate-500">
                   Loading vehicle information...
                 </p>
               ) : !purchaseCar ? (
-                <p className="mt-3 text-sm text-red-600">
+                <p className="mt-3 text-sm text-rose-600">
                   Unable to load the inventory vehicle.
                 </p>
               ) : (
                 <div className="mt-4 grid gap-4 md:grid-cols-2">
                   <div>
-                    <p className="text-xs text-gray-500">Stock ID</p>
+                    <p className="text-xs text-slate-500">Stock ID</p>
 
                     <p className="mt-1 text-sm font-medium">
                       {purchaseCar.stock_id ||
@@ -804,7 +804,7 @@ export default function RtaRecordCreate() {
                   </div>
 
                   <div>
-                    <p className="text-xs text-gray-500">Make</p>
+                    <p className="text-xs text-slate-500">Make</p>
 
                     <p className="mt-1 text-sm font-medium">
                       {purchaseCar.make || purchaseCar.vehicle_make || "—"}
@@ -812,7 +812,7 @@ export default function RtaRecordCreate() {
                   </div>
 
                   <div>
-                    <p className="text-xs text-gray-500">Model</p>
+                    <p className="text-xs text-slate-500">Model</p>
 
                     <p className="mt-1 text-sm font-medium">
                       {purchaseCar.model || purchaseCar.vehicle_model || "—"}
@@ -820,7 +820,7 @@ export default function RtaRecordCreate() {
                   </div>
 
                   <div>
-                    <p className="text-xs text-gray-500">Variant</p>
+                    <p className="text-xs text-slate-500">Variant</p>
 
                     <p className="mt-1 text-sm font-medium">
                       {purchaseCar.variant ||
@@ -830,7 +830,7 @@ export default function RtaRecordCreate() {
                   </div>
 
                   <div>
-                    <p className="text-xs text-gray-500">Chassis Number</p>
+                    <p className="text-xs text-slate-500">Chassis Number</p>
 
                     <p className="mt-1 text-sm font-medium">
                       {purchaseCar.chassis_number ||
@@ -841,13 +841,13 @@ export default function RtaRecordCreate() {
                 </div>
               )
             ) : !selectedQuote ? (
-              <p className="mt-3 text-sm text-gray-500">
+              <p className="mt-3 text-sm text-slate-500">
                 Select a quote to view the vehicle information.
               </p>
             ) : (
               <div className="mt-4 grid gap-4 md:grid-cols-2">
                 <div>
-                  <p className="text-xs text-gray-500">Stock ID</p>
+                  <p className="text-xs text-slate-500">Stock ID</p>
 
                   <p className="mt-1 text-sm font-medium">
                     {selectedQuote.vehicle_stock_id || "—"}
@@ -855,7 +855,7 @@ export default function RtaRecordCreate() {
                 </div>
 
                 <div>
-                  <p className="text-xs text-gray-500">Make</p>
+                  <p className="text-xs text-slate-500">Make</p>
 
                   <p className="mt-1 text-sm font-medium">
                     {selectedQuote.vehicle_make || "—"}
@@ -863,7 +863,7 @@ export default function RtaRecordCreate() {
                 </div>
 
                 <div>
-                  <p className="text-xs text-gray-500">Model</p>
+                  <p className="text-xs text-slate-500">Model</p>
 
                   <p className="mt-1 text-sm font-medium">
                     {selectedQuote.vehicle_model || "—"}
@@ -871,7 +871,7 @@ export default function RtaRecordCreate() {
                 </div>
 
                 <div>
-                  <p className="text-xs text-gray-500">Variant</p>
+                  <p className="text-xs text-slate-500">Variant</p>
 
                   <p className="mt-1 text-sm font-medium">
                     {selectedQuote.vehicle_variant || "—"}
@@ -879,7 +879,7 @@ export default function RtaRecordCreate() {
                 </div>
 
                 <div>
-                  <p className="text-xs text-gray-500">Chassis Number</p>
+                  <p className="text-xs text-slate-500">Chassis Number</p>
 
                   <p className="mt-1 text-sm font-medium">
                     {selectedQuote.vehicle_chassis_number || "—"}
@@ -887,7 +887,7 @@ export default function RtaRecordCreate() {
                 </div>
 
                 <div>
-                  <p className="text-xs text-gray-500">Quote Number</p>
+                  <p className="text-xs text-slate-500">Quote Number</p>
 
                   <p className="mt-1 text-sm font-medium">
                     {selectedQuote.quote_number || "—"}
@@ -897,11 +897,11 @@ export default function RtaRecordCreate() {
             )}
           </div>
 
-          <div className="rounded border bg-white p-6">
+          <div className="rounded-2xl border border-[#e5e7eb] bg-white p-6 shadow-[0_2px_8px_rgba(15,23,42,0.04)]">
             <h2 className="text-lg font-semibold">Branch</h2>
 
             <div className="mt-4">
-              <p className="text-xs text-gray-500">Branch</p>
+              <p className="text-xs text-slate-500">Branch</p>
 
               <p className="mt-1 text-sm font-medium">
                 {selectedBranch
@@ -914,7 +914,7 @@ export default function RtaRecordCreate() {
           </div>
 
           {recordType === "SALE" && (
-            <div className="rounded border bg-white p-6">
+            <div className="rounded-2xl border border-[#e5e7eb] bg-white p-6 shadow-[0_2px_8px_rgba(15,23,42,0.04)]">
               <h2 className="text-lg font-semibold">RTA Details</h2>
 
               <div className="mt-4 grid gap-4 md:grid-cols-2">
@@ -929,7 +929,7 @@ export default function RtaRecordCreate() {
                     onChange={(event) =>
                       setRtaReferenceNumber(event.target.value)
                     }
-                    className="w-full rounded border px-3 py-2"
+                    className="h-10 w-full rounded-xl border border-slate-200 bg-white px-3 text-sm text-slate-800 outline-none transition focus:border-amber-400 focus:ring-2 focus:ring-amber-400/15"
                     placeholder="Enter RTA reference number"
                   />
                 </div>
@@ -944,7 +944,7 @@ export default function RtaRecordCreate() {
                     onChange={(event) =>
                       setCustomerEmiratesIdNumber(event.target.value)
                     }
-                    className="w-full rounded border px-3 py-2"
+                    className="h-10 w-full rounded-xl border border-slate-200 bg-white px-3 text-sm text-slate-800 outline-none transition focus:border-amber-400 focus:ring-2 focus:ring-amber-400/15"
                     placeholder="Enter customer Emirates ID number"
                   />
                 </div>
@@ -960,7 +960,7 @@ export default function RtaRecordCreate() {
                     onChange={(event) =>
                       setFirstPartySignatoryName(event.target.value)
                     }
-                    className="w-full rounded border px-3 py-2"
+                    className="h-10 w-full rounded-xl border border-slate-200 bg-white px-3 text-sm text-slate-800 outline-none transition focus:border-amber-400 focus:ring-2 focus:ring-amber-400/15"
                     placeholder="Enter first party signatory name"
                   />
                 </div>
@@ -976,7 +976,7 @@ export default function RtaRecordCreate() {
                     value={notes}
                     onChange={(event) => setNotes(event.target.value)}
                     rows={4}
-                    className="w-full rounded border px-3 py-2"
+                    className="h-10 w-full rounded-xl border border-slate-200 bg-white px-3 text-sm text-slate-800 outline-none transition focus:border-amber-400 focus:ring-2 focus:ring-amber-400/15"
                     placeholder="Enter any RTA notes"
                   />
                 </div>
@@ -985,7 +985,7 @@ export default function RtaRecordCreate() {
           )}
 
           <div className="flex justify-end gap-3">
-            <Link to="/rta" className="rounded border px-4 py-2 text-sm">
+            <Link to="/rta" className="inline-flex h-10 items-center rounded-xl border border-slate-200 bg-white px-4 text-sm font-semibold text-slate-700 shadow-sm transition hover:bg-slate-50">
               Cancel
             </Link>
 
@@ -993,28 +993,28 @@ export default function RtaRecordCreate() {
               type="button"
               onClick={handleSubmit}
               disabled={saving}
-              className="rounded bg-gray-900 px-5 py-2 text-sm font-medium text-white disabled:cursor-not-allowed disabled:opacity-60"
+              className="inline-flex h-10 items-center rounded-xl border border-amber-500 bg-amber-500 px-5 text-sm font-semibold text-slate-950 shadow-sm transition hover:border-amber-400 hover:bg-amber-400 disabled:cursor-not-allowed disabled:opacity-60"
             >
               {saving ? "Creating..." : "Create RTA Record"}
             </button>
           </div>
 
-          <div className="rounded border bg-white p-6">
+          <div className="rounded-2xl border border-[#e5e7eb] bg-white p-6 shadow-[0_2px_8px_rgba(15,23,42,0.04)]">
             {recordType === "SALE" ? (
-              <p className="text-sm text-gray-600">
+              <p className="text-sm text-slate-600">
                 Quotes loaded: {quotes.length}
               </p>
             ) : (
-              <p className="text-sm text-gray-600">
+              <p className="text-sm text-slate-600">
                 Purchase vehicle: {purchaseCar ? "Loaded" : "Not loaded"}
               </p>
             )}
 
-            <p className="mt-2 text-sm text-gray-600">
+            <p className="mt-2 text-sm text-slate-600">
               Companies loaded: {companies.length}
             </p>
 
-            <p className="mt-2 text-sm text-gray-600">
+            <p className="mt-2 text-sm text-slate-600">
               Branches loaded: {branches.length}
             </p>
           </div>

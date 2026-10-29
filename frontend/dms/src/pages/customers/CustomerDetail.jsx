@@ -303,7 +303,7 @@ export default function CustomerDetail() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-slate-50 px-4 py-10">
+      <div className="min-h-screen bg-[#f5f6fa] px-4 py-10">
         <div className="mx-auto flex min-h-64 max-w-6xl items-center justify-center">
           <div className="text-sm text-slate-500">Loading customer...</div>
         </div>
@@ -313,11 +313,11 @@ export default function CustomerDetail() {
 
   if (!customer) {
     return (
-      <div className="min-h-screen bg-slate-50 px-4 py-10">
+      <div className="min-h-screen bg-[#f5f6fa] px-4 py-10">
         <div className="mx-auto max-w-6xl">
           <Link
             to="/customers"
-            className="inline-flex items-center gap-2 rounded-lg border border-slate-300 bg-white px-4 py-2.5 text-sm font-medium text-slate-700 hover:bg-slate-50"
+            className="inline-flex items-center gap-2 rounded-xl border border-slate-300 bg-white px-4 py-2.5 text-sm font-medium text-slate-700 hover:bg-slate-50"
           >
             <ArrowLeft size={16} />
             Back to Customers
@@ -332,20 +332,20 @@ export default function CustomerDetail() {
   const quotes = Array.isArray(customer.quotes) ? customer.quotes : [];
 
   return (
-    <div className="min-h-screen bg-slate-50 px-4 py-6 sm:px-6 lg:px-8">
-      <div className="mx-auto max-w-6xl">
-        <div className="mb-6 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+    <div className="min-h-screen bg-[#f5f6fa] px-4 py-6 sm:px-6 lg:px-8">
+      <div className="mx-auto w-full max-w-6xl">
+        <div className="mb-7 flex flex-wrap items-end justify-between gap-4">
           <div className="flex items-center gap-3">
             <Link
               to="/customers"
-              className="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-lg border border-slate-300 bg-white text-slate-600 hover:bg-slate-50"
+              className="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-xl border border-slate-200 bg-white text-slate-600 shadow-sm transition hover:bg-slate-50"
               aria-label="Back to customers"
             >
               <ArrowLeft size={18} />
             </Link>
 
             <div>
-              <h1 className="text-2xl font-semibold text-slate-900">
+              <h1 className="text-2xl font-bold tracking-tight text-slate-950 sm:text-3xl">
                 {customer.customer_name || "-"}
               </h1>
 
@@ -355,7 +355,7 @@ export default function CustomerDetail() {
 
           <Link
             to={`/customers/${id}/edit`}
-            className="inline-flex w-fit items-center gap-2 rounded-lg border border-slate-300 bg-white px-4 py-2.5 text-sm font-medium text-slate-700 hover:bg-slate-50"
+            className="inline-flex h-10 w-fit items-center gap-2 rounded-xl border border-slate-200 bg-white px-4 text-sm font-semibold text-slate-700 shadow-sm transition hover:bg-slate-50"
           >
             <Pencil size={16} />
             Edit Customer
@@ -364,7 +364,7 @@ export default function CustomerDetail() {
           <button
             type="button"
             onClick={handleDeleteCustomer}
-            className="inline-flex items-center gap-2 rounded-lg border border-red-200 bg-white px-4 py-2.5 text-sm font-medium text-red-600 hover:bg-red-50"
+            className="inline-flex h-10 items-center gap-2 rounded-xl border border-rose-200 bg-white px-4 text-sm font-semibold text-rose-600 shadow-sm transition hover:bg-rose-50"
           >
             <Trash2 size={16} />
             Delete Customer
@@ -372,14 +372,14 @@ export default function CustomerDetail() {
         </div>
 
         <div className="grid gap-6">
-          <section className="rounded-xl border border-slate-200 bg-white shadow-sm">
+          <section className="rounded-2xl border border-[#e5e7eb] bg-white shadow-[0_2px_8px_rgba(15,23,42,0.04)]">
             <div className="border-b border-slate-200 px-5 py-4">
               <h2 className="font-semibold text-slate-900">
                 Customer Information
               </h2>
             </div>
 
-            <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+            <div className="grid grid-cols-1 gap-4 p-5 md:grid-cols-2">
               <div>
                 <p className="text-xs font-medium uppercase tracking-wide text-slate-500">
                   Customer Name
@@ -478,7 +478,7 @@ export default function CustomerDetail() {
             </div>
           </section>
 
-          <section className="rounded-xl border border-slate-200 bg-white shadow-sm">
+          <section className="rounded-2xl border border-[#e5e7eb] bg-white shadow-[0_2px_8px_rgba(15,23,42,0.04)]">
             <div className="border-b border-slate-200 px-5 py-4">
               <div className="flex items-center gap-2">
                 <Upload size={19} className="text-slate-500" />
@@ -513,7 +513,7 @@ export default function CustomerDetail() {
                   value={documentCategory}
                   onChange={(event) => setDocumentCategory(event.target.value)}
                   disabled={uploading}
-                  className="w-full rounded-lg border border-slate-300 bg-white px-3 py-2.5 text-sm text-slate-900 outline-none focus:border-slate-500 focus:ring-2 focus:ring-slate-200"
+                  className="h-10 w-full rounded-xl border border-slate-200 bg-white px-3 text-sm text-slate-800 outline-none transition focus:border-amber-400 focus:ring-2 focus:ring-amber-400/15"
                 >
                   {DOCUMENT_CATEGORIES.filter(
                     (category) =>
@@ -541,7 +541,7 @@ export default function CustomerDetail() {
                   type="file"
                   onChange={handleFileChange}
                   disabled={uploading}
-                  className="block w-full rounded-lg border border-slate-300 bg-white text-sm text-slate-600 file:mr-3 file:border-0 file:bg-slate-100 file:px-3 file:py-2.5 file:text-sm file:font-medium file:text-slate-700"
+                  className="block w-full rounded-xl border border-slate-300 bg-white text-sm text-slate-600 file:mr-3 file:border-0 file:bg-slate-100 file:px-3 file:py-2.5 file:text-sm file:font-medium file:text-slate-700"
                 />
               </div>
 
@@ -549,7 +549,7 @@ export default function CustomerDetail() {
                 <button
                   type="submit"
                   disabled={uploading || !selectedFile}
-                  className="inline-flex w-full items-center justify-center gap-2 rounded-lg bg-slate-900 px-4 py-2.5 text-sm font-medium text-white hover:bg-slate-800 disabled:cursor-not-allowed disabled:opacity-60"
+                  className="inline-flex h-10 w-full items-center justify-center gap-2 rounded-xl border border-amber-500 bg-amber-500 px-4 text-sm font-semibold text-slate-950 shadow-sm transition hover:border-amber-400 hover:bg-amber-400 disabled:cursor-not-allowed disabled:opacity-60"
                 >
                   <Upload size={16} />
 
@@ -559,7 +559,7 @@ export default function CustomerDetail() {
             </form>
           </section>
 
-          <section className="rounded-xl border border-slate-200 bg-white shadow-sm">
+          <section className="rounded-2xl border border-[#e5e7eb] bg-white shadow-[0_2px_8px_rgba(15,23,42,0.04)]">
             <div className="flex items-center justify-between border-b border-slate-200 px-5 py-4">
               <div>
                 <h2 className="font-semibold text-slate-900">Documents</h2>
@@ -592,7 +592,7 @@ export default function CustomerDetail() {
                       className="flex flex-col gap-4 px-5 py-4 lg:flex-row lg:items-center lg:justify-between"
                     >
                       <div className="flex min-w-0 items-center gap-4">
-                        <div className="flex h-12 w-12 shrink-0 items-center justify-center overflow-hidden rounded-lg border border-slate-200 bg-slate-50">
+                        <div className="flex h-12 w-12 shrink-0 items-center justify-center overflow-hidden rounded-xl border border-slate-200 bg-slate-50">
                           {isImageDocument(document.document) ? (
                             <img
                               src={documentUrl}
@@ -626,7 +626,7 @@ export default function CustomerDetail() {
                             href={documentUrl}
                             target="_blank"
                             rel="noreferrer"
-                            className="inline-flex items-center gap-2 rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50"
+                            className="inline-flex h-9 items-center gap-2 rounded-xl border border-slate-200 bg-white px-3 text-sm font-semibold text-slate-700 shadow-sm transition hover:bg-slate-50"
                           >
                             <Eye size={15} />
                             View
@@ -637,7 +637,7 @@ export default function CustomerDetail() {
                           <a
                             href={documentUrl}
                             download
-                            className="inline-flex items-center gap-2 rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50"
+                            className="inline-flex h-9 items-center gap-2 rounded-xl border border-slate-200 bg-white px-3 text-sm font-semibold text-slate-700 shadow-sm transition hover:bg-slate-50"
                           >
                             <Download size={15} />
                             Download
@@ -648,7 +648,7 @@ export default function CustomerDetail() {
                           type="button"
                           onClick={() => handleDeleteDocument(document.id)}
                           disabled={deletingDocumentId === document.id}
-                          className="inline-flex items-center gap-2 rounded-lg border border-red-200 bg-white px-3 py-2 text-sm font-medium text-red-600 hover:bg-red-50 disabled:cursor-not-allowed disabled:opacity-60"
+                          className="inline-flex items-center gap-2 rounded-xl border border-rose-200 bg-white px-3 py-2 text-sm font-medium text-rose-600 hover:bg-rose-50 disabled:cursor-not-allowed disabled:opacity-60"
                         >
                           <Trash2 size={15} />
 
@@ -664,7 +664,7 @@ export default function CustomerDetail() {
             )}
           </section>
 
-          <section className="rounded-xl border border-slate-200 bg-white shadow-sm">
+          <section className="rounded-2xl border border-[#e5e7eb] bg-white shadow-[0_2px_8px_rgba(15,23,42,0.04)]">
             <div className="border-b border-slate-200 px-5 py-4">
               <div>
                 <h2 className="font-semibold text-slate-900">Quote History</h2>
@@ -731,7 +731,7 @@ export default function CustomerDetail() {
                         <td className="px-5 py-4 text-right">
                           <Link
                             to={`/deals/${quote.id}`}
-                            className="inline-flex items-center gap-2 rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50"
+                            className="inline-flex items-center gap-2 rounded-xl border border-slate-300 bg-white px-3 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50"
                           >
                             View Quote
                           </Link>

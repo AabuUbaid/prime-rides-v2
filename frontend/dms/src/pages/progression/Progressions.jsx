@@ -4,6 +4,7 @@ import { getProgressions } from "../../api/progression";
 
 import { getInsurances } from "../../api/insurance";
 import ProgressionPrintTemplate from "../../components/printing/templates/ProgressionPrintTemplate";
+import StatusBadge from "../../components/ui/StatusBadge";
 
 const STAGE_LABELS = {
   evaluation: "Evaluation",
@@ -236,21 +237,21 @@ export default function Progressions() {
         `}</style>
       )}
 
-      <div className="progression-list-ui mx-auto max-w-7xl space-y-6">
-        <div className="flex flex-wrap justify-between gap-3">
+      <div className="progression-list-ui mx-auto w-full max-w-[1600px] space-y-6 px-4 py-6 sm:px-6 lg:px-8">
+        <div className="flex flex-wrap items-end justify-between gap-4">
           <div>
-            <h1 className="text-2xl font-semibold">Progression</h1>
-            <p className="mt-1 text-sm text-gray-500">
+            <h1 className="text-2xl font-bold tracking-tight text-slate-950 sm:text-3xl">Progression</h1>
+            <p className="mt-1 text-sm text-slate-500">
               Operational delivery and registration workflow.
             </p>
           </div>
 
-          <div className="flex items-center gap-2">
+          <div className="flex flex-wrap items-center gap-2">
             <button
               type="button"
               onClick={handlePrintActiveProgressions}
               disabled={loading || printingActive}
-              className="rounded-lg bg-gray-900 px-4 py-2 text-sm font-medium text-white hover:bg-gray-800 disabled:opacity-50"
+              className="inline-flex min-h-10 items-center justify-center rounded-xl border border-amber-500 bg-amber-500 px-4 py-2 text-sm font-semibold text-slate-950 shadow-sm transition hover:border-amber-400 hover:bg-amber-400 focus:outline-none focus-visible:ring-2 focus-visible:ring-amber-400 disabled:cursor-not-allowed disabled:opacity-60"
             >
               {printingActive
                 ? "Preparing Print..."
@@ -261,7 +262,7 @@ export default function Progressions() {
               type="button"
               onClick={() => load(appliedSearch)}
               disabled={loading}
-              className="rounded-lg border border-gray-300 bg-white px-4 py-2 text-sm font-medium"
+              className="inline-flex h-10 items-center rounded-xl border border-slate-200 bg-white px-4 text-sm font-semibold text-slate-700 shadow-sm transition hover:bg-slate-50"
             >
               {loading ? "Refreshing..." : "Refresh"}
             </button>
@@ -275,20 +276,20 @@ export default function Progressions() {
             setAppliedSearch(value);
             load(value);
           }}
-          className="flex flex-col gap-3 rounded-xl border border-gray-200 bg-white p-4 shadow-sm sm:flex-row"
+          className="flex flex-col gap-3 rounded-2xl border border-[#e5e7eb] bg-white p-5 shadow-[0_2px_8px_rgba(15,23,42,0.04)] sm:flex-row"
         >
           <input
             type="search"
             value={search}
             onChange={(event) => setSearch(event.target.value)}
             placeholder="Search vehicle, stock ID, customer, seller, bank..."
-            className="h-10 min-w-0 flex-1 rounded-lg border border-gray-300 px-3 text-sm outline-none focus:border-gray-500 focus:ring-1 focus:ring-gray-500"
+            className="h-10 min-w-0 flex-1 rounded-xl border border-slate-200 bg-white px-3 text-sm text-slate-800 outline-none transition focus:border-amber-400 focus:ring-2 focus:ring-amber-400/15"
           />
 
           <button
             type="submit"
             disabled={loading}
-            className="rounded-lg bg-gray-900 px-5 py-2 text-sm font-medium text-white hover:bg-gray-800 disabled:cursor-not-allowed disabled:opacity-50"
+            className="inline-flex h-10 items-center rounded-xl border border-amber-500 bg-amber-500 px-5 text-sm font-semibold text-slate-950 shadow-sm transition hover:border-amber-400 hover:bg-amber-400 disabled:cursor-not-allowed disabled:opacity-50"
           >
             Search Progression
           </button>
@@ -301,18 +302,18 @@ export default function Progressions() {
               setAppliedSearch("");
               load("");
             }}
-            className="rounded-lg border border-gray-300 bg-white px-5 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50"
+            className="inline-flex h-10 items-center rounded-xl border border-slate-200 bg-white px-5 text-sm font-semibold text-slate-700 shadow-sm transition hover:bg-slate-50"
           >
             Clear
           </button>
         </form>
 
-        <div className="flex items-center justify-between rounded-lg border border-gray-200 bg-white px-4 py-3">
+        <div className="flex items-center justify-between rounded-2xl border border-[#e5e7eb] bg-white px-5 py-4 shadow-[0_2px_8px_rgba(15,23,42,0.04)]">
           <div>
-            <p className="text-sm font-medium text-gray-900">
+            <p className="text-sm font-medium text-slate-900">
               Show completed progressions
             </p>
-            <p className="text-xs text-gray-500">
+            <p className="text-xs text-slate-500">
               Completed records are hidden by default.
             </p>
           </div>
@@ -322,7 +323,7 @@ export default function Progressions() {
             role="switch"
             aria-checked={showCompleted}
             onClick={() => setShowCompleted((previous) => !previous)}
-            className={`relative inline-flex h-6 w-11 shrink-0 items-center rounded-full transition-colors ${showCompleted ? "bg-gray-900" : "bg-gray-300"
+            className={`relative inline-flex h-6 w-11 shrink-0 items-center rounded-full transition-colors ${showCompleted ? "bg-amber-500" : "bg-slate-300"
               }`}
           >
             <span
@@ -333,15 +334,15 @@ export default function Progressions() {
         </div>
 
         {error && (
-          <div className="rounded-lg border border-red-200 bg-red-50 p-4 text-sm text-red-700">
+          <div className="rounded-xl border border-rose-200 bg-rose-50 p-4 text-sm text-rose-700">
             {error}
           </div>
         )}
 
-        <div className="overflow-hidden rounded-xl border border-gray-200 bg-white shadow-sm">
+        <div className="overflow-hidden rounded-2xl border border-[#e5e7eb] bg-white shadow-[0_2px_8px_rgba(15,23,42,0.04)]">
           <div className="overflow-x-auto">
             <table className="min-w-full text-sm">
-              <thead className="bg-gray-50 text-left text-xs uppercase text-gray-500">
+              <thead className="bg-slate-50 text-left text-[10px] font-bold uppercase tracking-[0.08em] text-slate-500">
                 <tr>
                   <th className="px-4 py-3">Vehicle</th>
                   <th className="px-4 py-3">Customer</th>
@@ -353,14 +354,14 @@ export default function Progressions() {
                 </tr>
               </thead>
 
-              <tbody className="divide-y divide-gray-100">
+              <tbody className="divide-y divide-slate-100">
                 {rows.map((r) => (
-                  <tr key={r.id}>
+                  <tr key={r.id} className="transition-colors hover:bg-slate-50/80">
                     <td className="px-4 py-3">
                       <div className="font-medium">
                         {r.vehicle_stock_id || "-"}
                       </div>
-                      <div className="text-xs text-gray-500">
+                      <div className="text-xs text-slate-500">
                         {[r.vehicle_year, r.vehicle_make, r.vehicle_model]
                           .filter(Boolean)
                           .join(" ")}
@@ -380,12 +381,14 @@ export default function Progressions() {
                       {STAGE_LABELS[r.current_stage] || r.current_stage || "-"}
                     </td>
                     <td className="px-4 py-3">
-                      {STATUS_LABELS[r.status] || r.status || "-"}
+                      <StatusBadge status={r.status}>
+                        {STATUS_LABELS[r.status] || r.status || "-"}
+                      </StatusBadge>
                     </td>
                     <td className="px-4 py-3 text-right">
                       <Link
                         to={`/progression/${r.id}`}
-                        className="font-medium hover:underline"
+                        className="inline-flex h-9 items-center rounded-xl border border-slate-200 bg-white px-3 text-xs font-semibold text-slate-700 shadow-sm transition hover:bg-slate-50"
                       >
                         Open
                       </Link>
@@ -397,7 +400,7 @@ export default function Progressions() {
           </div>
 
           {!loading && !rows.length && (
-            <div className="p-6 text-sm text-gray-500">
+            <div className="p-6 text-sm text-slate-500">
               No Progression records are currently available.
             </div>
           )}

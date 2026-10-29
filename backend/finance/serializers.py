@@ -1774,7 +1774,7 @@ class CashReceiptCreateSerializer(
 
         return validate_cash_receipt_category(value)
 
-    
+
     def validate(self, attrs):
         category = attrs.get("category")
         description = attrs.get("description", "")
@@ -2121,7 +2121,7 @@ class BalanceSheetSerializer(serializers.ModelSerializer):
 
         return totals
 
-    
+
 
     def _get_company_receipts(self, obj):
         receipts = getattr(
@@ -2182,47 +2182,15 @@ class BalanceSheetSerializer(serializers.ModelSerializer):
     def get_total_received(self, obj):
         return self._get_receipt_totals(obj)["received"] or 0
 
-    
+
+
     def get_total_spent(self, obj):
         """
-        Balance Sheet selling value:
-        - Cash: vehicle price + VAT + actual company expenses.
-        - Finance: approved bank finance amount, as currently designed.
-        Estimated Quote/EMI expenses are excluded.
-        """
-        quote = obj.quote
+        Balance Sheet vehicle value:
+        vehicle price + VAT only.
 
-        if quote.payment_method == "Finance":
-            return (
-                getattr(quote, "emi_finance_amount", None)
-                or Decimal("0.00")
-            )
-
-        vehicle_price = (
-            getattr(obj.car, "asking_price", None)
-            or Decimal("0.00")
-        )
-
-        vat_amount = (
-            getattr(quote, "vat_amount", None)
-            or Decimal("0.00")
-        )
-
-        actual_company_expenses = (
-            self._get_receipt_totals(obj)["spent"]
-            or Decimal("0.00")
-        )
-
-        return (
-            vehicle_price
-            + vat_amount
-            + actual_company_expenses
-        )
-
-    def get_spent_breakdown(self, obj):
-        """
-        Only show vehicle price, VAT and actual company
-        expenses. Never show estimated Quote/EMI expenses.
+        Company-on-behalf receipts and estimated expenses
+        do not affect the vehicle's Balance Sheet amount.
         """
         quote = obj.quote
 
@@ -2231,18 +2199,46 @@ class BalanceSheetSerializer(serializers.ModelSerializer):
                 getattr(quote, "emi_vehicle_price", None)
                 or Decimal("0.00")
             )
-
             vat_amount = (
                 getattr(quote, "emi_vat_amount", None)
                 or Decimal("0.00")
             )
-
         else:
             vehicle_price = (
                 getattr(obj.car, "asking_price", None)
                 or Decimal("0.00")
             )
+            vat_amount = (
+                getattr(quote, "vat_amount", None)
+                or Decimal("0.00")
+            )
 
+        return vehicle_price + vat_amount
+
+
+
+    def get_spent_breakdown(self, obj):
+        """
+        Show only vehicle price and VAT.
+        Company-on-behalf receipts remain in transaction history,
+        not in the vehicle value calculation.
+        """
+        quote = obj.quote
+
+        if quote.payment_method == "Finance":
+            vehicle_price = (
+                getattr(quote, "emi_vehicle_price", None)
+                or Decimal("0.00")
+            )
+            vat_amount = (
+                getattr(quote, "emi_vat_amount", None)
+                or Decimal("0.00")
+            )
+        else:
+            vehicle_price = (
+                getattr(obj.car, "asking_price", None)
+                or Decimal("0.00")
+            )
             vat_amount = (
                 getattr(quote, "vat_amount", None)
                 or Decimal("0.00")
@@ -2263,34 +2259,7 @@ class BalanceSheetSerializer(serializers.ModelSerializer):
                 "amount": vat_amount,
             })
 
-        
-    
-        for receipt in self._get_company_receipts(obj):
-            is_reversal = receipt.reversal_of_id is not None
-
-            breakdown.append({
-                "type": (
-                    "company_expense_reversal"
-                    if is_reversal
-                    else "company_on_behalf"
-                ),
-                "narration": (
-                    receipt.description
-                    or receipt.category
-                    or "Company Expense"
-                ),
-                "amount": (
-                    -receipt.amount
-                    if is_reversal
-                    else receipt.amount
-                ),
-                "receipt_id": receipt.id,
-                "receipt_number": receipt.receipt_number,
-                "transaction_date": receipt.transaction_date,
-            })
-
         return breakdown
-
 
 
     def get_created_by_name(self, obj):
@@ -2420,7 +2389,7 @@ class BalanceSheetSerializer(serializers.ModelSerializer):
             else None
         )
 
-    
+
     def get_net_difference(self, obj):
         return (
             Decimal(str(self.get_total_spent(obj) or 0))

@@ -149,15 +149,15 @@ function CashDeals() {
 
   return (
     <div className="min-h-screen bg-[#f5f6fa]">
-      <main className="mx-auto w-full max-w-[1500px] px-4 py-6 sm:px-6 lg:px-8">
+      <main className="mx-auto w-full max-w-[1600px] px-4 py-6 sm:px-6 lg:px-8">
         <div className="mb-6">
           <p className="text-[11px] font-bold uppercase tracking-[0.08em] text-amber-600">
             Finance
           </p>
 
-          <h2 className="mt-1 text-2xl font-extrabold tracking-tight text-slate-900">
+          <h1 className="mt-1 text-2xl font-bold tracking-tight text-slate-950 sm:text-3xl">
             Cash Deal Tracker
-          </h2>
+          </h1>
 
           <p className="mt-1 text-sm text-slate-500">
             Track cash transactions, advances, balances, and status.
@@ -259,15 +259,15 @@ function CashDeals() {
                     Vehicle
                   </th>
 
-                  <th className="px-4 py-3 text-left text-[10px] font-bold uppercase tracking-[0.08em] text-slate-500">
+                  <th className="px-4 py-3 text-right text-[10px] font-bold uppercase tracking-[0.08em] text-slate-500">
                     Selling Price
                   </th>
 
-                  <th className="px-4 py-3 text-left text-[10px] font-bold uppercase tracking-[0.08em] text-slate-500">
+                  <th className="px-4 py-3 text-right text-[10px] font-bold uppercase tracking-[0.08em] text-slate-500">
                     Amount Paid
                   </th>
 
-                  <th className="px-4 py-3 text-left text-[10px] font-bold uppercase tracking-[0.08em] text-slate-500">
+                  <th className="px-4 py-3 text-right text-[10px] font-bold uppercase tracking-[0.08em] text-slate-500">
                     Balance
                   </th>
 
@@ -275,7 +275,7 @@ function CashDeals() {
                     Status
                   </th>
 
-                  <th className="px-4 py-3 text-right text-xs font-semibold uppercase tracking-wide text-gray-500">
+                  <th className="px-4 py-3 text-right text-[10px] font-bold uppercase tracking-[0.08em] text-slate-500">
                     Action
                   </th>
                 </tr>
@@ -315,15 +315,15 @@ function CashDeals() {
                       </div>
                     </td>
 
-                    <td className="px-4 py-3 text-sm font-medium text-slate-700">
+                    <td className="px-4 py-3 text-right text-sm font-medium tabular-nums text-slate-700">
                       {formatAED(deal.selling_price)}
                     </td>
 
-                    <td className="px-4 py-3 text-sm font-medium text-slate-700">
+                    <td className="px-4 py-3 text-right text-sm font-medium tabular-nums text-slate-700">
                       {formatAED(deal.advance_amount)}
                     </td>
 
-                    <td className="px-4 py-3 text-sm font-bold text-slate-900">
+                    <td className="px-4 py-3 text-right text-sm font-bold tabular-nums text-slate-900">
                       {formatAED(deal.balance_amount)}
                     </td>
 
@@ -352,7 +352,7 @@ function CashDeals() {
                     <td className="px-4 py-3 text-right">
                       <Link
                         to={`/finance/cash-deals/${deal.id}`}
-                        className="text-sm font-bold text-amber-600 transition-colors hover:text-amber-700"
+                        className="inline-flex h-9 items-center rounded-xl border border-slate-200 bg-white px-3 text-xs font-semibold text-slate-700 shadow-sm transition hover:bg-slate-50"
                       >
                         View
                       </Link>

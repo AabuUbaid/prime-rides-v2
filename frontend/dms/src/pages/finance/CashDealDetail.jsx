@@ -208,7 +208,7 @@ function CashDealDetail() {
               Finance · Cash Deal
             </p>
 
-            <h1 className="mt-1 text-2xl font-extrabold tracking-tight text-slate-900">
+            <h1 className="mt-1 text-xl sm:text-2xl font-bold tracking-tight text-slate-900">
               Cash Deal #{cashDeal.id}
             </h1>
 

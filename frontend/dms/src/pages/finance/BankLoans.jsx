@@ -232,42 +232,23 @@ function BankLoans() {
 
   return (
     <div className="min-h-screen bg-[#f5f6fa]">
-      <header className="border-b bg-white">
-        <div className="mx-auto flex max-w-7xl items-center justify-between px-6 py-4">
-          <div>
-            <h1 className="text-2xl font-bold text-gray-900">Prime Rides</h1>
-
-            <p className="text-sm text-gray-500">Dealer Management System</p>
-          </div>
-
-          <div className="flex items-center gap-3">
-            <Link
-              to="/dashboard"
-              className="rounded-md border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 transition hover:bg-gray-100"
-            >
-              Dashboard
-            </Link>
-          </div>
-        </div>
-      </header>
-
-      <main className="mx-auto w-full max-w-[1500px] px-4 py-6 sm:px-6 lg:px-8">
+      <main className="mx-auto w-full max-w-[1600px] px-4 py-6 sm:px-6 lg:px-8">
         <div className="mb-6">
-          <h2 className="text-2xl font-semibold text-gray-900">
+          <h1 className="text-2xl font-bold tracking-tight text-slate-950 sm:text-3xl">
             Bank Loan Tracker
-          </h2>
+          </h1>
 
-          <p className="mt-1 text-sm text-gray-500">
+          <p className="mt-1 text-sm text-slate-500">
             Track finance applications, decisions, and application progress.
           </p>
         </div>
 
-        <div className="mb-6 rounded-lg border border-gray-200 bg-white p-4 shadow-sm">
+        <div className="mb-6 rounded-2xl border border-[#e5e7eb] bg-white p-5 shadow-[0_2px_8px_rgba(15,23,42,0.04)]">
           <div className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-5">
             <div>
               <label
                 htmlFor="bank-loan-search"
-                className="mb-1 block text-sm font-medium text-gray-700"
+                className="mb-1.5 block text-[11px] font-bold uppercase tracking-[0.08em] text-slate-500"
               >
                 Search
               </label>
@@ -278,14 +259,14 @@ function BankLoans() {
                 value={search}
                 onChange={(event) => setSearch(event.target.value)}
                 placeholder="Customer, quote, vehicle, chassis..."
-                className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm outline-none transition focus:border-gray-500 focus:ring-1 focus:ring-gray-500"
+                className="h-10 w-full rounded-xl border border-slate-200 bg-white px-3 text-sm text-slate-800 outline-none transition focus:border-amber-400 focus:ring-2 focus:ring-amber-400/15"
               />
             </div>
 
             <div>
               <label
                 htmlFor="bank-loan-status"
-                className="mb-1 block text-sm font-medium text-gray-700"
+                className="mb-1.5 block text-[11px] font-bold uppercase tracking-[0.08em] text-slate-500"
               >
                 Decision Status
               </label>
@@ -294,7 +275,7 @@ function BankLoans() {
                 id="bank-loan-status"
                 value={status}
                 onChange={(event) => setStatus(event.target.value)}
-                className="w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-sm outline-none transition focus:border-gray-500 focus:ring-1 focus:ring-gray-500"
+                className="h-10 w-full rounded-xl border border-slate-200 bg-white px-3 text-sm text-slate-800 outline-none transition focus:border-amber-400 focus:ring-2 focus:ring-amber-400/15"
               >
                 {DECISION_STATUSES.map((option) => (
                   <option key={option.value} value={option.value}>
@@ -307,7 +288,7 @@ function BankLoans() {
             <div>
               <label
                 htmlFor="bank-loan-bank"
-                className="mb-1 block text-sm font-medium text-gray-700"
+                className="mb-1.5 block text-[11px] font-bold uppercase tracking-[0.08em] text-slate-500"
               >
                 Bank
               </label>
@@ -317,7 +298,7 @@ function BankLoans() {
                 value={bank}
                 onChange={(event) => setBank(event.target.value)}
                 disabled={banksLoading}
-                className="w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-sm outline-none transition focus:border-gray-500 focus:ring-1 focus:ring-gray-500 disabled:bg-gray-100"
+                className="h-10 w-full rounded-xl border border-slate-200 bg-white px-3 text-sm text-slate-800 outline-none transition focus:border-amber-400 focus:ring-2 focus:ring-amber-400/15 disabled:bg-slate-50"
               >
                 <option value="">
                   {banksLoading ? "Loading banks..." : "All Banks"}
@@ -331,14 +312,14 @@ function BankLoans() {
               </select>
 
               {banksError && (
-                <p className="mt-1 text-xs text-red-600">{banksError}</p>
+                <p className="mt-1 text-xs text-rose-600">{banksError}</p>
               )}
             </div>
 
             <div>
               <label
                 htmlFor="bank-loan-priority"
-                className="mb-1 block text-sm font-medium text-gray-700"
+                className="mb-1.5 block text-[11px] font-bold uppercase tracking-[0.08em] text-slate-500"
               >
                 Priority
               </label>
@@ -347,7 +328,7 @@ function BankLoans() {
                 id="bank-loan-priority"
                 value={priority}
                 onChange={(event) => setPriority(event.target.value)}
-                className="w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-sm outline-none transition focus:border-gray-500 focus:ring-1 focus:ring-gray-500"
+                className="h-10 w-full rounded-xl border border-slate-200 bg-white px-3 text-sm text-slate-800 outline-none transition focus:border-amber-400 focus:ring-2 focus:ring-amber-400/15"
               >
                 {PRIORITIES.map((option) => (
                   <option key={option.value} value={option.value}>
@@ -360,7 +341,7 @@ function BankLoans() {
             <div>
               <label
                 htmlFor="bank-loan-application-status"
-                className="mb-1 block text-sm font-medium text-gray-700"
+                className="mb-1.5 block text-[11px] font-bold uppercase tracking-[0.08em] text-slate-500"
               >
                 Application Status
               </label>
@@ -369,7 +350,7 @@ function BankLoans() {
                 id="bank-loan-application-status"
                 value={applicationStatus}
                 onChange={(event) => setApplicationStatus(event.target.value)}
-                className="w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-sm outline-none transition focus:border-gray-500 focus:ring-1 focus:ring-gray-500"
+                className="h-10 w-full rounded-xl border border-slate-200 bg-white px-3 text-sm text-slate-800 outline-none transition focus:border-amber-400 focus:ring-2 focus:ring-amber-400/15"
               >
                 {APPLICATION_STATUSES.map((option) => (
                   <option key={option.value} value={option.value}>
@@ -384,7 +365,7 @@ function BankLoans() {
             <button
               type="button"
               onClick={clearFilters}
-              className="mt-4 text-sm font-medium text-gray-700 hover:underline"
+              className="mt-4 text-sm font-medium text-slate-700 hover:underline"
             >
               Clear filters
             </button>
@@ -392,88 +373,88 @@ function BankLoans() {
         </div>
 
         {loading && (
-          <div className="rounded-lg border border-gray-200 bg-white p-6 shadow-sm">
-            <p className="text-sm text-gray-500">Loading bank loans...</p>
+          <div className="rounded-2xl border border-[#e5e7eb] bg-white p-6 shadow-[0_2px_8px_rgba(15,23,42,0.04)]">
+            <p className="text-sm text-slate-500">Loading bank loans...</p>
           </div>
         )}
 
         {!loading && error && (
-          <div className="rounded-lg border border-red-200 bg-red-50 p-6">
-            <p className="text-sm text-red-700">{error}</p>
+          <div className="rounded-2xl border border-rose-200 bg-rose-50 p-6">
+            <p className="text-sm text-rose-700">{error}</p>
           </div>
         )}
 
         {!loading && !error && bankLoans.length === 0 && (
-          <div className="rounded-lg border border-gray-200 bg-white p-8 text-center shadow-sm">
-            <p className="text-sm text-gray-500">
+          <div className="rounded-2xl border border-[#e5e7eb] bg-white p-8 text-center shadow-[0_2px_8px_rgba(15,23,42,0.04)]">
+            <p className="text-sm text-slate-500">
               No bank loan applications found.
             </p>
           </div>
         )}
 
         {!loading && !error && bankLoans.length > 0 && (
-          <div className="overflow-x-auto rounded-lg border border-gray-200 bg-white shadow-sm">
-            <table className="min-w-full divide-y divide-gray-200">
-              <thead className="bg-gray-50">
+          <div className="overflow-x-auto rounded-2xl border border-[#e5e7eb] bg-white shadow-[0_2px_8px_rgba(15,23,42,0.04)]">
+            <table className="min-w-full divide-y divide-slate-200">
+              <thead className="bg-slate-50">
                 <tr>
-                  <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-gray-500">
+                  <th className="px-4 py-3 text-left text-[10px] font-bold uppercase tracking-[0.08em] text-slate-500">
                     Customer
                   </th>
 
-                  <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-gray-500">
+                  <th className="px-4 py-3 text-left text-[10px] font-bold uppercase tracking-[0.08em] text-slate-500">
                     Vehicle
                   </th>
 
-                  <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-gray-500">
+                  <th className="px-4 py-3 text-left text-[10px] font-bold uppercase tracking-[0.08em] text-slate-500">
                     Bank
                   </th>
 
-                  <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-gray-500">
+                  <th className="px-4 py-3 text-right text-[10px] font-bold uppercase tracking-[0.08em] text-slate-500">
                     Requested
                   </th>
 
-                  <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-gray-500">
+                  <th className="px-4 py-3 text-right text-[10px] font-bold uppercase tracking-[0.08em] text-slate-500">
                     Approved
                   </th>
 
-                  <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-gray-500">
+                  <th className="px-4 py-3 text-left text-[10px] font-bold uppercase tracking-[0.08em] text-slate-500">
                     Decision
                   </th>
 
-                  <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-gray-500">
+                  <th className="px-4 py-3 text-left text-[10px] font-bold uppercase tracking-[0.08em] text-slate-500">
                     Application
                   </th>
 
-                  <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-gray-500">
+                  <th className="px-4 py-3 text-left text-[10px] font-bold uppercase tracking-[0.08em] text-slate-500">
                     Priority
                   </th>
 
-                  <th className="px-4 py-3 text-right text-xs font-semibold uppercase tracking-wide text-gray-500">
+                  <th className="px-4 py-3 text-right text-[10px] font-bold uppercase tracking-[0.08em] text-slate-500">
                     Action
                   </th>
                 </tr>
               </thead>
 
-              <tbody className="divide-y divide-gray-200 bg-white">
+              <tbody className="divide-y divide-slate-200 bg-white">
                 {bankLoans.map((loan) => (
-                  <tr key={loan.id} className="hover:bg-gray-50">
+                  <tr key={loan.id} className="transition-colors hover:bg-slate-50/80">
                     <td className="px-4 py-3">
-                      <div className="font-medium text-gray-900">
+                      <div className="font-medium text-slate-900">
                         {loan.customer_name || loan.customer?.name || "-"}
                       </div>
 
-                      <div className="text-xs text-gray-500">
+                      <div className="text-xs text-slate-500">
                         {loan.customer_mobile || loan.customer?.mobile || ""}
                       </div>
                     </td>
 
                     <td className="px-4 py-3">
-                      <div className="text-sm text-gray-900">
+                      <div className="text-sm text-slate-900">
                         {loan.vehicle_make || loan.car?.make || "-"}{" "}
                         {loan.vehicle_model || loan.car?.model || ""}
                       </div>
 
-                      <div className="text-xs text-gray-500">
+                      <div className="text-xs text-slate-500">
                         {loan.vehicle_stock_id ||
                           loan.car?.stock_id ||
                           loan.vehicle_chassis_number ||
@@ -481,36 +462,36 @@ function BankLoans() {
                       </div>
                     </td>
 
-                    <td className="px-4 py-3 text-sm text-gray-700">
+                    <td className="px-4 py-3 text-sm text-slate-700">
                       {loan.bank_name || loan.bank?.name || "-"}
                     </td>
 
-                    <td className="px-4 py-3 text-sm text-gray-700">
+                    <td className="px-4 py-3 text-right text-sm tabular-nums text-slate-700">
                       {formatCurrency(loan.requested_finance)}
                     </td>
 
-                    <td className="px-4 py-3 text-sm text-gray-700">
+                    <td className="px-4 py-3 text-right text-sm tabular-nums text-slate-700">
                       {formatCurrency(loan.approved_finance)}
                     </td>
 
                     <td className="px-4 py-3">
-                      <span className="inline-flex rounded-full bg-gray-100 px-2.5 py-1 text-xs font-medium text-gray-700">
+                      <span className="inline-flex rounded-full bg-slate-100 px-2.5 py-1 text-xs font-medium text-slate-700">
                         {formatStatus(loan.status)}
                       </span>
                     </td>
 
-                    <td className="px-4 py-3 text-sm text-gray-700">
+                    <td className="px-4 py-3 text-sm text-slate-700">
                       {formatStatus(loan.application_status)}
                     </td>
 
-                    <td className="px-4 py-3 text-sm text-gray-700">
+                    <td className="px-4 py-3 text-sm text-slate-700">
                       {formatStatus(loan.priority)}
                     </td>
 
                     <td className="px-4 py-3 text-right">
                       <Link
                         to={`/finance/bank-loans/${loan.id}`}
-                        className="text-sm font-medium text-gray-900 hover:underline"
+                        className="inline-flex h-9 items-center rounded-xl border border-slate-200 bg-white px-3 text-xs font-semibold text-slate-700 shadow-sm transition hover:bg-slate-50"
                       >
                         View
                       </Link>
@@ -523,7 +504,7 @@ function BankLoans() {
         )}
 
         {!loading && !error && bankLoans.length > 0 && (
-          <div className="mt-4 flex items-center justify-between text-sm text-gray-500">
+          <div className="mt-4 flex items-center justify-between text-sm text-slate-500">
             <span>
               {pagination.count} application
               {pagination.count === 1 ? "" : "s"}

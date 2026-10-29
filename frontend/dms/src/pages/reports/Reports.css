@@ -1,0 +1,46 @@
+.reports-page section.rounded-xl {
+  border-color: #e5e7eb;
+  border-radius: 1rem;
+  box-shadow: 0 2px 8px rgb(15 23 42 / 4%);
+}
+
+.reports-page h2 {
+  color: #0f172a;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+}
+
+.reports-page h3 {
+  color: #172033;
+}
+
+.reports-page table {
+  border-collapse: separate;
+  border-spacing: 0;
+}
+
+.reports-page table thead th {
+  background-color: #f8fafc;
+  color: #64748b;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+
+.reports-page table tbody tr {
+  transition: background-color 150ms ease;
+}
+
+.reports-page table tbody tr:hover {
+  background-color: #f8fafc;
+}
+
+.reports-page table tbody tr:last-child {
+  border-bottom-color: transparent;
+}
+
+.reports-page table td {
+  vertical-align: middle;
+}

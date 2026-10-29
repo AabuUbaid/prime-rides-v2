@@ -194,20 +194,20 @@ function BalanceSheetCreate() {
     <div className="min-h-screen bg-[#f5f6fa]">
 
 
-      <main className="mx-auto max-w-3xl px-6 py-8">
+      <main className="mx-auto w-full max-w-3xl px-4 py-6 sm:px-6 lg:py-8">
         <Link
           to="/finance/balance-sheets"
-          className="text-sm font-medium text-gray-700 hover:underline"
+          className="text-sm font-medium text-slate-700 hover:underline"
         >
           ← Back to Balance Sheets
         </Link>
 
         <div className="mt-4">
-          <h2 className="text-2xl font-semibold text-gray-900">
+          <h1 className="text-2xl font-bold tracking-tight text-slate-950 sm:text-3xl">
             Create Balance Sheet
-          </h2>
+          </h1>
 
-          <p className="mt-1 text-sm text-gray-500">
+          <p className="mt-1 text-sm text-slate-500">
             Select the customer and Deal. The backend will calculate the
             financial position from the actual transactions.
           </p>
@@ -215,13 +215,13 @@ function BalanceSheetCreate() {
 
         <form
           onSubmit={handleSubmit}
-          className="mt-6 rounded-lg border border-gray-200 bg-white p-6 shadow-sm"
+          className="mt-6 rounded-2xl border border-[#e5e7eb] bg-white p-5 shadow-[0_2px_8px_rgba(15,23,42,0.04)] sm:p-6"
         >
 
           <div className="relative">
             <label
               htmlFor="balance-sheet-customer-search"
-              className="mb-1 block text-sm font-medium text-gray-700"
+              className="mb-1.5 block text-[11px] font-bold uppercase tracking-[0.08em] text-slate-500"
             >
               Customer
             </label>
@@ -251,13 +251,13 @@ function BalanceSheetCreate() {
               }
               disabled={loadingCustomers || submitting}
               autoComplete="off"
-              className="w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-sm outline-none focus:border-gray-500 focus:ring-1 focus:ring-gray-500"
+              className="h-10 w-full rounded-xl border border-slate-200 bg-white px-3 text-sm text-slate-800 outline-none transition focus:border-amber-400 focus:ring-2 focus:ring-amber-400/15"
             />
 
             {showCustomerOptions && !loadingCustomers && (
-              <div className="absolute z-20 mt-1 max-h-60 w-full overflow-y-auto rounded-md border border-gray-200 bg-white shadow-lg">
+              <div className="absolute z-20 mt-1 max-h-60 w-full overflow-y-auto rounded-xl border border-slate-200 bg-white shadow-lg">
                 {filteredCustomers.length === 0 ? (
-                  <div className="px-3 py-3 text-sm text-gray-500">
+                  <div className="px-3 py-3 text-sm text-slate-500">
                     No matching customers found.
                   </div>
                 ) : (
@@ -272,14 +272,14 @@ function BalanceSheetCreate() {
                         setQuoteId("");
                         setDeals([]);
                       }}
-                      className="block w-full border-b border-gray-100 px-3 py-2 text-left text-sm hover:bg-gray-50"
+                      className="block w-full border-b border-slate-100 px-3 py-2 text-left text-sm hover:bg-slate-50"
                     >
-                      <div className="font-medium text-gray-900">
+                      <div className="font-medium text-slate-900">
                         {customer.customer_name ||
                           customer.name ||
                           `Customer #${customer.id}`}
                       </div>
-                      <div className="text-xs text-gray-500">
+                      <div className="text-xs text-slate-500">
                         {customer.phone_number || ""}
                         {customer.emirates_id_number
                           ? ` · ${customer.emirates_id_number}`
@@ -296,7 +296,7 @@ function BalanceSheetCreate() {
           <div className="mt-4">
             <label
               htmlFor="balance-sheet-deal"
-              className="mb-1 block text-sm font-medium text-gray-700"
+              className="mb-1.5 block text-[11px] font-bold uppercase tracking-[0.08em] text-slate-500"
             >
               Deal / Quote
             </label>
@@ -306,7 +306,7 @@ function BalanceSheetCreate() {
               value={quoteId}
               onChange={(event) => setQuoteId(event.target.value)}
               disabled={!customerId || loadingDeals || submitting}
-              className="w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-sm outline-none focus:border-gray-500 focus:ring-1 focus:ring-gray-500"
+              className="h-10 w-full rounded-xl border border-slate-200 bg-white px-3 text-sm text-slate-800 outline-none transition focus:border-amber-400 focus:ring-2 focus:ring-amber-400/15"
             >
               <option value="">
                 {!customerId
@@ -331,15 +331,15 @@ function BalanceSheetCreate() {
           </div>
 
           {error && (
-            <div className="mt-4 rounded-md border border-red-200 bg-red-50 p-4">
-              <p className="text-sm text-red-700">{error}</p>
+            <div className="mt-4 rounded-xl border border-rose-200 bg-rose-50 p-4">
+              <p className="text-sm text-rose-700">{error}</p>
             </div>
           )}
 
           <div className="mt-6 flex items-center justify-end gap-3">
             <Link
               to="/finance/balance-sheets"
-              className="rounded-md border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-100"
+              className="inline-flex h-10 items-center rounded-xl border border-slate-200 bg-white px-4 text-sm font-semibold text-slate-700 shadow-sm transition hover:bg-slate-50"
             >
               Cancel
             </Link>
@@ -347,7 +347,7 @@ function BalanceSheetCreate() {
             <button
               type="submit"
               disabled={submitting || !customerId || !quoteId}
-              className="rounded-md bg-gray-900 px-4 py-2 text-sm font-medium text-white hover:bg-gray-800 disabled:cursor-not-allowed disabled:opacity-50"
+              className="inline-flex h-10 items-center rounded-xl border border-amber-500 bg-amber-500 px-4 text-sm font-semibold text-slate-950 shadow-sm transition hover:border-amber-400 hover:bg-amber-400 disabled:cursor-not-allowed disabled:opacity-50"
             >
               {submitting ? "Creating..." : "Create Balance Sheet"}
             </button>

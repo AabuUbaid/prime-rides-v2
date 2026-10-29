@@ -20,21 +20,21 @@ export default function StaffPerformance() {
     })();
   }, [id]);
   if (loading)
-    return <div className="p-6 text-sm text-gray-500">Loading...</div>;
+    return <div className="p-6 text-sm text-slate-500">Loading...</div>;
   return (
-    <div className="min-h-screen bg-gray-50 p-6">
-      <div className="mx-auto max-w-5xl space-y-6">
-        <div className="flex justify-between">
+    <div className="min-h-screen bg-[#f5f6fa] px-4 py-6 sm:px-6 lg:px-8">
+      <div className="mx-auto w-full max-w-6xl space-y-6">
+        <div className="flex flex-wrap items-end justify-between gap-4">
           <div>
-            <h1 className="text-2xl font-semibold">Staff Performance</h1>
-            <p className="mt-1 text-sm text-gray-500">
+            <h1 className="text-2xl font-bold tracking-tight text-slate-950 sm:text-3xl">Staff Performance</h1>
+            <p className="mt-1 text-sm text-slate-500">
               Backend-calculated results for{" "}
               {data?.staff_name || `Staff #${id}`}
             </p>
           </div>
           <Link
             to="/staff"
-            className="rounded-lg border bg-white px-4 py-2 text-sm"
+            className="inline-flex h-10 items-center rounded-xl border border-slate-200 bg-white px-4 text-sm font-semibold text-slate-700 shadow-sm transition hover:bg-slate-50"
           >
             Back
           </Link>
@@ -45,15 +45,15 @@ export default function StaffPerformance() {
             ["Sales Value", data?.sales_value],
             ["Profit", data?.profit],
           ].map(([l, v]) => (
-            <div key={l} className="rounded-xl border bg-white p-5">
-              <div className="text-sm text-gray-500">{l}</div>
-              <div className="mt-2 text-2xl font-semibold">
+            <div key={l} className="rounded-2xl border border-[#e5e7eb] bg-white p-5 shadow-[0_2px_8px_rgba(15,23,42,0.04)]">
+              <div className="text-sm text-slate-500">{l}</div>
+              <div className="mt-2 text-2xl font-semibold tabular-nums text-slate-900">
                 {l === "Vehicles Sold" ? (v ?? "-") : `AED ${v ?? "-"}`}
               </div>
             </div>
           ))}
         </div>
-        <div className="rounded-lg border bg-white p-5 text-sm text-gray-600">
+        <div className="rounded-2xl border border-[#e5e7eb] bg-white p-5 text-sm text-slate-600 shadow-[0_2px_8px_rgba(15,23,42,0.04)]">
           Sold count and profit come from completed Progression records and
           backend calculations.
         </div>
