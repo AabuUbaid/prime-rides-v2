@@ -4043,7 +4043,7 @@ def create_cash_receipt(
                         created_by=created_by,
                     )
 
-        return cash_receipt
+    return cash_receipt
 
 @transaction.atomic
 def reverse_cash_receipt(

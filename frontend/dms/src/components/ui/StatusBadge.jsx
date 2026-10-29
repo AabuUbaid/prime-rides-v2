@@ -13,6 +13,7 @@ function getVariant(status = "") {
   if (
     [
       "approved",
+      "released",
       "available",
       "paid",
       "completed",
@@ -28,6 +29,9 @@ function getVariant(status = "") {
   if (
     [
       "pending",
+      "pending_assignment",
+      "pending_verification",
+      "pending_review",
       "draft",
       "requested",
       "partially_paid",

@@ -77,6 +77,10 @@ function formatDate(value) {
 
 function CashReceipts() {
   const [receipts, setReceipts] = useState([]);
+
+  const PAGE_SIZE = 25;
+  const [currentPage, setCurrentPage] = useState(1);
+
   const [summary, setSummary] = useState({
     total_received: "0.00",
   });
@@ -198,16 +202,49 @@ function CashReceipts() {
           params.date_to = dateTo;
         }
 
-        const response = await getCashReceipts(params);
+        const firstResponse = await getCashReceipts({
+          ...params,
+          page: 1,
+        });
 
         if (!active) {
           return;
         }
 
-        const result = getResponseData(response);
+        const firstBody = firstResponse?.data?.pagination
+          ? firstResponse.data
+          : firstResponse;
 
-        setReceipts(result.data);
-        setSummary(result.summary);
+        const pagination = firstBody?.pagination;
+        const totalPages = Number(pagination?.total_pages ?? 1);
+
+        const remainingResponses = await Promise.all(
+          Array.from({ length: totalPages - 1 }, (_, index) =>
+            getCashReceipts({
+              ...params,
+              page: index + 2,
+            }),
+          ),
+        );
+
+        if (!active) {
+          return;
+        }
+
+        const allResponses = [firstResponse, ...remainingResponses];
+
+        const allReceipts = allResponses.flatMap((response) => {
+          const body = response?.data?.success !== undefined
+            ? response.data
+            : response;
+
+          return Array.isArray(body?.data) ? body.data : [];
+        });
+
+        setReceipts(allReceipts);
+        setSummary(firstBody?.summary ?? {});
+
+
       } catch (err) {
         if (!active) {
           return;
@@ -246,6 +283,21 @@ function CashReceipts() {
     dateTo,
   ]);
 
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [
+    search,
+    receiptNumber,
+    customerId,
+    quoteId,
+    direction,
+    category,
+    paymentMethod,
+    transactionDate,
+    dateFrom,
+    dateTo,
+  ]);
+
   function clearFilters() {
     setSearch("");
     setReceiptNumber("");
@@ -270,6 +322,14 @@ function CashReceipts() {
     transactionDate ||
     dateFrom ||
     dateTo;
+
+  const totalPages = Math.ceil(receipts.length / PAGE_SIZE);
+  const startIndex = (currentPage - 1) * PAGE_SIZE;
+
+  const paginatedReceipts = receipts.slice(
+    startIndex,
+    startIndex + PAGE_SIZE,
+  );
 
   return (
     <div className="min-h-screen bg-[#f5f6fa]">
@@ -614,7 +674,7 @@ function CashReceipts() {
               </thead>
 
               <tbody className="divide-y divide-slate-100 bg-white">
-                {receipts.map((receipt) => (
+                {paginatedReceipts.map((receipt) => (
                   <tr
                     key={receipt.id}
                     className="transition-colors hover:bg-slate-50/80"
@@ -687,6 +747,39 @@ function CashReceipts() {
             </table>
           </div>
         )}
+        <div className="mt-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+          <p className="text-sm text-slate-500">
+            Showing {startIndex + 1}–
+            {Math.min(startIndex + PAGE_SIZE, receipts.length)} of{" "}
+            {receipts.length} cash receipts
+          </p>
+
+          <div className="flex items-center gap-2">
+            <button
+              type="button"
+              onClick={() => setCurrentPage((page) => Math.max(1, page - 1))}
+              disabled={currentPage === 1}
+              className="rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm disabled:cursor-not-allowed disabled:opacity-50"
+            >
+              Previous
+            </button>
+
+            <span className="text-sm text-slate-600">
+              Page {currentPage} of {Math.max(totalPages, 1)}
+            </span>
+
+            <button
+              type="button"
+              onClick={() =>
+                setCurrentPage((page) => Math.min(totalPages, page + 1))
+              }
+              disabled={currentPage >= totalPages}
+              className="rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm disabled:cursor-not-allowed disabled:opacity-50"
+            >
+              Next
+            </button>
+          </div>
+        </div>
       </main>
     </div>
   );

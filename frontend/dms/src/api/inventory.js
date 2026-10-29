@@ -203,3 +203,31 @@ export function deleteProcurementCheck(id) {
     method: "DELETE",
   });
 }
+
+export function assignProcurementInspector(id, data) {
+  return apiClient(`/inventory/procurement-checks/${id}/assign/`, {
+    method: 'POST',
+    body: JSON.stringify(data),
+  });
+}
+
+export function submitProcurementFindings(id, data) {
+  return apiClient(`/inventory/procurement-checks/${id}/submit-findings/`, {
+    method: 'POST',
+    body: JSON.stringify(data),
+  });
+}
+
+export function approveProcurementCheck(id, data = {}) {
+  return apiClient(`/inventory/procurement-checks/${id}/approve/`, {
+    method: 'POST',
+    body: JSON.stringify(data),
+  });
+}
+
+export function releaseProcurementCheck(id, data = {}) {
+  return apiClient(`/inventory/procurement-checks/${id}/release/`, {
+    method: 'POST',
+    body: JSON.stringify(data),
+  });
+}

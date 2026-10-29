@@ -48,6 +48,9 @@ function formatBalanceStatus(value) {
 function BalanceSheets() {
   const [balanceSheets, setBalanceSheets] = useState([]);
 
+  const PAGE_SIZE = 25;
+  const [currentPage, setCurrentPage] = useState(1);
+
   const [customerId, setCustomerId] = useState("");
   const [quoteId, setQuoteId] = useState("");
   const [search, setSearch] = useState("");
@@ -89,13 +92,58 @@ function BalanceSheets() {
           params.balance_status = balanceStatus;
         }
 
-        const response = await getBalanceSheets(params);
+        const firstResponse = await getBalanceSheets({
+          ...params,
+          page: 1,
+        });
 
         if (!active) {
           return;
         }
 
-        setBalanceSheets(getResponseData(response));
+        const firstBody = firstResponse?.data?.pagination
+          ? firstResponse.data
+          : firstResponse;
+
+        const totalPages = Number(
+          firstBody?.pagination?.total_pages ?? 1
+        );
+
+        const remainingResponses = await Promise.all(
+          Array.from({ length: totalPages - 1 }, (_, index) =>
+            getBalanceSheets({
+              ...params,
+              page: index + 2,
+            })
+          )
+        );
+
+        if (!active) {
+          return;
+        }
+
+        const allResponses = [
+          firstResponse,
+          ...remainingResponses,
+        ];
+
+        const allBalanceSheets = allResponses.flatMap((response) => {
+          const body = response?.data?.success !== undefined
+            ? response.data
+            : response;
+
+          return Array.isArray(body?.data)
+            ? body.data
+            : Array.isArray(body?.results)
+              ? body.results
+              : Array.isArray(body)
+                ? body
+                : [];
+        });
+
+        setBalanceSheets(allBalanceSheets);
+
+
       } catch (err) {
         if (!active) {
           return;
@@ -119,6 +167,10 @@ function BalanceSheets() {
     };
   }, [customerId, quoteId, search, paymentMethod, balanceStatus]);
 
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [customerId, quoteId, search, paymentMethod, balanceStatus]);
+
   function clearFilters() {
     setCustomerId("");
     setQuoteId("");
@@ -129,6 +181,14 @@ function BalanceSheets() {
 
   const hasFilters =
     customerId || quoteId || search || paymentMethod || balanceStatus;
+
+  const totalPages = Math.ceil(balanceSheets.length / PAGE_SIZE);
+  const startIndex = (currentPage - 1) * PAGE_SIZE;
+
+  const paginatedBalanceSheets = balanceSheets.slice(
+    startIndex,
+    startIndex + PAGE_SIZE,
+  );
 
   return (
     <div className="min-h-screen bg-[#f5f6fa]">
@@ -347,7 +407,7 @@ function BalanceSheets() {
               </thead>
 
               <tbody className="divide-y divide-gray-200 bg-white">
-                {balanceSheets.map((sheet) => (
+                {paginatedBalanceSheets.map((sheet) => (
                   <tr key={sheet.id} className="hover:bg-gray-50">
                     <td className="px-4 py-3">
                       <div className="font-medium text-gray-900">
@@ -409,8 +469,43 @@ function BalanceSheets() {
                 ))}
               </tbody>
             </table>
+
           </div>
+
         )}
+        <div className="mt-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+          <p className="text-sm text-gray-500">
+            Showing {startIndex + 1}–
+            {Math.min(startIndex + PAGE_SIZE, balanceSheets.length)} of{" "}
+            {balanceSheets.length} balance sheets
+          </p>
+
+          <div className="flex items-center gap-2">
+            <button
+              type="button"
+              onClick={() => setCurrentPage((page) => Math.max(1, page - 1))}
+              disabled={currentPage === 1}
+              className="rounded-md border border-gray-300 px-3 py-2 text-sm disabled:cursor-not-allowed disabled:opacity-50"
+            >
+              Previous
+            </button>
+
+            <span className="text-sm text-gray-600">
+              Page {currentPage} of {Math.max(totalPages, 1)}
+            </span>
+
+            <button
+              type="button"
+              onClick={() =>
+                setCurrentPage((page) => Math.min(totalPages, page + 1))
+              }
+              disabled={currentPage >= totalPages}
+              className="rounded-md border border-gray-300 px-3 py-2 text-sm disabled:cursor-not-allowed disabled:opacity-50"
+            >
+              Next
+            </button>
+          </div>
+        </div>
       </main>
     </div>
   );

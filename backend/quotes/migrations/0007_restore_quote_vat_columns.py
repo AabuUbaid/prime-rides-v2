@@ -1,6 +1,22 @@
 from django.db import migrations
 
 
+def restore_vat_columns(apps, schema_editor):
+    if schema_editor.connection.vendor == "postgresql":
+        schema_editor.execute(
+            "ALTER TABLE quotes ADD COLUMN IF NOT EXISTS vat_amount numeric(12, 2) NOT NULL DEFAULT 0.00;"
+        )
+        schema_editor.execute(
+            "ALTER TABLE quotes ADD COLUMN IF NOT EXISTS vat_enabled boolean NOT NULL DEFAULT FALSE;"
+        )
+
+
+def drop_vat_columns(apps, schema_editor):
+    if schema_editor.connection.vendor == "postgresql":
+        schema_editor.execute("ALTER TABLE quotes DROP COLUMN IF EXISTS vat_amount;")
+        schema_editor.execute("ALTER TABLE quotes DROP COLUMN IF EXISTS vat_enabled;")
+
+
 class Migration(migrations.Migration):
 
     dependencies = [
@@ -8,28 +24,5 @@ class Migration(migrations.Migration):
     ]
 
     operations = [
-        migrations.RunSQL(
-            sql=[
-                """
-                ALTER TABLE quotes
-                ADD COLUMN IF NOT EXISTS vat_amount
-                numeric(12, 2) NOT NULL DEFAULT 0.00;
-                """,
-                """
-                ALTER TABLE quotes
-                ADD COLUMN IF NOT EXISTS vat_enabled
-                boolean NOT NULL DEFAULT FALSE;
-                """,
-            ],
-            reverse_sql=[
-                """
-                ALTER TABLE quotes
-                DROP COLUMN IF EXISTS vat_amount;
-                """,
-                """
-                ALTER TABLE quotes
-                DROP COLUMN IF EXISTS vat_enabled;
-                """,
-            ],
-        ),
+        migrations.RunPython(restore_vat_columns, drop_vat_columns),
     ]

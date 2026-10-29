@@ -38,6 +38,11 @@ from .procurement_views import (
     ProcurementCheckListCreateView,
     ProcurementCheckDetailView,
     PublicProcurementReportAPIView,
+    PublicSaleReportAPIView,
+    ProcurementCheckAssignInspectorAPIView,
+    ProcurementCheckSubmitFindingsAPIView,
+    ProcurementCheckApproveAPIView,
+    ProcurementCheckReleaseAPIView,
 )
 
 app_name = "inventory"
@@ -262,5 +267,30 @@ urlpatterns = [
         "procurement-checks/<int:pk>/",
         ProcurementCheckDetailView.as_view(),
         name="procurement-check-detail",
+    ),
+    path(
+        "procurement-checks/<int:pk>/assign/",
+        ProcurementCheckAssignInspectorAPIView.as_view(),
+        name="procurement-check-assign",
+    ),
+    path(
+        "procurement-checks/<int:pk>/submit-findings/",
+        ProcurementCheckSubmitFindingsAPIView.as_view(),
+        name="procurement-check-submit-findings",
+    ),
+    path(
+        "procurement-checks/<int:pk>/approve/",
+        ProcurementCheckApproveAPIView.as_view(),
+        name="procurement-check-approve",
+    ),
+    path(
+        "procurement-checks/<int:pk>/release/",
+        ProcurementCheckReleaseAPIView.as_view(),
+        name="procurement-check-release",
+    ),
+    path(
+        "sales/public/",
+        PublicSaleReportAPIView.as_view(),
+        name="sales-public",
     ),
 ]

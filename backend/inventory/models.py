@@ -707,6 +707,81 @@ class ProcurementCheck(models.Model):
         blank=True,
     )
 
+    workflow_state = models.CharField(
+        max_length=50,
+        default="pending",
+        blank=True,
+    )
+
+    assigned_inspector = models.CharField(
+        max_length=255,
+        blank=True,
+    )
+
+    inspection_date = models.DateField(
+        null=True,
+        blank=True,
+    )
+
+    inspection_time = models.CharField(
+        max_length=50,
+        blank=True,
+    )
+
+    overall_score = models.DecimalField(
+        max_digits=4,
+        decimal_places=1,
+        null=True,
+        blank=True,
+    )
+
+    paint_thickness_data = models.JSONField(
+        default=dict,
+        blank=True,
+    )
+
+    checkpoints_data = models.JSONField(
+        default=dict,
+        blank=True,
+    )
+
+    tyres_data = models.JSONField(
+        default=dict,
+        blank=True,
+    )
+
+    accident_flood_assessment = models.JSONField(
+        default=dict,
+        blank=True,
+    )
+
+    inspector_recommendations = models.TextField(
+        blank=True,
+    )
+
+    is_approved_by_master = models.BooleanField(
+        default=False,
+    )
+
+    approved_at = models.DateTimeField(
+        null=True,
+        blank=True,
+    )
+
+    is_released_to_customer = models.BooleanField(
+        default=False,
+    )
+
+    released_at = models.DateTimeField(
+        null=True,
+        blank=True,
+    )
+
+    marketplace_reference_code = models.CharField(
+        max_length=100,
+        blank=True,
+    )
+
     checked_by = models.ForeignKey(
         settings.AUTH_USER_MODEL,
         on_delete=models.PROTECT,
