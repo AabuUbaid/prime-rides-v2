@@ -782,6 +782,46 @@ class ProcurementCheck(models.Model):
         blank=True,
     )
 
+    is_approved_by_dms = models.BooleanField(
+        default=False,
+    )
+
+    dms_approved_at = models.DateTimeField(
+        null=True,
+        blank=True,
+    )
+
+    dms_reviewer_name = models.CharField(
+        max_length=255,
+        blank=True,
+        null=True,
+        default="",
+    )
+
+    dms_review_notes = models.TextField(
+        blank=True,
+        null=True,
+        default="",
+    )
+
+    master_reviewer_name = models.CharField(
+        max_length=255,
+        blank=True,
+        null=True,
+        default="",
+    )
+
+    master_review_notes = models.TextField(
+        blank=True,
+        null=True,
+        default="",
+    )
+
+    photos_data = models.JSONField(
+        default=list,
+        blank=True,
+    )
+
     checked_by = models.ForeignKey(
         settings.AUTH_USER_MODEL,
         on_delete=models.PROTECT,
@@ -813,4 +853,98 @@ class ProcurementCheck(models.Model):
             else self.chassis_number or str(self.pk)
         )
 
-        return f"Procurement Check - {vehicle_reference}"    
+        return f"Procurement Check - {vehicle_reference}"
+
+    def sync_photos_data(self):
+        items = []
+        for p in self.photos.all():
+            items.append({
+                "id": p.id,
+                "url": p.image.url if p.image else "",
+                "category": p.category,
+                "category_display": p.get_category_display(),
+                "panel_id": p.panel_id,
+                "checkpoint_key": p.checkpoint_key,
+                "caption": p.caption,
+                "inspector_comments": p.inspector_comments,
+                "uploaded_at": p.uploaded_at.isoformat() if p.uploaded_at else "",
+            })
+        self.photos_data = items
+        self.save(update_fields=["photos_data"])
+
+
+class ProcurementCheckPhoto(models.Model):
+    class Category(models.TextChoices):
+        FRONT_EXTERIOR = "front_exterior", "Front Exterior"
+        REAR_EXTERIOR = "rear_exterior", "Rear Exterior"
+        LEFT_SIDE = "left_side", "Left Profile"
+        RIGHT_SIDE = "right_side", "Right Profile"
+        VEHICLE_INTERIOR = "vehicle_interior", "Cabin & Interior"
+        DASHBOARD_ODOMETER = "dashboard_odometer", "Dashboard & Odometer"
+        ENGINE_BAY = "engine_bay", "Engine Bay"
+        VIN_CHASSIS = "vin_chassis", "VIN / Chassis Plate"
+        TYRES_WHEELS = "tyres_wheels", "Tyres & Wheels"
+        BODY_PANEL = "body_panel", "Body Panel"
+        SCRATCHES_DENTS = "scratches_dents", "Scratches & Dents"
+        STRUCTURAL = "structural", "Structural & Frame"
+        MECHANICAL = "mechanical", "Mechanical Defects"
+        FLOOD_WATER = "flood_water", "Flood & Water Indicators"
+        ADDITIONAL = "additional", "Additional Evidence"
+
+    procurement_check = models.ForeignKey(
+        ProcurementCheck,
+        related_name="photos",
+        on_delete=models.CASCADE,
+    )
+
+    image = models.ImageField(
+        upload_to="procurement_photos/%Y/%m/",
+    )
+
+    category = models.CharField(
+        max_length=50,
+        choices=Category.choices,
+        default=Category.ADDITIONAL,
+    )
+
+    panel_id = models.CharField(
+        max_length=50,
+        blank=True,
+        default="",
+    )
+
+    checkpoint_key = models.CharField(
+        max_length=100,
+        blank=True,
+        default="",
+    )
+
+    caption = models.CharField(
+        max_length=255,
+        blank=True,
+        default="",
+    )
+
+    inspector_comments = models.TextField(
+        blank=True,
+        default="",
+    )
+
+    uploaded_by = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="uploaded_procurement_photos",
+    )
+
+    uploaded_at = models.DateTimeField(
+        auto_now_add=True,
+    )
+
+    class Meta:
+        db_table = "procurement_check_photos"
+        ordering = ["uploaded_at", "id"]
+
+    def __str__(self):
+        return f"Photo #{self.id} for Check #{self.procurement_check_id} ({self.category})"

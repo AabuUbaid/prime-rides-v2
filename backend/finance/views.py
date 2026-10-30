@@ -3,6 +3,8 @@ from django.shortcuts import get_object_or_404
 from decimal import Decimal
 
 from django.db.models import (
+    Case,
+    When,
     DecimalField,
     F,
     OuterRef,
@@ -38,7 +40,6 @@ from .models import (
     
 )
 from accounts.permissions import IsMasterOrAdmin, IsMaster
-from quotes.models import QuoteExpense
 
 from .serializers import (
     BankSerializer,
@@ -97,10 +98,6 @@ def _balance_sheet_queryset():
         "transaction_date",
         "created_at",
     )
-    expense_queryset = QuoteExpense.objects.filter(
-        actual_amount__isnull=False,
-        applies=True,
-    ).order_by("created_at")
     bank_loan_queryset = BankLoan.objects.order_by(
         "-created_at",
     )
@@ -122,11 +119,6 @@ def _balance_sheet_queryset():
                 "quote__cash_receipts",
                 queryset=receipt_queryset,
                 to_attr="_balance_sheet_receipts",
-            ),
-            Prefetch(
-                "quote__expenses",
-                queryset=expense_queryset,
-                to_attr="_balance_sheet_expenses",
             ),
             Prefetch(
                 "quote__bank_loans",
@@ -1643,17 +1635,31 @@ class CashDealDetailView(APIView):
 # =========================================================
 
 def _cash_receipt_total_received(quote_id):
-    total = (
+    receipts = (
         CashReceipt.objects
-        .filter(
-            quote_id=quote_id,
-            direction=CashReceipt.Direction.CUSTOMER_PAYMENT,
-        )
-        .aggregate(total= Sum("amount"))
-        .get("total")
+        .filter(quote_id=quote_id)
+        .select_related("reversal_of")
     )
 
-    return total or 0
+    total = Decimal("0.00")
+
+    for receipt in receipts:
+        if receipt.reversal_of_id:
+            if (
+                receipt.reversal_of.direction
+                == CashReceipt.Direction.CUSTOMER_PAYMENT
+            ):
+                total -= receipt.amount
+
+            continue
+
+        if (
+            receipt.direction
+            == CashReceipt.Direction.CUSTOMER_PAYMENT
+        ):
+            total += receipt.amount
+
+    return total
 
 
 # =========================================================
@@ -2374,66 +2380,131 @@ class BalanceSheetListCreateView(APIView):
         # Calculate it from CashReceipt movements.
         # -------------------------------------------------
         if balance_status:
+            decimal_field = DecimalField(
+                max_digits=12,
+                decimal_places=2,
+            )
+
+            zero_amount = Value(
+                Decimal("0.00"),
+                output_field=decimal_field,
+            )
+
             receipt_totals = (
                 CashReceipt.objects
-                .filter(
-                    quote_id=OuterRef("quote_id"),
-                )
+                .filter(quote_id=OuterRef("quote_id"))
                 .order_by()
                 .values("quote_id")
                 .annotate(
                     total_received=Sum(
-                        "amount",
-                        filter=Q(
-                            direction=(
-                                CashReceipt.Direction.CUSTOMER_PAYMENT
-                            )
-                        ),
+                        Case(
+                            When(
+                                reversal_of__isnull=False,
+                                reversal_of__direction=(
+                                    CashReceipt.Direction.CUSTOMER_PAYMENT
+                                ),
+                                then=-F("amount"),
+                            ),
+                            When(
+                                reversal_of__isnull=True,
+                                direction=(
+                                    CashReceipt.Direction.CUSTOMER_PAYMENT
+                                ),
+                                then=F("amount"),
+                            ),
+                            default=zero_amount,
+                            output_field=decimal_field,
+                        )
                     ),
-                    total_spent=Sum(
-                        "amount",
-                        filter=Q(
-                            direction=(
-                                CashReceipt.Direction.COMPANY_ON_BEHALF
-                            )
-                        ),
+                    total_company_spent=Sum(
+                        Case(
+                            When(
+                                reversal_of__isnull=False,
+                                reversal_of__direction=(
+                                    CashReceipt.Direction.COMPANY_ON_BEHALF
+                                ),
+                                then=-F("amount"),
+                            ),
+                            When(
+                                reversal_of__isnull=True,
+                                direction=(
+                                    CashReceipt.Direction.COMPANY_ON_BEHALF
+                                ),
+                                then=F("amount"),
+                            ),
+                            default=zero_amount,
+                            output_field=decimal_field,
+                        )
                     ),
                 )
             )
-            zero_amount = Value(
-                Decimal("0.00"),
-                output_field=DecimalField(
-                    max_digits=12,
-                    decimal_places=2,
+
+            vehicle_value = Case(
+                When(
+                    quote__payment_method="Finance",
+                    then=(
+                        Coalesce(
+                            F("quote__emi_vehicle_price"),
+                            zero_amount,
+                        )
+                        + Coalesce(
+                            F("quote__emi_vat_amount"),
+                            zero_amount,
+                        )
+                    ),
                 ),
+                When(
+                    quote__payment_method="Cash",
+                    quote__cash_deal__selling_price__isnull=False,
+                    then=F("quote__cash_deal__selling_price"),
+                ),
+                default=Coalesce(
+                    F("quote__price"),
+                    zero_amount,
+                ),
+                output_field=decimal_field,
             )
+
             queryset = queryset.annotate(
                 _balance_received=Coalesce(
                     Subquery(
                         receipt_totals.values("total_received")[:1],
+                        output_field=decimal_field,
                     ),
                     zero_amount,
                 ),
-                _balance_spent=Coalesce(
+                _balance_company_spent=Coalesce(
                     Subquery(
-                        receipt_totals.values("total_spent")[:1],
+                        receipt_totals.values(
+                            "total_company_spent"
+                        )[:1],
+                        output_field=decimal_field,
                     ),
                     zero_amount,
                 ),
+                _vehicle_value=vehicle_value,
+            ).annotate(
+                _balance_spent=(
+                    F("_vehicle_value")
+                    + F("_balance_company_spent")
+                )
             )
 
             if balance_status == "settled":
                 queryset = queryset.filter(
                     _balance_received=F("_balance_spent"),
                 )
+
             elif balance_status == "customer_receivable":
                 queryset = queryset.filter(
                     _balance_received__gt=F("_balance_spent"),
                 )
+
             elif balance_status == "customer_payable":
                 queryset = queryset.filter(
                     _balance_received__lt=F("_balance_spent"),
                 )
+
             else:
                 queryset = queryset.none()
 

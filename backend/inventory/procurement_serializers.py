@@ -1,6 +1,40 @@
 from rest_framework import serializers
 
-from .models import Car, ProcurementCheck
+from .models import Car, ProcurementCheck, ProcurementCheckPhoto
+
+
+class ProcurementCheckPhotoSerializer(serializers.ModelSerializer):
+    image_url = serializers.SerializerMethodField()
+    category_display = serializers.CharField(source="get_category_display", read_only=True)
+
+    class Meta:
+        model = ProcurementCheckPhoto
+        fields = [
+            "id",
+            "procurement_check",
+            "image",
+            "image_url",
+            "category",
+            "category_display",
+            "panel_id",
+            "checkpoint_key",
+            "caption",
+            "inspector_comments",
+            "uploaded_by",
+            "uploaded_at",
+        ]
+        read_only_fields = [
+            "id",
+            "image_url",
+            "category_display",
+            "uploaded_by",
+            "uploaded_at",
+        ]
+
+    def get_image_url(self, obj):
+        if obj.image:
+            return obj.image.url
+        return ""
 
 
 class ProcurementCheckSerializer(serializers.ModelSerializer):
@@ -12,6 +46,11 @@ class ProcurementCheckSerializer(serializers.ModelSerializer):
 
     checked_by = serializers.PrimaryKeyRelatedField(
         read_only=True
+    )
+
+    photos = ProcurementCheckPhotoSerializer(
+        many=True,
+        read_only=True,
     )
 
     class Meta:
@@ -46,6 +85,14 @@ class ProcurementCheckSerializer(serializers.ModelSerializer):
             "is_released_to_customer",
             "released_at",
             "marketplace_reference_code",
+            "is_approved_by_dms",
+            "dms_approved_at",
+            "dms_reviewer_name",
+            "dms_review_notes",
+            "master_reviewer_name",
+            "master_review_notes",
+            "photos_data",
+            "photos",
             "checked_by",
             "created_at",
             "updated_at",

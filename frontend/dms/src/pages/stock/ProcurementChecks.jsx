@@ -5,25 +5,30 @@ import {
   AlertTriangle,
   Award,
   Calendar,
+  Camera,
   CheckCircle2,
   ChevronRight,
   ClipboardCheck,
+  Download,
   Eye,
   FileCheck2,
   FileText,
   Filter,
   Gauge,
   HelpCircle,
+  Image,
   Info,
   Layers,
   Pencil,
   Plus,
   RefreshCw,
+  RotateCcw,
   Search,
   Send,
   ShieldAlert,
   ShieldCheck,
   Trash2,
+  UploadCloud,
   UserCheck,
   Wrench,
   X,
@@ -40,12 +45,17 @@ import {
   assignProcurementInspector,
   createProcurementCheck,
   deleteProcurementCheck,
+  deleteProcurementPhoto,
+  dmsApproveProcurementCheck,
+  downloadProcurementPdf,
   getCars,
   getProcurementCheck,
   getProcurementChecks,
   releaseProcurementCheck,
+  returnProcurementCorrections,
   submitProcurementFindings,
   updateProcurementCheck,
+  uploadProcurementPhoto,
 } from "../../api/inventory";
 
 // 13-Panel Paint Inspection Mapping with stable identifiers & display names
@@ -65,13 +75,57 @@ const INSPECTION_PANELS = [
   { id: "rearRightQuarter", label: "Rear Right Quarter Panel", location: "Right Side" },
 ];
 
-function getPaintClassification(microns) {
+const PHOTO_CATEGORIES = [
+  { id: "exterior_front", label: "1. Exterior - Front 3/4 & Headlights" },
+  { id: "exterior_rear", label: "2. Exterior - Rear 3/4 & Tail Lights" },
+  { id: "exterior_left", label: "3. Exterior - Left Profile & Doors" },
+  { id: "exterior_right", label: "4. Exterior - Right Profile & Doors" },
+  { id: "paint_diagram", label: "5. Paint Thickness Gauge Readings" },
+  { id: "interior_dashboard", label: "6. Dashboard, Cluster & Steering" },
+  { id: "interior_seats", label: "7. Seats, Upholstery & Carpets" },
+  { id: "interior_controls", label: "8. AC, Infotainment & Center Console" },
+  { id: "engine_bay", label: "9. Engine Bay, Fluid Caps & Belts" },
+  { id: "boot_trunk", label: "10. Boot Space, Spare Tyre & Toolkit" },
+  { id: "wheels_tyres", label: "11. Alloy Wheels, Rotors & Tread Depth" },
+  { id: "underbody", label: "12. Chassis Rails, Floor Pan & Exhaust" },
+  { id: "imperfections", label: "13. Cosmetic Blemishes, Dents & Scratches" },
+  { id: "chassis_vin", label: "14. VIN Plate, Chassis Stamping & Door Jam" },
+  { id: "documentation", label: "15. Service History & Registration Card" },
+];
+
+function getPaintClassification(microns, overrideStatus = null) {
+  if (overrideStatus === "damaged") {
+    return {
+      status: "damaged",
+      label: "Damaged / Dent / Scratch",
+      badgeClass: "bg-red-50 text-red-700 border-red-200",
+      pillClass: "border-red-300 bg-red-50 text-red-800 font-semibold",
+      color: "#EF4444",
+      fill: "#fee2e2",
+      stroke: "#dc2626",
+    };
+  }
+  if (overrideStatus === "repainted") {
+    return {
+      status: "repainted",
+      label: "Fully Repainted",
+      badgeClass: "bg-orange-50 text-orange-700 border-orange-200",
+      pillClass: "border-orange-300 bg-orange-50 text-orange-800 font-semibold",
+      color: "#F97316",
+      fill: "#ffedd5",
+      stroke: "#ea580c",
+    };
+  }
+
   if (microns === null || microns === undefined || microns === "") {
     return {
       status: "unmeasured",
       label: "Unmeasured",
       badgeClass: "bg-slate-100 text-slate-500 border-slate-200",
       pillClass: "border-slate-300 bg-slate-50 text-slate-600",
+      color: "#94A3B8",
+      fill: "#f8fafc",
+      stroke: "#cbd5e1",
     };
   }
 
@@ -82,6 +136,9 @@ function getPaintClassification(microns) {
       label: "Invalid",
       badgeClass: "bg-slate-100 text-slate-500 border-slate-200",
       pillClass: "border-slate-300 bg-slate-50 text-slate-600",
+      color: "#94A3B8",
+      fill: "#f8fafc",
+      stroke: "#cbd5e1",
     };
   }
 
@@ -91,23 +148,44 @@ function getPaintClassification(microns) {
       label: "Factory Original (<150 µm)",
       badgeClass: "bg-emerald-50 text-emerald-700 border-emerald-200",
       pillClass: "border-emerald-300 bg-emerald-50 text-emerald-800 font-semibold",
+      color: "#10B981",
+      fill: "#d1fae5",
+      stroke: "#059669",
     };
   }
 
   if (num <= 250) {
     return {
-      status: "respray",
-      label: "Cosmetic Respray (150-250 µm)",
-      badgeClass: "bg-amber-50 text-amber-700 border-amber-200",
-      pillClass: "border-amber-300 bg-amber-50 text-amber-800 font-semibold",
+      status: "partial_respray",
+      label: "Partially Repainted (150-250 µm)",
+      badgeClass: "bg-yellow-50 text-yellow-800 border-yellow-200",
+      pillClass: "border-yellow-300 bg-yellow-50 text-yellow-800 font-semibold",
+      color: "#EAB308",
+      fill: "#fef9c3",
+      stroke: "#ca8a04",
+    };
+  }
+
+  if (num <= 350) {
+    return {
+      status: "repainted",
+      label: "Fully Repainted (250-350 µm)",
+      badgeClass: "bg-orange-50 text-orange-700 border-orange-200",
+      pillClass: "border-orange-300 bg-orange-50 text-orange-800 font-semibold",
+      color: "#F97316",
+      fill: "#ffedd5",
+      stroke: "#ea580c",
     };
   }
 
   return {
     status: "filler",
-    label: "Body Filler / Heavy (>250 µm)",
+    label: "Body Filler / Heavy (>350 µm)",
     badgeClass: "bg-purple-50 text-purple-700 border-purple-200",
     pillClass: "border-purple-300 bg-purple-50 text-purple-800 font-semibold",
+    color: "#8B5CF6",
+    fill: "#ede9fe",
+    stroke: "#7c3aed",
   };
 }
 
@@ -300,11 +378,36 @@ function ProcurementChecks() {
   const [signOffData, setSignOffData] = useState({
     overall_score: "",
     inspector_recommendations: "",
+    is_approved_by_dms: false,
+    dms_approved_at: null,
+    dms_reviewer_name: "",
+    dms_review_notes: "",
     is_approved_by_master: false,
     approved_at: null,
+    master_reviewer_name: "",
+    master_review_notes: "",
     is_released_to_customer: false,
     released_at: null,
   });
+
+  // Photos and Evidence state
+  const [photosList, setPhotosList] = useState([]);
+  const [photoCategoryFilter, setPhotoCategoryFilter] = useState("all");
+  const [uploadCategory, setUploadCategory] = useState("exterior_front");
+  const [uploadPanelId, setUploadPanelId] = useState("");
+  const [uploadCaption, setUploadCaption] = useState("");
+  const [uploadInspectorComments, setUploadInspectorComments] = useState("");
+  const [isUploadingPhoto, setIsUploadingPhoto] = useState(false);
+  const [selectedPhotoPreview, setSelectedPhotoPreview] = useState(null);
+
+  // Paint interactive panel selection
+  const [selectedPanelId, setSelectedPanelId] = useState("hood");
+
+  // Corrections return modal & PDF
+  const [showCorrectionModal, setShowCorrectionModal] = useState(false);
+  const [correctionNotes, setCorrectionNotes] = useState("");
+  const [isReturningCorrections, setIsReturningCorrections] = useState(false);
+  const [isDownloadingPdf, setIsDownloadingPdf] = useState(false);
 
   async function loadProcurementChecks() {
     setLoading(true);
@@ -580,14 +683,22 @@ function ProcurementChecks() {
       setAccidentFloodData(rec.accident_flood_assessment);
     }
 
+    setPhotosList(rec.photos_data || rec.photos || []);
+
     setSignOffData({
       overall_score:
         rec.overall_score !== null && rec.overall_score !== undefined
           ? String(rec.overall_score)
           : "",
       inspector_recommendations: rec.inspector_recommendations || "",
+      is_approved_by_dms: Boolean(rec.is_approved_by_dms),
+      dms_approved_at: rec.dms_approved_at || null,
+      dms_reviewer_name: rec.dms_reviewer_name || "",
+      dms_review_notes: rec.dms_review_notes || "",
       is_approved_by_master: Boolean(rec.is_approved_by_master),
       approved_at: rec.approved_at || null,
+      master_reviewer_name: rec.master_reviewer_name || "",
+      master_review_notes: rec.master_review_notes || "",
       is_released_to_customer: Boolean(rec.is_released_to_customer),
       released_at: rec.released_at || null,
     });
@@ -717,6 +828,30 @@ function ProcurementChecks() {
           inspector_recommendations: signOffData.inspector_recommendations,
         });
         setAssignmentData((cur) => ({ ...cur, workflow_state: "pending_review" }));
+      } else if (targetState === "dms_approved") {
+        const reviewer = user?.name || user?.email || "DMS Technical Reviewer";
+        await dmsApproveProcurementCheck(currentCheckId, {
+          reviewer_name: reviewer,
+          notes: "Stage 1 DMS Technical Review approved.",
+        });
+        setAssignmentData((cur) => ({ ...cur, workflow_state: "dms_approved" }));
+        setSignOffData((cur) => ({
+          ...cur,
+          is_approved_by_dms: true,
+          dms_approved_at: new Date().toISOString(),
+          dms_reviewer_name: reviewer,
+          dms_review_notes: "Stage 1 DMS Technical Review approved.",
+        }));
+      } else if (targetState === "returned_for_correction") {
+        const reviewer = user?.name || user?.email || "DMS Technical Reviewer";
+        await returnProcurementCorrections(currentCheckId, {
+          notes: correctionNotes || "Corrections requested by technical reviewer.",
+          reviewer_name: reviewer,
+          role: "dms_reviewer",
+        });
+        setAssignmentData((cur) => ({ ...cur, workflow_state: "returned_for_correction" }));
+        setShowCorrectionModal(false);
+        setCorrectionNotes("");
       } else if (targetState === "approved") {
         await approveProcurementCheck(currentCheckId);
         setAssignmentData((cur) => ({ ...cur, workflow_state: "approved" }));
@@ -762,6 +897,103 @@ function ProcurementChecks() {
       await loadProcurementChecks();
     } catch (error) {
       setError(error.message || "Failed to delete procurement check.");
+    }
+  }
+
+  async function handlePhotoUpload(e) {
+    const files = e.target.files;
+    if (!files || files.length === 0) return;
+    if (!currentCheckId) {
+      setActionMessage({
+        type: "error",
+        text: "Please save the inspection record before uploading photographs.",
+      });
+      return;
+    }
+
+    setIsUploadingPhoto(true);
+    setActionMessage({ type: "", text: "" });
+
+    try {
+      const formData = new FormData();
+      for (let i = 0; i < files.length; i++) {
+        formData.append("images", files[i]);
+      }
+      formData.append("category", uploadCategory);
+      if (uploadPanelId) formData.append("panel_id", uploadPanelId);
+      if (uploadCaption) formData.append("caption", uploadCaption);
+      if (uploadInspectorComments) formData.append("inspector_comments", uploadInspectorComments);
+
+      const res = await uploadProcurementPhoto(currentCheckId, formData);
+      if (res && res.photos) {
+        setPhotosList(res.photos);
+      } else {
+        const refreshed = await getProcurementCheck(currentCheckId);
+        setPhotosList(refreshed.photos_data || refreshed.photos || []);
+      }
+      setUploadCaption("");
+      setUploadInspectorComments("");
+      setActionMessage({
+        type: "success",
+        text: `${files.length} photograph(s) uploaded successfully and cataloged.`,
+      });
+      await loadProcurementChecks();
+    } catch (err) {
+      console.error("Photo upload error:", err);
+      setActionMessage({
+        type: "error",
+        text: err.message || "Failed to upload photo evidence.",
+      });
+    } finally {
+      setIsUploadingPhoto(false);
+      e.target.value = "";
+    }
+  }
+
+  async function handleDeletePhoto(photoId) {
+    if (!currentCheckId || !photoId) return;
+    if (!window.confirm("Are you sure you want to delete this inspection photograph?")) return;
+
+    try {
+      await deleteProcurementPhoto(currentCheckId, photoId);
+      setPhotosList((prev) => prev.filter((p) => p.id !== photoId));
+      setActionMessage({
+        type: "success",
+        text: "Photograph deleted from evidence record.",
+      });
+      await loadProcurementChecks();
+    } catch (err) {
+      console.error("Photo delete error:", err);
+      setActionMessage({
+        type: "error",
+        text: err.message || "Failed to delete photograph.",
+      });
+    }
+  }
+
+  async function handleDownloadPdf() {
+    if (!currentCheckId) return;
+    setIsDownloadingPdf(true);
+    setActionMessage({ type: "", text: "" });
+
+    try {
+      const blob = await downloadProcurementPdf(currentCheckId);
+      const url = window.URL.createObjectURL(blob);
+      const link = document.createElement("a");
+      link.href = url;
+      link.download = `PrimeRides-Inspection-Check-${currentCheckId}.pdf`;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      window.URL.revokeObjectURL(url);
+    } catch (err) {
+      console.error("PDF download error:", err);
+      setActionMessage({
+        type: "error",
+        text: err.message || "Failed to generate certified inspection PDF.",
+      });
+    } finally {
+      setIsDownloadingPdf(false);
     }
   }
 
@@ -1175,6 +1407,7 @@ function ProcurementChecks() {
                   { id: "inspector", label: "Inspector & Schedule", icon: UserCheck },
                   { id: "paint_scan", label: "13-Panel Paint Scan", icon: Layers },
                   { id: "checkpoints", label: "9-System Checklist", icon: Wrench },
+                  { id: "photos", label: "Photographs & Evidence", icon: Camera },
                   { id: "sign_off", label: "Review & Release", icon: Award },
                 ].map((tab) => {
                   const Icon = tab.icon;
@@ -1652,94 +1885,431 @@ function ProcurementChecks() {
                           </div>
                         </div>
 
-                        {/* Legend */}
-                        <div className="flex flex-wrap items-center gap-4 text-xs">
-                          <span className="font-bold text-slate-700">Gauge Reference:</span>
+                        {/* Dubizzle-Inspired Color Legend */}
+                        <div className="flex flex-wrap items-center gap-3 rounded-xl border border-slate-200 bg-white p-3.5 text-xs shadow-sm">
+                          <span className="font-bold text-slate-700">Paint Condition Legend:</span>
                           <span className="inline-flex items-center gap-1.5 rounded-full border border-emerald-200 bg-emerald-50 px-2.5 py-1 text-emerald-800 font-semibold">
-                            <span className="h-2 w-2 rounded-full bg-emerald-500" />
-                            Factory Original (&lt;150 µm)
+                            <span className="h-2.5 w-2.5 rounded-full bg-emerald-500" />
+                            Original (&lt;150 µm)
                           </span>
-                          <span className="inline-flex items-center gap-1.5 rounded-full border border-amber-200 bg-amber-50 px-2.5 py-1 text-amber-800 font-semibold">
-                            <span className="h-2 w-2 rounded-full bg-amber-500" />
-                            Cosmetic Respray (150 - 250 µm)
+                          <span className="inline-flex items-center gap-1.5 rounded-full border border-yellow-200 bg-yellow-50 px-2.5 py-1 text-yellow-800 font-semibold">
+                            <span className="h-2.5 w-2.5 rounded-full bg-yellow-400" />
+                            Partially Repainted (150 - 250 µm)
+                          </span>
+                          <span className="inline-flex items-center gap-1.5 rounded-full border border-orange-200 bg-orange-50 px-2.5 py-1 text-orange-800 font-semibold">
+                            <span className="h-2.5 w-2.5 rounded-full bg-orange-500" />
+                            Fully Repainted (250 - 350 µm)
                           </span>
                           <span className="inline-flex items-center gap-1.5 rounded-full border border-purple-200 bg-purple-50 px-2.5 py-1 text-purple-800 font-semibold">
-                            <span className="h-2 w-2 rounded-full bg-purple-500" />
-                            Body Filler / Repair (&gt;250 µm)
+                            <span className="h-2.5 w-2.5 rounded-full bg-purple-500" />
+                            Repaired / Filler (&gt;350 µm)
+                          </span>
+                          <span className="inline-flex items-center gap-1.5 rounded-full border border-red-200 bg-red-50 px-2.5 py-1 text-red-800 font-semibold">
+                            <span className="h-2.5 w-2.5 rounded-full bg-red-500" />
+                            Damaged
+                          </span>
+                          <span className="inline-flex items-center gap-1.5 rounded-full border border-slate-200 bg-slate-50 px-2.5 py-1 text-slate-600 font-medium">
+                            <span className="h-2.5 w-2.5 rounded-full bg-slate-400" />
+                            Not Inspected
                           </span>
                         </div>
 
-                        {/* 13 Panels Grid */}
-                        <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
-                          {INSPECTION_PANELS.map((panel) => {
-                            const val = paintData[panel.id]?.thickness_microns ?? "";
-                            const note = paintData[panel.id]?.notes ?? "";
-                            const classification = getPaintClassification(val);
+                        {/* Interactive Vector Top-Down Diagram & Active Panel Inspector */}
+                        <div className="grid grid-cols-1 gap-6 lg:grid-cols-12">
+                          {/* Top-Down Vector Diagram (5 cols) */}
+                          <div className="flex flex-col items-center justify-center rounded-2xl border border-slate-200 bg-slate-900/95 p-6 shadow-md lg:col-span-5">
+                            <div className="mb-3 text-center">
+                              <span className="text-xs font-bold uppercase tracking-wider text-amber-400">
+                                Interactive Vehicle Body Diagram
+                              </span>
+                              <p className="text-[11px] text-slate-400">
+                                Click any panel to inspect and calibrate measurement
+                              </p>
+                            </div>
 
-                            return (
-                              <div
-                                key={panel.id}
-                                className="rounded-xl border border-slate-200 bg-white p-3.5 shadow-sm transition hover:border-slate-300"
-                              >
-                                <div className="flex items-center justify-between">
-                                  <span className="text-xs font-bold text-slate-800">{panel.label}</span>
-                                  <span className="text-[10px] uppercase tracking-wide text-slate-400 font-medium">
-                                    {panel.location}
-                                  </span>
-                                </div>
+                            <svg viewBox="0 0 280 600" className="h-[460px] w-auto select-none drop-shadow-xl">
+                              {/* Background silhouette */}
+                              <rect x="35" y="30" width="210" height="540" rx="36" fill="#0f172a" stroke="#334155" strokeWidth="2" />
 
-                                <div className="mt-2.5 flex items-center gap-2">
-                                  <div className="relative w-28">
+                              {/* 1. Front Bumper */}
+                              <path
+                                d="M 55,40 Q 140,15 225,40 L 220,68 Q 140,48 60,68 Z"
+                                fill={getPaintClassification(paintData.frontBumper?.thickness_microns, paintData.frontBumper?.override_status).fill}
+                                stroke={selectedPanelId === "frontBumper" ? "#f59e0b" : getPaintClassification(paintData.frontBumper?.thickness_microns, paintData.frontBumper?.override_status).stroke}
+                                strokeWidth={selectedPanelId === "frontBumper" ? 3.5 : 1.5}
+                                className="transition-all duration-150 cursor-pointer hover:opacity-90"
+                                onClick={() => setSelectedPanelId("frontBumper")}
+                              />
+                              <text x="140" y="52" textAnchor="middle" fontSize="9" fontWeight="700" fill="#0f172a" pointerEvents="none">
+                                Front Bumper {paintData.frontBumper?.thickness_microns ? `(${paintData.frontBumper.thickness_microns}µm)` : ""}
+                              </text>
+
+                              {/* 2. Front Left Fender */}
+                              <path
+                                d="M 45,72 L 72,72 L 80,180 L 40,180 Z"
+                                fill={getPaintClassification(paintData.frontLeftFender?.thickness_microns, paintData.frontLeftFender?.override_status).fill}
+                                stroke={selectedPanelId === "frontLeftFender" ? "#f59e0b" : getPaintClassification(paintData.frontLeftFender?.thickness_microns, paintData.frontLeftFender?.override_status).stroke}
+                                strokeWidth={selectedPanelId === "frontLeftFender" ? 3.5 : 1.5}
+                                className="transition-all duration-150 cursor-pointer hover:opacity-90"
+                                onClick={() => setSelectedPanelId("frontLeftFender")}
+                              />
+
+                              {/* 3. Hood / Bonnet */}
+                              <path
+                                d="M 76,72 L 204,72 L 198,180 L 82,180 Z"
+                                fill={getPaintClassification(paintData.hood?.thickness_microns, paintData.hood?.override_status).fill}
+                                stroke={selectedPanelId === "hood" ? "#f59e0b" : getPaintClassification(paintData.hood?.thickness_microns, paintData.hood?.override_status).stroke}
+                                strokeWidth={selectedPanelId === "hood" ? 3.5 : 1.5}
+                                className="transition-all duration-150 cursor-pointer hover:opacity-90"
+                                onClick={() => setSelectedPanelId("hood")}
+                              />
+                              <text x="140" y="130" textAnchor="middle" fontSize="11" fontWeight="700" fill="#0f172a" pointerEvents="none">
+                                Bonnet / Hood {paintData.hood?.thickness_microns ? `(${paintData.hood.thickness_microns}µm)` : ""}
+                              </text>
+
+                              {/* 4. Front Right Fender */}
+                              <path
+                                d="M 208,72 L 235,72 L 240,180 L 202,180 Z"
+                                fill={getPaintClassification(paintData.frontRightFender?.thickness_microns, paintData.frontRightFender?.override_status).fill}
+                                stroke={selectedPanelId === "frontRightFender" ? "#f59e0b" : getPaintClassification(paintData.frontRightFender?.thickness_microns, paintData.frontRightFender?.override_status).stroke}
+                                strokeWidth={selectedPanelId === "frontRightFender" ? 3.5 : 1.5}
+                                className="transition-all duration-150 cursor-pointer hover:opacity-90"
+                                onClick={() => setSelectedPanelId("frontRightFender")}
+                              />
+
+                              {/* Windscreen Glass */}
+                              <path d="M 82,184 L 198,184 L 205,238 L 75,238 Z" fill="#1e293b" stroke="#334155" strokeWidth="1" />
+                              <text x="140" y="214" textAnchor="middle" fontSize="9" fontWeight="600" fill="#64748b" pointerEvents="none">
+                                WINDSCREEN
+                              </text>
+
+                              {/* 5. Front Left Door */}
+                              <path
+                                d="M 38,242 L 72,242 L 72,338 L 38,338 Z"
+                                fill={getPaintClassification(paintData.frontLeftDoor?.thickness_microns, paintData.frontLeftDoor?.override_status).fill}
+                                stroke={selectedPanelId === "frontLeftDoor" ? "#f59e0b" : getPaintClassification(paintData.frontLeftDoor?.thickness_microns, paintData.frontLeftDoor?.override_status).stroke}
+                                strokeWidth={selectedPanelId === "frontLeftDoor" ? 3.5 : 1.5}
+                                className="transition-all duration-150 cursor-pointer hover:opacity-90"
+                                onClick={() => setSelectedPanelId("frontLeftDoor")}
+                              />
+
+                              {/* 6. Roof Panel */}
+                              <path
+                                d="M 76,242 L 204,242 L 204,422 L 76,422 Z"
+                                fill={getPaintClassification(paintData.roof?.thickness_microns, paintData.roof?.override_status).fill}
+                                stroke={selectedPanelId === "roof" ? "#f59e0b" : getPaintClassification(paintData.roof?.thickness_microns, paintData.roof?.override_status).stroke}
+                                strokeWidth={selectedPanelId === "roof" ? 3.5 : 1.5}
+                                className="transition-all duration-150 cursor-pointer hover:opacity-90"
+                                onClick={() => setSelectedPanelId("roof")}
+                              />
+                              <text x="140" y="335" textAnchor="middle" fontSize="12" fontWeight="700" fill="#0f172a" pointerEvents="none">
+                                Roof {paintData.roof?.thickness_microns ? `(${paintData.roof.thickness_microns}µm)` : ""}
+                              </text>
+
+                              {/* 7. Front Right Door */}
+                              <path
+                                d="M 208,242 L 242,242 L 242,338 L 208,338 Z"
+                                fill={getPaintClassification(paintData.frontRightDoor?.thickness_microns, paintData.frontRightDoor?.override_status).fill}
+                                stroke={selectedPanelId === "frontRightDoor" ? "#f59e0b" : getPaintClassification(paintData.frontRightDoor?.thickness_microns, paintData.frontRightDoor?.override_status).stroke}
+                                strokeWidth={selectedPanelId === "frontRightDoor" ? 3.5 : 1.5}
+                                className="transition-all duration-150 cursor-pointer hover:opacity-90"
+                                onClick={() => setSelectedPanelId("frontRightDoor")}
+                              />
+
+                              {/* 8. Rear Left Door */}
+                              <path
+                                d="M 38,342 L 72,342 L 72,438 L 38,438 Z"
+                                fill={getPaintClassification(paintData.rearLeftDoor?.thickness_microns, paintData.rearLeftDoor?.override_status).fill}
+                                stroke={selectedPanelId === "rearLeftDoor" ? "#f59e0b" : getPaintClassification(paintData.rearLeftDoor?.thickness_microns, paintData.rearLeftDoor?.override_status).stroke}
+                                strokeWidth={selectedPanelId === "rearLeftDoor" ? 3.5 : 1.5}
+                                className="transition-all duration-150 cursor-pointer hover:opacity-90"
+                                onClick={() => setSelectedPanelId("rearLeftDoor")}
+                              />
+
+                              {/* 9. Rear Right Door */}
+                              <path
+                                d="M 208,342 L 242,342 L 242,438 L 208,438 Z"
+                                fill={getPaintClassification(paintData.rearRightDoor?.thickness_microns, paintData.rearRightDoor?.override_status).fill}
+                                stroke={selectedPanelId === "rearRightDoor" ? "#f59e0b" : getPaintClassification(paintData.rearRightDoor?.thickness_microns, paintData.rearRightDoor?.override_status).stroke}
+                                strokeWidth={selectedPanelId === "rearRightDoor" ? 3.5 : 1.5}
+                                className="transition-all duration-150 cursor-pointer hover:opacity-90"
+                                onClick={() => setSelectedPanelId("rearRightDoor")}
+                              />
+
+                              {/* Rear Window Glass */}
+                              <path d="M 76,426 L 204,426 L 198,472 L 82,472 Z" fill="#1e293b" stroke="#334155" strokeWidth="1" />
+                              <text x="140" y="452" textAnchor="middle" fontSize="9" fontWeight="600" fill="#64748b" pointerEvents="none">
+                                REAR GLASS
+                              </text>
+
+                              {/* 10. Rear Left Quarter Panel */}
+                              <path
+                                d="M 38,442 L 78,476 L 72,546 L 46,546 Z"
+                                fill={getPaintClassification(paintData.rearLeftQuarter?.thickness_microns, paintData.rearLeftQuarter?.override_status).fill}
+                                stroke={selectedPanelId === "rearLeftQuarter" ? "#f59e0b" : getPaintClassification(paintData.rearLeftQuarter?.thickness_microns, paintData.rearLeftQuarter?.override_status).stroke}
+                                strokeWidth={selectedPanelId === "rearLeftQuarter" ? 3.5 : 1.5}
+                                className="transition-all duration-150 cursor-pointer hover:opacity-90"
+                                onClick={() => setSelectedPanelId("rearLeftQuarter")}
+                              />
+
+                              {/* 11. Boot / Trunk Lid */}
+                              <path
+                                d="M 82,476 L 198,476 L 192,546 L 88,546 Z"
+                                fill={getPaintClassification(paintData.trunk?.thickness_microns, paintData.trunk?.override_status).fill}
+                                stroke={selectedPanelId === "trunk" ? "#f59e0b" : getPaintClassification(paintData.trunk?.thickness_microns, paintData.trunk?.override_status).stroke}
+                                strokeWidth={selectedPanelId === "trunk" ? 3.5 : 1.5}
+                                className="transition-all duration-150 cursor-pointer hover:opacity-90"
+                                onClick={() => setSelectedPanelId("trunk")}
+                              />
+                              <text x="140" y="515" textAnchor="middle" fontSize="10" fontWeight="700" fill="#0f172a" pointerEvents="none">
+                                Trunk {paintData.trunk?.thickness_microns ? `(${paintData.trunk.thickness_microns}µm)` : ""}
+                              </text>
+
+                              {/* 12. Rear Right Quarter Panel */}
+                              <path
+                                d="M 242,442 L 202,476 L 208,546 L 234,546 Z"
+                                fill={getPaintClassification(paintData.rearRightQuarter?.thickness_microns, paintData.rearRightQuarter?.override_status).fill}
+                                stroke={selectedPanelId === "rearRightQuarter" ? "#f59e0b" : getPaintClassification(paintData.rearRightQuarter?.thickness_microns, paintData.rearRightQuarter?.override_status).stroke}
+                                strokeWidth={selectedPanelId === "rearRightQuarter" ? 3.5 : 1.5}
+                                className="transition-all duration-150 cursor-pointer hover:opacity-90"
+                                onClick={() => setSelectedPanelId("rearRightQuarter")}
+                              />
+
+                              {/* 13. Rear Bumper */}
+                              <path
+                                d="M 48,550 Q 140,568 232,550 L 226,578 Q 140,598 54,578 Z"
+                                fill={getPaintClassification(paintData.rearBumper?.thickness_microns, paintData.rearBumper?.override_status).fill}
+                                stroke={selectedPanelId === "rearBumper" ? "#f59e0b" : getPaintClassification(paintData.rearBumper?.thickness_microns, paintData.rearBumper?.override_status).stroke}
+                                strokeWidth={selectedPanelId === "rearBumper" ? 3.5 : 1.5}
+                                className="transition-all duration-150 cursor-pointer hover:opacity-90"
+                                onClick={() => setSelectedPanelId("rearBumper")}
+                              />
+                              <text x="140" y="567" textAnchor="middle" fontSize="9" fontWeight="700" fill="#0f172a" pointerEvents="none">
+                                Rear Bumper {paintData.rearBumper?.thickness_microns ? `(${paintData.rearBumper.thickness_microns}µm)` : ""}
+                              </text>
+                            </svg>
+                          </div>
+
+                          {/* Active Panel Calibration Editor (7 cols) */}
+                          <div className="flex flex-col gap-4 rounded-2xl border border-slate-200 bg-white p-6 shadow-sm lg:col-span-7">
+                            {(() => {
+                              const activeDef = INSPECTION_PANELS.find((p) => p.id === selectedPanelId) || INSPECTION_PANELS[1];
+                              const activeVal = paintData[activeDef.id]?.thickness_microns ?? "";
+                              const activeNote = paintData[activeDef.id]?.notes ?? "";
+                              const activeOverride = paintData[activeDef.id]?.override_status ?? null;
+                              const classification = getPaintClassification(activeVal, activeOverride);
+
+                              return (
+                                <>
+                                  <div className="flex items-center justify-between border-b border-slate-100 pb-4">
+                                    <div>
+                                      <span className="text-xs uppercase tracking-wider text-slate-400 font-semibold">
+                                        Selected Body Panel
+                                      </span>
+                                      <h3 className="text-lg font-bold text-slate-800">{activeDef.label}</h3>
+                                      <span className="text-xs text-slate-500">{activeDef.location}</span>
+                                    </div>
+
+                                    <div className={`rounded-xl border px-3 py-1.5 text-xs font-bold ${classification.pillClass}`}>
+                                      {classification.label}
+                                    </div>
+                                  </div>
+
+                                  {/* Quick Preset Buttons */}
+                                  <div>
+                                    <label className="mb-1.5 block text-xs font-semibold text-slate-600">
+                                      Quick Diagnostic Presets:
+                                    </label>
+                                    <div className="flex flex-wrap gap-2">
+                                      <button
+                                        type="button"
+                                        onClick={() => {
+                                          setPaintData((c) => ({
+                                            ...c,
+                                            [activeDef.id]: {
+                                              ...(c[activeDef.id] || {}),
+                                              thickness_microns: "115",
+                                              override_status: null,
+                                              status: "original",
+                                            },
+                                          }));
+                                        }}
+                                        className="rounded-lg border border-emerald-200 bg-emerald-50 px-2.5 py-1 text-xs font-semibold text-emerald-800 hover:bg-emerald-100"
+                                      >
+                                        Original (115µm)
+                                      </button>
+                                      <button
+                                        type="button"
+                                        onClick={() => {
+                                          setPaintData((c) => ({
+                                            ...c,
+                                            [activeDef.id]: {
+                                              ...(c[activeDef.id] || {}),
+                                              thickness_microns: "190",
+                                              override_status: null,
+                                              status: "partial_respray",
+                                            },
+                                          }));
+                                        }}
+                                        className="rounded-lg border border-yellow-200 bg-yellow-50 px-2.5 py-1 text-xs font-semibold text-yellow-800 hover:bg-yellow-100"
+                                      >
+                                        Partial Respray (190µm)
+                                      </button>
+                                      <button
+                                        type="button"
+                                        onClick={() => {
+                                          setPaintData((c) => ({
+                                            ...c,
+                                            [activeDef.id]: {
+                                              ...(c[activeDef.id] || {}),
+                                              thickness_microns: "295",
+                                              override_status: "repainted",
+                                              status: "repainted",
+                                            },
+                                          }));
+                                        }}
+                                        className="rounded-lg border border-orange-200 bg-orange-50 px-2.5 py-1 text-xs font-semibold text-orange-800 hover:bg-orange-100"
+                                      >
+                                        Fully Repainted (295µm)
+                                      </button>
+                                      <button
+                                        type="button"
+                                        onClick={() => {
+                                          setPaintData((c) => ({
+                                            ...c,
+                                            [activeDef.id]: {
+                                              ...(c[activeDef.id] || {}),
+                                              thickness_microns: "450",
+                                              override_status: "filler",
+                                              status: "filler",
+                                            },
+                                          }));
+                                        }}
+                                        className="rounded-lg border border-purple-200 bg-purple-50 px-2.5 py-1 text-xs font-semibold text-purple-800 hover:bg-purple-100"
+                                      >
+                                        Body Filler (450µm)
+                                      </button>
+                                      <button
+                                        type="button"
+                                        onClick={() => {
+                                          setPaintData((c) => ({
+                                            ...c,
+                                            [activeDef.id]: {
+                                              ...(c[activeDef.id] || {}),
+                                              override_status: "damaged",
+                                              status: "damaged",
+                                            },
+                                          }));
+                                        }}
+                                        className="rounded-lg border border-red-200 bg-red-50 px-2.5 py-1 text-xs font-semibold text-red-800 hover:bg-red-100"
+                                      >
+                                        Damaged Panel
+                                      </button>
+                                    </div>
+                                  </div>
+
+                                  {/* Custom Calibrated Microns Input */}
+                                  <div>
+                                    <label className="mb-1 block text-xs font-semibold text-slate-700">
+                                      Calibrated Coating Thickness Gauge Reading:
+                                    </label>
+                                    <div className="relative w-full max-w-xs">
+                                      <input
+                                        type="number"
+                                        min="0"
+                                        max="3000"
+                                        value={activeVal}
+                                        onChange={(e) => {
+                                          const newThickness = e.target.value;
+                                          setPaintData((c) => ({
+                                            ...c,
+                                            [activeDef.id]: {
+                                              ...(c[activeDef.id] || {}),
+                                              thickness_microns: newThickness,
+                                              override_status: null,
+                                              status: getPaintClassification(newThickness).status,
+                                            },
+                                          }));
+                                        }}
+                                        placeholder="e.g. 120"
+                                        className="h-10 w-full rounded-xl border border-slate-200 bg-white px-3 font-mono text-sm font-bold text-slate-800 focus:border-amber-400 focus:outline-none"
+                                      />
+                                      <span className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-xs font-bold text-slate-400">
+                                        µm (microns)
+                                      </span>
+                                    </div>
+                                  </div>
+
+                                  {/* Panel Notes */}
+                                  <div>
+                                    <label className="mb-1 block text-xs font-semibold text-slate-700">
+                                      Inspector Panel Observations & Findings:
+                                    </label>
                                     <input
-                                      type="number"
-                                      min="0"
-                                      max="3000"
-                                      value={val}
+                                      type="text"
+                                      value={activeNote}
                                       onChange={(e) => {
-                                        const newThickness = e.target.value;
+                                        const newNote = e.target.value;
                                         setPaintData((c) => ({
                                           ...c,
-                                          [panel.id]: {
-                                            ...(c[panel.id] || {}),
-                                            thickness_microns: newThickness,
-                                            status: getPaintClassification(newThickness).status,
+                                          [activeDef.id]: {
+                                            ...(c[activeDef.id] || {}),
+                                            notes: newNote,
                                           },
                                         }));
                                       }}
-                                      placeholder="0"
-                                      className="h-8 w-full rounded-lg border border-slate-200 bg-white px-2.5 text-right font-mono text-xs font-bold text-slate-800 focus:border-amber-400 focus:outline-none"
+                                      placeholder="e.g. Factory clear coat, consistent reading across 5 gauge points."
+                                      className="h-10 w-full rounded-xl border border-slate-200 bg-white px-3 text-xs text-slate-700 focus:border-amber-400 focus:outline-none"
                                     />
-                                    <span className="pointer-events-none absolute right-7 top-1/2 -translate-y-1/2 text-[10px] text-slate-400">
-                                      µm
+                                  </div>
+
+                                  <div className="mt-2 text-xs text-slate-500">
+                                    Tip: You can also select other body panels directly from the quick selector list below.
+                                  </div>
+                                </>
+                              );
+                            })()}
+                          </div>
+                        </div>
+
+                        {/* All 13 Panels Quick Table / Grid */}
+                        <div className="mt-6">
+                          <h4 className="mb-3 text-xs font-bold uppercase tracking-wider text-slate-600">
+                            All 13 Body Panels Summary:
+                          </h4>
+                          <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+                            {INSPECTION_PANELS.map((panel) => {
+                              const val = paintData[panel.id]?.thickness_microns ?? "";
+                              const override = paintData[panel.id]?.override_status ?? null;
+                              const classification = getPaintClassification(val, override);
+                              const isSelected = selectedPanelId === panel.id;
+
+                              return (
+                                <div
+                                  key={panel.id}
+                                  onClick={() => setSelectedPanelId(panel.id)}
+                                  className={`cursor-pointer rounded-xl border p-3 transition-all ${
+                                    isSelected
+                                      ? "border-amber-400 bg-amber-50/40 shadow-sm ring-2 ring-amber-400/20"
+                                      : "border-slate-200 bg-white hover:border-slate-300"
+                                  }`}
+                                >
+                                  <div className="flex items-center justify-between">
+                                    <span className="text-xs font-bold text-slate-800">{panel.label}</span>
+                                    <span className="text-[10px] uppercase text-slate-400">{panel.location}</span>
+                                  </div>
+                                  <div className="mt-2 flex items-center justify-between">
+                                    <span className="font-mono text-xs font-bold text-slate-700">
+                                      {val ? `${val} µm` : "—"}
+                                    </span>
+                                    <span className={`rounded-md px-1.5 py-0.5 text-[10px] font-semibold ${classification.badgeClass}`}>
+                                      {classification.label.split("(")[0].trim()}
                                     </span>
                                   </div>
-
-                                  <div
-                                    className={`flex-1 rounded-lg border px-2 py-1 text-center text-[10px] truncate ${classification.pillClass}`}
-                                  >
-                                    {classification.label}
-                                  </div>
                                 </div>
-
-                                <input
-                                  type="text"
-                                  value={note}
-                                  onChange={(e) => {
-                                    const newNote = e.target.value;
-                                    setPaintData((c) => ({
-                                      ...c,
-                                      [panel.id]: {
-                                        ...(c[panel.id] || {}),
-                                        notes: newNote,
-                                      },
-                                    }));
-                                  }}
-                                  placeholder="Observations (e.g. factory clear coat)"
-                                  className="mt-2 h-7 w-full rounded-md border border-slate-100 bg-slate-50/60 px-2 text-[11px] text-slate-600 focus:border-amber-400 focus:bg-white focus:outline-none"
-                                />
-                              </div>
-                            );
-                          })}
+                              );
+                            })}
+                          </div>
                         </div>
                       </div>
                     )}
@@ -1837,16 +2407,227 @@ function ProcurementChecks() {
                       </div>
                     )}
 
-                    {/* TAB 6: REVIEW, SCORING & RELEASE SIGN-OFF */}
+{/* TAB: PHOTOGRAPHS & EVIDENCE */}
+                    {activeModalTab === "photos" && (
+                      <div className="space-y-6">
+                        {/* Photo Upload Form Card */}
+                        <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
+                          <div className="flex items-center justify-between border-b border-slate-100 pb-3">
+                            <div>
+                              <h4 className="text-sm font-bold text-slate-800">
+                                Upload Photographic Evidence
+                              </h4>
+                              <p className="text-xs text-slate-500">
+                                Upload high-resolution inspector photographs categorized across 15 vehicle domains.
+                              </p>
+                            </div>
+                            <span className="rounded-full bg-amber-50 px-3 py-1 text-xs font-bold text-amber-700 border border-amber-200">
+                              {photosList.length} Photographs Cataloged
+                            </span>
+                          </div>
+
+                          <div className="mt-4 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
+                            <div>
+                              <label className="mb-1 block text-xs font-semibold text-slate-700">
+                                Inspection Category *
+                              </label>
+                              <select
+                                value={uploadCategory}
+                                onChange={(e) => setUploadCategory(e.target.value)}
+                                className="h-9 w-full rounded-xl border border-slate-200 bg-white px-2.5 text-xs text-slate-800 focus:border-amber-400 focus:outline-none"
+                              >
+                                {PHOTO_CATEGORIES.map((cat) => (
+                                  <option key={cat.id} value={cat.id}>
+                                    {cat.label}
+                                  </option>
+                                ))}
+                              </select>
+                            </div>
+
+                            <div>
+                              <label className="mb-1 block text-xs font-semibold text-slate-700">
+                                Associated Body Panel (optional)
+                              </label>
+                              <select
+                                value={uploadPanelId}
+                                onChange={(e) => setUploadPanelId(e.target.value)}
+                                className="h-9 w-full rounded-xl border border-slate-200 bg-white px-2.5 text-xs text-slate-800 focus:border-amber-400 focus:outline-none"
+                              >
+                                <option value="">None / General Component</option>
+                                {INSPECTION_PANELS.map((p) => (
+                                  <option key={p.id} value={p.id}>
+                                    {p.label}
+                                  </option>
+                                ))}
+                              </select>
+                            </div>
+
+                            <div>
+                              <label className="mb-1 block text-xs font-semibold text-slate-700">
+                                Caption / Angle Description
+                              </label>
+                              <input
+                                type="text"
+                                value={uploadCaption}
+                                onChange={(e) => setUploadCaption(e.target.value)}
+                                placeholder="e.g. Front 3/4 angle, clean bumper"
+                                className="h-9 w-full rounded-xl border border-slate-200 bg-white px-3 text-xs text-slate-800 focus:border-amber-400 focus:outline-none"
+                              />
+                            </div>
+
+                            <div>
+                              <label className="mb-1 block text-xs font-semibold text-slate-700">
+                                Inspector Observations
+                              </label>
+                              <input
+                                type="text"
+                                value={uploadInspectorComments}
+                                onChange={(e) => setUploadInspectorComments(e.target.value)}
+                                placeholder="e.g. Factory paint, no visible stone chips"
+                                className="h-9 w-full rounded-xl border border-slate-200 bg-white px-3 text-xs text-slate-800 focus:border-amber-400 focus:outline-none"
+                              />
+                            </div>
+                          </div>
+
+                          <div className="mt-4 flex flex-wrap items-center justify-between gap-3 border-t border-slate-100 pt-4">
+                            <div className="flex items-center gap-2">
+                              <label className="relative cursor-pointer rounded-xl border border-amber-300 bg-amber-50 px-4 py-2 text-xs font-bold text-amber-800 hover:bg-amber-100 transition shadow-sm">
+                                <span className="flex items-center gap-2">
+                                  <Camera size={16} />
+                                  {isUploadingPhoto ? "Uploading & Cataloging..." : "Choose Files & Upload"}
+                                </span>
+                                <input
+                                  type="file"
+                                  multiple
+                                  accept="image/*"
+                                  disabled={isUploadingPhoto || !currentCheckId}
+                                  onChange={handlePhotoUpload}
+                                  className="absolute inset-0 opacity-0 cursor-pointer"
+                                />
+                              </label>
+                              {!currentCheckId && (
+                                <span className="text-xs text-rose-500 font-medium">
+                                  Save record first before uploading photos.
+                                </span>
+                              )}
+                            </div>
+
+                            <span className="text-xs text-slate-400">
+                              Supported formats: JPEG, PNG, WebP (max 15MB per image)
+                            </span>
+                          </div>
+                        </div>
+
+                        {/* Category Filter Pills */}
+                        <div className="flex flex-wrap items-center gap-2">
+                          <span className="text-xs font-semibold text-slate-500 mr-1">Filter by Domain:</span>
+                          {["all", "exterior", "interior", "engine", "wheels", "underbody", "imperfections"].map((cat) => (
+                            <button
+                              key={cat}
+                              type="button"
+                              onClick={() => setPhotoCategoryFilter(cat)}
+                              className={`rounded-lg px-2.5 py-1 text-xs font-semibold transition ${
+                                photoCategoryFilter === cat
+                                  ? "bg-amber-500 text-white shadow-sm"
+                                  : "bg-slate-100 text-slate-600 hover:bg-slate-200"
+                              }`}
+                            >
+                              {cat.toUpperCase()}
+                            </button>
+                          ))}
+                        </div>
+
+                        {/* Photo Gallery Grid */}
+                        {photosList.length === 0 ? (
+                          <div className="flex min-h-[220px] flex-col items-center justify-center rounded-2xl border border-dashed border-slate-300 bg-slate-50/60 p-6 text-center">
+                            <Camera className="mb-2 text-slate-400" size={36} />
+                            <h5 className="text-xs font-bold text-slate-700">No Inspection Photographs Uploaded</h5>
+                            <p className="mt-1 text-xs text-slate-500 max-w-sm">
+                              Upload high-resolution photographs to document physical vehicle condition, coating measurements, and mechanical components.
+                            </p>
+                          </div>
+                        ) : (
+                          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4">
+                            {photosList
+                              .filter((p) => {
+                                if (photoCategoryFilter === "all") return true;
+                                return (p.category || "").toLowerCase().includes(photoCategoryFilter.toLowerCase());
+                              })
+                              .map((photo, idx) => (
+                                <div
+                                  key={photo.id || idx}
+                                  className="group relative flex flex-col rounded-xl border border-slate-200 bg-white overflow-hidden shadow-sm transition hover:shadow-md hover:border-amber-300"
+                                >
+                                  <div
+                                    className="relative h-44 w-full bg-slate-900 cursor-pointer overflow-hidden"
+                                    onClick={() => setSelectedPhotoPreview(photo)}
+                                  >
+                                    <img
+                                      src={photo.image_url || photo.image || photo.url}
+                                      alt={photo.caption || "Inspection photo"}
+                                      className="h-full w-full object-cover transition duration-200 group-hover:scale-105"
+                                    />
+                                    <div className="absolute inset-0 bg-black/20 opacity-0 group-hover:opacity-100 transition flex items-center justify-center">
+                                      <span className="rounded-lg bg-black/70 px-2.5 py-1 text-[11px] font-bold text-white flex items-center gap-1">
+                                        <Eye size={13} /> Enlarge
+                                      </span>
+                                    </div>
+                                  </div>
+
+                                  <div className="flex flex-1 flex-col justify-between p-3">
+                                    <div>
+                                      <div className="flex items-center justify-between gap-1 mb-1">
+                                        <span className="rounded bg-amber-50 px-1.5 py-0.5 text-[10px] font-bold text-amber-800 border border-amber-200">
+                                          {(photo.category_display || photo.category || "Evidence").replace(/_/g, " ")}
+                                        </span>
+                                        {photo.panel_id && (
+                                          <span className="text-[10px] text-slate-400 font-medium">{photo.panel_id}</span>
+                                        )}
+                                      </div>
+                                      <h5 className="text-xs font-bold text-slate-800 truncate" title={photo.caption}>
+                                        {photo.caption || "Inspection Evidence"}
+                                      </h5>
+                                      {photo.inspector_comments && (
+                                        <p className="mt-1 text-[11px] text-slate-500 line-clamp-2">
+                                          {photo.inspector_comments}
+                                        </p>
+                                      )}
+                                    </div>
+
+                                    <div className="mt-3 flex items-center justify-between border-t border-slate-100 pt-2 text-[10px] text-slate-400">
+                                      <span>{photo.uploaded_at ? new Date(photo.uploaded_at).toLocaleDateString() : ""}</span>
+                                      <button
+                                        type="button"
+                                        onClick={(e) => {
+                                          e.stopPropagation();
+                                          handleDeletePhoto(photo.id);
+                                        }}
+                                        className="text-rose-500 hover:text-rose-700 p-1 font-semibold"
+                                        title="Delete photo"
+                                      >
+                                        Delete
+                                      </button>
+                                    </div>
+                                  </div>
+                                </div>
+                              ))}
+                          </div>
+                        )}
+                      </div>
+                    )}
+
+
+
+{/* TAB 7: REVIEW, SCORING & THREE-STAGE SIGN-OFF */}
                     {activeModalTab === "sign_off" && (
                       <div className="space-y-6">
                         {/* Overall Rating Score */}
-                        <div className="rounded-xl border border-slate-200 bg-white p-5">
+                        <div className="rounded-xl border border-slate-200 bg-white p-5 shadow-sm">
                           <h4 className="text-xs font-bold uppercase tracking-[0.08em] text-slate-700">
                             Overall Condition Score Rating
                           </h4>
                           <p className="mt-1 text-xs text-slate-500">
-                            Certified 10-point scale based on mechanical health, paint readings, and diagnostic status.
+                            Authoritative 10-point scale synthesized from paint scan, 160 checklist points, and road diagnostics.
                           </p>
 
                           <div className="mt-4 flex items-center gap-4">
@@ -1898,75 +2679,163 @@ function ProcurementChecks() {
                           />
                         </div>
 
-                        {/* Master Quality Review Sign-Off */}
+                        {/* Three-Stage Review & Release Gates */}
                         <div className="rounded-xl border border-slate-200 bg-slate-50/70 p-5">
-                          <h4 className="text-xs font-bold uppercase tracking-[0.08em] text-slate-700">
-                            Master QA Approval & Customer Release Gates
-                          </h4>
-
-                          <div className="mt-4 grid grid-cols-1 gap-4 sm:grid-cols-2">
-                            <div className="rounded-lg border border-slate-200 bg-white p-3.5">
-                              <div className="flex items-center justify-between">
-                                <span className="text-xs font-bold text-slate-800">1. Master QA Review</span>
-                                {signOffData.is_approved_by_master ? (
-                                  <span className="rounded bg-emerald-50 px-2 py-0.5 text-[10px] font-bold text-emerald-700">
-                                    Approved
-                                  </span>
-                                ) : (
-                                  <span className="rounded bg-slate-100 px-2 py-0.5 text-[10px] font-medium text-slate-500">
-                                    Pending
-                                  </span>
-                                )}
-                              </div>
-                              <p className="mt-1 text-[11px] text-slate-500">
-                                {signOffData.approved_at
-                                  ? `Approved at ${new Date(signOffData.approved_at).toLocaleString()}`
-                                  : "Requires authorized Master review before customer release."}
+                          <div className="flex items-center justify-between mb-4">
+                            <div>
+                              <h4 className="text-xs font-bold uppercase tracking-[0.08em] text-slate-700">
+                                Multi-Stage QA Approval & Customer Release Gates
+                              </h4>
+                              <p className="text-xs text-slate-500">
+                                Three distinct verification gates required before public marketplace and customer report release.
                               </p>
-                              {user?.role === "MASTER" && !signOffData.is_approved_by_master && (
+                            </div>
+
+                            {currentCheckId && (
+                              <Button
+                                type="button"
+                                variant="secondary"
+                                size="sm"
+                                onClick={handleDownloadPdf}
+                                loading={isDownloadingPdf}
+                                className="flex items-center gap-1.5 text-emerald-700 border-emerald-200 bg-emerald-50"
+                              >
+                                <Download size={14} /> Download Certified PDF
+                              </Button>
+                            )}
+                          </div>
+
+                          <div className="grid grid-cols-1 gap-4 lg:grid-cols-3">
+                            {/* Stage 1: DMS Technical Review */}
+                            <div className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm flex flex-col justify-between">
+                              <div>
+                                <div className="flex items-center justify-between">
+                                  <span className="text-xs font-bold text-slate-800">Stage 1: DMS Review</span>
+                                  {signOffData.is_approved_by_dms ? (
+                                    <span className="rounded bg-emerald-50 px-2 py-0.5 text-[10px] font-bold text-emerald-700 border border-emerald-200">
+                                      ✓ Approved
+                                    </span>
+                                  ) : (
+                                    <span className="rounded bg-amber-50 px-2 py-0.5 text-[10px] font-bold text-amber-700 border border-amber-200">
+                                      Pending Review
+                                    </span>
+                                  )}
+                                </div>
+                                <div className="mt-2 text-xs font-semibold text-slate-700">
+                                  {signOffData.dms_reviewer_name || "Internal Technical Reviewer"}
+                                </div>
+                                <p className="mt-1 text-[11px] text-slate-500">
+                                  {signOffData.dms_approved_at
+                                    ? `Signed off on ${new Date(signOffData.dms_approved_at).toLocaleString()}`
+                                    : "Validates 160-point mechanical scan, paint microns, and diagnostic trouble codes."}
+                                </p>
+                              </div>
+
+                              <div className="mt-3 flex flex-col gap-2 pt-2 border-t border-slate-100">
+                                {!signOffData.is_approved_by_dms && (
+                                  <Button
+                                    type="button"
+                                    variant="secondary"
+                                    size="sm"
+                                    className="w-full"
+                                    onClick={() => handleStateTransition("dms_approved")}
+                                    loading={saveLoading}
+                                  >
+                                    Sign-Off Technical Review (Stage 1)
+                                  </Button>
+                                )}
                                 <Button
                                   type="button"
                                   variant="secondary"
                                   size="sm"
-                                  className="mt-3 w-full"
-                                  onClick={() => handleStateTransition("approved")}
-                                  loading={saveLoading}
+                                  className="w-full text-rose-600 border-rose-200 hover:bg-rose-50"
+                                  onClick={() => setShowCorrectionModal(true)}
                                 >
-                                  Authorize Master Approval
+                                  <RotateCcw size={13} className="mr-1" /> Request Corrections
                                 </Button>
-                              )}
+                              </div>
                             </div>
 
-                            <div className="rounded-lg border border-slate-200 bg-white p-3.5">
-                              <div className="flex items-center justify-between">
-                                <span className="text-xs font-bold text-slate-800">2. Customer Report Release</span>
-                                {signOffData.is_released_to_customer ? (
-                                  <span className="rounded bg-indigo-50 px-2 py-0.5 text-[10px] font-bold text-indigo-700">
-                                    Released
-                                  </span>
-                                ) : (
-                                  <span className="rounded bg-slate-100 px-2 py-0.5 text-[10px] font-medium text-slate-500">
-                                    Unreleased
-                                  </span>
+                            {/* Stage 2: Master QA Approval */}
+                            <div className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm flex flex-col justify-between">
+                              <div>
+                                <div className="flex items-center justify-between">
+                                  <span className="text-xs font-bold text-slate-800">Stage 2: Master Panel</span>
+                                  {signOffData.is_approved_by_master ? (
+                                    <span className="rounded bg-emerald-50 px-2 py-0.5 text-[10px] font-bold text-emerald-700 border border-emerald-200">
+                                      ✓ Approved
+                                    </span>
+                                  ) : (
+                                    <span className="rounded bg-slate-100 px-2 py-0.5 text-[10px] font-medium text-slate-500">
+                                      Pending Master
+                                    </span>
+                                  )}
+                                </div>
+                                <div className="mt-2 text-xs font-semibold text-slate-700">
+                                  {signOffData.master_reviewer_name || "Master Authority"}
+                                </div>
+                                <p className="mt-1 text-[11px] text-slate-500">
+                                  {signOffData.approved_at
+                                    ? `Authorized on ${new Date(signOffData.approved_at).toLocaleString()}`
+                                    : "Authoritative Master Panel verification of complete inspection findings."}
+                                </p>
+                              </div>
+
+                              <div className="mt-3 pt-2 border-t border-slate-100">
+                                {user?.role === "MASTER" && !signOffData.is_approved_by_master && (
+                                  <Button
+                                    type="button"
+                                    variant="secondary"
+                                    size="sm"
+                                    className="w-full"
+                                    onClick={() => handleStateTransition("approved")}
+                                    loading={saveLoading}
+                                  >
+                                    Authorize Master Approval
+                                  </Button>
                                 )}
                               </div>
-                              <p className="mt-1 text-[11px] text-slate-500">
-                                {signOffData.released_at
-                                  ? `Released at ${new Date(signOffData.released_at).toLocaleString()}`
-                                  : "Unreleased reports remain strictly gated from customer download."}
-                              </p>
-                              {user?.role === "MASTER" && !signOffData.is_released_to_customer && (
-                                <Button
-                                  type="button"
-                                  variant="primary"
-                                  size="sm"
-                                  className="mt-3 w-full"
-                                  onClick={() => handleStateTransition("released")}
-                                  loading={saveLoading}
-                                >
-                                  Release to Customer
-                                </Button>
-                              )}
+                            </div>
+
+                            {/* Stage 3: Customer Portal Release */}
+                            <div className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm flex flex-col justify-between">
+                              <div>
+                                <div className="flex items-center justify-between">
+                                  <span className="text-xs font-bold text-slate-800">Stage 3: Customer Release</span>
+                                  {signOffData.is_released_to_customer ? (
+                                    <span className="rounded bg-indigo-50 px-2 py-0.5 text-[10px] font-bold text-indigo-700 border border-indigo-200">
+                                      ✓ Released
+                                    </span>
+                                  ) : (
+                                    <span className="rounded bg-slate-100 px-2 py-0.5 text-[10px] font-medium text-slate-500">
+                                      Restricted Quarantine
+                                    </span>
+                                  )}
+                                </div>
+                                <div className="mt-2 text-xs font-semibold text-slate-700">
+                                  {signOffData.is_released_to_customer ? "Published to Portal & PDF" : "Quality Quarantine"}
+                                </div>
+                                <p className="mt-1 text-[11px] text-slate-500">
+                                  {signOffData.released_at
+                                    ? `Released on ${new Date(signOffData.released_at).toLocaleString()}`
+                                    : "Unreleased reports remain strictly gated from customer dashboard download."}
+                                </p>
+                              </div>
+
+                              <div className="mt-3 pt-2 border-t border-slate-100">
+                                {user?.role === "MASTER" && !signOffData.is_released_to_customer && (
+                                  <Button
+                                    type="button"
+                                    variant="primary"
+                                    size="sm"
+                                    className="w-full bg-emerald-600 hover:bg-emerald-700 text-white"
+                                    onClick={() => handleStateTransition("released")}
+                                    loading={saveLoading}
+                                  >
+                                    Release to Customer Account
+                                  </Button>
+                                )}
+                              </div>
                             </div>
                           </div>
                         </div>
@@ -1983,6 +2852,19 @@ function ProcurementChecks() {
                 </div>
 
                 <div className="flex items-center gap-3">
+                  {currentCheckId && (
+                    <Button
+                      type="button"
+                      variant="secondary"
+                      onClick={handleDownloadPdf}
+                      disabled={isDownloadingPdf}
+                      className="text-emerald-700 border-emerald-200 bg-emerald-50 hover:bg-emerald-100"
+                    >
+                      <Download size={14} className="mr-1.5" />
+                      {isDownloadingPdf ? "Generating PDF..." : "Download Certified PDF"}
+                    </Button>
+                  )}
+
                   <Button type="button" variant="secondary" onClick={closeWorkbenchModal} disabled={saveLoading}>
                     Close
                   </Button>
@@ -1996,6 +2878,90 @@ function ProcurementChecks() {
                     Save Findings & Record
                   </Button>
                 </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Return for Corrections Modal */}
+      {showCorrectionModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/60 p-4 backdrop-blur-sm">
+          <div className="w-full max-w-md rounded-2xl border border-slate-200 bg-white p-6 shadow-2xl">
+            <h3 className="text-sm font-bold text-slate-800">Return Inspection for Corrections</h3>
+            <p className="mt-1 text-xs text-slate-500">
+              Provide actionable guidance or specific re-test items for the technical inspector.
+            </p>
+            <textarea
+              rows={4}
+              value={correctionNotes}
+              onChange={(e) => setCorrectionNotes(e.target.value)}
+              placeholder="e.g. Please re-verify rear left door coating thickness and add photo of spare tyre."
+              className="mt-3 w-full rounded-xl border border-slate-200 p-3 text-xs text-slate-800 focus:border-amber-400 focus:outline-none"
+            />
+            <div className="mt-4 flex justify-end gap-2">
+              <Button
+                type="button"
+                variant="secondary"
+                size="sm"
+                onClick={() => {
+                  setShowCorrectionModal(false);
+                  setCorrectionNotes("");
+                }}
+              >
+                Cancel
+              </Button>
+              <Button
+                type="button"
+                variant="primary"
+                size="sm"
+                className="bg-rose-600 hover:bg-rose-700 text-white"
+                onClick={() => handleStateTransition("returned_for_correction")}
+                disabled={!correctionNotes.trim() || saveLoading}
+              >
+                Submit Return
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Fullscreen Photo Lightbox */}
+      {selectedPhotoPreview && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/85 p-6 backdrop-blur-md"
+          onClick={() => setSelectedPhotoPreview(null)}
+        >
+          <div
+            className="relative max-w-3xl w-full rounded-2xl bg-slate-900 overflow-hidden border border-slate-700 shadow-2xl"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="flex items-center justify-between border-b border-slate-800 p-4">
+              <span className="text-xs font-bold text-amber-400 uppercase tracking-wider">
+                {selectedPhotoPreview.caption || selectedPhotoPreview.category_display || "Inspector Evidence"}
+              </span>
+              <button
+                type="button"
+                onClick={() => setSelectedPhotoPreview(null)}
+                className="text-slate-400 hover:text-white"
+              >
+                <X size={20} />
+              </button>
+            </div>
+            <div className="flex items-center justify-center bg-black max-h-[65vh] p-2">
+              <img
+                src={selectedPhotoPreview.image_url || selectedPhotoPreview.image || selectedPhotoPreview.url}
+                alt="Evidence enlarged"
+                className="max-h-[60vh] max-w-full object-contain"
+              />
+            </div>
+            <div className="p-4 text-xs text-slate-300 bg-slate-900/90 border-t border-slate-800">
+              {selectedPhotoPreview.inspector_comments && (
+                <p className="font-medium text-slate-200">{selectedPhotoPreview.inspector_comments}</p>
+              )}
+              <div className="mt-1 flex gap-3 text-[11px] text-slate-400">
+                <span>Category: {(selectedPhotoPreview.category_display || selectedPhotoPreview.category || "").replace(/_/g, " ")}</span>
+                {selectedPhotoPreview.panel_id && <span>Panel: {selectedPhotoPreview.panel_id}</span>}
               </div>
             </div>
           </div>

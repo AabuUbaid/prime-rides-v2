@@ -382,32 +382,40 @@ def _balance_sheet_is_settled(*, quote):
         ):
             company_expenses += amount
 
-    if quote.payment_method == "Finance":
-        vehicle_price = (
-            getattr(quote, "emi_vehicle_price", None)
-            or Decimal("0.00")
-        )
+        if quote.payment_method == "Finance":
+            vehicle_price = (
+                getattr(quote, "emi_vehicle_price", None)
+                or Decimal("0.00")
+            )
 
-        vat_amount = (
-            getattr(quote, "emi_vat_amount", None)
-            or Decimal("0.00")
-        )
+            vat_amount = (
+                getattr(quote, "emi_vat_amount", None)
+                or Decimal("0.00")
+            )
 
-        total_spent = vehicle_price + vat_amount
-    else:
-        vehicle_price = (
-            getattr(balance_sheet.car, "asking_price", None)
-            or Decimal("0.00")
-        )
+            base_vehicle_amount = vehicle_price + vat_amount
 
-        vat_amount = (
-            getattr(quote, "vat_amount", None)
-            or Decimal("0.00")
-        )
+        else:
+            cash_deal = (
+                CashDeal.objects
+                .filter(quote=quote)
+                .order_by("-updated_at", "-id")
+                .first()
+            )
 
-        total_spent = vehicle_price + vat_amount
+            if cash_deal is None:
+                return False
 
-    return total_received == total_spent
+            base_vehicle_amount = (
+                cash_deal.selling_price
+                or Decimal("0.00")
+            )
+
+        # Match the Finance Balance Sheet calculation:
+        # Vehicle selling price + actual company expenses.
+        total_spent = base_vehicle_amount + company_expenses
+
+        return total_received == total_spent
 
        
 @transaction.atomic

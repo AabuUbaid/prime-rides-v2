@@ -43,6 +43,12 @@ from .procurement_views import (
     ProcurementCheckSubmitFindingsAPIView,
     ProcurementCheckApproveAPIView,
     ProcurementCheckReleaseAPIView,
+    ProcurementCheckPhotoUploadAPIView,
+    ProcurementCheckPhotoDetailAPIView,
+    ProcurementCheckDmsApproveAPIView,
+    ProcurementCheckReturnCorrectionsAPIView,
+    ProcurementCheckPdfAPIView,
+    MarketplaceInventoryAdmissionAPIView,
 )
 
 app_name = "inventory"
@@ -287,6 +293,41 @@ urlpatterns = [
         "procurement-checks/<int:pk>/release/",
         ProcurementCheckReleaseAPIView.as_view(),
         name="procurement-check-release",
+    ),
+    path(
+        "procurement-checks/<int:pk>/dms-approve/",
+        ProcurementCheckDmsApproveAPIView.as_view(),
+        name="procurement-check-dms-approve",
+    ),
+    path(
+        "procurement-checks/<int:pk>/marketplace-admit/",
+        MarketplaceInventoryAdmissionAPIView.as_view(),
+        name="procurement-check-marketplace-admit",
+    ),
+    path(
+        "procurement-checks/<int:pk>/return-corrections/",
+        ProcurementCheckReturnCorrectionsAPIView.as_view(),
+        name="procurement-check-return-corrections",
+    ),
+    path(
+        "procurement-checks/<int:pk>/photos/",
+        ProcurementCheckPhotoUploadAPIView.as_view(),
+        name="procurement-check-photos",
+    ),
+    path(
+        "procurement-checks/<int:pk>/photos/<int:photo_id>/",
+        ProcurementCheckPhotoDetailAPIView.as_view(),
+        name="procurement-check-photo-detail",
+    ),
+    path(
+        "procurement-checks/<int:pk>/pdf/",
+        ProcurementCheckPdfAPIView.as_view(),
+        name="procurement-check-pdf",
+    ),
+    path(
+        "procurement-checks/public/<int:pk>/pdf/",
+        ProcurementCheckPdfAPIView.as_view(),
+        name="procurement-check-public-pdf",
     ),
     path(
         "sales/public/",

@@ -1789,7 +1789,7 @@ class CashReceiptCreateSerializer(
                 )
             })
 
-        # Prevent customer payments exceeding the remaining balance.
+        # Prevent customer payments exceeding the actual Balance Sheet balance.
         if (
             attrs.get("direction")
             == CashReceipt.Direction.CUSTOMER_PAYMENT
@@ -1804,31 +1804,64 @@ class CashReceiptCreateSerializer(
             ).select_related("quote", "car").first()
 
             if balance_sheet:
-                selling_price = (
-                    balance_sheet.car.asking_price
-                    + (balance_sheet.quote.vat_amount or Decimal("0.00"))
-                )
+                quote = balance_sheet.quote
+
+                if quote.payment_method == "Finance":
+                    selling_price = (
+                        (quote.emi_vehicle_price or Decimal("0.00"))
+                        + (quote.emi_vat_amount or Decimal("0.00"))
+                    )
+                else:
+                    cash_deal = getattr(
+                        quote,
+                        "cash_deal",
+                        None,
+                    )
+
+                    selling_price = (
+                        cash_deal.selling_price
+                        if cash_deal
+                        else (quote.price or Decimal("0.00"))
+                    )
 
                 receipts = CashReceipt.objects.filter(
                     quote_id=quote_id
                 ).select_related("reversal_of")
 
                 received = Decimal("0.00")
+                company_spent = Decimal("0.00")
 
                 for receipt in receipts:
                     if receipt.reversal_of_id:
+                        original = receipt.reversal_of
+
                         if (
-                            receipt.reversal_of.direction
+                            original.direction
                             == CashReceipt.Direction.CUSTOMER_PAYMENT
                         ):
                             received -= receipt.amount
-                    elif (
+
+                        elif (
+                            original.direction
+                            == CashReceipt.Direction.COMPANY_ON_BEHALF
+                        ):
+                            company_spent -= receipt.amount
+
+                        continue
+
+                    if (
                         receipt.direction
                         == CashReceipt.Direction.CUSTOMER_PAYMENT
                     ):
                         received += receipt.amount
 
-                remaining = selling_price - received
+                    elif (
+                        receipt.direction
+                        == CashReceipt.Direction.COMPANY_ON_BEHALF
+                    ):
+                        company_spent += receipt.amount
+
+                remaining = selling_price + company_spent - received
 
                 if amount > remaining:
                     raise serializers.ValidationError({
@@ -2185,79 +2218,65 @@ class BalanceSheetSerializer(serializers.ModelSerializer):
 
 
     def get_total_spent(self, obj):
-        """
-        Balance Sheet vehicle value:
-        vehicle price + VAT only.
+        selling_price = Decimal(
+            str(self.get_selling_price(obj) or 0)
+        )
 
-        Company-on-behalf receipts and estimated expenses
-        do not affect the vehicle's Balance Sheet amount.
-        """
-        quote = obj.quote
+        company_expenses = Decimal(
+            str(self._get_receipt_totals(obj)["spent"] or 0)
+        )
 
-        if quote.payment_method == "Finance":
-            vehicle_price = (
-                getattr(quote, "emi_vehicle_price", None)
-                or Decimal("0.00")
-            )
-            vat_amount = (
-                getattr(quote, "emi_vat_amount", None)
-                or Decimal("0.00")
-            )
-        else:
-            vehicle_price = (
-                getattr(obj.car, "asking_price", None)
-                or Decimal("0.00")
-            )
-            vat_amount = (
-                getattr(quote, "vat_amount", None)
-                or Decimal("0.00")
-            )
-
-        return vehicle_price + vat_amount
+        return selling_price + company_expenses
 
 
 
     def get_spent_breakdown(self, obj):
-        """
-        Show only vehicle price and VAT.
-        Company-on-behalf receipts remain in transaction history,
-        not in the vehicle value calculation.
-        """
-        quote = obj.quote
-
-        if quote.payment_method == "Finance":
-            vehicle_price = (
-                getattr(quote, "emi_vehicle_price", None)
-                or Decimal("0.00")
-            )
-            vat_amount = (
-                getattr(quote, "emi_vat_amount", None)
-                or Decimal("0.00")
-            )
-        else:
-            vehicle_price = (
-                getattr(obj.car, "asking_price", None)
-                or Decimal("0.00")
-            )
-            vat_amount = (
-                getattr(quote, "vat_amount", None)
-                or Decimal("0.00")
-            )
+        selling_price = Decimal(
+            str(self.get_selling_price(obj) or 0)
+        )
 
         breakdown = [
             {
                 "type": "vehicle_price",
-                "narration": "Vehicle Price",
-                "amount": vehicle_price,
+                "narration": "Vehicle Selling Price",
+                "amount": selling_price,
             }
         ]
 
-        if vat_amount > 0:
-            breakdown.append({
-                "type": "vat",
-                "narration": "VAT",
-                "amount": vat_amount,
-            })
+        receipts = getattr(
+            obj.quote,
+            "_balance_sheet_receipts",
+            None,
+        )
+
+        if receipts is None:
+            receipts = list(
+                CashReceipt.objects
+                .filter(quote_id=obj.quote_id)
+                .select_related("reversal_of")
+            )
+
+        reversed_ids = {
+            receipt.reversal_of_id
+            for receipt in receipts
+            if receipt.reversal_of_id is not None
+        }
+
+        for receipt in receipts:
+            if (
+                receipt.direction
+                == CashReceipt.Direction.COMPANY_ON_BEHALF
+                and receipt.reversal_of_id is None
+                and receipt.id not in reversed_ids
+            ):
+                breakdown.append({
+                    "type": "company_expense",
+                    "narration": (
+                        receipt.description.strip()
+                        or receipt.category.replace("_", " ").title()
+                    ),
+                    "amount": receipt.amount,
+                })
 
         return breakdown
 
@@ -2285,21 +2304,23 @@ class BalanceSheetSerializer(serializers.ModelSerializer):
                 getattr(quote, "emi_vehicle_price", None)
                 or Decimal("0.00")
             )
+
             vat_amount = (
                 getattr(quote, "emi_vat_amount", None)
                 or Decimal("0.00")
             )
-        else:
-            vehicle_price = (
-                getattr(obj.car, "asking_price", None)
-                or Decimal("0.00")
-            )
-            vat_amount = (
-                getattr(quote, "vat_amount", None)
-                or Decimal("0.00")
-            )
 
-        return vehicle_price + vat_amount
+            return vehicle_price + vat_amount
+
+        cash_deal = self._get_cash_deal(obj)
+
+        if cash_deal:
+            return cash_deal.selling_price
+
+        return (
+            getattr(quote, "price", None)
+            or Decimal("0.00")
+        )
 
     def get_evaluation(self, obj):
         if obj.quote.payment_method == "Cash":

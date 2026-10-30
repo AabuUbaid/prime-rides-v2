@@ -177,16 +177,11 @@ function BalanceSheetDetail() {
       return;
     }
 
-    const sellingPrice = Number(balanceSheet?.selling_price || 0);
-    const totalReceived = Number(balanceSheet?.total_received || 0);
+    const remainingBalance = Number(
+      balanceSheet?.net_difference || 0
+    );
 
-    console.log("Balance Sheet payment check:", {
-      selling_price: balanceSheet?.selling_price,
-      total_received: balanceSheet?.total_received,
-      quote_id: balanceSheet?.quote,
-    });
-
-    const amount = Math.max(0, sellingPrice - totalReceived);
+    const amount = Math.max(0, remainingBalance);
 
     if (amount <= 0) {
       toast.info("The customer has no remaining payment due.");

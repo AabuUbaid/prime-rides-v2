@@ -231,3 +231,36 @@ export function releaseProcurementCheck(id, data = {}) {
     body: JSON.stringify(data),
   });
 }
+export function dmsApproveProcurementCheck(id, data = {}) {
+  return apiClient(`/inventory/procurement-checks/${id}/dms-approve/`, {
+    method: 'POST',
+    body: JSON.stringify(data),
+  });
+}
+
+export function returnProcurementCorrections(id, data = {}) {
+  return apiClient(`/inventory/procurement-checks/${id}/return-corrections/`, {
+    method: 'POST',
+    body: JSON.stringify(data),
+  });
+}
+
+export function uploadProcurementPhoto(id, formData) {
+  return apiClient(`/inventory/procurement-checks/${id}/photos/`, {
+    method: 'POST',
+    body: formData,
+  });
+}
+
+export function deleteProcurementPhoto(id, photoId) {
+  return apiClient(`/inventory/procurement-checks/${id}/photos/${photoId}/`, {
+    method: 'DELETE',
+  });
+}
+
+export function downloadProcurementPdf(id) {
+  return apiClient(`/inventory/procurement-checks/${id}/pdf/`, {
+    method: 'GET',
+    responseType: 'blob',
+  });
+}

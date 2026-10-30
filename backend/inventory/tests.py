@@ -4,8 +4,9 @@ from django.test import TestCase
 from rest_framework import status
 from rest_framework.test import APIClient
 
-from inventory.models import ProcurementCheck
+from inventory.models import Car, ProcurementCheck
 from inventory.procurement_views import DMS_SERVICE_SECRET
+from staff.models import Staff
 
 User = get_user_model()
 
@@ -75,6 +76,138 @@ class ProcurementInspectionSecurityAndLifecycleTests(TestCase):
         self.assertEqual(response.status_code, status.HTTP_201_CREATED)
         self.assertEqual(response.data["make"], "Porsche")
         self.assertEqual(response.data["marketplace_reference_code"], "PR-INS-2026-TEST")
+
+    def test_dms_review_requires_active_procurement_staff_and_genuine_evidence(self):
+        check = ProcurementCheck.objects.create(
+            make="BMW",
+            model="M5",
+            checked_by=self.master_user,
+            workflow_state="submitted_for_review",
+            overall_score=Decimal("8.7"),
+            checkpoints_data={"engine_oil": "pass"},
+        )
+        url = f"/api/inventory/procurement-checks/{check.id}/dms-approve/"
+
+        service_response = self.client.post(
+            url,
+            data={},
+            format="json",
+            HTTP_X_DMS_SERVICE_KEY=self.service_key,
+        )
+        self.assertIn(
+            service_response.status_code,
+            [status.HTTP_401_UNAUTHORIZED, status.HTTP_403_FORBIDDEN],
+        )
+
+        self.client.force_authenticate(user=self.master_user)
+        master_response = self.client.post(url, data={}, format="json")
+        self.assertEqual(master_response.status_code, status.HTTP_403_FORBIDDEN)
+
+        reviewer = User.objects.create_user(
+            email="procurement_reviewer@primerides.ae",
+            role="SALES_STAFF",
+            password="reviewer-test-password",
+        )
+        Staff.objects.create(
+            user=reviewer,
+            name="Procurement Reviewer",
+            job_role=Staff.JobRole.PROCUREMENT,
+        )
+        self.client.force_authenticate(user=reviewer)
+        reviewer_response = self.client.post(url, data={}, format="json")
+        self.assertEqual(reviewer_response.status_code, status.HTTP_409_CONFLICT)
+        check.refresh_from_db()
+        self.assertFalse(check.is_approved_by_dms)
+
+    def test_marketplace_admission_requires_both_approvals_and_creates_in_house_stock(self):
+        payload = {
+            "reference_code": "PR-SUB-ADMISSION-TEST",
+            "make": "Porsche",
+            "model": "911",
+            "year": 2024,
+            "mileage": 3200,
+            "chassis_number": "WP0AF2A97RS654321",
+            "asking_price": "1220000",
+            "supplier": "customer-test",
+        }
+        check = ProcurementCheck.objects.create(
+            make=payload["make"],
+            model=payload["model"],
+            model_year=payload["year"],
+            mileage=payload["mileage"],
+            chassis_number=payload["chassis_number"],
+            checked_by=self.master_user,
+            is_approved_by_dms=True,
+        )
+        url = f"/api/inventory/procurement-checks/{check.id}/marketplace-admit/"
+
+        pending_response = self.client.post(
+            url,
+            data=payload,
+            format="json",
+            HTTP_X_DMS_SERVICE_KEY=self.service_key,
+        )
+        self.assertEqual(pending_response.status_code, status.HTTP_409_CONFLICT)
+        self.assertEqual(Car.objects.count(), 0)
+
+        check.is_approved_by_master = True
+        check.save(update_fields=["is_approved_by_master", "updated_at"])
+        admitted_response = self.client.post(
+            url,
+            data=payload,
+            format="json",
+            HTTP_X_DMS_SERVICE_KEY=self.service_key,
+        )
+        self.assertEqual(admitted_response.status_code, status.HTTP_201_CREATED)
+        car = Car.objects.get(pk=admitted_response.data["id"])
+        self.assertEqual(car.status, Car.Status.IN_HOUSE)
+        self.assertEqual(car.source, Car.Source.PARK_AND_SALE)
+        self.assertFalse(car.highlight_public)
+        check.refresh_from_db()
+        self.assertEqual(check.car_id, car.id)
+
+        retry_response = self.client.post(
+            url,
+            data=payload,
+            format="json",
+            HTTP_X_DMS_SERVICE_KEY=self.service_key,
+        )
+        self.assertEqual(retry_response.status_code, status.HTTP_200_OK)
+        self.assertEqual(retry_response.data["id"], str(car.id))
+        self.assertEqual(Car.objects.count(), 1)
+
+    def test_marketplace_admission_rejects_duplicate_chassis_number(self):
+        Car.objects.create(
+            stock_id="PR-L9998",
+            year=2023,
+            make="Audi",
+            model="RS6",
+            variant="Avant",
+            colour="Black",
+            chassis_number="WAUZZZ4G0PN123456",
+        )
+        check = ProcurementCheck.objects.create(
+            make="Audi",
+            model="RS6",
+            model_year=2023,
+            checked_by=self.master_user,
+            is_approved_by_dms=True,
+            is_approved_by_master=True,
+        )
+        response = self.client.post(
+            f"/api/inventory/procurement-checks/{check.id}/marketplace-admit/",
+            data={
+                "reference_code": "PR-SUB-DUPLICATE-TEST",
+                "make": "Audi",
+                "model": "RS6",
+                "year": 2023,
+                "chassis_number": "WAUZZZ4G0PN123456",
+            },
+            format="json",
+            HTTP_X_DMS_SERVICE_KEY=self.service_key,
+        )
+        self.assertEqual(response.status_code, status.HTTP_409_CONFLICT)
+        self.assertEqual(Car.objects.count(), 1)
 
     def test_unreleased_procurement_check_public_access_denied(self):
         """
@@ -181,6 +314,10 @@ class ProcurementInspectionSecurityAndLifecycleTests(TestCase):
         self.assertEqual(check.overall_score, Decimal("8.7"))
         self.assertEqual(check.workflow_state, "submitted_for_review")
         self.assertEqual(check.paint_thickness_data["bonnet"]["value"], 115)
+
+        # Stage 1 is completed by an authorized Procurement reviewer.
+        check.is_approved_by_dms = True
+        check.save(update_fields=["is_approved_by_dms", "updated_at"])
 
         # 4. Master Review & Approval
         approve_res = self.client.post(
